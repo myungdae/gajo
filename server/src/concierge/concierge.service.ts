@@ -56,8 +56,10 @@ export class ConciergeService {
       executionLog: runResult.executionLog,
       recommendation: runResult.recommendation,
       reservationCheck: runResult.reservationCheck,
-      usedAgents: usedAgents.map((a) => ({ uri: a, label: this.traversal.label(a) })),
-      risks: (context.risks || []).map((r: string) => ({ uri: r, label: this.traversal.label(r) })),
+      usedAgents,
+      usedAgentLabels: usedAgents.map((a) => ({ uri: a, label: this.traversal.label(a) })),
+      risks: context.risks || [],
+      riskLabels: (context.risks || []).map((r: string) => ({ uri: r, label: this.traversal.label(r) })),
       confidenceScore: runResult.recommendation?.confidenceScore || 0,
       nextAction: runResult.recommendation?.nextAction || null,
     };
