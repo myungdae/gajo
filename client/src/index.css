@@ -41,12 +41,14 @@ a {
 .app-shell {
   max-width: 480px;
   margin: 0 auto;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
   background: var(--color-bg);
   display: flex;
   flex-direction: column;
   position: relative;
   box-shadow: var(--shadow);
+  overflow: hidden;
 }
 
 @media (min-width: 600px) {
@@ -80,13 +82,14 @@ a {
 
 .app-main {
   flex: 1;
-  padding: 16px 16px 90px;
+  min-height: 0;
+  padding: 16px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .bottom-nav {
-  position: sticky;
-  bottom: 0;
+  flex-shrink: 0;
   z-index: 20;
   display: flex;
   background: var(--color-surface);
@@ -272,7 +275,6 @@ select:focus {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  min-height: 55vh;
 }
 
 .chat-bubble {
@@ -300,11 +302,13 @@ select:focus {
 
 .chat-input-bar {
   position: sticky;
-  bottom: 62px;
+  bottom: -16px;
   display: flex;
   gap: 8px;
-  padding: 10px;
+  padding: 10px 16px;
+  margin: 8px -16px -16px;
   background: var(--color-bg);
+  border-top: 1px solid var(--color-border);
 }
 
 .evidence-item {
