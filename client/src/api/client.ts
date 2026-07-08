@@ -43,6 +43,11 @@ export interface FiredRule {
   policyLabel?: string;
 }
 
+export interface UriLabel {
+  uri: string;
+  label: string;
+}
+
 export interface ConciergeChatResponse {
   context: any;
   evidence: EvidenceStep[];
@@ -53,7 +58,9 @@ export interface ConciergeChatResponse {
   recommendation?: any;
   reservationCheck?: any[];
   usedAgents?: string[];
+  usedAgentLabels?: UriLabel[];
   risks?: string[];
+  riskLabels?: UriLabel[];
   confidenceScore?: number;
   nextAction?: string;
   error?: string;

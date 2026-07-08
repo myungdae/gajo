@@ -126,6 +126,29 @@ export default function ConciergePage() {
   );
 }
 
+/**
+ * Builds a uri -> 한글 라벨 lookup from every source available on the
+ * response (riskLabels/usedAgentLabels from the backend, plus every
+ * subject/object label already present in the recommendation's evidence
+ * chain). Falls back to a shortened URI (gajo:xxx / roo:xxx) when no
+ * label can be found, so the chat panel never shows a bare full URI.
+ */
+function buildLabelMap(result: ConciergeChatResponse): Record<string, string> {
+  const map: Record<string, string> = {};
+  for (const ul of result.riskLabels || []) map[ul.uri] = ul.label;
+  for (const ul of result.usedAgentLabels || []) map[ul.uri] = ul.label;
+  const rec = result.recommendation;
+  for (const e of (rec?.evidence || result.evidence || []) as any[]) {
+    if (e.subject && e.subjectLabel) map[e.subject] = e.subjectLabel;
+    if (e.object && e.objectLabel) map[e.object] = e.objectLabel;
+  }
+  return map;
+}
+
+function labelFor(map: Record<string, string>, uri: string): string {
+  return map[uri] || shortUri(uri);
+}
+
 function ResultPanel({
   result,
   onViewItinerary,
@@ -134,37 +157,59 @@ function ResultPanel({
   onViewItinerary: () => void;
 }) {
   const rec = result.recommendation;
+  const labelMap = buildLabelMap(result);
+  const itinerarySteps: any[] = rec?.itinerary?.steps || rec?.steps || [];
+
   return (
     <div className="card" style={{ marginTop: 8 }}>
       {result.risks && result.risks.length > 0 && (
-        <div style={{ marginBottom: 8 }}>
-          <b style={{ fontSize: 12 }}>감지된 위험 요소</b>
+        <div style={{ marginBottom: 12 }}>
+          <b style={{ fontSize: 12 }}>⚠️ 감지된 위험 요소</b>
           <div className="tag-row">
             {result.risks.map((r) => (
               <span className="badge risk" key={r}>
-                {shortUri(r)}
+                {labelFor(labelMap, r)}
               </span>
             ))}
           </div>
         </div>
       )}
 
-      {rec && (
+      {rec && itinerarySteps.length > 0 && (
+        <div style={{ marginBottom: 4 }}>
+          <b style={{ fontSize: 12 }}>📋 추천 일정</b>
+          {itinerarySteps.map((step: any, i: number) => (
+            <div className="itinerary-step" key={i} style={{ marginTop: 10 }}>
+              <div className="step-index">{step.order ?? i + 1}</div>
+              <div className="step-body">
+                <h3>{step.programLabel || step.label || labelFor(labelMap, step.programUri)}</h3>
+                {step.facilityLabel && <p>📍 {step.facilityLabel}</p>}
+                {step.durationMinutes && <p>소요 시간: 약 {step.durationMinutes}분</p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {rec && !itinerarySteps.length && (
         <>
           <b style={{ fontSize: 12 }}>추천 프로그램</b>
           <div className="tag-row">
             {(rec.recommendedPrograms || []).map((p: string) => (
               <span className="badge" key={p}>
-                {shortUri(p)}
+                {labelFor(labelMap, p)}
               </span>
             ))}
           </div>
-          <div style={{ marginTop: 10 }}>
-            <button className="btn btn-primary btn-block" onClick={onViewItinerary}>
-              📋 전체 일정 및 근거 보기
-            </button>
-          </div>
         </>
+      )}
+
+      {rec && (
+        <div style={{ marginTop: 12 }}>
+          <button className="btn btn-primary btn-block" onClick={onViewItinerary}>
+            📋 전체 일정 및 근거 보기
+          </button>
+        </div>
       )}
 
       {result.firedRules && result.firedRules.length > 0 && (
