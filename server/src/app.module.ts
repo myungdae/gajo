@@ -16,6 +16,7 @@ import { AdminModule } from './admin/admin.module';
 import { ConciergeModule } from './concierge/concierge.module';
 import { VisitorModule } from './visitor/visitor.module';
 import { DemoModule } from './demo/demo.module';
+import { NearbyModule } from './nearby/nearby.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { DemoModule } from './demo/demo.module';
     ConciergeModule,
     VisitorModule,
     DemoModule,
+    NearbyModule,
   ],
   controllers: [AppController],
   providers: [AppService],

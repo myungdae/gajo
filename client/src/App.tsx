@@ -6,6 +6,7 @@ import ItineraryPage from './pages/ItineraryPage';
 import MapPage from './pages/MapPage';
 import AdminPage from './pages/AdminPage';
 import OntologyExplorerPage from './pages/OntologyExplorerPage';
+import NearbyRestaurantsPage from './pages/NearbyRestaurantsPage';
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
           <Route path="/concierge" element={<ConciergePage />} />
           <Route path="/itinerary" element={<ItineraryPage />} />
           <Route path="/map" element={<MapPage />} />
+          <Route path="/nearby-restaurants" element={<NearbyRestaurantsPage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/ontology" element={<OntologyExplorerPage />} />
         </Route>

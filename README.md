@@ -141,6 +141,28 @@ npm run dev      # http://localhost:5173, /api는 :3000으로 프록시
 npm run build && npm run preview
 ```
 
+## 실제 위치 기반 "내 주변 식당 찾기" (`server/src/nearby`, `client/src/pages/NearbyRestaurantsPage.tsx`)
+
+온톨로지에 등록된 Gajo 자체 Program/Facility 추천과는 별도로, 방문객의 **실제 GPS 위치**를 기준으로
+카카오 로컬 API(무료 REST API 키, 일 100,000건 쿼터)를 프록시하여 진짜 주변 식당을 검색하고,
+건강식/약선·채식/사찰음식·한식·해산물 등으로 자동 분류해 카테고리 탭으로 보여줍니다. 식당을
+선택하면 OSRM(무료, 키 불필요) 도보 경로를 지도에 미리보기로 표시하고, "길찾기 시작" 클릭 시
+구글맵/카카오맵으로 실제 내비게이션을 넘겨줍니다(자체 턴바이턴 내비게이션은 재구현하지 않음).
+
+- 백엔드: `NearbyModule` → `/api/nearby/status`, `/api/nearby/restaurants?lat=&lng=&radius=`,
+  `/api/nearby/route?...`, `/api/nearby/navigation-links?...`. 서버 환경변수 `KAKAO_REST_API_KEY`
+  가 없으면 해당 기능만 503으로 명확히 안내되고 나머지 서비스는 정상 동작합니다.
+- 프론트: `/nearby-restaurants` 페이지에서 `navigator.geolocation`으로 위치 권한 요청(거부 시
+  가조 온천단지 중심으로 자동 대체), 카테고리 탭, Leaflet 지도 + 경로 폴리라인, 길찾기 딥링크.
+- 컨시어지 채팅(`ConciergeService.chat`)이 "주변 건강식 식당 추천해주세요" 류의 자연어를
+  `nearbyRestaurantIntent: true`로 감지해 채팅 결과 카드에 "내 주변 식당 찾기" CTA를 노출합니다.
+
+### 카카오 REST API 키 발급 (무료)
+1. https://developers.kakao.com → 로그인 → 내 애플리케이션 → 애플리케이션 추가
+2. 앱 선택 → 앱 키 → **REST API 키** 복사 (JavaScript 키가 아님)
+3. 서버 환경변수로 등록: `KAKAO_REST_API_KEY=<발급받은 키>` (`docker-compose.yml`의
+   `api` 서비스 environment 또는 `.env`)
+
 ## Docker 배포 (gajo.odex.kr)
 
 `docker-compose.yml` + `server/Dockerfile` + `client/Dockerfile` + `client/nginx.conf`
