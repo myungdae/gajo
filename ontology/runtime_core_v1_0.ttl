@@ -1,0 +1,101 @@
+@prefix roo: <https://linkeddata.center/roo-core#> .
+@prefix schema: <https://schema.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+roo:RuntimeOperationalOntologyCore a owl:Ontology ;
+  rdfs:label "Runtime Operational Ontology Core"@en, "런타임 오퍼레이셔널 온톨로지 코어"@ko ;
+  rdfs:comment "Agentic AI 시스템에서 Entity, Event, Context, Operation, Policy, Rule, State, Agent, Tool, Task를 런타임에서 연결하기 위한 공통 Core Ontology."@ko ;
+  owl:versionInfo "1.0" .
+
+roo:Entity a owl:Class ; rdfs:label "Entity"@en, "개체"@ko .
+roo:Actor a owl:Class ; rdfs:subClassOf roo:Entity ; rdfs:label "Actor"@en, "행위자"@ko .
+roo:HumanActor a owl:Class ; rdfs:subClassOf roo:Actor, schema:Person ; rdfs:label "Human Actor"@en, "인간 행위자"@ko .
+roo:OrganizationActor a owl:Class ; rdfs:subClassOf roo:Actor, schema:Organization ; rdfs:label "Organization Actor"@en, "조직 행위자"@ko .
+roo:ArtificialAgent a owl:Class ; rdfs:subClassOf roo:Actor ; rdfs:label "Artificial Agent"@en, "인공지능 Agent"@ko .
+roo:Context a owl:Class ; rdfs:label "Context"@en, "맥락"@ko .
+roo:SemanticContext a owl:Class ; rdfs:subClassOf roo:Context ; rdfs:label "Semantic Context"@en, "의미 맥락"@ko .
+roo:Event a owl:Class ; rdfs:label "Event"@en, "사건"@ko .
+roo:State a owl:Class ; rdfs:label "State"@en, "상태"@ko .
+roo:OperationalState a owl:Class ; rdfs:subClassOf roo:State ; rdfs:label "Operational State"@en, "운영상태"@ko .
+roo:Operation a owl:Class ; rdfs:label "Operation"@en, "운영/작동"@ko .
+roo:Task a owl:Class ; rdfs:label "Task"@en, "작업"@ko .
+roo:Action a owl:Class ; rdfs:label "Action"@en, "행동"@ko .
+roo:Decision a owl:Class ; rdfs:label "Decision"@en, "의사결정"@ko .
+roo:Recommendation a owl:Class ; rdfs:subClassOf roo:Decision ; rdfs:label "Recommendation"@en, "추천"@ko .
+roo:Policy a owl:Class ; rdfs:label "Policy"@en, "정책/운영규칙"@ko .
+roo:Rule a owl:Class ; rdfs:label "Rule"@en, "규칙"@ko .
+roo:Condition a owl:Class ; rdfs:label "Condition"@en, "조건"@ko .
+roo:Risk a owl:Class ; rdfs:label "Risk"@en, "위험"@ko .
+roo:Evidence a owl:Class ; rdfs:label "Evidence"@en, "근거"@ko .
+roo:Capability a owl:Class ; rdfs:label "Capability"@en, "수행능력"@ko .
+roo:Tool a owl:Class ; rdfs:label "Tool"@en, "도구"@ko .
+roo:APITool a owl:Class ; rdfs:subClassOf roo:Tool ; rdfs:label "API Tool"@en, "API 도구"@ko .
+roo:DatabaseTool a owl:Class ; rdfs:subClassOf roo:Tool ; rdfs:label "Database Tool"@en, "데이터베이스 도구"@ko .
+roo:SensorTool a owl:Class ; rdfs:subClassOf roo:Tool ; rdfs:label "Sensor Tool"@en, "센서 도구"@ko .
+roo:MessageTool a owl:Class ; rdfs:subClassOf roo:Tool ; rdfs:label "Message Tool"@en, "메시지 도구"@ko .
+roo:ExecutionResult a owl:Class ; rdfs:label "Execution Result"@en, "실행 결과"@ko .
+
+roo:hasActor a owl:ObjectProperty ; rdfs:domain roo:Context ; rdfs:range roo:Actor ; rdfs:label "행위자를 가진다"@ko .
+roo:hasEntity a owl:ObjectProperty ; rdfs:domain roo:Context ; rdfs:range roo:Entity ; rdfs:label "개체를 가진다"@ko .
+roo:hasEvent a owl:ObjectProperty ; rdfs:domain roo:Context ; rdfs:range roo:Event ; rdfs:label "사건을 가진다"@ko .
+roo:hasState a owl:ObjectProperty ; rdfs:domain owl:Thing ; rdfs:range roo:State ; rdfs:label "상태를 가진다"@ko .
+roo:hasRisk a owl:ObjectProperty ; rdfs:domain owl:Thing ; rdfs:range roo:Risk ; rdfs:label "위험을 가진다"@ko .
+roo:hasEvidence a owl:ObjectProperty ; rdfs:domain owl:Thing ; rdfs:range roo:Evidence ; rdfs:label "근거를 가진다"@ko .
+roo:basedOnContext a owl:ObjectProperty ; rdfs:domain owl:Thing ; rdfs:range roo:Context ; rdfs:label "맥락에 근거한다"@ko .
+roo:generatedFromEvent a owl:ObjectProperty ; rdfs:domain roo:Context ; rdfs:range roo:Event ; rdfs:label "사건으로부터 생성된다"@ko .
+roo:activatesContext a owl:ObjectProperty ; rdfs:domain roo:Event ; rdfs:range roo:Context ; rdfs:label "맥락을 활성화한다"@ko .
+roo:relatedTo a owl:ObjectProperty, owl:SymmetricProperty ; rdfs:domain owl:Thing ; rdfs:range owl:Thing ; rdfs:label "관련된다"@ko .
+roo:semanticallyExpandsTo a owl:ObjectProperty ; rdfs:domain owl:Thing ; rdfs:range owl:Thing ; rdfs:label "의미적으로 확장된다"@ko .
+roo:hasOperation a owl:ObjectProperty ; rdfs:domain roo:Context ; rdfs:range roo:Operation ; rdfs:label "운영을 가진다"@ko .
+roo:triggersOperation a owl:ObjectProperty ; rdfs:domain roo:Event ; rdfs:range roo:Operation ; rdfs:label "운영을 트리거한다"@ko .
+roo:hasTask a owl:ObjectProperty ; rdfs:domain roo:Operation ; rdfs:range roo:Task ; rdfs:label "작업을 가진다"@ko .
+roo:dependsOnTask a owl:ObjectProperty ; rdfs:domain roo:Task ; rdfs:range roo:Task ; rdfs:label "작업에 의존한다"@ko .
+roo:requiresCapability a owl:ObjectProperty ; rdfs:domain roo:Task ; rdfs:range roo:Capability ; rdfs:label "수행능력을 요구한다"@ko .
+roo:assignedToAgent a owl:ObjectProperty ; rdfs:domain roo:Task ; rdfs:range roo:ArtificialAgent ; rdfs:label "Agent에게 할당된다"@ko .
+roo:executedByAgent a owl:ObjectProperty ; rdfs:domain owl:Thing ; rdfs:range roo:ArtificialAgent ; rdfs:label "Agent가 실행한다"@ko .
+roo:hasCapability a owl:ObjectProperty ; rdfs:domain roo:ArtificialAgent ; rdfs:range roo:Capability ; rdfs:label "수행능력이 있다"@ko .
+roo:usesTool a owl:ObjectProperty ; rdfs:domain roo:ArtificialAgent ; rdfs:range roo:Tool ; rdfs:label "도구를 사용한다"@ko .
+roo:toolSupportsCapability a owl:ObjectProperty ; rdfs:domain roo:Tool ; rdfs:range roo:Capability ; rdfs:label "도구가 수행능력을 지원한다"@ko .
+roo:producesResult a owl:ObjectProperty ; rdfs:domain owl:Thing ; rdfs:range roo:ExecutionResult ; rdfs:label "결과를 산출한다"@ko .
+roo:governedByPolicy a owl:ObjectProperty ; rdfs:domain owl:Thing ; rdfs:range roo:Policy ; rdfs:label "정책의 적용을 받는다"@ko .
+roo:hasRule a owl:ObjectProperty ; rdfs:domain roo:Policy ; rdfs:range roo:Rule ; rdfs:label "규칙을 가진다"@ko .
+roo:ifCondition a owl:ObjectProperty ; rdfs:domain roo:Rule ; rdfs:range roo:Condition ; rdfs:label "IF 조건"@ko .
+roo:thenAction a owl:ObjectProperty ; rdfs:domain roo:Rule ; rdfs:range roo:Action ; rdfs:label "THEN 행동"@ko .
+roo:thenRecommendation a owl:ObjectProperty ; rdfs:domain roo:Rule ; rdfs:range roo:Recommendation ; rdfs:label "THEN 추천"@ko .
+roo:mitigatesRisk a owl:ObjectProperty ; rdfs:domain owl:Thing ; rdfs:range roo:Risk ; rdfs:label "위험을 완화한다"@ko .
+roo:increasesRisk a owl:ObjectProperty ; rdfs:domain owl:Thing ; rdfs:range roo:Risk ; rdfs:label "위험을 증가시킨다"@ko .
+roo:decisionMadeBy a owl:ObjectProperty ; rdfs:domain roo:Decision ; rdfs:range roo:ArtificialAgent ; rdfs:label "의사결정을 수행한다"@ko .
+
+roo:identifier a owl:DatatypeProperty ; rdfs:range xsd:string ; rdfs:label "식별자"@ko .
+roo:description a owl:DatatypeProperty ; rdfs:range xsd:string ; rdfs:label "설명"@ko .
+roo:startTime a owl:DatatypeProperty ; rdfs:range xsd:dateTime ; rdfs:label "시작 시간"@ko .
+roo:endTime a owl:DatatypeProperty ; rdfs:range xsd:dateTime ; rdfs:label "종료 시간"@ko .
+roo:priority a owl:DatatypeProperty ; rdfs:range xsd:integer ; rdfs:label "우선순위"@ko .
+roo:confidenceScore a owl:DatatypeProperty ; rdfs:range xsd:decimal ; rdfs:label "신뢰도 점수"@ko .
+roo:riskLevel a owl:DatatypeProperty ; rdfs:range xsd:string ; rdfs:label "위험 수준"@ko .
+roo:stateValue a owl:DatatypeProperty ; rdfs:range xsd:string ; rdfs:label "상태값"@ko .
+roo:apiEndpoint a owl:DatatypeProperty ; rdfs:domain roo:Tool ; rdfs:range xsd:anyURI ; rdfs:label "API 엔드포인트"@ko .
+roo:method a owl:DatatypeProperty ; rdfs:domain roo:APITool ; rdfs:range xsd:string ; rdfs:label "HTTP 메서드"@ko .
+
+roo:planningState a roo:OperationalState ; rdfs:label "계획중"@ko ; roo:stateValue "planning" .
+roo:waitingState a roo:OperationalState ; rdfs:label "대기중"@ko ; roo:stateValue "waiting" .
+roo:activeState a roo:OperationalState ; rdfs:label "진행중"@ko ; roo:stateValue "active" .
+roo:completedState a roo:OperationalState ; rdfs:label "완료"@ko ; roo:stateValue "completed" .
+roo:failedState a roo:OperationalState ; rdfs:label "실패"@ko ; roo:stateValue "failed" .
+roo:requiresHumanReviewState a roo:OperationalState ; rdfs:label "사람 검토 필요"@ko ; roo:stateValue "requires_human_review" .
+
+roo:planningCapability a roo:Capability ; rdfs:label "계획 수립 능력"@ko .
+roo:semanticPlanningCapability a roo:Capability ; rdfs:label "의미 기반 계획 수립 능력"@ko .
+roo:graphTraversalCapability a roo:Capability ; rdfs:label "그래프 탐색 능력"@ko .
+roo:recommendationCapability a roo:Capability ; rdfs:label "추천 능력"@ko .
+roo:reservationCapability a roo:Capability ; rdfs:label "예약 처리 능력"@ko .
+roo:safetyCapability a roo:Capability ; rdfs:label "안전 판단 능력"@ko .
+roo:notificationCapability a roo:Capability ; rdfs:label "알림 능력"@ko .
+roo:facilityManagementCapability a roo:Capability ; rdfs:label "시설관리 능력"@ko .
+roo:weatherInterpretationCapability a roo:Capability ; rdfs:label "날씨 해석 능력"@ko .
+
+roo:orchestratorAgent a roo:ArtificialAgent ; rdfs:label "오케스트레이터 Agent"@ko ; roo:hasCapability roo:planningCapability .
+roo:semanticPlannerAgent a roo:ArtificialAgent ; rdfs:label "의미 기반 Planner Agent"@ko ; roo:hasCapability roo:semanticPlanningCapability, roo:graphTraversalCapability .
+roo:evaluatorAgent a roo:ArtificialAgent ; rdfs:label "평가 Agent"@ko ; roo:hasCapability roo:recommendationCapability .

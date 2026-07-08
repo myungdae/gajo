@@ -1,0 +1,153 @@
+@prefix roo: <https://linkeddata.center/roo-core#> .
+@prefix gajo: <https://gajo-wellness.kr/ontology#> .
+@prefix schema: <https://schema.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+gajo:GajoAIConciergeOntology a owl:Ontology ;
+  rdfs:label "Gajo AI Concierge Domain Ontology"@en, "가조온천 AI Concierge 도메인 온톨로지"@ko ;
+  rdfs:comment "ROO-Core 위에서 동작하는 가조온천 AI 스마트 웰니스 리조트 도메인 온톨로지."@ko ;
+  owl:versionInfo "1.0" .
+
+gajo:Visitor a owl:Class ; rdfs:subClassOf roo:HumanActor, schema:Person ; rdfs:label "방문객"@ko .
+gajo:Companion a owl:Class ; rdfs:subClassOf roo:HumanActor, schema:Person ; rdfs:label "동반자"@ko .
+gajo:VisitorGroup a owl:Class ; rdfs:subClassOf roo:Entity ; rdfs:label "방문객 그룹"@ko .
+gajo:HealthCondition a owl:Class ; rdfs:subClassOf roo:State ; rdfs:label "건강 상태"@ko .
+gajo:WellnessGoal a owl:Class ; rdfs:subClassOf roo:Condition ; rdfs:label "웰니스 목적"@ko .
+gajo:Facility a owl:Class ; rdfs:subClassOf roo:Entity, schema:Place ; rdfs:label "시설"@ko .
+gajo:HotSpringFacility a owl:Class ; rdfs:subClassOf gajo:Facility ; rdfs:label "온천 시설"@ko .
+gajo:AccommodationFacility a owl:Class ; rdfs:subClassOf gajo:Facility ; rdfs:label "숙박 시설"@ko .
+gajo:RestaurantFacility a owl:Class ; rdfs:subClassOf gajo:Facility ; rdfs:label "식음 시설"@ko .
+gajo:WellnessFacility a owl:Class ; rdfs:subClassOf gajo:Facility ; rdfs:label "웰니스 시설"@ko .
+gajo:TouristAttraction a owl:Class ; rdfs:subClassOf gajo:Facility ; rdfs:label "관광지"@ko .
+gajo:Program a owl:Class ; rdfs:subClassOf roo:Entity ; rdfs:label "프로그램"@ko .
+gajo:WellnessProgram a owl:Class ; rdfs:subClassOf gajo:Program ; rdfs:label "웰니스 프로그램"@ko .
+gajo:TourProgram a owl:Class ; rdfs:subClassOf gajo:Program ; rdfs:label "관광 프로그램"@ko .
+gajo:FoodProgram a owl:Class ; rdfs:subClassOf gajo:Program ; rdfs:label "식음 프로그램"@ko .
+gajo:Reservation a owl:Class ; rdfs:subClassOf roo:Entity ; rdfs:label "예약"@ko .
+gajo:Itinerary a owl:Class ; rdfs:subClassOf roo:Recommendation ; rdfs:label "일정"@ko .
+gajo:ItineraryStep a owl:Class ; rdfs:subClassOf roo:Entity ; rdfs:label "일정 단계"@ko .
+gajo:EnvironmentCondition a owl:Class ; rdfs:subClassOf roo:Condition ; rdfs:label "환경 조건"@ko .
+gajo:WeatherCondition a owl:Class ; rdfs:subClassOf gajo:EnvironmentCondition ; rdfs:label "날씨 상태"@ko .
+gajo:CongestionCondition a owl:Class ; rdfs:subClassOf gajo:EnvironmentCondition ; rdfs:label "혼잡도 상태"@ko .
+gajo:MobilityCondition a owl:Class ; rdfs:subClassOf roo:Condition ; rdfs:label "이동 조건"@ko .
+gajo:AccessibilityFeature a owl:Class ; rdfs:subClassOf roo:Entity ; rdfs:label "접근성 기능"@ko .
+gajo:WellnessContext a owl:Class ; rdfs:subClassOf roo:SemanticContext ; rdfs:label "웰니스 맥락"@ko .
+gajo:ConciergeOperation a owl:Class ; rdfs:subClassOf roo:Operation ; rdfs:label "컨시어지 운영"@ko .
+gajo:SafetyRisk a owl:Class ; rdfs:subClassOf roo:Risk ; rdfs:label "안전 위험"@ko .
+
+gajo:hasCompanion a owl:ObjectProperty ; rdfs:domain gajo:Visitor ; rdfs:range gajo:Companion ; owl:inverseOf gajo:isCompanionOf ; rdfs:label "동반자가 있다"@ko .
+gajo:isCompanionOf a owl:ObjectProperty ; rdfs:domain gajo:Companion ; rdfs:range gajo:Visitor ; rdfs:label "동반자이다"@ko .
+gajo:belongsToGroup a owl:ObjectProperty ; rdfs:domain gajo:Visitor ; rdfs:range gajo:VisitorGroup ; rdfs:label "방문객 그룹에 속한다"@ko .
+gajo:hasHealthCondition a owl:ObjectProperty ; rdfs:domain roo:HumanActor ; rdfs:range gajo:HealthCondition ; rdfs:label "건강 상태가 있다"@ko .
+gajo:hasWellnessGoal a owl:ObjectProperty ; rdfs:domain gajo:Visitor ; rdfs:range gajo:WellnessGoal ; rdfs:label "웰니스 목적이 있다"@ko .
+gajo:visitsFacility a owl:ObjectProperty ; rdfs:domain gajo:Visitor ; rdfs:range gajo:Facility ; rdfs:label "시설을 방문한다"@ko .
+gajo:participatesInProgram a owl:ObjectProperty ; rdfs:domain gajo:Visitor ; rdfs:range gajo:Program ; rdfs:label "프로그램에 참여한다"@ko .
+gajo:hasReservation a owl:ObjectProperty ; rdfs:domain gajo:Visitor ; rdfs:range gajo:Reservation ; rdfs:label "예약을 가진다"@ko .
+gajo:offersProgram a owl:ObjectProperty ; rdfs:domain gajo:Facility ; rdfs:range gajo:Program ; owl:inverseOf gajo:heldAtFacility ; rdfs:label "프로그램을 제공한다"@ko .
+gajo:heldAtFacility a owl:ObjectProperty ; rdfs:domain gajo:Program ; rdfs:range gajo:Facility ; rdfs:label "시설에서 열린다"@ko .
+gajo:connectedToFacility a owl:ObjectProperty, owl:SymmetricProperty ; rdfs:domain gajo:Facility ; rdfs:range gajo:Facility ; rdfs:label "시설과 연결된다"@ko .
+gajo:hasAccessibilityFeature a owl:ObjectProperty ; rdfs:domain gajo:Facility ; rdfs:range gajo:AccessibilityFeature ; rdfs:label "접근성 기능이 있다"@ko .
+gajo:suitableForHealthCondition a owl:ObjectProperty ; rdfs:domain gajo:Program ; rdfs:range gajo:HealthCondition ; rdfs:label "건강 상태에 적합하다"@ko .
+gajo:suitableForWellnessGoal a owl:ObjectProperty ; rdfs:domain gajo:Program ; rdfs:range gajo:WellnessGoal ; rdfs:label "웰니스 목적에 적합하다"@ko .
+gajo:requiresMobilityCondition a owl:ObjectProperty ; rdfs:domain gajo:Program ; rdfs:range gajo:MobilityCondition ; rdfs:label "이동 조건을 요구한다"@ko .
+gajo:affectedByEnvironment a owl:ObjectProperty ; rdfs:domain owl:Thing ; rdfs:range gajo:EnvironmentCondition ; rdfs:label "환경 조건의 영향을 받는다"@ko .
+gajo:hasItineraryStep a owl:ObjectProperty ; rdfs:domain gajo:Itinerary ; rdfs:range gajo:ItineraryStep ; rdfs:label "일정 단계를 가진다"@ko .
+gajo:stepFacility a owl:ObjectProperty ; rdfs:domain gajo:ItineraryStep ; rdfs:range gajo:Facility ; rdfs:label "일정 단계 시설"@ko .
+gajo:stepProgram a owl:ObjectProperty ; rdfs:domain gajo:ItineraryStep ; rdfs:range gajo:Program ; rdfs:label "일정 단계 프로그램"@ko .
+gajo:recommendedItinerary a owl:ObjectProperty ; rdfs:domain roo:Recommendation ; rdfs:range gajo:Itinerary ; rdfs:label "추천 일정"@ko .
+gajo:recommendedFacility a owl:ObjectProperty ; rdfs:domain roo:Recommendation ; rdfs:range gajo:Facility ; rdfs:label "추천 시설"@ko .
+gajo:recommendedProgram a owl:ObjectProperty ; rdfs:domain roo:Recommendation ; rdfs:range gajo:Program ; rdfs:label "추천 프로그램"@ko .
+
+gajo:age a owl:DatatypeProperty ; rdfs:domain schema:Person ; rdfs:range xsd:integer ; rdfs:label "나이"@ko .
+gajo:durationMinutes a owl:DatatypeProperty ; rdfs:range xsd:integer ; rdfs:label "소요 시간 분"@ko .
+gajo:capacity a owl:DatatypeProperty ; rdfs:range xsd:integer ; rdfs:label "수용 인원"@ko .
+gajo:isIndoor a owl:DatatypeProperty ; rdfs:range xsd:boolean ; rdfs:label "실내 여부"@ko .
+gajo:isAccessible a owl:DatatypeProperty ; rdfs:range xsd:boolean ; rdfs:label "무장애 접근 가능 여부"@ko .
+gajo:requiresReservation a owl:DatatypeProperty ; rdfs:range xsd:boolean ; rdfs:label "예약 필요 여부"@ko .
+gajo:displayOrder a owl:DatatypeProperty ; rdfs:range xsd:integer ; rdfs:label "표시 순서"@ko .
+
+gajo:kneePain a gajo:HealthCondition ; rdfs:label "무릎 통증"@ko ; roo:description "계단, 경사로, 장거리 보행에 부담이 있는 상태."@ko ; roo:semanticallyExpandsTo gajo:shortWalkingDistance, gajo:elevatorAvailable, gajo:fallRisk .
+gajo:fatigue a gajo:HealthCondition ; rdfs:label "피로"@ko ; roo:description "휴식과 저강도 프로그램이 우선되는 상태."@ko ; roo:semanticallyExpandsTo gajo:lowIntensityProgramPreference .
+gajo:hypertensionConcern a gajo:HealthCondition ; rdfs:label "고혈압 주의"@ko ; roo:description "고온탕 장시간 이용을 피하고 수분 섭취와 휴식이 필요한 상태."@ko ; roo:semanticallyExpandsTo gajo:overheatingRisk, gajo:dehydrationRisk .
+gajo:limitedMobility a gajo:HealthCondition ; rdfs:label "보행 불편"@ko ; roo:description "짧은 보행거리, 엘리베이터, 셔틀, 무장애 동선이 필요한 상태."@ko ; roo:semanticallyExpandsTo gajo:wheelchairAccessible, gajo:shortWalkingDistance, gajo:fallRisk .
+
+gajo:restAndRecovery a gajo:WellnessGoal ; rdfs:label "휴식과 회복"@ko .
+gajo:antiAgingWellness a gajo:WellnessGoal ; rdfs:label "항노화 웰니스"@ko .
+gajo:familyHealingTrip a gajo:WellnessGoal ; rdfs:label "가족 힐링 여행"@ko .
+gajo:seniorFriendlyTrip a gajo:WellnessGoal ; rdfs:label "실버 친화 여행"@ko .
+gajo:stressRelief a gajo:WellnessGoal ; rdfs:label "스트레스 완화"@ko .
+
+gajo:rainyWeather a gajo:WeatherCondition ; rdfs:label "비 오는 날씨"@ko ; roo:description "실외 이동과 산책 프로그램의 적합도를 낮추는 날씨."@ko ; roo:semanticallyExpandsTo gajo:indoorPreference, gajo:fallRisk .
+gajo:clearWeather a gajo:WeatherCondition ; rdfs:label "맑은 날씨"@ko .
+gajo:highCongestion a gajo:CongestionCondition ; rdfs:label "높은 혼잡도"@ko ; roo:semanticallyExpandsTo gajo:reservationPriority, gajo:congestionRisk .
+gajo:lowCongestion a gajo:CongestionCondition ; rdfs:label "낮은 혼잡도"@ko .
+gajo:shortWalkingDistance a gajo:MobilityCondition ; rdfs:label "짧은 보행 거리"@ko .
+gajo:elevatorAvailable a gajo:MobilityCondition ; rdfs:label "엘리베이터 이용 가능"@ko .
+gajo:wheelchairAccessible a gajo:MobilityCondition ; rdfs:label "휠체어 접근 가능"@ko .
+gajo:stairsRequired a gajo:MobilityCondition ; rdfs:label "계단 이동 필요"@ko .
+gajo:fallRisk a gajo:SafetyRisk ; rdfs:label "낙상 위험"@ko ; roo:riskLevel "high" .
+gajo:dehydrationRisk a gajo:SafetyRisk ; rdfs:label "탈수 위험"@ko ; roo:riskLevel "medium" .
+gajo:overheatingRisk a gajo:SafetyRisk ; rdfs:label "온열 부담 위험"@ko ; roo:riskLevel "medium" .
+gajo:congestionRisk a gajo:SafetyRisk ; rdfs:label "혼잡 위험"@ko ; roo:riskLevel "medium" .
+gajo:indoorPreference a roo:Condition ; rdfs:label "실내 우선 조건"@ko .
+gajo:reservationPriority a roo:Condition ; rdfs:label "예약 우선 조건"@ko .
+gajo:lowIntensityProgramPreference a roo:Condition ; rdfs:label "저강도 프로그램 우선 조건"@ko .
+
+gajo:gajoHotSpringComplex a gajo:HotSpringFacility ; rdfs:label "가조온천단지"@ko ; roo:description "거창군 가조면의 온천 중심 웰니스 거점."@ko ; gajo:isIndoor true ; gajo:isAccessible true .
+gajo:indoorHotSpringBath a gajo:HotSpringFacility ; rdfs:label "실내 온천탕"@ko ; gajo:isIndoor true ; gajo:isAccessible true ; roo:mitigatesRisk gajo:fallRisk ; gajo:connectedToFacility gajo:wellnessLounge, gajo:localFoodRestaurant .
+gajo:wellnessLounge a gajo:WellnessFacility ; rdfs:label "웰니스 라운지"@ko ; gajo:isIndoor true ; gajo:isAccessible true .
+gajo:healingWalkingTrail a gajo:WellnessFacility ; rdfs:label "힐링 산책로"@ko ; gajo:isIndoor false ; gajo:isAccessible false ; roo:hasRisk gajo:fallRisk ; gajo:affectedByEnvironment gajo:rainyWeather .
+gajo:localFoodRestaurant a gajo:RestaurantFacility ; rdfs:label "지역 약선식 식당"@ko ; gajo:isIndoor true ; gajo:isAccessible true ; gajo:requiresReservation true .
+gajo:antiAgingHealingLand a gajo:TouristAttraction ; rdfs:label "거창 항노화힐링랜드"@ko ; gajo:isIndoor false .
+gajo:suseungdae a gajo:TouristAttraction ; rdfs:label "수승대"@ko ; gajo:isIndoor false .
+
+gajo:lowIntensityHotSpringCourse a gajo:WellnessProgram ; rdfs:label "저강도 실내 온천 힐링 코스"@ko ; roo:description "고령자, 피로, 무릎 통증 방문객에게 적합한 짧고 안전한 온천 중심 코스."@ko ; gajo:heldAtFacility gajo:indoorHotSpringBath ; gajo:suitableForHealthCondition gajo:kneePain, gajo:fatigue, gajo:limitedMobility ; gajo:suitableForWellnessGoal gajo:restAndRecovery, gajo:seniorFriendlyTrip ; gajo:requiresMobilityCondition gajo:shortWalkingDistance, gajo:elevatorAvailable ; roo:mitigatesRisk gajo:fallRisk ; gajo:durationMinutes 60 ; gajo:requiresReservation false .
+gajo:meditationLoungeProgram a gajo:WellnessProgram ; rdfs:label "AI 명상 라운지 프로그램"@ko ; gajo:heldAtFacility gajo:wellnessLounge ; gajo:suitableForHealthCondition gajo:fatigue ; gajo:suitableForWellnessGoal gajo:stressRelief, gajo:restAndRecovery ; gajo:durationMinutes 30 .
+gajo:localFoodHealingMeal a gajo:FoodProgram ; rdfs:label "지역 약선식 힐링 식사"@ko ; gajo:heldAtFacility gajo:localFoodRestaurant ; gajo:suitableForWellnessGoal gajo:antiAgingWellness, gajo:familyHealingTrip ; gajo:requiresReservation true ; gajo:durationMinutes 60 .
+gajo:shortIndoorSeniorCourse a gajo:TourProgram ; rdfs:label "실버 친화 단기 실내 코스"@ko ; roo:description "비 오는 날 또는 보행이 불편한 방문객을 위한 실내 중심 코스."@ko ; gajo:suitableForHealthCondition gajo:kneePain, gajo:limitedMobility ; gajo:suitableForWellnessGoal gajo:seniorFriendlyTrip ; gajo:affectedByEnvironment gajo:rainyWeather ; gajo:durationMinutes 180 .
+
+gajo:guestAgent a roo:ArtificialAgent ; rdfs:label "방문객 응대 Agent"@ko ; roo:hasCapability gajo:guestInquiryCapability, roo:recommendationCapability ; roo:usesTool gajo:profileStoreTool .
+gajo:wellnessAgent a roo:ArtificialAgent ; rdfs:label "웰니스 Agent"@ko ; roo:hasCapability gajo:wellnessRecommendationCapability ; roo:usesTool gajo:healthQuestionnaireTool .
+gajo:reservationAgent a roo:ArtificialAgent ; rdfs:label "예약 Agent"@ko ; roo:hasCapability roo:reservationCapability ; roo:usesTool gajo:reservationApiTool .
+gajo:tourismAgent a roo:ArtificialAgent ; rdfs:label "관광 Agent"@ko ; roo:hasCapability gajo:tourRecommendationCapability ; roo:usesTool gajo:mapApiTool, gajo:weatherApiTool .
+gajo:safetyAgent a roo:ArtificialAgent ; rdfs:label "안전 Agent"@ko ; roo:hasCapability roo:safetyCapability ; roo:usesTool gajo:emergencyMessageTool .
+gajo:facilityAgent a roo:ArtificialAgent ; rdfs:label "시설관리 Agent"@ko ; roo:hasCapability roo:facilityManagementCapability ; roo:usesTool gajo:facilityStatusTool .
+
+gajo:guestInquiryCapability a roo:Capability ; rdfs:label "방문객 문의 응대 능력"@ko .
+gajo:recommendationCapability a roo:Capability ; rdfs:label "컨시어지 추천 능력"@ko .
+gajo:wellnessRecommendationCapability a roo:Capability ; rdfs:label "웰니스 추천 능력"@ko .
+gajo:tourRecommendationCapability a roo:Capability ; rdfs:label "관광 추천 능력"@ko .
+
+gajo:profileStoreTool a roo:DatabaseTool ; rdfs:label "방문객 프로필 저장소"@ko ; roo:apiEndpoint "https://gajo-wellness.kr/api/profile"^^xsd:anyURI .
+gajo:healthQuestionnaireTool a roo:APITool ; rdfs:label "건강 문진 도구"@ko ; roo:apiEndpoint "https://gajo-wellness.kr/api/health-questionnaire"^^xsd:anyURI ; roo:method "POST" .
+gajo:reservationApiTool a roo:APITool ; rdfs:label "예약 API 도구"@ko ; roo:apiEndpoint "https://gajo-wellness.kr/api/reservations"^^xsd:anyURI ; roo:method "POST" .
+gajo:mapApiTool a roo:APITool ; rdfs:label "지도 API 도구"@ko ; roo:apiEndpoint "https://gajo-wellness.kr/api/maps"^^xsd:anyURI .
+gajo:weatherApiTool a roo:APITool ; rdfs:label "날씨 API 도구"@ko ; roo:apiEndpoint "https://gajo-wellness.kr/api/weather"^^xsd:anyURI .
+gajo:emergencyMessageTool a roo:MessageTool ; rdfs:label "긴급 메시지 도구"@ko ; roo:apiEndpoint "https://gajo-wellness.kr/api/emergency"^^xsd:anyURI .
+gajo:facilityStatusTool a roo:APITool ; rdfs:label "시설 상태 도구"@ko ; roo:apiEndpoint "https://gajo-wellness.kr/api/facility-status"^^xsd:anyURI .
+
+gajo:seniorDayTripPlanningOperation a gajo:ConciergeOperation ; rdfs:label "실버 당일 여행 일정 설계 Operation"@ko ; roo:hasTask gajo:createWellnessContextTask, gajo:checkWeatherImpactTask, gajo:evaluateSafetyRiskTask, gajo:recommendItineraryTask, gajo:checkReservationAvailabilityTask ; roo:hasState roo:planningState .
+gajo:createWellnessContextTask a roo:Task ; rdfs:label "웰니스 의미 맥락 생성"@ko ; roo:requiresCapability roo:semanticPlanningCapability, roo:graphTraversalCapability ; roo:assignedToAgent roo:semanticPlannerAgent .
+gajo:checkWeatherImpactTask a roo:Task ; rdfs:label "날씨 영향 확인"@ko ; roo:requiresCapability roo:weatherInterpretationCapability ; roo:assignedToAgent gajo:tourismAgent .
+gajo:evaluateSafetyRiskTask a roo:Task ; rdfs:label "안전 위험 평가"@ko ; roo:requiresCapability roo:safetyCapability ; roo:assignedToAgent gajo:safetyAgent .
+gajo:recommendItineraryTask a roo:Task ; rdfs:label "일정 추천"@ko ; roo:requiresCapability gajo:recommendationCapability, gajo:wellnessRecommendationCapability ; roo:assignedToAgent gajo:guestAgent .
+gajo:checkReservationAvailabilityTask a roo:Task ; rdfs:label "예약 가능 여부 확인"@ko ; roo:requiresCapability roo:reservationCapability ; roo:assignedToAgent gajo:reservationAgent .
+
+gajo:seniorHotSpringSafetyPolicy a roo:Policy ; rdfs:label "고령자 온천 이용 안전 규칙"@ko ; roo:description "고령자 또는 고혈압 주의 방문객에게는 장시간 고온탕 이용을 피하고 수분 섭취와 휴식을 권고한다."@ko ; roo:hasRule gajo:avoidLongHotBathForSeniorRule .
+gajo:rainyDayOutdoorPolicy a roo:Policy ; rdfs:label "우천 시 야외활동 제한 규칙"@ko ; roo:description "비 오는 날에는 산책로, 계단, 경사로 등 야외 이동 프로그램의 우선순위를 낮추고 실내 코스를 우선한다."@ko ; roo:hasRule gajo:preferIndoorProgramWhenRainyRule .
+gajo:avoidLongHotBathForSeniorRule a roo:Rule ; rdfs:label "고령자 장시간 고온탕 회피 규칙"@ko ; roo:ifCondition gajo:hypertensionConcern ; roo:thenRecommendation gajo:lowIntensityHotSpringRecommendation .
+gajo:preferIndoorProgramWhenRainyRule a roo:Rule ; rdfs:label "우천 시 실내 프로그램 우선 규칙"@ko ; roo:ifCondition gajo:rainyWeather ; roo:thenRecommendation gajo:indoorSeniorCourseRecommendation .
+gajo:lowIntensityHotSpringCourse roo:governedByPolicy gajo:seniorHotSpringSafetyPolicy .
+gajo:healingWalkingTrail roo:governedByPolicy gajo:rainyDayOutdoorPolicy .
+
+gajo:runtimeContext_001 a gajo:WellnessContext ; rdfs:label "런타임 맥락 001: 비 오는 날 실버 가족여행"@ko ; roo:hasActor gajo:visitor_001, gajo:mother_001 ; roo:hasEntity gajo:gajoHotSpringComplex, gajo:indoorHotSpringBath, gajo:localFoodRestaurant, gajo:wellnessLounge ; roo:hasState gajo:rainyWeather, gajo:highCongestion ; roo:hasRisk gajo:fallRisk, gajo:congestionRisk ; roo:hasOperation gajo:seniorDayTripPlanningOperation ; roo:governedByPolicy gajo:seniorHotSpringSafetyPolicy, gajo:rainyDayOutdoorPolicy .
+gajo:visitor_001 a gajo:Visitor ; rdfs:label "방문객 001"@ko ; gajo:age 58 ; gajo:hasCompanion gajo:mother_001 ; gajo:hasHealthCondition gajo:fatigue ; gajo:hasWellnessGoal gajo:familyHealingTrip .
+gajo:mother_001 a gajo:Companion ; rdfs:label "어머니 동반자 001"@ko ; gajo:age 78 ; gajo:hasHealthCondition gajo:kneePain, gajo:limitedMobility .
+gajo:itinerary_001 a gajo:Itinerary ; rdfs:label "비 오는 날 실버 친화 당일 코스"@ko ; roo:basedOnContext gajo:runtimeContext_001 ; gajo:hasItineraryStep gajo:step_001, gajo:step_002, gajo:step_003 ; roo:confidenceScore 0.89 .
+gajo:step_001 a gajo:ItineraryStep ; rdfs:label "1단계: 실내 온천"@ko ; roo:priority 1 ; gajo:stepFacility gajo:indoorHotSpringBath ; gajo:stepProgram gajo:lowIntensityHotSpringCourse .
+gajo:step_002 a gajo:ItineraryStep ; rdfs:label "2단계: 약선식 식사"@ko ; roo:priority 2 ; gajo:stepFacility gajo:localFoodRestaurant ; gajo:stepProgram gajo:localFoodHealingMeal .
+gajo:step_003 a gajo:ItineraryStep ; rdfs:label "3단계: AI 명상 라운지"@ko ; roo:priority 3 ; gajo:stepFacility gajo:wellnessLounge ; gajo:stepProgram gajo:meditationLoungeProgram .
+gajo:indoorSeniorCourseRecommendation a roo:Recommendation ; rdfs:label "우천 시 실내 실버 코스 추천"@ko ; roo:basedOnContext gajo:runtimeContext_001 ; gajo:recommendedItinerary gajo:itinerary_001 ; gajo:recommendedProgram gajo:lowIntensityHotSpringCourse, gajo:localFoodHealingMeal, gajo:meditationLoungeProgram ; roo:decisionMadeBy roo:semanticPlannerAgent ; roo:hasEvidence gajo:rainyWeather, gajo:kneePain, gajo:limitedMobility, gajo:fallRisk .
+gajo:lowIntensityHotSpringRecommendation a roo:Recommendation ; rdfs:label "저강도 온천 이용 추천"@ko ; gajo:recommendedProgram gajo:lowIntensityHotSpringCourse ; roo:decisionMadeBy gajo:wellnessAgent .
