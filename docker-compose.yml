@@ -1,0 +1,45 @@
+version: "3.8"
+
+services:
+  mongo:
+    image: mongo:7.0
+    container_name: gajo-mongo
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - gajo-net
+
+  api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: gajo-api
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    environment:
+      - PORT=3000
+      - MONGODB_URI=mongodb://mongo:27017/gajo
+    networks:
+      - gajo-net
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: gajo-client
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "8090:80"
+    networks:
+      - gajo-net
+
+networks:
+  gajo-net:
+    driver: bridge
+
+volumes:
+  mongo_data:

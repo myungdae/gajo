@@ -117,3 +117,47 @@ curl "http://localhost:3000/api/ontology/expand?uri=<full-kneePain-URI>"
 See `ontology/` for the original spec prompt, TTL files, and package readme
 kept in-repo for documentation purposes (the copies actually loaded at
 runtime live in `server/src/ontology-data/`).
+
+## 프론트엔드 (`client/`, React + Vite + TypeScript + PWA)
+
+Vite React-TS PWA로 스캐폴딩 완료, 아래 6개 페이지 모두 구현됨:
+- **Home** — 온톨로지 상태 요약 + 빠른 시나리오 진입
+- **AI 컨시어지 (채팅)** — `/api/concierge/chat` 호출, 스펙 데모 시나리오 원클릭 실행 버튼 포함
+- **일정 보기 (Itinerary View)** — 추천 프로그램/시설/예약 가능 여부/증거 체인(RDF triple) 표시
+- **시설 지도 (Leaflet)** — `/api/facilities` 기반 마커 표시 (가조면 인근에 결정론적 배치)
+- **관리자 대시보드** — `/api/admin/dashboard` 집계 통계 + 최근 컨텍스트/추천/예약 테이블
+- **온톨로지 탐색기** — 클래스/속성/개체 목록 + `semanticallyExpandsTo` 그래프 확장 테스트 UI
+
+`npm run build` 검증 완료 (오류 없음). Vite dev 서버는 `/api` 요청을 `localhost:3000`으로
+프록시하도록 설정되어 있고 (`vite.config.ts`), `vite-plugin-pwa`로 서비스워커/매니페스트가
+자동 생성됩니다 (report.odex.kr 프로젝트에서 배운 대로 `index.html`/`sw.js`는 no-cache 처리).
+
+### 프론트엔드 실행
+```bash
+cd client
+npm install
+npm run dev      # http://localhost:5173, /api는 :3000으로 프록시
+# 또는
+npm run build && npm run preview
+```
+
+## Docker 배포 (gajo.odex.kr)
+
+`docker-compose.yml` + `server/Dockerfile` + `client/Dockerfile` + `client/nginx.conf`
+작성 완료. 상세 절차는 `docs/DEPLOY_DOCKER.md` 참고. mongo/api/client 3-컨테이너 구성이며
+`client`만 호스트 포트(8090)에 노출됩니다.
+
+## 백엔드 실제 구동 검증 완료 (2026-07-08)
+
+로컬 MongoDB 7.0 바이너리로 `npm run build` 산출물을 실제 부팅하여 검증:
+- `POST /api/demo/scenario` 실행 결과, 스펙에 명시된 정확한 데모 시나리오
+  (78세 어머니, 무릎 통증, 우천, 혼잡)가 `kneePain --semanticallyExpandsTo-->
+  shortWalkingDistance/elevatorAvailable/fallRisk`, `rainyWeather -->
+  indoorPreference/fallRisk`, `highCongestion --> reservationPriority/congestionRisk`로
+  올바르게 그래프 확장되고, "우천 시 실내 프로그램 우선 규칙"이 발동하며,
+  최종적으로 **저강도 실내 온천 힐링 코스 + 지역 약선식 힐링 식사**가
+  (실외 산책로 등은 환경 영향으로 자동 배제된 채) 증거 체인(evidence)과 함께
+  추천되는 것을 확인함 — 스펙의 기대 출력과 정확히 일치.
+- `/api/ontology/stats`, `/api/facilities`, `/api/admin/dashboard` 등 주요
+  엔드포인트도 정상 응답 확인.
+- 프론트엔드 6개 페이지 모두 빌드 성공 및 dev 서버 기동 확인.
