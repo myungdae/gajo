@@ -98,7 +98,13 @@ export default function ConciergePage() {
         {messages.map((m, i) => (
           <div key={i}>
             <div className={`chat-bubble ${m.role === 'user' ? 'user' : 'ai'}`}>{m.text}</div>
-            {m.result && <ResultPanel result={m.result} onViewItinerary={() => navigate('/itinerary', { state: { result: m.result } })} />}
+            {m.result && (
+              <ResultPanel
+                result={m.result}
+                onViewItinerary={() => navigate('/itinerary', { state: { result: m.result } })}
+                onFindNearbyRestaurants={() => navigate('/nearby-restaurants')}
+              />
+            )}
           </div>
         ))}
         {loading && <div className="loading">AI 컨시어지가 온톨로지 그래프를 탐색하고 있습니다...</div>}
@@ -152,9 +158,11 @@ function labelFor(map: Record<string, string>, uri: string): string {
 function ResultPanel({
   result,
   onViewItinerary,
+  onFindNearbyRestaurants,
 }: {
   result: ConciergeChatResponse;
   onViewItinerary: () => void;
+  onFindNearbyRestaurants: () => void;
 }) {
   const rec = result.recommendation;
   const labelMap = buildLabelMap(result);
@@ -162,6 +170,27 @@ function ResultPanel({
 
   return (
     <div className="card" style={{ marginTop: 8 }}>
+      {result.nearbyRestaurantIntent && (
+        <div
+          style={{
+            marginBottom: 12,
+            background: '#ecfdf5',
+            border: '1px solid #a7f3d0',
+            borderRadius: 10,
+            padding: 12,
+          }}
+        >
+          <b style={{ fontSize: 13 }}>📍 실제 내 위치 기준으로 찾아드릴까요?</b>
+          <p style={{ fontSize: 12, color: 'var(--color-text-muted)', margin: '6px 0 10px' }}>
+            현재 위치를 기준으로 주변 실제 식당을 건강식/약선·채식·한식·해산물 등 종류별로 분류해서
+            보여주고, 선택하시면 도보 경로와 길찾기까지 안내해드립니다.
+          </p>
+          <button className="btn btn-primary btn-block" onClick={onFindNearbyRestaurants}>
+            🍽️ 내 주변 식당 찾기 (실시간 위치 기반)
+          </button>
+        </div>
+      )}
+
       {result.risks && result.risks.length > 0 && (
         <div style={{ marginBottom: 12 }}>
           <b style={{ fontSize: 12 }}>⚠️ 감지된 위험 요소</b>

@@ -11,7 +11,7 @@ const quickPrompts = [
   },
   { emoji: '👨‍👩‍👧', title: '가족 힐링 여행', prompt: '가족과 함께 편안하게 힐링할 수 있는 온천 코스를 추천해주세요.' },
   { emoji: '🌧️', title: '비 오는 날 실내 코스', prompt: '오늘 비가 오는데 실내에서 즐길 수 있는 프로그램이 있을까요?' },
-  { emoji: '🍽️', title: '지역 맛집 추천', prompt: '온천 후 먹을 수 있는 지역 건강식 식당을 추천해주세요.' },
+  { emoji: '🍽️', title: '지역 맛집 추천', prompt: '온천 후 먹을 수 있는 지역 건강식 식당을 추천해주세요.', nearby: true },
 ];
 
 export default function HomePage() {
@@ -26,6 +26,14 @@ export default function HomePage() {
     navigate('/concierge', { state: { prefill: prompt } });
   };
 
+  const goToPrompt = (q: (typeof quickPrompts)[number]) => {
+    if ((q as any).nearby) {
+      navigate('/nearby-restaurants');
+    } else {
+      goToChat(q.prompt);
+    }
+  };
+
   return (
     <div>
       <div className="hero">
@@ -38,7 +46,7 @@ export default function HomePage() {
 
       <div className="quick-grid">
         {quickPrompts.map((q) => (
-          <button key={q.title} onClick={() => goToChat(q.prompt)}>
+          <button key={q.title} onClick={() => goToPrompt(q)}>
             <span className="emoji">{q.emoji}</span>
             {q.title}
           </button>

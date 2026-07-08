@@ -124,6 +124,10 @@ export default function ItineraryPage() {
         </div>
       )}
 
+      <button className="btn btn-primary btn-block" style={{ marginBottom: 10 }} onClick={() => navigate('/nearby-restaurants')}>
+        🍽️ 내 주변 식당 찾기 (실시간 위치 기반)
+      </button>
+
       <button className="btn btn-outline btn-block" onClick={() => navigate('/concierge')}>
         ← AI 컨시어지로 돌아가기
       </button>

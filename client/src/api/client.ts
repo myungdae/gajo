@@ -64,6 +64,7 @@ export interface ConciergeChatResponse {
   confidenceScore?: number;
   nextAction?: string;
   error?: string;
+  nearbyRestaurantIntent?: boolean;
 }
 
 export async function postConciergeChat(input: CreateContextInput) {
@@ -130,6 +131,80 @@ export async function queryOntology(subject?: string, predicate?: string, object
 
 export async function checkReservation(facilityUri: string, date?: string) {
   const { data } = await api.post('/reservations/check', { facilityUri, date });
+  return data;
+}
+
+// ---- Nearby (real-world, GPS-anchored) restaurant finder ----
+// Separate from the ontology-driven recommendation flow: this hits
+// /api/nearby/* which proxies the Kakao Local API using the visitor's
+// live location, rather than traversing the Gajo domain ontology.
+
+export interface NearbyRestaurant {
+  id: string;
+  name: string;
+  categoryName: string;
+  categoryGroup: string;
+  address: string;
+  roadAddress?: string;
+  phone?: string;
+  lat: number;
+  lng: number;
+  distanceMeters?: number;
+  placeUrl: string;
+  matchedKeyword?: string;
+}
+
+export interface NearbyRestaurantsResponse {
+  origin: { lat: number; lng: number };
+  radius: number;
+  total: number;
+  groups: Record<string, NearbyRestaurant[]>;
+  results: NearbyRestaurant[];
+}
+
+export async function fetchNearbyStatus() {
+  const { data } = await api.get<{ configured: boolean }>('/nearby/status');
+  return data;
+}
+
+export async function fetchNearbyRestaurants(lat: number, lng: number, radius = 2000) {
+  const { data } = await api.get<NearbyRestaurantsResponse>('/nearby/restaurants', {
+    params: { lat, lng, radius },
+  });
+  return data;
+}
+
+export interface RoutePreview {
+  available: boolean;
+  coordinates?: [number, number][];
+  distanceMeters?: number;
+  durationSeconds?: number;
+}
+
+export async function fetchRoutePreview(
+  startLat: number,
+  startLng: number,
+  endLat: number,
+  endLng: number,
+  mode: 'foot' | 'car' = 'foot',
+) {
+  const { data } = await api.get<RoutePreview>('/nearby/route', {
+    params: { startLat, startLng, endLat, endLng, mode },
+  });
+  return data;
+}
+
+export interface NavigationLinks {
+  kakaoMapApp: string;
+  kakaoMapWeb: string;
+  naverMapApp: string;
+  googleMaps: string;
+}
+
+export async function fetchNavigationLinks(lat: number, lng: number, name: string) {
+  const { data } = await api.get<NavigationLinks>('/nearby/navigation-links', {
+    params: { lat, lng, name },
+  });
   return data;
 }
 
