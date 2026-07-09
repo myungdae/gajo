@@ -10,9 +10,12 @@ import {
   type NearbyRestaurant,
 } from '../api/client';
 
-// Gajo-myeon (가조면) approximate center, used as a fallback origin when the
-// visitor declines/loses location permission so the finder still works.
-const GAJO_CENTER: [number, number] = [35.7423, 127.9528];
+// Gajo hot spring commercial district (가조온천 관광특구, 거창군 가조면 온천길 161 /
+// 백두산천지온천 일대) center, used as a fallback origin when the visitor
+// declines/loses location permission so the finder still returns real nearby
+// restaurants. Geocoded via Kakao's address.json API; verified via
+// category.json (FD6) that multiple restaurants exist within ~100m.
+const GAJO_CENTER: [number, number] = [35.6987576293202, 128.023103093418];
 
 const CATEGORY_ORDER = ['건강식/약선', '채식/사찰음식', '한식', '해산물', '기타 음식점'];
 const CATEGORY_EMOJI: Record<string, string> = {
