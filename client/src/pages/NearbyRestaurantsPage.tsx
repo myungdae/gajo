@@ -65,7 +65,9 @@ export default function NearbyRestaurantsPage() {
   const [selected, setSelected] = useState<NearbyRestaurant | null>(null);
   const [route, setRoute] = useState<[number, number][] | null>(null);
   const [routeMeta, setRouteMeta] = useState<{ distanceMeters: number; durationSeconds: number } | null>(null);
-  const [navLinks, setNavLinks] = useState<{ kakaoMapWeb: string; googleMaps: string } | null>(null);
+  const [navLinks, setNavLinks] = useState<{ kakaoMapWeb: string; googleMaps: string; naverMapApp: string } | null>(
+    null,
+  );
 
   useEffect(() => {
     fetchNearbyStatus()
@@ -282,10 +284,24 @@ export default function NearbyRestaurantsPage() {
                     </p>
                   )}
                   <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                    {/*
+                      Kakao Map is used as the primary navigation link (not
+                      Google Maps): Google's walking/driving turn-by-turn
+                      directions are not available in South Korea due to
+                      the government's high-precision map data export
+                      restriction, so on mobile the Google Maps deep link
+                      would open the app but fail to actually route (this
+                      worked "fine" on desktop only because the browser
+                      just shows a static map/search result, masking the
+                      missing directions). Kakao Map's link.kakao.com URL
+                      is a universal link: it opens the Kakao Map app if
+                      installed, otherwise falls back to the web map, and
+                      real walking directions work in both cases.
+                    */}
                     <a
                       className="btn btn-primary"
                       style={{ flex: 1, textDecoration: 'none' }}
-                      href={navLinks?.googleMaps || '#'}
+                      href={navLinks?.kakaoMapWeb || '#'}
                       target="_blank"
                       rel="noreferrer"
                     >
@@ -303,9 +319,13 @@ export default function NearbyRestaurantsPage() {
                   </div>
                   {navLinks && (
                     <p style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 8 }}>
-                      카카오맵으로 열기:{' '}
-                      <a href={navLinks.kakaoMapWeb} target="_blank" rel="noreferrer">
-                        {navLinks.kakaoMapWeb}
+                      다른 지도로 열기:{' '}
+                      <a href={navLinks.googleMaps} target="_blank" rel="noreferrer">
+                        구글맵
+                      </a>
+                      {' · '}
+                      <a href={navLinks.naverMapApp} target="_blank" rel="noreferrer">
+                        네이버맵
                       </a>
                     </p>
                   )}
