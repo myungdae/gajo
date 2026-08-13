@@ -1,5 +1,6 @@
 export type NavigationProvider='kakao'|'naver'|'tmap';
 export interface NavigationDestination{name:string;latitude:number;longitude:number}
+export interface NavigationOrigin{latitude:number;longitude:number}
 export interface NavigationTarget{provider:NavigationProvider;native:string;fallback:string;fallbackKind:'web-navigation'|'web-destination'|'provider-home'}
 
 const PLACEHOLDER_COORDINATES=[[0,0]] as const;
@@ -12,10 +13,10 @@ export function navigationDestination(place:{name?:string;canonicalLabel?:string
   return{name,latitude,longitude};
 }
 
-export function navigationTarget(provider:NavigationProvider,destination:NavigationDestination):NavigationTarget{
+export function navigationTarget(provider:NavigationProvider,destination:NavigationDestination,origin?:NavigationOrigin|null):NavigationTarget{
   const name=encodeURIComponent(destination.name),lat=destination.latitude,lng=destination.longitude;
-  if(provider==='kakao')return{provider,native:`kakaomap://route?ep=${lat},${lng}&epName=${name}&by=CAR`,fallback:`https://map.kakao.com/link/to/${name},${lat},${lng}`,fallbackKind:'web-navigation'};
-  if(provider==='naver'){const appName=typeof location==='undefined'?'https://gajo.local':location.origin;return{provider,native:`nmap://navigation?dlat=${lat}&dlng=${lng}&dname=${name}&appname=${encodeURIComponent(appName)}`,fallback:`https://map.naver.com/p/search/${name}?c=${lng},${lat},15,0,0,0,dh`,fallbackKind:'web-destination'}}
+  if(provider==='kakao'){const start=origin?`sp=${origin.latitude},${origin.longitude}&`:'';const fallback=origin?`https://map.kakao.com/link/from/${encodeURIComponent('현재 위치')},${origin.latitude},${origin.longitude}/to/${name},${lat},${lng}`:`https://map.kakao.com/link/to/${name},${lat},${lng}`;return{provider,native:`kakaomap://route?${start}ep=${lat},${lng}&epName=${name}&by=car`,fallback,fallbackKind:'web-navigation'}}
+  if(provider==='naver'){const appName=typeof location==='undefined'?'https://gajo.local':location.origin;const start=origin?`&slat=${origin.latitude}&slng=${origin.longitude}&sname=${encodeURIComponent('현재 위치')}`:'';return{provider,native:`nmap://navigation?dlat=${lat}&dlng=${lng}&dname=${name}${start}&appname=${encodeURIComponent(appName)}`,fallback:`https://map.naver.com/p/directions/-/${name},${lng},${lat},PLACE_POI/-/car?c=${lng},${lat},15,0,0,0,dh`,fallbackKind:'web-navigation'}}
   return{provider,native:`tmap://route?rGoName=${name}&rGoX=${lng}&rGoY=${lat}`,fallback:'https://www.tmap.co.kr/',fallbackKind:'provider-home'};
 }
 
