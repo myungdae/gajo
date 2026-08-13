@@ -22,6 +22,37 @@ export interface CreateContextInput {
   companions?: CompanionInput[];
   weather?: string;
   congestion?: string;
+  currentTime?: string;
+  currentDate?: string;
+  dayOfWeek?: string;
+  temperature?: number;
+  precipitation?: number;
+  latitude?: number;
+  longitude?: number;
+  transportMode?: 'WALK' | 'CAR' | 'PUBLIC_TRANSPORT' | 'PUBLIC_TRANSIT' | 'UNKNOWN' | 'OTHER';
+  locationAccuracy?: number;
+  locationObservedAt?: string;
+  locationStatus?: 'AVAILABLE' | 'DENIED' | 'UNAVAILABLE' | 'TIMEOUT' | 'UNKNOWN';
+  stayUntil?: string;
+  walkingLevel?: 'LOW' | 'MODERATE' | 'HIGH';
+  companionConstraints?: string[];
+  congestionState?: 'LOW' | 'MODERATE' | 'HIGH' | 'UNKNOWN';
+  runtimeStates?: EntityRuntimeState[];
+  activityPreferences?: string[];
+  contextSessionId?: string;
+  inputMode?: 'STRUCTURED' | 'FREE_TEXT';
+  isFollowup?: boolean;
+}
+
+export interface EntityRuntimeState {
+  entityUri: string;
+  availability?: 'AVAILABLE' | 'UNAVAILABLE' | 'UNKNOWN';
+  operatingState?: 'OPEN' | 'CLOSING_SOON' | 'CLOSED' | 'UNKNOWN';
+  congestion?: 'LOW' | 'MODERATE' | 'HIGH' | 'UNKNOWN';
+  reservationState?: 'AVAILABLE' | 'REQUIRED' | 'FULL' | 'UNKNOWN';
+  closingTime?: string;
+  estimatedTravelMinutes?: number;
+  observedAt?: string;
 }
 
 export interface EvidenceStep {
@@ -65,6 +96,8 @@ export interface ConciergeChatResponse {
   nextAction?: string;
   error?: string;
   nearbyRestaurantIntent?: boolean;
+  nearbyDiscoveryIntent?: boolean;
+  nearbyCategory?: NearbyCategory;
 }
 
 export async function postConciergeChat(input: CreateContextInput) {
@@ -79,6 +112,16 @@ export async function runDemoScenario() {
 
 export async function fetchFacilities() {
   const { data } = await api.get('/facilities');
+  return data;
+}
+
+export interface OperationalPlace {
+  uri: string; label: string; description?: string; latitude: number; longitude: number;
+  category?: string; operatingHours?: any[]; walkingBurden?: string; coordinateVerification: 'VERIFIED';
+}
+
+export async function fetchOperationalPlaces() {
+  const { data } = await api.get<OperationalPlace[]>('/operational-places');
   return data;
 }
 
@@ -160,10 +203,25 @@ export interface NearbyRestaurantsResponse {
   total: number;
   groups: Record<string, NearbyRestaurant[]>;
   results: NearbyRestaurant[];
+  resultStatus: 'AVAILABLE' | 'EMPTY';
+}
+
+export type NearbyCategory = 'FOOD' | 'CAFE' | 'LODGING' | 'HOT_SPRING_WELLNESS' | 'GOLF_SCREEN_GOLF' | 'ACTIVITY' | 'TOURISM_NATURE' | 'CONVENIENCE' | 'OTHER';
+export interface NearbyPlace {
+  id: string; name: string; category: NearbyCategory; categoryLabel: string; providerCategoryName: string;
+  address: string; roadAddress?: string; phone?: string; lat: number; lng: number; distanceMeters?: number;
+  estimatedTravelMinutes?: number; placeUrl: string; matchedKeyword?: string;
+  indoorRelevance: 'INDOOR' | 'OUTDOOR' | 'UNKNOWN'; operatingState: 'UNKNOWN'; operatingMessage: string;
+  availabilityMessage?: string; contextualReasons: string[]; canonicalEntityUri?: string; canonicalLabel?: string;
+  masterVerificationStatus?: string; transient: true; relevanceScore: number;
+}
+export interface NearbyDiscoveryResponse {
+  origin: { lat: number; lng: number; distanceTrusted: boolean }; category: NearbyCategory; radius: number; total: number;
+  resultStatus: 'AVAILABLE' | 'EMPTY'; results: NearbyPlace[];
 }
 
 export async function fetchNearbyStatus() {
-  const { data } = await api.get<{ configured: boolean }>('/nearby/status');
+  const { data } = await api.get<{ configured: boolean; state: 'READY' | 'NOT_CONFIGURED'; provider: 'KAKAO_LOCAL'; timeoutMs: number }>('/nearby/status');
   return data;
 }
 
@@ -218,5 +276,85 @@ export async function createReservation(payload: {
   note?: string;
 }) {
   const { data } = await api.post('/reservations/create', payload);
+  return data;
+}
+
+export async function fetchNearbyDiscovery(category: NearbyCategory, lat: number, lng: number, options: { radius?: number; weather?: string; useDistance?: boolean; transportMode?: 'car' | 'foot' } = {}) {
+  const { data } = await api.get<NearbyDiscoveryResponse>('/nearby/discovery', { params: { category, lat, lng, radius: options.radius || 2500, weather: options.weather, useDistance: options.useDistance !== false, transportMode: options.transportMode || 'foot' } });
+  return data;
+}
+
+export interface OntologyEntityDetail {
+  uri: string;
+  label: string;
+  comment?: string;
+  literalProps?: Record<string, any>;
+  objectProps?: Record<string, string[]>;
+  programNature?: 'OFFICIAL' | 'AI_COMPOSED';
+  masterData?: any;
+}
+
+export async function fetchProgram(uri: string) {
+  const { data } = await api.get<OntologyEntityDetail>(`/programs/${encodeURIComponent(uri)}`);
+  return data;
+}
+
+export async function fetchFacility(uri: string) {
+  const { data } = await api.get<OntologyEntityDetail>(`/facilities/${encodeURIComponent(uri)}`);
+  return data;
+}
+
+export interface ReplanningProposal {
+  proposalNo: string;
+  status: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
+  triggerEvent: { eventType: string; currentValue?: unknown };
+  impacts: Array<{ level: string; affectedItems: any[]; reasons: string[] }>;
+  preservedHistory: any[];
+  removedItems: any[];
+  proposedNewItems: any[];
+  proposedFutureSteps: any[];
+  explanation: string;
+}
+
+export async function observeRuntime(payload: {
+  previousContext?: any;
+  currentContext?: any;
+  itinerary?: any;
+  previousContextNo?: string;
+  currentContextNo?: string;
+  itineraryNo?: string;
+}) {
+  const { data } = await api.post('/runtime-replanning/observe', payload);
+  return data as { events: any[]; impacts: any[]; replanningRecommended: boolean; proposedRevision: ReplanningProposal | null; suppressed?: boolean };
+}
+
+export async function approveReplanning(proposalNo: string) {
+  const { data } = await api.post(`/runtime-replanning/${proposalNo}/approve`);
+  return data;
+}
+
+export async function rejectReplanning(proposalNo: string) {
+  const { data } = await api.post(`/runtime-replanning/${proposalNo}/reject`);
+  return data;
+}
+
+export interface LiveRuntimeResponse {
+  context: any;
+  metadata: {
+    observedAt: string;
+    source: 'OPEN_METEO' | 'UNAVAILABLE';
+    status: 'LIVE' | 'STALE' | 'UNAVAILABLE';
+    stale: boolean;
+    location: { latitude: number; longitude: number; timezone: string };
+  };
+}
+
+export async function fetchLiveRuntimeContext(contextNo?: string) {
+  const { data } = await api.get<LiveRuntimeResponse>('/runtime-context/live', { params: contextNo ? { contextNo } : undefined });
+  return data;
+}
+
+export async function hydrateRuntimeLocation(context: any, location: any) {
+  const { data } = await api.post<LiveRuntimeResponse>('/runtime-context/hydrate', { context, location });
   return data;
 }

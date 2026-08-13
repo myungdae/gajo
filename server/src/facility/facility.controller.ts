@@ -10,6 +10,11 @@ export class FacilityController {
     return this.service.listFacilities();
   }
 
+  @Get('operational-places')
+  operationalPlaces() {
+    return this.service.operationalPlaces();
+  }
+
   @Get('facilities/:uri')
   getFacility(@Param('uri') uri: string) {
     return this.service.getFacility(decodeURIComponent(uri));

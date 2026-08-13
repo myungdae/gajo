@@ -27,9 +27,17 @@ export class RuntimeContext {
   @Prop({ type: [String], default: [] })
   healthConditions: string[];
 
+  /** Structured companions parsed from the request or supplied explicitly. */
+  @Prop({ type: [Object], default: [] })
+  companions: { age?: number; relationship?: string; healthConditions: string[] }[];
+
   /** URIs of gajo:WellnessGoal individuals */
   @Prop({ type: [String], default: [] })
   wellnessGoals: string[];
+
+  /** Controlled visitor selections not yet represented as ontology WellnessGoal individuals. */
+  @Prop({ type: [String], default: [] })
+  activityPreferences: string[];
 
   /** URIs of gajo:WeatherCondition / gajo:CongestionCondition individuals */
   @Prop({ type: [String], default: [] })
@@ -50,6 +58,27 @@ export class RuntimeContext {
   /** URIs of roo:Policy individuals that govern this context */
   @Prop({ type: [String], default: [] })
   policies: string[];
+
+  @Prop() currentTime?: string;
+  @Prop() currentDate?: string;
+  @Prop() dayOfWeek?: string;
+  @Prop() weather?: string;
+  @Prop() weatherState?: string;
+  @Prop() temperature?: number;
+  @Prop() precipitation?: number;
+  @Prop() latitude?: number;
+  @Prop() longitude?: number;
+  @Prop() transportMode?: string;
+  @Prop() stayUntil?: string;
+  @Prop() stayUntilPeriod?: string;
+  @Prop() extractedIntent?: string;
+  @Prop() walkingLevel?: string;
+  @Prop({ type: [String], default: [] }) companionConstraints: string[];
+  @Prop() congestionState?: string;
+
+  /** Operational observations keyed by static ontology entity URI. */
+  @Prop({ type: [Object], default: [] })
+  runtimeStates: Record<string, any>[];
 
   @Prop({ type: Object, default: {} })
   raw: Record<string, any>;

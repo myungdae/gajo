@@ -15,11 +15,16 @@ import { GraphTraversalService } from '../context/graph-traversal.service';
  * and show the real nearby-restaurant finder UI alongside the ontology
  * based itinerary answer.
  */
-function detectsNearbyRestaurantIntent(message?: string): boolean {
-  if (!message) return false;
-  const hasFoodWord = /식당|맛집|밥\s*(먹|을)|먹을\s*(곳|데)|건강식|약선|음식점|식사/.test(message);
-  const hasNearbyIntent = /주변|근처|가까운|인근/.test(message) || /추천/.test(message);
-  return hasFoodWord && hasNearbyIntent;
+function detectNearbyDiscovery(message?: string): { intent: boolean; category?: string } {
+  if (!message) return { intent: false };
+  const entries: [string, RegExp][] = [
+    ['LODGING', /숙박|호텔|모텔|펜션|민박/], ['CAFE', /카페|커피|다방/],
+    ['GOLF_SCREEN_GOLF', /스크린\s*골프|골프연습장/], ['HOT_SPRING_WELLNESS', /온천|사우나|찜질|스파/],
+    ['ACTIVITY', /놀거리|체험|레저/], ['TOURISM_NATURE', /산책|관광|공원|명소/],
+    ['CONVENIENCE', /편의점|약국|병원/], ['FOOD', /식당|맛집|밥\s*(먹|을)|먹을\s*(곳|데)|건강식|약선|음식점|식사/],
+  ];
+  const category = entries.find(([, pattern]) => pattern.test(message))?.[0];
+  return { intent: !!category && (/주변|근처|가까운|인근|갈\s*만한|찾아|추천/.test(message)), category };
 }
 
 /**
@@ -47,7 +52,8 @@ export class ConciergeService {
 
   async chat(input: CreateContextInput) {
     const { context, evidence, firedRules } = await this.contextService.createContext(input);
-    const nearbyRestaurantIntent = detectsNearbyRestaurantIntent(input.rawMessage);
+    const nearbyDiscovery = detectNearbyDiscovery(input.rawMessage);
+    const nearbyRestaurantIntent = nearbyDiscovery.intent && nearbyDiscovery.category === 'FOOD';
 
     if (!context.operationUri) {
       return {
@@ -55,6 +61,8 @@ export class ConciergeService {
         evidence,
         firedRules,
         nearbyRestaurantIntent,
+        nearbyDiscoveryIntent: nearbyDiscovery.intent,
+        nearbyCategory: nearbyDiscovery.category,
         message: '적용 가능한 컨시어지 운영(Operation)을 찾지 못했습니다. 온톨로지에 gajo:ConciergeOperation을 확인해주세요.',
       };
     }
@@ -84,6 +92,8 @@ export class ConciergeService {
       confidenceScore: runResult.recommendation?.confidenceScore || 0,
       nextAction: runResult.recommendation?.nextAction || null,
       nearbyRestaurantIntent,
+      nearbyDiscoveryIntent: nearbyDiscovery.intent,
+      nearbyCategory: nearbyDiscovery.category,
     };
   }
 }

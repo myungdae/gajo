@@ -1,11 +1,21 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { RuntimeContext, RuntimeContextDocument } from '../schemas/runtime-context.schema';
 import { GraphTraversalService } from './graph-traversal.service';
 import { OntologyGraphService } from '../ontology/ontology-graph.service';
 import { gajo, roo, CLASS } from '../ontology/ontology.constants';
+import type {
+  CongestionState,
+  EntityRuntimeState,
+  TransportMode,
+  WalkingLevel,
+} from './runtime-context.types';
+import { parseNaturalLanguageContext } from './natural-language-context.parser';
+import type { ExtractorResult } from './context-extractor.types';
+import { mergeContextExtractions } from './context-extraction.merger';
+import { ContextExtractionGateway } from './context-extraction.gateway';
 
 export interface CreateContextInput {
   visitorNo?: string;
@@ -15,7 +25,28 @@ export interface CreateContextInput {
   companions?: { age?: number; relationship?: string; healthConditions: string[] }[];
   healthConditions?: string[]; // visitor's own health conditions
   weather?: string; // "rainyWeather" | "clearWeather" | full URI
+  weatherState?: string;
   congestion?: string; // "highCongestion" | "lowCongestion" | full URI
+  currentTime?: string;
+  currentDate?: string;
+  dayOfWeek?: string;
+  temperature?: number;
+  precipitation?: number;
+  latitude?: number;
+  longitude?: number;
+  locationAccuracy?: number;
+  locationObservedAt?: string;
+  locationStatus?: 'AVAILABLE' | 'DENIED' | 'UNAVAILABLE' | 'TIMEOUT' | 'UNKNOWN';
+  transportMode?: TransportMode;
+  stayUntil?: string;
+  walkingLevel?: WalkingLevel;
+  companionConstraints?: string[];
+  congestionState?: CongestionState;
+  runtimeStates?: EntityRuntimeState[];
+  contextSessionId?: string;
+  inputMode?: 'STRUCTURED' | 'FREE_TEXT';
+  isFollowup?: boolean;
+  activityPreferences?: string[];
 }
 
 /**
@@ -59,6 +90,7 @@ export class RuntimeContextService {
     @InjectModel(RuntimeContext.name) private contextModel: Model<RuntimeContextDocument>,
     private readonly traversal: GraphTraversalService,
     private readonly graph: OntologyGraphService,
+    @Optional() private readonly extractionGateway?: ContextExtractionGateway,
   ) {}
 
   /** Resolve a bare local name ("kneePain") or a full URI to a full gajo: URI. */
@@ -90,18 +122,47 @@ export class RuntimeContextService {
     let weatherUri = input.weather ? this.toGajoUri(input.weather) : undefined;
     let congestionUri = input.congestion ? this.toGajoUri(input.congestion) : undefined;
     let wellnessGoals = (input.wellnessGoals || []).map((g) => this.toGajoUri(g));
+    let companions = [...(input.companions || [])];
+    let transportMode = input.transportMode;
+    let stayUntil = input.stayUntil;
+    let walkingLevel = input.walkingLevel;
+    let companionConstraints = [...(input.companionConstraints || [])];
+    let activityPreferences = [...(input.activityPreferences || [])];
+    let extractionDebug: Record<string, any> | undefined;
+    let stayUntilPeriod: string | undefined;
+    let extractedIntent: string | undefined;
+    const gatewayOutcome = this.extractionGateway
+      ? await this.extractionGateway.extract({ text: input.rawMessage, sessionId: input.contextSessionId, followup: input.isFollowup })
+      : { decision: 'SKIP_LLM' as const, invocationReason: input.rawMessage ? (input.isFollowup ? 'FREE_TEXT_FOLLOWUP' as const : 'FREE_TEXT_INITIAL' as const) : 'NOT_REQUIRED' as const, result: { status: 'DISABLED' as const, provider: 'none', latencyMs: 0, errorCode: 'NO_GATEWAY' } };
+    extractionDebug = { extractorInvocationReason: gatewayOutcome.invocationReason, gatewayDecision: gatewayOutcome.decision, duplicate: gatewayOutcome.duplicate, limitReached: gatewayOutcome.limitReached };
     const actors: string[] = [];
 
-    if (input.companions) {
-      for (const c of input.companions) {
+    if (companions.length) {
+      for (const c of companions) {
         companionConditions.push(...c.healthConditions.map((h) => this.toGajoUri(h)));
       }
     }
 
     // Free-text fallback / augmentation via lightweight keyword extraction.
     if (input.rawMessage) {
-      const extracted = keywordExtract(input.rawMessage);
-      for (const c of extracted.conds) {
+      const extracted = parseNaturalLanguageContext(input.rawMessage);
+      const extractorResult: ExtractorResult = gatewayOutcome.result;
+      const merged = mergeContextExtractions(extracted, extractorResult);
+      if (companions.length === 0) companions = merged.companions;
+      if (merged.transportMode && (input.isFollowup || !transportMode)) transportMode = merged.transportMode as TransportMode;
+      if (merged.stayUntil && (input.isFollowup || !stayUntil)) stayUntil = merged.stayUntil;
+      if (merged.walkingLevel && (input.isFollowup || !walkingLevel)) walkingLevel = merged.walkingLevel as WalkingLevel;
+      companionConstraints = [...new Set([...companionConstraints, ...merged.companionConstraints])];
+      activityPreferences = [...new Set([...activityPreferences, ...merged.activityPreferences])];
+      stayUntilPeriod = merged.stayUntilPeriod;
+      extractedIntent = merged.intent;
+      if (!input.isFollowup) {
+        const selected:Record<string,unknown>={transportMode:input.transportMode,stayUntil:input.stayUntil,walkingLevel:input.walkingLevel,companions:input.companions?.length?input.companions:undefined};
+        for(const resolution of merged.diagnostics){if(selected[resolution.field]!==undefined&&JSON.stringify(selected[resolution.field])!==JSON.stringify(resolution.finalValue)){resolution.finalValue=selected[resolution.field];resolution.resolution='USER_SELECTION_WINS';}}
+      }
+      extractionDebug = { ...extractionDebug, ...merged.extractor, fieldsExtracted: merged.diagnostics.map(item => item.field), conflictsCount: merged.diagnostics.filter(item => ['USER_SELECTION_WINS','DETERMINISTIC_WINS','UNRESOLVED'].includes(item.resolution)).length, resolutions: merged.diagnostics, validatedExtraction: extractorResult.extraction, needsClarification: merged.needsClarification, clarificationReason: merged.clarificationReason, suggestedQuestion: merged.suggestedQuestion };
+      for (const goal of merged.wellnessGoals) if (!wellnessGoals.includes(gajo(goal))) wellnessGoals.push(gajo(goal));
+      for (const c of merged.conditions) {
         const uri = gajo(c);
         if (!healthConditions.includes(uri) && !companionConditions.includes(uri)) {
           companionConditions.push(uri);
@@ -110,7 +171,27 @@ export class RuntimeContextService {
       if (extracted.weather && !weatherUri) weatherUri = gajo(extracted.weather);
       if (extracted.congestion && !congestionUri) congestionUri = gajo(extracted.congestion);
       if (extracted.wellnessGoal && wellnessGoals.length === 0) wellnessGoals.push(gajo(extracted.wellnessGoal));
+      if (extracted.conditions.includes('kneePain')) {
+        for (const companion of companions) {
+          if (!companion.healthConditions.includes('kneePain')) companion.healthConditions.push('kneePain');
+        }
+      }
     }
+
+    const knownHealthConstraints = new Set(['kneePain', 'fatigue', 'limitedMobility', 'hypertensionConcern']);
+    const knownMobilityConstraints = new Set(['shortWalkingDistance', 'elevatorAvailable', 'wheelchairAccessible', 'stairsRequired']);
+    const constraintLocalName = (value: string) => value.split('#').pop() || value;
+    for (const constraint of companionConstraints) {
+      const local = constraintLocalName(constraint);
+      if (knownHealthConstraints.has(local)) {
+        const uri = gajo(local);
+        if (!healthConditions.includes(uri) && !companionConditions.includes(uri)) companionConditions.push(uri);
+      }
+    }
+    const explicitMobilityConditions = companionConstraints
+      .map(constraintLocalName)
+      .filter(value => knownMobilityConstraints.has(value))
+      .map(value => gajo(value));
 
     const allConditionSeeds = [
       ...healthConditions,
@@ -122,7 +203,8 @@ export class RuntimeContextService {
     const expansion = this.traversal.expandConditions(allConditionSeeds);
 
     // Governing policies: any roo:Policy whose rule ifCondition matches an active (seed or expanded) condition.
-    const activeConditions = [...allConditionSeeds, ...expansion.expanded];
+    const alignedExpandedConditions = [...new Set([...explicitMobilityConditions, ...expansion.expanded])];
+    const activeConditions = [...allConditionSeeds, ...alignedExpandedConditions];
     const firedRules = this.traversal.evaluateRules(activeConditions);
     const policies = Array.from(new Set(firedRules.map((r) => r.policyUri).filter(Boolean))) as string[];
 
@@ -134,24 +216,47 @@ export class RuntimeContextService {
     const operations = this.traversal.individualsOfIncludingSubclasses(CLASS.Operation);
     const operationUri = operations[0]; // MVP: single seeded operation
 
-    const contextNo = `RC-${Date.now()}-${uuidv4().slice(0, 6)}`;
+    const contextNo = `RC-${Date.now()}-${randomUUID().slice(0, 6)}`;
     const doc = await this.contextModel.create({
       contextNo,
       visitorNo: input.visitorNo,
       rawMessage: input.rawMessage,
       actors,
       healthConditions: [...healthConditions, ...companionConditions],
+      companions,
       wellnessGoals,
+      activityPreferences,
       environmentConditions: [weatherUri, congestionUri].filter(Boolean) as string[],
-      expandedConditions: expansion.expanded,
+      expandedConditions: alignedExpandedConditions,
       risks: expansion.risks,
       operationUri,
       policies,
-      raw: { input, firedRules },
+      currentTime: input.currentTime,
+      currentDate: input.currentDate,
+      dayOfWeek: input.dayOfWeek,
+      weather: weatherUri,
+      weatherState: input.weatherState,
+      temperature: input.temperature,
+      precipitation: input.precipitation,
+      transportMode,
+      stayUntil,
+      walkingLevel,
+      companionConstraints,
+      stayUntilPeriod,
+      extractedIntent,
+      congestionState: input.congestionState,
+      runtimeStates: input.runtimeStates || [],
+      raw: { input: { ...input, companions, transportMode, stayUntil, walkingLevel, companionConstraints, activityPreferences, wellnessGoals, latitude: undefined, longitude: undefined, locationAccuracy: undefined, locationObservedAt: undefined }, firedRules, extractionDebug, fieldProvenance: {
+        companions: input.companions?.length ? 'USER_SELECTION' : input.rawMessage ? 'DETERMINISTIC_OR_LLM' : undefined,
+        transportMode: input.transportMode && !input.isFollowup ? 'USER_SELECTION' : input.rawMessage ? 'DETERMINISTIC_OR_LLM' : undefined,
+        stayUntil: input.stayUntil && !input.isFollowup ? 'USER_SELECTION' : input.rawMessage ? 'DETERMINISTIC_OR_LLM' : undefined,
+        walkingLevel: input.walkingLevel && !input.isFollowup ? 'USER_SELECTION' : input.rawMessage ? 'DETERMINISTIC_OR_LLM' : undefined,
+        wellnessGoals: input.wellnessGoals?.length ? 'USER_SELECTION' : input.rawMessage ? 'DETERMINISTIC_OR_LLM' : undefined,
+      } },
     });
 
     return {
-      context: doc.toObject(),
+      context: { ...doc.toObject(), latitude: input.latitude, longitude: input.longitude, locationAccuracy: input.locationAccuracy, locationObservedAt: input.locationObservedAt, locationStatus: input.locationStatus },
       evidence: expansion.evidence,
       firedRules,
     };

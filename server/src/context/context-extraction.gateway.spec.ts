@@ -1,0 +1,13 @@
+import { ContextExtractionGateway } from './context-extraction.gateway';
+
+const config=(max=3)=>({get:(key:string)=>key==='MAX_CONTEXT_LLM_CALLS_PER_SESSION'?max:undefined}) as any;
+const success={status:'SUCCESS' as const,provider:'mock',latencyMs:1,extraction:{transportMode:{value:'CAR' as const,confidence:.9,sourceText:'차로',source:'LLM' as const}}};
+
+describe('ContextExtractionGateway',()=>{
+  it('makes zero provider calls for structured-only input',async()=>{const extractor={extract:jest.fn()};const gateway=new ContextExtractionGateway(extractor as any,config());const result=await gateway.extract({sessionId:'s'});expect(result.invocationReason).toBe('NOT_REQUIRED');expect(extractor.extract).not.toHaveBeenCalled();expect(gateway.stats().structuredOnlyRequests).toBe(1)});
+  it('calls once for initial free text',async()=>{const extractor={extract:jest.fn().mockResolvedValue(success)};const gateway=new ContextExtractionGateway(extractor as any,config());expect((await gateway.extract({text:'엄마와 왔어요',sessionId:'s'})).decision).toBe('CALL_LLM');expect(extractor.extract).toHaveBeenCalledTimes(1)});
+  it('marks follow-up invocation reason',async()=>{const gateway=new ContextExtractionGateway({extract:jest.fn().mockResolvedValue(success)} as any,config());expect((await gateway.extract({text:'4시에 가야 해요',sessionId:'s',followup:true})).invocationReason).toBe('FREE_TEXT_FOLLOWUP')});
+  it('deduplicates identical submissions in one session',async()=>{const extractor={extract:jest.fn().mockResolvedValue(success)};const gateway=new ContextExtractionGateway(extractor as any,config());await gateway.extract({text:'같은 요청',sessionId:'s'});expect((await gateway.extract({text:'같은 요청',sessionId:'s'})).duplicate).toBe(true);expect(extractor.extract).toHaveBeenCalledTimes(1)});
+  it('enforces per-session maximum and falls back',async()=>{const extractor={extract:jest.fn().mockResolvedValue(success)};const gateway=new ContextExtractionGateway(extractor as any,config(1));await gateway.extract({text:'첫 요청',sessionId:'s'});const result=await gateway.extract({text:'둘째 요청',sessionId:'s'});expect(result).toMatchObject({decision:'FALLBACK',limitReached:true});expect(extractor.extract).toHaveBeenCalledTimes(1)});
+  it('preserves service when provider times out',async()=>{const gateway=new ContextExtractionGateway({extract:jest.fn().mockResolvedValue({status:'TIMEOUT',provider:'mock',latencyMs:8})} as any,config());expect((await gateway.extract({text:'요청',sessionId:'s'})).decision).toBe('FALLBACK')});
+});

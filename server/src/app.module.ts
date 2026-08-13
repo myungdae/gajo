@@ -17,6 +17,7 @@ import { ConciergeModule } from './concierge/concierge.module';
 import { VisitorModule } from './visitor/visitor.module';
 import { DemoModule } from './demo/demo.module';
 import { NearbyModule } from './nearby/nearby.module';
+import { ReplanningModule } from './replanning/replanning.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { NearbyModule } from './nearby/nearby.module';
     VisitorModule,
     DemoModule,
     NearbyModule,
+    ReplanningModule,
   ],
   controllers: [AppController],
   providers: [AppService],

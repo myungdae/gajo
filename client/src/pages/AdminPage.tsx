@@ -17,6 +17,7 @@ export default function AdminPage() {
 
   return (
     <div>
+      <DataQualityPanel quality={data.dataQuality} />
       <div className="card">
         <h2>운영 현황 요약</h2>
         <div className="grid-2">
@@ -126,6 +127,17 @@ export default function AdminPage() {
           </tbody>
         </table>
       </div>
+      <div className="card">
+        <h2>마스터 데이터 품질</h2>
+        <table className="simple"><thead><tr><th>엔티티</th><th>좌표</th><th>주소</th><th>전화</th><th>운영시간</th><th>엔티티 상태</th></tr></thead><tbody>
+          {(data.dataQuality?.entities || []).map((entity: any) => <tr key={entity.entityUri}><td>{entity.record?.canonicalLabelKo || entity.label}</td><td>{entity.flags.includes('MISSING_COORDINATES') ? '누락' : entity.fieldVerification?.coordinates}</td><td>{entity.flags.includes('MISSING_ADDRESS') ? '누락' : entity.fieldVerification?.address}</td><td>{entity.flags.includes('MISSING_PHONE') ? '누락' : entity.fieldVerification?.telephone}</td><td>{entity.flags.includes('MISSING_HOURS') ? '확인 필요' : entity.fieldVerification?.operatingHours}</td><td>{entity.record?.verificationStatus || 'UNVERIFIED'}{entity.flags.length ? ` · ${entity.flags.join(', ')}` : ''}</td></tr>)}
+        </tbody></table>
+      </div>
     </div>
   );
+}
+
+function DataQualityPanel({quality}:{quality:any}) {
+  if(!quality)return null;
+  return <div className="card"><h2>실제 장소 데이터 품질</h2><div className="tag-row"><span className="badge">전체 {quality.summary?.total||0}</span><span className="badge">검증 {quality.summary?.verified||0}</span><span className="badge muted">부분 확인 {quality.summary?.partial||0}</span><span className="badge muted">좌표 있음 {quality.summary?.withCoordinates||0}</span></div><table className="simple"><thead><tr><th>장소</th><th>온톨로지 연결</th><th>기본 정보</th><th>출처</th><th>점검 항목</th></tr></thead><tbody>{(quality.entities||[]).map((entity:any)=><tr key={entity.entityUri}><td>{entity.record?.canonicalLabelKo||entity.label}</td><td>{entity.entityUri.split('#').pop()}</td><td>{[entity.record?.address,entity.record?.telephone,entity.record?.operatingHours?.length?'운영시간 등록':null].filter(Boolean).join(' · ')||'확인 필요'}</td><td>{entity.record?.detailsProvenance?.sourceName||'출처 없음'}</td><td>{entity.flags.join(', ')||'OK'}</td></tr>)}</tbody></table></div>
 }

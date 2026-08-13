@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { Visitor, VisitorDocument } from '../schemas/visitor.schema';
 import { Companion, CompanionDocument } from '../schemas/companion.schema';
 import { VisitorGroup, VisitorGroupDocument } from '../schemas/visitor-group.schema';
@@ -23,7 +23,7 @@ export class VisitorService {
   ) {}
 
   async createVisitor(dto: { name?: string; phone?: string; age?: number; wellnessGoals?: string[]; healthConditions?: string[] }) {
-    const visitorNo = `V-${Date.now()}-${uuidv4().slice(0, 6)}`;
+    const visitorNo = `V-${Date.now()}-${randomUUID().slice(0, 6)}`;
     return this.visitorModel.create({ visitorNo, ...dto });
   }
 

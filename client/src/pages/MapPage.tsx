@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { fetchFacilities } from '../api/client';
-import { shortUri } from '../utils/uri';
+import { getSessionLocation, isOperationalLocation } from '../utils/visitorLocation';
+import { useSearchParams } from 'react-router-dom';
 
 // Gajo-myeon (가조면), Geochang-gun, Gyeongsangnam-do approximate center.
 const GAJO_CENTER: [number, number] = [35.7423, 127.9528];
@@ -15,25 +16,17 @@ const icon = new L.Icon({
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
 });
+function categoryIcon(category?:string){const color=category?.includes('온천')?'#dc2626':category?.includes('음식')?'#ea580c':category?.includes('카페')?'#7c3aed':category?.includes('산림')?'#15803d':'#0f766e';return L.divIcon({className:'facility-map-marker',html:`<div style="width:18px;height:18px;border-radius:4px;background:${color};border:2px solid white;box-shadow:0 1px 5px #334155"></div>`,iconSize:[18,18],iconAnchor:[9,9]})}
 
-// The ontology does not encode lat/long for facilities (it's a
-// business/wellness ontology, not a GIS one), so we deterministically
-// scatter facility markers within a small radius of the Gajo hot spring
-// complex based on a hash of their URI. This keeps marker positions
-// stable across reloads without needing separate GIS data entry for MVP.
-function hashOffset(uri: string): [number, number] {
-  let h = 0;
-  for (let i = 0; i < uri.length; i++) {
-    h = (h * 31 + uri.charCodeAt(i)) >>> 0;
-  }
-  const dx = ((h % 1000) / 1000 - 0.5) * 0.012;
-  const dy = (((h >> 10) % 1000) / 1000 - 0.5) * 0.012;
-  return [dx, dy];
-}
+// Only facilities with reliable source coordinates receive a marker.
+function FitKnownPoints({ points }: { points: [number, number][] }) { const map=useMap(); useEffect(()=>{ if(points.length>1) map.fitBounds(points,{padding:[30,30]}); else if(points.length===1) map.setView(points[0],15); },[map,points]); return null; }
+function FocusPoint({ point }: { point?: [number, number] }) { const map=useMap(); useEffect(()=>{if(point)map.setView(point,16)},[map,point]); return null; }
 
 export default function MapPage() {
   const [facilities, setFacilities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const visitor = getSessionLocation();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     fetchFacilities()
@@ -43,10 +36,7 @@ export default function MapPage() {
 
   const markers = useMemo(
     () =>
-      facilities.map((f) => {
-        const [dx, dy] = hashOffset(f.uri);
-        return { ...f, position: [GAJO_CENTER[0] + dx, GAJO_CENTER[1] + dy] as [number, number] };
-      }),
+      facilities.map((f) => { const latitude=Number(f.literalProps?.latitude ?? f.literalProps?.lat), longitude=Number(f.literalProps?.longitude ?? f.literalProps?.lng ?? f.literalProps?.lon); return Number.isFinite(latitude)&&Number.isFinite(longitude)?{...f,position:[latitude,longitude] as [number,number]}:null; }).filter(Boolean) as any[],
     [facilities],
   );
 
@@ -65,12 +55,14 @@ export default function MapPage() {
       ) : (
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           <MapContainer center={GAJO_CENTER} zoom={14} style={{ height: '55vh', width: '100%' }}>
+            <FitKnownPoints points={[...(isOperationalLocation(visitor)?[[visitor!.latitude!,visitor!.longitude!] as [number,number]]:[]),...markers.map((m)=>m.position)]} />
+            <FocusPoint point={markers.find((m)=>m.uri===searchParams.get('entityUri'))?.position} />
             <TileLayer
               attribution='&copy; OpenStreetMap contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             {markers.map((m) => (
-              <Marker key={m.uri} position={m.position} icon={icon}>
+              <Marker key={m.uri} position={m.position} icon={categoryIcon(m.literalProps?.category)}>
                 <Popup>
                   <b>{m.label}</b>
                   <br />
@@ -81,6 +73,7 @@ export default function MapPage() {
                 </Popup>
               </Marker>
             ))}
+            {isOperationalLocation(visitor) && <Marker position={[visitor!.latitude!,visitor!.longitude!]} icon={icon}><Popup><b>현재 위치</b></Popup></Marker>}
           </MapContainer>
         </div>
       )}
@@ -89,10 +82,11 @@ export default function MapPage() {
         <h2>시설 목록</h2>
         {facilities.map((f) => (
           <div key={f.uri} style={{ marginBottom: 10, fontSize: 13 }}>
-            <b>{f.label}</b> <span className="badge muted">{shortUri(f.uri)}</span>
+            <b>{f.label}</b>
             <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--color-text-muted)' }}>
               {f.comment}
             </p>
+            {!Number.isFinite(Number(f.literalProps?.latitude)) && <small style={{color:'var(--color-text-muted)'}}>지도 위치 미확인</small>}
           </div>
         ))}
       </div>

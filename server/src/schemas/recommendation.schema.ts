@@ -56,6 +56,9 @@ export class Recommendation {
 
   @Prop()
   nextAction?: string;
+
+  @Prop({ type: Object })
+  decisionStages?: Record<string, any>;
 }
 
 export type RecommendationDocument = Recommendation & Document;

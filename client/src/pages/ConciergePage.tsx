@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { postConciergeChat, runDemoScenario, type ConciergeChatResponse } from '../api/client';
-import { shortUri } from '../utils/uri';
+import { useNavigate } from 'react-router-dom';
+import { postConciergeChat, runDemoScenario, type ConciergeChatResponse, type CreateContextInput } from '../api/client';
+import GajoLiveStatus from '../components/GajoLiveStatus';
+import VisitorLocationControl from '../components/VisitorLocationControl';
+import MovementPlan from '../components/MovementPlan';
+import { getSessionLocation } from '../utils/visitorLocation';
+import { mergeCommittedSpeech, renderSpeechText, SPEECH_RESTART_DELAY_MS } from '../utils/speechTranscript';
+import { buildContextSummary } from '../utils/contextSummary';
+import StructuredVisitorIntake from '../components/StructuredVisitorIntake';
 
 interface Message {
   role: 'user' | 'ai';
@@ -12,39 +18,113 @@ interface Message {
 function summarizeResult(result: ConciergeChatResponse): string {
   const rec = result.recommendation;
   if (result.error) {
-    return '죄송합니다. 요청을 처리할 수 있는 운영(Operation)을 온톨로지에서 찾지 못했습니다. 조금 더 구체적으로 말씀해주시겠어요?';
+    return '죄송합니다. 말씀하신 내용을 일정으로 구성하지 못했습니다. 원하는 방문 상황을 조금 더 구체적으로 말씀해 주세요.';
   }
   if (!rec) {
     return '요청을 접수했습니다. 조건을 분석했지만 아직 추천할 프로그램을 찾지 못했습니다.';
   }
-  return rec.reasonSummary || '맞춤 일정을 준비했습니다. 아래 근거와 함께 확인해보세요.';
+  return rec.reasonSummary || '말씀하신 상황에 맞춰 편안한 일정을 준비했습니다.';
 }
 
 export default function ConciergePage() {
-  const location = useLocation() as { state?: { prefill?: string } };
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'ai',
-      text: '안녕하세요! 가조 온천단지 AI 컨시어지입니다. 방문 상황(동반 가족, 건강 상태, 날씨, 혼잡도 등)을 자유롭게 말씀해주시면 온톨로지 그래프 추론을 통해 설명 가능한 맞춤 일정을 안내해드립니다.',
+      text: '안녕하세요! 함께 오신 분, 머무는 시간, 이동 방법, 걷기 편한 정도를 말씀해 주시면 지금 상황에 알맞은 일정을 안내해 드릴게요.',
     },
   ]);
-  const [input, setInput] = useState(location.state?.prefill || '');
+  const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const [listening, setListening] = useState(false);
+  const [voiceSupported, setVoiceSupported] = useState(true);
+  const [voiceError, setVoiceError] = useState('');
+  const [freeTextOpen,setFreeTextOpen]=useState(false);
+  const [structuredDraft,setStructuredDraft]=useState<CreateContextInput>({inputMode:'STRUCTURED'});
+  const contextSessionIdRef=useRef(sessionStorage.getItem('gajo-context-session')||crypto.randomUUID());
+  const recognitionRef = useRef<any>(null);
+  const userWantsListeningRef = useRef(false);
+  const recognitionActiveRef = useRef(false);
+  const restartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const restartTimesRef = useRef<number[]>([]);
+  const baseTextRef = useRef('');
+  const committedSpeechRef = useRef('');
+  const interimSpeechRef = useRef('');
+  const fatalErrorRef = useRef(false);
+  const liveStoryRef = useRef<HTMLDivElement>(null);
+  const hadRecommendationRef = useRef(false);
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  const renderTranscript = () => setInput(renderSpeechText(baseTextRef.current, committedSpeechRef.current, interimSpeechRef.current));
+  const stopListening = () => {
+    userWantsListeningRef.current = false;
+    if (restartTimerRef.current) clearTimeout(restartTimerRef.current);
+    restartTimerRef.current = null;
+    if (interimSpeechRef.current) committedSpeechRef.current = mergeCommittedSpeech(committedSpeechRef.current, interimSpeechRef.current);
+    interimSpeechRef.current = '';
+    renderTranscript(); setListening(false);
+    if (recognitionActiveRef.current) try { recognitionRef.current?.stop?.(); } catch { /* already ending */ }
+  };
 
-  const send = async (overrideText?: string) => {
+  useEffect(() => () => { userWantsListeningRef.current=false;if(restartTimerRef.current)clearTimeout(restartTimerRef.current);try{recognitionRef.current?.stop?.()}catch{/* already ending */} }, []);
+
+  const startRecognitionInstance = (SpeechRecognition:any) => {
+    if (!userWantsListeningRef.current || document.hidden) return;
+    const now=Date.now();restartTimesRef.current=restartTimesRef.current.filter(time=>now-time<30000);
+    if(restartTimesRef.current.length>=8){setVoiceError('음성 연결이 반복해서 끊겼습니다. 입력된 내용을 확인한 뒤 다시 시작해 주세요.');stopListening();return}
+    restartTimesRef.current.push(now);
+    const recognition = new SpeechRecognition();
+    const finalIndexes = new Set<number>();
+    recognition.lang = 'ko-KR'; recognition.interimResults = true; recognition.continuous = true; recognition.maxAlternatives=1;
+    recognition.onstart = () => { recognitionActiveRef.current=true; setListening(true); };
+    recognition.onresult = (event:any) => {
+      for(let index=Number(event.resultIndex||0);index<(event.results?.length||0);index+=1){const result=event.results[index];const transcript=String(result?.[0]?.transcript||'').trim();if(!transcript)continue;const isFinal=result?.isFinal!==false;if(isFinal){if(!finalIndexes.has(index)){committedSpeechRef.current=mergeCommittedSpeech(committedSpeechRef.current,transcript);finalIndexes.add(index)}interimSpeechRef.current=''}else interimSpeechRef.current=transcript}
+      renderTranscript();
+    };
+    recognition.onerror = (event:any) => { const fatal=['not-allowed','service-not-allowed','audio-capture','language-not-supported'].includes(event?.error);fatalErrorRef.current=fatal;if(fatal){setVoiceError(['not-allowed','service-not-allowed'].includes(event?.error)?'마이크 권한을 허용하면 음성으로 말씀하실 수 있습니다.':'마이크를 계속 사용할 수 없습니다. 직접 입력해 주세요.');stopListening()} };
+    recognition.onend = () => { recognitionActiveRef.current=false;recognitionRef.current=null;if(!userWantsListeningRef.current||fatalErrorRef.current)return;interimSpeechRef.current='';renderTranscript();restartTimerRef.current=setTimeout(()=>{restartTimerRef.current=null;startRecognitionInstance(SpeechRecognition)},SPEECH_RESTART_DELAY_MS); };
+    recognitionRef.current=recognition;
+    try{recognition.start()}catch{setVoiceError('음성 입력을 시작하지 못했습니다. 다시 시도해 주세요.');stopListening()}
+  };
+
+  const toggleListening = () => {
+    if (userWantsListeningRef.current) { stopListening(); return; }
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) { setVoiceSupported(false); setVoiceError('이 브라우저에서는 음성 입력을 사용할 수 없습니다. 직접 입력해 주세요.'); return; }
+    setVoiceError('');
+    baseTextRef.current=input.trim();committedSpeechRef.current='';interimSpeechRef.current='';fatalErrorRef.current=false;restartTimesRef.current=[];userWantsListeningRef.current=true;setListening(true);startRecognitionInstance(SpeechRecognition);
+  };
+
+  useEffect(()=>{sessionStorage.setItem('gajo-context-session',contextSessionIdRef.current)},[]);
+
+  const send = async (overrideText?: string, structured?: CreateContextInput) => {
     const text = (overrideText ?? input).trim();
-    if (!text || loading) return;
-    setMessages((prev) => [...prev, { role: 'user', text }]);
+    if ((!text && !structured) || loading) return;
+    setMessages((prev) => [...prev, { role: 'user', text: text || '선택한 조건으로 일정을 추천해 주세요.' }]);
     setInput('');
     setLoading(true);
     try {
-      const result = await postConciergeChat({ rawMessage: text });
+      const gps = getSessionLocation();
+      const previousContext = [...messages].reverse().find(message => message.result?.context)?.result?.context || {};
+      const previousInput = previousContext.raw?.input || previousContext;
+      const carriedContext = {
+        visitorNo: previousInput.visitorNo || previousContext.visitorNo,
+        visitorAge: previousInput.visitorAge,
+        healthConditions: previousContext.healthConditions || previousInput.healthConditions,
+        wellnessGoals: previousContext.wellnessGoals || previousInput.wellnessGoals,
+        activityPreferences: previousContext.activityPreferences || previousInput.activityPreferences,
+        companions: previousContext.companions || previousInput.companions,
+        weather: previousInput.weather || previousContext.weather,
+        congestion: previousInput.congestion,
+        temperature: previousContext.temperature,
+        precipitation: previousContext.precipitation,
+        transportMode: previousContext.transportMode,
+        stayUntil: previousContext.stayUntil,
+        walkingLevel: previousContext.walkingLevel,
+        companionConstraints: previousContext.companionConstraints,
+        congestionState: previousContext.congestionState,
+        runtimeStates: previousContext.runtimeStates,
+      };
+      const result = await postConciergeChat({ ...(hasRecommendation?carriedContext:structuredDraft), ...structured, ...(text?{rawMessage:text,inputMode:'FREE_TEXT' as const}:{}), contextSessionId:contextSessionIdRef.current,isFollowup:hasRecommendation, ...(gps?.status === 'AVAILABLE' ? { latitude: gps.latitude, longitude: gps.longitude, locationAccuracy: gps.accuracy, locationObservedAt: gps.observedAt, locationStatus: gps.status } : { locationStatus: gps?.status }) });
       setMessages((prev) => [
         ...prev,
         { role: 'ai', text: summarizeResult(result), result },
@@ -59,13 +139,23 @@ export default function ConciergePage() {
     }
   };
 
+  const hasRecommendation = messages.some(message => Boolean(message.result?.recommendation));
+  const latestRecommendation = [...messages].reverse().find(message => message.result?.recommendation)?.result;
+
+  useEffect(() => {
+    if (hasRecommendation && !hadRecommendationRef.current) {
+      requestAnimationFrame(() => liveStoryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    }
+    hadRecommendationRef.current = hasRecommendation;
+  }, [hasRecommendation]);
+
   const runDemo = async () => {
     setLoading(true);
     setMessages((prev) => [
       ...prev,
       {
         role: 'user',
-        text: '이번 토요일에 어머니를 모시고 가조온천에 하루 다녀오려고 합니다. 어머니는 78세이고 무릎이 좋지 않습니다. 비가 올 것 같고 사람이 많을까 걱정됩니다.',
+        text: '맑은 날 78세 어머니를 모시고 자동차로 방문합니다. 어머니는 무릎이 불편해 짧은 보행이 필요하고 오후 5시까지 머물 예정입니다.',
       },
     ]);
     try {
@@ -88,33 +178,44 @@ export default function ConciergePage() {
 
   return (
     <div>
-      <div className="card" style={{ marginBottom: 10 }}>
-        <button className="btn btn-outline btn-block" onClick={runDemo} disabled={loading}>
-          🎬 스펙 데모 시나리오 실행 (78세 어머니 · 무릎통증 · 우천 · 혼잡)
-        </button>
-      </div>
-
-      <div className="chat-window">
+      <div ref={liveStoryRef} className="card journey-live-context"><GajoLiveStatus /></div>
+      {!hasRecommendation && <div className="card"><VisitorLocationControl /></div>}
+      {!hasRecommendation && <div className="chat-window">
         {messages.map((m, i) => (
           <div key={i}>
             <div className={`chat-bubble ${m.role === 'user' ? 'user' : 'ai'}`}>{m.text}</div>
-            {m.result && (
-              <ResultPanel
-                result={m.result}
-                onViewItinerary={() => navigate('/itinerary', { state: { result: m.result } })}
-                onFindNearbyRestaurants={() => navigate('/nearby-restaurants')}
-              />
-            )}
           </div>
         ))}
-        {loading && <div className="loading">AI 컨시어지가 온톨로지 그래프를 탐색하고 있습니다...</div>}
-        <div ref={bottomRef} />
-      </div>
+        {loading && <div className="loading">가조이가 말씀하신 상황에 맞는 일정을 살펴보고 있습니다...</div>}
+      </div>}
 
-      <div className="chat-input-bar">
+      {!hasRecommendation && <>
+        <StructuredVisitorIntake loading={loading} onChange={setStructuredDraft} onSubmit={structured=>send('',structured)}/>
+        <div className="free-text-option"><span>또는</span><button type="button" className="btn btn-outline btn-block" aria-expanded={freeTextOpen} onClick={()=>setFreeTextOpen(open=>!open)}>그냥 말로 알려줄게요</button><p>선택하기 번거로우시면 편하게 말씀해 주세요.</p></div>
+      </>}
+
+      {hasRecommendation && latestRecommendation && <div className="recommendation-journey-start">
+        <UnderstoodContext result={latestRecommendation} />
+        <ResultPanel result={latestRecommendation} onFindNearbyRestaurants={() => navigate('/nearby-discovery')} />
+        <MovementPlan result={latestRecommendation} />
+        <section className="card runtime-journey-card">
+          <h2>상황이 바뀌면</h2>
+          <p>날씨와 현재 상황이 달라지면 남은 일정을 다시 확인할 수 있어요.</p>
+          <button className="btn btn-primary btn-block" onClick={() => navigate('/itinerary', { state: { result: latestRecommendation } })}>지금 상황 다시 확인</button>
+          <details className="demo-tools"><summary>시연·테스트</summary><p>발표용으로 13시 강한 비 상황을 재현합니다.</p><button className="btn btn-outline btn-block" onClick={runDemo} disabled={loading}>13시 강한 비 상황 재현</button></details>
+        </section>
+        {loading && <div className="loading">가조이가 이어서 살펴보고 있습니다...</div>}
+      </div>}
+
+      {(hasRecommendation||freeTextOpen) && <div className={hasRecommendation ? 'concierge-followup-composer' : 'concierge-input-panel'}>
+        <div className="input-panel-heading">
+          {!hasRecommendation && <small>말하거나 직접 입력하세요</small>}
+          <h2>{hasRecommendation ? '가조이에게 더 물어보세요' : '가조이에게 편하게 말씀해 주세요.'}</h2>
+        </div>
         <textarea
-          rows={2}
-          placeholder="예: 무릎이 아프신 부모님과 방문하려고 하는데 비가 올 것 같아요"
+          className={listening ? 'is-voice-listening' : undefined}
+          rows={hasRecommendation ? 2 : 5}
+          placeholder={hasRecommendation ? '일정에 대해 궁금한 것을 말씀해주세요.' : '예: 가족과 함께 편안하게 힐링할 수 있는 온천 코스를 추천해주세요.'}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
@@ -124,10 +225,20 @@ export default function ConciergePage() {
             }
           }}
         />
-        <button className="btn btn-primary" onClick={() => send()} disabled={loading}>
-          전송
+        <div className="voice-input">
+          <button type="button" className={`speech-session-button${listening?' is-listening':''}`} onClick={toggleListening} disabled={loading} aria-pressed={listening} aria-label={listening?'말하기 끝':'한국어로 여행 조건 말하기'}>
+            <span className="voice-dot" aria-hidden="true">●</span>
+            <strong>{listening?'듣고 있어요... · 말하기 끝':'말하기'}</strong>
+            <span className={`voice-bars${listening?' is-listening':''}`} aria-hidden="true"><i/><i/><i/><i/><i/><i/></span>
+          </button>
+          {!hasRecommendation && <p>말씀하신 내용이 위 입력창에 들어갑니다. 음성은 저장하지 않아요.</p>}
+        </div>
+        <p className="voice-helper" role="status">{listening?'듣고 있어요. 계속 말씀하시거나 ‘말하기 끝’을 눌러 주세요.':'말씀하신 내용이 위 입력창에 들어갑니다. 음성은 저장하지 않아요.'}</p>
+        {(!voiceSupported||voiceError)&&<p className="voice-error" role="alert">{voiceError}</p>}
+        <button className="btn btn-primary btn-block concierge-submit" onClick={() => send()} disabled={loading}>
+          {hasRecommendation ? '전송' : '가조이에게 물어보기'}
         </button>
-      </div>
+      </div>}
     </div>
   );
 }
@@ -151,17 +262,20 @@ function buildLabelMap(result: ConciergeChatResponse): Record<string, string> {
   return map;
 }
 
-function labelFor(map: Record<string, string>, uri: string): string {
-  return map[uri] || shortUri(uri);
+function labelFor(map: Record<string, string>, uri: string, fallback = '상세 정보'): string {
+  return map[uri] || fallback;
+}
+
+function UnderstoodContext({ result }: { result: ConciergeChatResponse }) {
+  const rows = buildContextSummary(result.context || {});
+  return <section className="card understood-context-card"><h2>가조이가 이해한 내용</h2>{rows.length ? <dl>{rows.map(row => <div key={row.key}><dt><span aria-hidden="true">{row.icon}</span>{row.label}</dt><dd>{row.value}</dd></div>)}</dl> : <p className="muted-line">말씀하신 방문 상황을 바탕으로 일정을 구성했습니다.</p>}</section>;
 }
 
 function ResultPanel({
   result,
-  onViewItinerary,
   onFindNearbyRestaurants,
 }: {
   result: ConciergeChatResponse;
-  onViewItinerary: () => void;
   onFindNearbyRestaurants: () => void;
 }) {
   const rec = result.recommendation;
@@ -170,7 +284,8 @@ function ResultPanel({
 
   return (
     <div className="card" style={{ marginTop: 8 }}>
-      {result.nearbyRestaurantIntent && (
+      {rec && <><h2>가조이의 추천</h2>{rec.reasonSummary && <div className="visitor-reason-summary"><b>이렇게 추천한 이유</b><p>{rec.reasonSummary}</p></div>}</>}
+      {(result.nearbyDiscoveryIntent || result.nearbyRestaurantIntent) && (
         <div
           style={{
             marginBottom: 12,
@@ -182,25 +297,12 @@ function ResultPanel({
         >
           <b style={{ fontSize: 13 }}>📍 실제 내 위치 기준으로 찾아드릴까요?</b>
           <p style={{ fontSize: 12, color: 'var(--color-text-muted)', margin: '6px 0 10px' }}>
-            현재 위치를 기준으로 주변 실제 식당을 건강식/약선·채식·한식·해산물 등 종류별로 분류해서
+            현재 위치를 기준으로 맛집, 카페, 숙박, 온천, 체험 등 실제 주변 장소를 찾아볼 수 있어요.
             보여주고, 선택하시면 도보 경로와 길찾기까지 안내해드립니다.
           </p>
           <button className="btn btn-primary btn-block" onClick={onFindNearbyRestaurants}>
-            🍽️ 내 주변 식당 찾기 (실시간 위치 기반)
+            🧭 주변 즐길거리 찾기
           </button>
-        </div>
-      )}
-
-      {result.risks && result.risks.length > 0 && (
-        <div style={{ marginBottom: 12 }}>
-          <b style={{ fontSize: 12 }}>⚠️ 감지된 위험 요소</b>
-          <div className="tag-row">
-            {result.risks.map((r) => (
-              <span className="badge risk" key={r}>
-                {labelFor(labelMap, r)}
-              </span>
-            ))}
-          </div>
         </div>
       )}
 
@@ -211,7 +313,7 @@ function ResultPanel({
             <div className="itinerary-step" key={i} style={{ marginTop: 10 }}>
               <div className="step-index">{step.order ?? i + 1}</div>
               <div className="step-body">
-                <h3>{step.programLabel || step.label || labelFor(labelMap, step.programUri)}</h3>
+                <h3>{step.programLabel || step.label || labelFor(labelMap, step.programUri, '일정 항목')}</h3>
                 {step.facilityLabel && <p>📍 {step.facilityLabel}</p>}
                 {step.durationMinutes && <p>소요 시간: 약 {step.durationMinutes}분</p>}
               </div>
@@ -220,38 +322,6 @@ function ResultPanel({
         </div>
       )}
 
-      {rec && !itinerarySteps.length && (
-        <>
-          <b style={{ fontSize: 12 }}>추천 프로그램</b>
-          <div className="tag-row">
-            {(rec.recommendedPrograms || []).map((p: string) => (
-              <span className="badge" key={p}>
-                {labelFor(labelMap, p)}
-              </span>
-            ))}
-          </div>
-        </>
-      )}
-
-      {rec && (
-        <div style={{ marginTop: 12 }}>
-          <button className="btn btn-primary btn-block" onClick={onViewItinerary}>
-            📋 전체 일정 및 근거 보기
-          </button>
-        </div>
-      )}
-
-      {result.firedRules && result.firedRules.length > 0 && (
-        <div style={{ marginTop: 10 }}>
-          <b style={{ fontSize: 12 }}>발동된 규칙 (Policy/Rule)</b>
-          {result.firedRules.map((fr) => (
-            <div className="evidence-item" key={fr.ruleUri}>
-              <b>{fr.ruleLabel}</b>
-              {fr.policyLabel ? ` · 정책: ${fr.policyLabel}` : ''}
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

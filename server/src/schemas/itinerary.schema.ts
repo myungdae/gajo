@@ -3,6 +3,9 @@ import { Document } from 'mongoose';
 
 @Schema({ _id: false })
 export class ItineraryStep {
+  @Prop()
+  itemId?: string;
+
   @Prop({ required: true })
   order: number;
 
@@ -28,6 +31,12 @@ export class ItineraryStep {
 
   @Prop()
   requiresReservation?: boolean;
+
+  @Prop({ default: 'PLANNED' })
+  status?: string;
+
+  @Prop()
+  scheduledTime?: string;
 }
 export const ItineraryStepSchema = SchemaFactory.createForClass(ItineraryStep);
 

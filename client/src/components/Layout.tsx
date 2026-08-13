@@ -5,7 +5,6 @@ const navItems = [
   { to: '/concierge', label: 'AI 컨시어지', icon: '💬' },
   { to: '/map', label: '지도', icon: '🗺️' },
   { to: '/admin', label: '관리자', icon: '📊' },
-  { to: '/ontology', label: '온톨로지', icon: '🕸️' },
 ];
 
 export default function Layout() {
@@ -14,7 +13,7 @@ export default function Layout() {
       <header className="app-header">
         <div>
           <h1>가조 AI 컨시어지</h1>
-          <div className="subtitle">거창 가조 온천단지 · 온톨로지 기반 맞춤 안내</div>
+          <div className="subtitle">거창 가조 온천단지 · 맞춤 여행 안내</div>
         </div>
       </header>
       <main className="app-main">

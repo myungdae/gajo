@@ -18,7 +18,7 @@ export class RecommendationController {
    */
   @Post('itinerary')
   async itinerary(@Body() body: any) {
-    let contextDoc = body.contextNo ? await this.contextService.getContext(body.contextNo) : null;
+    let contextDoc: any = body.contextNo ? await this.contextService.getContext(body.contextNo) : null;
     let evidence: any[] = [];
     let firedRules: any[] = [];
     if (!contextDoc) {

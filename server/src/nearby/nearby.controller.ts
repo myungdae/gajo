@@ -1,90 +1,62 @@
-import { BadRequestException, Controller, Get, Query, ServiceUnavailableException } from '@nestjs/common';
-import { NearbyService } from './nearby.service';
+import { BadGatewayException, BadRequestException, Controller, GatewayTimeoutException, Get, Query, ServiceUnavailableException } from '@nestjs/common';
+import { NearbyCategory, NearbyService, NearbyServiceError } from './nearby.service';
 
-/**
- * /api/nearby/* — real-world, GPS-anchored POI lookup + route preview +
- * navigation handoff. Deliberately kept separate from the ontology-driven
- * `/api/recommendations` (which only knows about Gajo's own registered
- * Facility/Program individuals). This controller answers questions like
- * "지금 내 위치 기준으로 주변 건강식 식당이 어디 있어?" using live
- * third-party map data (Kakao Local API) rather than the domain ontology.
- */
+const CATEGORIES: NearbyCategory[] = ['FOOD', 'CAFE', 'LODGING', 'HOT_SPRING_WELLNESS', 'GOLF_SCREEN_GOLF', 'ACTIVITY', 'TOURISM_NATURE', 'CONVENIENCE', 'OTHER'];
+
 @Controller('api/nearby')
 export class NearbyController {
   constructor(private readonly nearby: NearbyService) {}
+  @Get('status') status() { return this.nearby.status(); }
 
-  @Get('status')
-  status() {
-    return { configured: this.nearby.isConfigured() };
+  @Get('discovery')
+  async discovery(@Query('category') categoryValue: string, @Query('lat') latValue: string, @Query('lng') lngValue: string,
+    @Query('radius') radiusValue?: string, @Query('weather') weather?: string, @Query('useDistance') useDistanceValue?: string,
+    @Query('transportMode') transportMode?: 'car' | 'foot') {
+    if (!CATEGORIES.includes(categoryValue as NearbyCategory)) throw new BadRequestException('지원하지 않는 주변 장소 종류입니다.');
+    const { lat, lng, radius } = this.validateSearch(latValue, lngValue, radiusValue);
+    this.ensureConfigured();
+    try {
+      const results = await this.nearby.search(categoryValue as NearbyCategory, lat, lng, radius, { weather, useDistance: useDistanceValue !== 'false', transportMode: transportMode === 'car' ? 'car' : 'foot' });
+      return { origin: { lat, lng, distanceTrusted: useDistanceValue !== 'false' }, category: categoryValue, radius, total: results.length, resultStatus: results.length ? 'AVAILABLE' : 'EMPTY', results };
+    } catch (error) { this.rethrow(error); }
   }
 
+  /** Backward-compatible restaurant endpoint. */
   @Get('restaurants')
-  async restaurants(
-    @Query('lat') latStr: string,
-    @Query('lng') lngStr: string,
-    @Query('radius') radiusStr?: string,
-  ) {
-    const lat = parseFloat(latStr);
-    const lng = parseFloat(lngStr);
-    if (Number.isNaN(lat) || Number.isNaN(lng)) {
-      throw new BadRequestException('lat, lng 쿼리 파라미터가 필요합니다.');
-    }
-    const radius = radiusStr ? Math.min(Math.max(parseInt(radiusStr, 10), 200), 5000) : 2000;
-    if (!this.nearby.isConfigured()) {
-      throw new ServiceUnavailableException(
-        'KAKAO_REST_API_KEY가 설정되지 않았습니다. 카카오 디벨로퍼스에서 REST API 키를 발급받아 서버 환경변수로 등록해주세요.',
-      );
-    }
-    const results = await this.nearby.searchRestaurants(lat, lng, radius);
-
-    const grouped: Record<string, typeof results> = {};
-    for (const r of results) {
-      grouped[r.categoryGroup] = grouped[r.categoryGroup] || [];
-      grouped[r.categoryGroup].push(r);
-    }
-
-    return {
-      origin: { lat, lng },
-      radius,
-      total: results.length,
-      groups: grouped,
-      results,
-    };
+  async restaurants(@Query('lat') latValue: string, @Query('lng') lngValue: string, @Query('radius') radiusValue?: string) {
+    const { lat, lng, radius } = this.validateSearch(latValue, lngValue, radiusValue); this.ensureConfigured();
+    try {
+      const results = await this.nearby.searchRestaurants(lat, lng, radius); const groups: Record<string, typeof results> = {};
+      for (const row of results) (groups[row.categoryGroup || '맛집'] ||= []).push(row);
+      return { origin: { lat, lng }, radius, total: results.length, resultStatus: results.length ? 'AVAILABLE' : 'EMPTY', groups, results };
+    } catch (error) { this.rethrow(error); }
   }
 
   @Get('route')
-  async route(
-    @Query('startLat') startLatStr: string,
-    @Query('startLng') startLngStr: string,
-    @Query('endLat') endLatStr: string,
-    @Query('endLng') endLngStr: string,
-    @Query('mode') mode?: 'foot' | 'car',
-  ) {
-    const startLat = parseFloat(startLatStr);
-    const startLng = parseFloat(startLngStr);
-    const endLat = parseFloat(endLatStr);
-    const endLng = parseFloat(endLngStr);
-    if ([startLat, startLng, endLat, endLng].some(Number.isNaN)) {
-      throw new BadRequestException('startLat, startLng, endLat, endLng 쿼리 파라미터가 필요합니다.');
-    }
-    const preview = await this.nearby.getRoutePreview(startLat, startLng, endLat, endLng, mode || 'foot');
-    if (!preview) {
-      return { available: false };
-    }
-    return { available: true, ...preview };
+  async route(@Query('startLat') a: string, @Query('startLng') b: string, @Query('endLat') c: string, @Query('endLng') d: string, @Query('mode') mode?: 'foot' | 'car') {
+    const values = [a, b, c, d].map(Number); if (values.some(value => !Number.isFinite(value))) throw new BadRequestException('올바른 출발지와 목적지 좌표가 필요합니다.');
+    const preview = await this.nearby.getRoutePreview(values[0], values[1], values[2], values[3], mode || 'foot'); return preview ? { available: true, ...preview } : { available: false };
   }
 
   @Get('navigation-links')
-  navigationLinks(
-    @Query('lat') latStr: string,
-    @Query('lng') lngStr: string,
-    @Query('name') name?: string,
-  ) {
-    const lat = parseFloat(latStr);
-    const lng = parseFloat(lngStr);
-    if (Number.isNaN(lat) || Number.isNaN(lng)) {
-      throw new BadRequestException('lat, lng 쿼리 파라미터가 필요합니다.');
-    }
+  navigationLinks(@Query('lat') latValue: string, @Query('lng') lngValue: string, @Query('name') name?: string) {
+    const lat = Number(latValue), lng = Number(lngValue); if (!Number.isFinite(lat) || !Number.isFinite(lng)) throw new BadRequestException('올바른 목적지 좌표가 필요합니다.');
     return this.nearby.buildNavigationLinks(lat, lng, name || '목적지');
+  }
+
+  private ensureConfigured() { if (!this.nearby.isConfigured()) throw new ServiceUnavailableException({ code: 'NOT_CONFIGURED', message: '주변 장소 검색은 현재 준비 중입니다. 다른 컨시어지 기능은 계속 이용할 수 있습니다.' }); }
+  private validateSearch(latValue: string, lngValue: string, radiusValue?: string) {
+    const lat = Number(latValue), lng = Number(lngValue), inputRadius = radiusValue ? Number(radiusValue) : 2000;
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) throw new BadRequestException('올바른 lat, lng 값이 필요합니다.');
+    if (!Number.isFinite(inputRadius)) throw new BadRequestException('radius는 숫자여야 합니다.');
+    return { lat, lng, radius: Math.min(Math.max(inputRadius, 200), 5000) };
+  }
+  private rethrow(error: unknown): never {
+    if (error instanceof NearbyServiceError) {
+      if (error.code === 'UPSTREAM_TIMEOUT') throw new GatewayTimeoutException({ code: error.code, message: error.message });
+      if (error.code === 'NOT_CONFIGURED') throw new ServiceUnavailableException({ code: error.code, message: error.message });
+      throw new BadGatewayException({ code: error.code, message: error.message });
+    }
+    throw error;
   }
 }

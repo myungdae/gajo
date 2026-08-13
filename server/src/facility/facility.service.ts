@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { OntologyIndividualDoc } from '../schemas/ontology-individual.schema';
+import { MasterDataService } from '../master-data/master-data.service';
 
 /**
  * FacilityService: CRUD over the Mongo-materialized `facilities` and
@@ -16,14 +17,25 @@ export class FacilityService {
   constructor(
     @InjectModel('FacilityModel') private facilityModel: Model<OntologyIndividualDoc>,
     @InjectModel('ProgramModel') private programModel: Model<OntologyIndividualDoc>,
+    private readonly masterData: MasterDataService,
   ) {}
 
-  listFacilities() {
-    return this.facilityModel.find().sort({ label: 1 }).lean();
+  async listFacilities() {
+    const rows=await this.facilityModel.find().sort({ label: 1 }).lean();
+    return rows.map(row=>this.enrich(row));
   }
 
-  getFacility(uri: string) {
-    return this.facilityModel.findOne({ uri }).lean();
+  operationalPlaces() {
+    return this.masterData.mapEligiblePlaces().map((place) => ({
+      uri: place.entityUri, label: place.canonicalLabelKo, description: place.description,
+      latitude: place.latitude, longitude: place.longitude, category: place.category,
+      operatingHours: place.operatingHours, walkingBurden: place.walkingBurden,
+      coordinateVerification: place.coordinateProvenance?.verificationStatus,
+    }));
+  }
+
+  async getFacility(uri: string) {
+    const row=await this.facilityModel.findOne({ uri }).lean(); return row?this.enrich(row):null;
   }
 
   updateFacility(uri: string, patch: Partial<OntologyIndividualDoc>) {
@@ -38,12 +50,12 @@ export class FacilityService {
     return this.facilityModel.findOneAndDelete({ uri });
   }
 
-  listPrograms() {
-    return this.programModel.find().sort({ label: 1 }).lean();
+  async listPrograms() {
+    const rows=await this.programModel.find().sort({ label: 1 }).lean();return rows.map(row=>this.enrichProgram(row));
   }
 
-  getProgram(uri: string) {
-    return this.programModel.findOne({ uri }).lean();
+  async getProgram(uri: string) {
+    const row=await this.programModel.findOne({ uri }).lean();return row?this.enrichProgram(row):null;
   }
 
   updateProgram(uri: string, patch: Partial<OntologyIndividualDoc>) {
@@ -57,4 +69,6 @@ export class FacilityService {
   deleteProgram(uri: string) {
     return this.programModel.findOneAndDelete({ uri });
   }
+  private enrich(row:any){const master=this.masterData.place(row.uri);if(!master)return row;return {...row,label:master.canonicalLabelKo,comment:master.description||row.comment,literalProps:{...row.literalProps,address:master.address,lotAddress:master.lotAddress,telephone:master.telephone,website:master.website,managementOrganization:master.managementOrganization,latitude:master.coordinateProvenance?.verificationStatus==='VERIFIED'?master.latitude:undefined,longitude:master.coordinateProvenance?.verificationStatus==='VERIFIED'?master.longitude:undefined,category:master.category,operatingHours:master.operatingHours,walkingBurden:master.walkingBurden,parking:master.parking,accessibilityNotes:master.accessibilityNotes},masterData:{canonicalId:master.canonicalId,verificationStatus:master.verificationStatus,provenance:master.detailsProvenance,fieldVerification:{coordinates:master.coordinateProvenance?.verificationStatus||'UNVERIFIED',address:master.addressProvenance?.verificationStatus||'UNVERIFIED',lotAddress:master.lotAddressProvenance?.verificationStatus||'UNVERIFIED',telephone:master.telephoneProvenance?.verificationStatus||'UNVERIFIED',operatingHours:master.operatingHours?.length&&master.operatingHours.every(h=>h.provenance.verificationStatus==='VERIFIED')?'VERIFIED':'UNVERIFIED'},coordinateProvenance:master.coordinateProvenance,sourceConflicts:master.sourceConflicts}}}
+  private enrichProgram(row:any){const master=this.masterData.programs().find(p=>p.entityUri===row.uri);return master?{...row,programNature:master.nature,masterData:{provenance:master.provenance}}:row}
 }

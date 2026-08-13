@@ -6,6 +6,7 @@ import { Recommendation, RecommendationDocument } from '../schemas/recommendatio
 import { Reservation, ReservationDocument } from '../schemas/reservation.schema';
 import { OntologyIndividualDoc } from '../schemas/ontology-individual.schema';
 import { OntologyGraphService } from '../ontology/ontology-graph.service';
+import { MasterDataService } from '../master-data/master-data.service';
 
 /**
  * AdminService: aggregate dashboard metrics + read access into the
@@ -21,6 +22,7 @@ export class AdminService {
     @InjectModel('ProgramModel') private programModel: Model<OntologyIndividualDoc>,
     @InjectModel('AgentModel') private agentModel: Model<OntologyIndividualDoc>,
     private readonly graph: OntologyGraphService,
+    private readonly masterData: MasterDataService,
   ) {}
 
   async dashboard() {
@@ -50,6 +52,7 @@ export class AdminService {
       recentContexts,
       recentRecommendations,
       recentReservations,
+      dataQuality: this.masterData.quality(),
     };
   }
 }

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { Reservation, ReservationDocument } from '../schemas/reservation.schema';
 import { GraphTraversalService } from '../context/graph-traversal.service';
 
@@ -57,7 +57,7 @@ export class ReservationService {
     partySize?: number;
     note?: string;
   }) {
-    const reservationNo = `RSV-${Date.now()}-${uuidv4().slice(0, 6)}`;
+    const reservationNo = `RSV-${Date.now()}-${randomUUID().slice(0, 6)}`;
     const doc = await this.model.create({
       reservationNo,
       visitorNo: params.visitorNo,

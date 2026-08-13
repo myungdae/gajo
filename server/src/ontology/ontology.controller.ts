@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Res } from '@nestjs/common';
+import { Controller, Get, Query, Res, ServiceUnavailableException } from '@nestjs/common';
 import type { Response } from 'express';
 import { OntologyGraphService } from './ontology-graph.service';
 
@@ -56,6 +56,7 @@ export class OntologyController {
 
   @Get('stats')
   stats() {
+    if (this.graph.size === 0) throw new ServiceUnavailableException('Ontology engine is not ready');
     return {
       totalTriples: this.graph.size,
       classCount: this.graph.listClasses().length,

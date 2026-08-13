@@ -48,15 +48,13 @@ export class OntologyGraphService implements OnModuleInit {
   private ttlSource = '';
 
   onModuleInit() {
-    const dataDir = path.join(__dirname, '..', 'ontology-data');
     const files = ['runtime_core_v1_0.ttl', 'gajo_ai_concierge_domain_v1_0.ttl'];
+    const candidates = [path.join(__dirname, '..', 'ontology-data'), path.join(process.cwd(), 'src', 'ontology-data'), path.join(process.cwd(), 'server', 'src', 'ontology-data')];
+    const dataDir = candidates.find((dir) => files.every((file) => fs.existsSync(path.join(dir, file))));
+    if (!dataDir) throw new Error(`Ontology files not found in: ${candidates.join(', ')}`);
     let totalQuads = 0;
     for (const file of files) {
       const filePath = path.join(dataDir, file);
-      if (!fs.existsSync(filePath)) {
-        this.logger.warn(`Ontology file not found: ${filePath}`);
-        continue;
-      }
       const content = fs.readFileSync(filePath, 'utf-8');
       this.ttlSource += `\n# === ${file} ===\n${content}\n`;
       const parser = new Parser();
@@ -64,6 +62,7 @@ export class OntologyGraphService implements OnModuleInit {
       this.store.addQuads(quads);
       totalQuads += quads.length;
     }
+    if (totalQuads === 0) throw new Error(`Ontology loaded zero RDF triples from ${dataDir}`);
     this.logger.log(
       `Loaded Runtime Operational Ontology: ${totalQuads} RDF triples from ${files.length} TTL files into in-memory graph`,
     );

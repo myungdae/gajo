@@ -1,11 +1,20 @@
+import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { shortUri } from '../utils/uri';
-import type { ConciergeChatResponse } from '../api/client';
+import { approveReplanning, hydrateRuntimeLocation, observeRuntime, rejectReplanning, type ConciergeChatResponse, type LiveRuntimeResponse, type ReplanningProposal } from '../api/client';
+import RecommendationEntityDetails from '../components/RecommendationEntityDetails';
+import GajoLiveStatus from '../components/GajoLiveStatus';
+import VisitorLocationControl from '../components/VisitorLocationControl';
+import MovementPlan from '../components/MovementPlan';
 
 export default function ItineraryPage() {
   const location = useLocation() as { state?: { result?: ConciergeChatResponse } };
   const navigate = useNavigate();
-  const result = location.state?.result;
+  const [result, setResult] = useState(location.state?.result);
+  const [proposal, setProposal] = useState<ReplanningProposal | null>(null);
+  const [runtimeMessage, setRuntimeMessage] = useState('');
+  const [observing, setObserving] = useState(false);
+  const [knownRuntimeContext, setKnownRuntimeContext] = useState<any>(location.state?.result?.context);
 
   if (!result || !result.recommendation) {
     return (
@@ -23,11 +32,53 @@ export default function ItineraryPage() {
 
   const rec = result.recommendation;
   const itinerarySteps: any[] = rec.itinerary?.steps || rec.steps || [];
+  const visitorLabel = (uri: string, fallback: string) => {
+    const step = itinerarySteps.find((item: any) => item.programUri === uri || item.facilityUri === uri);
+    if (step) return step.programUri === uri ? step.programLabel || fallback : step.facilityLabel || fallback;
+    const evidence = (rec.evidence || []).find((item: any) => item.subject === uri || item.object === uri);
+    return evidence?.subject === uri ? evidence.subjectLabel || fallback : evidence?.objectLabel || fallback;
+  };
   const reservationChecks: any[] =
     result.reservationCheck ||
     (result as any).runResult?.executionLog?.find((l: any) => l.taskLabel?.includes('예약'))?.output
       ?.reservationCheck ||
     [];
+
+  const observeHeavyRain = async () => {
+    setObserving(true);
+    setRuntimeMessage('');
+    try {
+      const previousContext = result.context || {};
+      const demoSteps = itinerarySteps.map((step: any) => ({ ...step, status: step.status || 'PLANNED' }));
+      const currentContext = { ...previousContext, contextNo: `${previousContext.contextNo || 'runtime'}-heavy-rain`, observedAt: new Date().toISOString(), currentTime: '13:00', precipitation: 20, weather: 'gajo:heavyRain', environmentConditions: [...(previousContext.environmentConditions || []), 'gajo:heavyRain'] };
+      const response = await observeRuntime({ previousContext, currentContext, itinerary: { ...rec.itinerary, steps: demoSteps } });
+      setProposal(response.proposedRevision);
+      setRuntimeMessage(response.suppressed ? '같은 조건의 제안이 이미 거절되어 다시 알리지 않습니다.' : response.replanningRecommended ? '' : '현재 미래 일정에는 재계획이 필요한 영향이 없습니다.');
+    } catch (error: any) {
+      setRuntimeMessage(`런타임 관측 실패: ${error?.message || '알 수 없는 오류'}`);
+    } finally { setObserving(false); }
+  };
+
+  const approve = async () => {
+    if (!proposal) return;
+    const response = await approveReplanning(proposal.proposalNo);
+    setResult((current: any) => ({ ...current, recommendation: { ...current.recommendation, itinerary: response.itinerary } }));
+    setProposal(null); setRuntimeMessage('승인된 미래 일정만 반영했습니다. 완료된 일정은 그대로 유지됩니다.');
+  };
+
+  const observeLiveRuntime = async (live: LiveRuntimeResponse) => {
+    const previousContext = knownRuntimeContext || result.context || {};
+    const response = await observeRuntime({ previousContext, currentContext: live.context, itinerary: rec.itinerary });
+    setKnownRuntimeContext(live.context);
+    setProposal(response.proposedRevision);
+    setRuntimeMessage(response.replanningRecommended ? '' : '현재 일정에 영향을 주는 변화는 없습니다.');
+  };
+
+  const reject = async () => {
+    if (!proposal) return;
+    await rejectReplanning(proposal.proposalNo);
+    setProposal(null); setRuntimeMessage('기존 일정을 유지합니다. 같은 조건은 다시 알리지 않습니다.');
+  };
 
   return (
     <div>
@@ -41,20 +92,38 @@ export default function ItineraryPage() {
         )}
       </div>
 
+      <MovementPlan result={result} />
+
+      <div className="card">
+        <h2>런타임 상황 확인</h2>
+        <VisitorLocationControl onLocation={async (gps) => observeLiveRuntime(await hydrateRuntimeLocation(knownRuntimeContext || result.context, gps))} />
+        <GajoLiveStatus contextNo={result.context?.contextNo} onLiveRefresh={observeLiveRuntime} />
+        {runtimeMessage && <p style={{ fontSize: 12 }}>{runtimeMessage}</p>}
+        <div className="demo-runtime-control">
+          <small>시연·테스트 기능</small>
+          <p>완료된 앞의 두 일정을 보존하고 13:00, 강수량 20mm 상황을 재현합니다.</p>
+          <button className="btn btn-outline btn-block" onClick={observeHeavyRain} disabled={observing}>
+            {observing ? '데모 실행 중…' : '데모: 13시 강한 비 발생'}
+          </button>
+        </div>
+      </div>
+
+      {proposal && (
+        <div className="card replanning-card">
+          <h2>상황이 바뀌었습니다</h2>
+          <div className="replanning-section"><b>무엇이 바뀌었나요?</b><p>강한 비가 시작되었습니다.</p></div>
+          <div className="replanning-section"><b>영향받는 일정</b>{proposal.removedItems.map((step: any) => <span className="badge risk" key={step.itemId || step.order}>{step.programLabel || step.facilityLabel || step.label}</span>)}</div>
+          <div className="replanning-section"><b>제안하는 대안</b>{proposal.proposedNewItems.map((step: any) => <span className="badge" key={step.itemId || step.order}>{step.programLabel || step.facilityLabel || step.label}</span>)}</div>
+          <div className="replanning-section"><b>추천 이유</b><p>{proposal.explanation}</p></div>
+          <div className="sequence-comparison"><div><b>기존 남은 일정</b><p>{itinerarySteps.filter((step:any)=>step.status!=='COMPLETED'&&step.status!=='SKIPPED').map((step:any)=>step.programLabel||step.facilityLabel||step.label).join(' → ')||'-'}</p></div><div><b>가조이 제안</b><p>{proposal.proposedFutureSteps.map((step:any)=>step.programLabel||step.facilityLabel||step.label).join(' → ')||'-'}</p></div></div>
+          {proposal.preservedHistory?.length>0&&<p className="preserved-history">🔒 완료된 {proposal.preservedHistory.length}개 일정은 그대로 보존됩니다.</p>}
+          <div className="grid-2"><button className="btn btn-primary" onClick={approve}>변경하기</button><button className="btn btn-outline" onClick={reject}>기존 일정 유지</button></div>
+        </div>
+      )}
+
       <div className="card">
         <h2>추천 프로그램 &amp; 시설</h2>
-        <div className="tag-row">
-          {(rec.recommendedPrograms || []).map((p: string) => (
-            <span className="badge" key={p}>
-              🧖 {shortUri(p)}
-            </span>
-          ))}
-          {(rec.recommendedFacilities || []).map((f: string) => (
-            <span className="badge muted" key={f}>
-              📍 {shortUri(f)}
-            </span>
-          ))}
-        </div>
+        <RecommendationEntityDetails result={result} />
       </div>
 
       {itinerarySteps.length > 0 && (
@@ -64,7 +133,7 @@ export default function ItineraryPage() {
             <div className="itinerary-step" key={i}>
               <div className="step-index">{step.order ?? i + 1}</div>
               <div className="step-body">
-                <h3>{step.label || step.facilityLabel || shortUri(step.facilityUri)}</h3>
+                <h3>{step.label || step.facilityLabel || '일정 항목'}</h3>
                 {step.programLabel && <p>{step.programLabel}</p>}
                 {step.durationMinutes && <p>소요 시간: 약 {step.durationMinutes}분</p>}
               </div>
@@ -78,7 +147,7 @@ export default function ItineraryPage() {
           <h2>예약 가능 여부</h2>
           {reservationChecks.map((r: any, i: number) => (
             <div key={i} style={{ marginBottom: 8, fontSize: 13 }}>
-              <b>{r.facilityLabel || shortUri(r.facilityUri)}</b> —{' '}
+              <b>{r.facilityLabel || visitorLabel(r.facilityUri, '시설 정보')}</b> —{' '}
               {r.available ? '✅ 예약 가능' : '❌ 예약 불가'}
               {r.availableSlots && (
                 <div className="tag-row">
@@ -100,7 +169,7 @@ export default function ItineraryPage() {
           <div className="tag-row">
             {rec.risks.map((r: string) => (
               <span className="badge risk" key={r}>
-                ⚠️ {shortUri(r)}
+                ⚠️ {visitorLabel(r, '안전 주의사항')}
               </span>
             ))}
           </div>
@@ -124,8 +193,8 @@ export default function ItineraryPage() {
         </div>
       )}
 
-      <button className="btn btn-primary btn-block" style={{ marginBottom: 10 }} onClick={() => navigate('/nearby-restaurants')}>
-        🍽️ 내 주변 식당 찾기 (실시간 위치 기반)
+      <button className="btn btn-primary btn-block" style={{ marginBottom: 10 }} onClick={() => navigate('/nearby-discovery')}>
+        🧭 주변 즐길거리 찾기
       </button>
 
       <button className="btn btn-outline btn-block" onClick={() => navigate('/concierge')}>

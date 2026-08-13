@@ -11,15 +11,20 @@ const quickPrompts = [
   },
   { emoji: '👨‍👩‍👧', title: '가족 힐링 여행', prompt: '가족과 함께 편안하게 힐링할 수 있는 온천 코스를 추천해주세요.' },
   { emoji: '🌧️', title: '비 오는 날 실내 코스', prompt: '오늘 비가 오는데 실내에서 즐길 수 있는 프로그램이 있을까요?' },
-  { emoji: '🍽️', title: '지역 맛집 추천', prompt: '온천 후 먹을 수 있는 지역 건강식 식당을 추천해주세요.', nearby: true },
+  { emoji: '🧭', title: '주변 즐길거리 찾기', prompt: '지금 주변에서 갈 만한 곳을 찾아주세요.', nearby: true },
 ];
 
 export default function HomePage() {
   const navigate = useNavigate();
   const [stats, setStats] = useState<any>(null);
+  const [statsState, setStatsState] = useState<'loading' | 'ready' | 'unavailable'>('loading');
 
   useEffect(() => {
-    fetchOntologyStats().then(setStats).catch(() => setStats(null));
+    fetchOntologyStats().then((value) => {
+      const valid = ['totalTriples', 'classCount', 'propertyCount', 'individualCount'].every((key) => Number.isFinite(value?.[key]) && value[key] > 0);
+      if (valid) { setStats(value); setStatsState('ready'); }
+      else setStatsState('unavailable');
+    }).catch(() => setStatsState('unavailable'));
   }, []);
 
   const goToChat = (prompt: string) => {
@@ -28,7 +33,7 @@ export default function HomePage() {
 
   const goToPrompt = (q: (typeof quickPrompts)[number]) => {
     if ((q as any).nearby) {
-      navigate('/nearby-restaurants');
+      navigate('/nearby-discovery');
     } else {
       goToChat(q.prompt);
     }
@@ -39,8 +44,8 @@ export default function HomePage() {
       <div className="hero">
         <h2>가조 온천단지에 오신 것을 환영합니다</h2>
         <p>
-          방문객의 건강 상태, 날씨, 혼잡도를 종합적으로 이해하는 에이전틱 AI 컨시어지가
-          온톨로지 그래프 추론을 통해 설명 가능한 맞춤 일정을 안내해드립니다.
+          함께 오신 분, 머무는 시간, 이동 방법, 걷기 편한 정도와 날씨 같은 상황을 함께 고려해
+          지금 가장 알맞은 일정을 추천해드립니다.
         </p>
       </div>
 
@@ -56,38 +61,19 @@ export default function HomePage() {
       <div className="card">
         <h2>AI 컨시어지에게 바로 물어보세요</h2>
         <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 12 }}>
-          자연어로 상황을 말씀해주시면, 룰 기반이 아닌 온톨로지 그래프 추론으로 안전하고
-          설명 가능한 추천을 제공합니다.
+          자연어로 편하게 말씀해주세요. 함께 오신 분, 머무는 시간, 이동 방법, 걷기 편한 정도,
+          날씨 같은 상황을 함께 고려해 지금 가장 알맞은 일정을 추천해드립니다.
         </p>
         <button className="btn btn-primary btn-block" onClick={() => navigate('/concierge')}>
           💬 AI 컨시어지 채팅 시작하기
         </button>
       </div>
 
-      <div className="card">
-        <h2>온톨로지 엔진 상태</h2>
-        {stats ? (
-          <div className="grid-2">
-            <div className="stat-box">
-              <div className="num">{stats.totalTriples}</div>
-              <div className="label">RDF 트리플</div>
-            </div>
-            <div className="stat-box">
-              <div className="num">{stats.classCount}</div>
-              <div className="label">클래스</div>
-            </div>
-            <div className="stat-box">
-              <div className="num">{stats.propertyCount}</div>
-              <div className="label">속성</div>
-            </div>
-            <div className="stat-box">
-              <div className="num">{stats.individualCount}</div>
-              <div className="label">개체</div>
-            </div>
-          </div>
-        ) : (
-          <div className="loading">온톨로지 서버에 연결 중...</div>
-        )}
+      <div className="card engine-status" aria-live="polite">
+        <h2>서비스 엔진 상태</h2>
+        {statsState === 'loading' && <p>엔진 상태 확인 중</p>}
+        {statsState === 'unavailable' && <p>엔진 상태를 확인할 수 없습니다.</p>}
+        {statsState === 'ready' && stats && <p>맞춤 일정 추천 엔진이 준비되었습니다.</p>}
       </div>
     </div>
   );

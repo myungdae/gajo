@@ -1,196 +1,130 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { Recommendation, RecommendationDocument } from '../schemas/recommendation.schema';
 import { Itinerary, ItineraryDocument } from '../schemas/itinerary.schema';
 import { GraphTraversalService } from '../context/graph-traversal.service';
-import { OntologyGraphService, TraversalStep } from '../ontology/ontology-graph.service';
+import { TraversalStep } from '../ontology/ontology-graph.service';
 import { roo } from '../ontology/ontology.constants';
+import { DecisionPipelineService } from './decision-pipeline.service';
+import type { EntityRuntimeState } from '../context/runtime-context.types';
+import { EntityLocationService } from '../context/entity-location.service';
+import { MasterDataService } from '../master-data/master-data.service';
+import { isOperationalLocation } from '../context/location-confidence';
 
-/**
- * RecommendationService: the "Recommendation" step of the architecture.
- * Given a persisted RuntimeContext document (health conditions, wellness
- * goals, environment conditions, their semantic expansion, and identified
- * risks), this service:
- *
- *   1. Finds every gajo:Program suitable for the active health
- *      conditions / wellness goals (suitableForHealthCondition /
- *      suitableForWellnessGoal object properties),
- *   2. Deprioritizes / annotates programs & facilities affected by the
- *      active environment conditions (affectedByEnvironment),
- *   3. Surfaces which candidate programs/facilities mitigate the
- *      identified risks (mitigatesRisk),
- *   4. Ranks and builds an ordered Itinerary from the top matches,
- *   5. Persists both the Recommendation and its Itinerary with a full
- *      evidence trail (every RDF edge used to justify the pick), and
- *   6. Computes a confidence score from evidence density.
- *
- * CRITICAL PRINCIPLE (per spec): no hardcoded "if kneePain then X"
- * business rule lives here — every program in `recommendedPrograms` is
- * present because a real `suitableForHealthCondition` /
- * `suitableForWellnessGoal` RDF edge in the .ttl graph connects it to one
- * of the (possibly semantically-expanded) active conditions.
- */
+/** Ontology candidates are hydrated with runtime observations, then pass Feasibility -> Suitability -> Sequence -> Explanation. */
 @Injectable()
 export class RecommendationService {
   constructor(
     @InjectModel(Recommendation.name) private recModel: Model<RecommendationDocument>,
     @InjectModel(Itinerary.name) private itineraryModel: Model<ItineraryDocument>,
     private readonly traversal: GraphTraversalService,
-    private readonly graph: OntologyGraphService,
+    private readonly decisionPipeline: DecisionPipelineService,
+    private readonly locations: EntityLocationService,
+    private readonly masterData: MasterDataService,
   ) {}
 
   async buildRecommendation(contextDoc: any) {
-    const conditionSeeds: string[] = [
-      ...(contextDoc.healthConditions || []),
-      ...(contextDoc.wellnessGoals || []),
-    ];
+    const conditionSeeds: string[] = [...(contextDoc.healthConditions || []), ...(contextDoc.wellnessGoals || [])];
     const expanded: string[] = contextDoc.expandedConditions || [];
     const environment: string[] = contextDoc.environmentConditions || [];
     const risks: string[] = contextDoc.risks || [];
-
-    // 1. Direct suitability match (seeds + expanded conditions, since e.g.
-    //    a Program might be suitableForHealthCondition kneePain directly,
-    //    while another matches only on the expanded shortWalkingDistance).
-    const matchPool = [...conditionSeeds, ...expanded];
-    const suitable = this.traversal.findSuitablePrograms(matchPool);
-
-    // 2. Environment-affected programs/facilities (used to filter OUT
-    //    outdoor/rain-affected candidates and to explain why they were
-    //    excluded).
+    const suitable = this.traversal.findSuitablePrograms([...conditionSeeds, ...expanded]);
     const envAffected = this.traversal.findEnvironmentAffected(environment);
-    const envAffectedUris = new Set(envAffected.map((e) => e.uri));
-
-    // 3. Risk mitigation bonus: programs/facilities with roo:mitigatesRisk
-    //    covering an identified risk are boosted.
+    const envAffectedUris = new Set(envAffected.map((item) => item.uri));
     const mitigations = this.traversal.findRiskMitigations(risks);
-    const mitigationMap = new Map<string, string[]>();
-    for (const m of mitigations) mitigationMap.set(m.uri, m.matchedOn);
+    const mitigationMap = new Map(mitigations.map((item) => [item.uri, item.matchedOn]));
+    const runtimeStateMap = new Map<string, EntityRuntimeState>(
+      (contextDoc.runtimeStates || []).map((state: EntityRuntimeState) => [state.entityUri, state]),
+    );
 
-    // Rank: suitable (not env-affected) first, ordered by
-    // (mitigatesRisk bonus, then number of matched conditions) descending.
-    const ranked = suitable
-      .filter((s) => !envAffectedUris.has(s.programUri))
-      .map((s) => ({
-        ...s,
-        mitigatesRisk: mitigationMap.get(s.programUri) || [],
-        score: s.matchedOn.length * 10 + (mitigationMap.get(s.programUri)?.length || 0) * 5,
-      }))
-      .sort((a, b) => b.score - a.score);
-
-    const top = ranked.slice(0, 4);
-
-    // Build evidence: semantic expansion steps (already on the context) +
-    // suitability edges + environment-exclusion edges + risk-mitigation edges.
-    const evidence: TraversalStep[] = [];
-    for (const t of top) {
-      for (const matchedUri of t.matchedOn) {
-        evidence.push({
-          subject: t.programUri,
-          subjectLabel: this.traversal.label(t.programUri),
-          predicate: 'suitableFor',
-          predicateLabel: '적합하다',
-          object: matchedUri,
-          objectLabel: this.traversal.label(matchedUri),
-        });
-      }
-      for (const riskUri of t.mitigatesRisk) {
-        evidence.push({
-          subject: t.programUri,
-          subjectLabel: this.traversal.label(t.programUri),
-          predicate: roo('mitigatesRisk'),
-          predicateLabel: '위험을 완화한다',
-          object: riskUri,
-          objectLabel: this.traversal.label(riskUri),
-        });
-      }
-    }
-    for (const env of envAffected) {
-      evidence.push({
-        subject: env.uri,
-        subjectLabel: this.traversal.label(env.uri),
-        predicate: 'affectedByEnvironment(excluded)',
-        predicateLabel: '환경 영향으로 제외됨',
-        object: env.matchedOn[0],
-        objectLabel: this.traversal.label(env.matchedOn[0]),
-      });
-    }
-
-    // Resolve facility for each recommended program (heldAtFacility).
-    const stepInputs = top.map((t) => {
-      const props = this.traversal.objectProps(t.programUri);
-      const facilityUri = (props['heldAtFacility'] || [])[0];
-      const literals = this.traversal.literalProps(t.programUri);
+    const candidates = suitable.map((item) => {
+      const props = this.traversal.objectProps(item.programUri);
+      const literals = this.traversal.literalProps(item.programUri);
+      const facilityUri = (props.heldAtFacility || [])[0];
+      const facilityLiterals = facilityUri ? this.traversal.literalProps(facilityUri) : {};
+      const mitigatesRisk = mitigationMap.get(item.programUri) || mitigationMap.get(facilityUri) || [];
+      const coordinates = this.locations.coordinatesFor(item.programUri, facilityUri);
+      const origin = isOperationalLocation(contextDoc) ? { latitude: contextDoc.latitude, longitude: contextDoc.longitude } : undefined;
+      const distance = this.locations.distance(origin, coordinates);
       return {
-        programUri: t.programUri,
-        programLabel: this.traversal.label(t.programUri),
+        programUri: item.programUri,
+        programLabel: this.traversal.label(item.programUri),
         facilityUri,
         facilityLabel: facilityUri ? this.traversal.label(facilityUri) : undefined,
-        durationMinutes: literals.durationMinutes ? parseInt(literals.durationMinutes, 10) : undefined,
-        requiresReservation: literals.requiresReservation === 'true',
+        matchedOn: item.matchedOn,
+        matchedLabels: item.matchedOn.map((uri) => this.traversal.label(uri)),
+        mitigatesRisk,
+        mitigationLabels: mitigatesRisk.map((uri) => this.traversal.label(uri)),
+        requiredMobility: props.requiresMobilityCondition || [],
+        affectedByEnvironment: envAffectedUris.has(item.programUri) ? environment : [],
+        durationMinutes: literals.durationMinutes ? Number.parseInt(literals.durationMinutes, 10) : undefined,
+        requiresReservation: literals.requiresReservation === 'true' || facilityLiterals.requiresReservation === 'true',
+        isIndoor: facilityLiterals.isIndoor === undefined ? undefined : facilityLiterals.isIndoor === 'true',
+        isAccessible: facilityLiterals.isAccessible === undefined ? undefined : facilityLiterals.isAccessible === 'true',
+        isMeal: /FoodProgram|Meal|Food/i.test(item.programUri),
+        runtime: runtimeStateMap.get(item.programUri) || (facilityUri ? runtimeStateMap.get(facilityUri) : undefined) || (facilityUri ? { entityUri: facilityUri, ...this.masterData.deriveOperatingState(facilityUri, contextDoc.dayOfWeek, contextDoc.currentTime, contextDoc.currentDate) } : undefined),
+        coordinates, ...distance, estimatedTravelMinutes: this.locations.estimateTravelMinutes(distance.distanceMeters, contextDoc.transportMode),
       };
     });
 
-    const itineraryNo = `IT-${Date.now()}-${uuidv4().slice(0, 6)}`;
-    const confidenceScore = Math.min(0.5 + top.length * 0.1 + (mitigations.length ? 0.1 : 0), 0.98);
-
-    const itinerary = await this.itineraryModel.create({
-      itineraryNo,
-      runtimeContextId: contextDoc.contextNo,
-      label: `${contextDoc.contextNo} 기반 추천 일정`,
-      steps: stepInputs.map((s, idx) => ({
-        order: idx + 1,
-        label: `${idx + 1}단계: ${s.programLabel}`,
-        facilityUri: s.facilityUri || 'unknown',
-        facilityLabel: s.facilityLabel,
-        programUri: s.programUri,
-        programLabel: s.programLabel,
-        durationMinutes: s.durationMinutes,
-        requiresReservation: s.requiresReservation,
-      })),
-      confidenceScore,
-      risks,
+    const decision = this.decisionPipeline.run(candidates, {
+      currentTime: contextDoc.currentTime,
+      stayUntil: contextDoc.stayUntil,
+      environmentConditions: environment,
+      expandedConditions: expanded,
+      walkingLevel: contextDoc.walkingLevel,
+      latitude: isOperationalLocation(contextDoc)?contextDoc.latitude:undefined, longitude: isOperationalLocation(contextDoc)?contextDoc.longitude:undefined, transportMode: contextDoc.transportMode,
+      maxWalkingDistanceMeters: contextDoc.maxWalkingDistanceMeters,
     });
+    const top = decision.sequenced.slice(0, 4);
 
-    const reasonParts: string[] = [];
-    for (const seed of conditionSeeds) {
-      reasonParts.push(`${this.traversal.label(seed)}`);
+    const evidence: TraversalStep[] = [];
+    for (const item of top) {
+      for (const matchedUri of item.matchedOn) evidence.push({
+        subject: item.programUri, subjectLabel: item.programLabel, predicate: 'suitableFor',
+        predicateLabel: '적합하다', object: matchedUri, objectLabel: this.traversal.label(matchedUri),
+      });
+      for (const riskUri of item.mitigatesRisk) evidence.push({
+        subject: item.programUri, subjectLabel: item.programLabel, predicate: roo('mitigatesRisk'),
+        predicateLabel: '위험을 완화한다', object: riskUri, objectLabel: this.traversal.label(riskUri),
+      });
     }
-    const reasonSummary = `${reasonParts.join(', ')} 조건을 바탕으로, 온톨로지 그래프 탐색을 통해 ${top
-      .map((t) => this.traversal.label(t.programUri))
-      .join(', ')}을(를) 추천합니다.`;
-
-    const recommendationNo = `REC-${Date.now()}-${uuidv4().slice(0, 6)}`;
-    const rec = await this.recModel.create({
-      recommendationNo,
-      runtimeContextId: contextDoc.contextNo,
-      itineraryNo,
-      recommendedPrograms: top.map((t) => t.programUri),
-      recommendedFacilities: stepInputs.map((s) => s.facilityUri).filter(Boolean),
-      reasonSummary,
-      evidence,
-      risks,
-      decisionMadeBy: [roo('semanticPlannerAgent')],
-      confidenceScore,
-      nextAction: 'reservation',
+    for (const affected of envAffected) evidence.push({
+      subject: affected.uri, subjectLabel: this.traversal.label(affected.uri), predicate: 'affectedByEnvironment',
+      predicateLabel: '환경의 영향을 받는다', object: affected.matchedOn[0], objectLabel: this.traversal.label(affected.matchedOn[0]),
     });
 
-    return {
-      ...rec.toObject(),
-      itinerary: itinerary.toObject(),
+    const itineraryNo = `IT-${Date.now()}-${randomUUID().slice(0, 6)}`;
+    const confidenceScore = Math.min(0.5 + top.length * 0.1 + (mitigations.length ? 0.1 : 0), 0.98);
+    const itinerary = await this.itineraryModel.create({
+      itineraryNo, runtimeContextId: contextDoc.contextNo, label: `${contextDoc.contextNo} 기반 추천 일정`,
+      steps: top.map((item, index) => ({ itemId: `STEP-${randomUUID().slice(0, 8)}`, order: index + 1, label: `${index + 1}단계: ${item.programLabel}`,
+        facilityUri: item.facilityUri || 'unknown', facilityLabel: item.facilityLabel, programUri: item.programUri,
+        programLabel: item.programLabel, durationMinutes: item.durationMinutes,
+        requiresReservation: item.requiresReservation, status: 'PLANNED', distanceMeters: item.distanceMeters, estimatedTravelMinutes: item.estimatedTravelMinutes })),
+      confidenceScore, risks,
+    });
+
+    const recommendationNo = `REC-${Date.now()}-${randomUUID().slice(0, 6)}`;
+    const decisionStages = {
+      feasibility: { feasible: decision.feasible.map((c) => c.programUri), rejected: decision.rejected.map((r) => ({ programUri: r.candidate.programUri, reasons: r.reasons, reasonCodes: r.reasonCodes })) },
+      suitability: decision.ranked.map((c) => ({ programUri: c.programUri, score: c.score })),
+      sequence: top.map((c, index) => ({ programUri: c.programUri, order: index + 1 })),
+      explanation: decision.reasonSummary,
     };
+    const rec = await this.recModel.create({
+      recommendationNo, runtimeContextId: contextDoc.contextNo, itineraryNo,
+      recommendedPrograms: top.map((item) => item.programUri),
+      recommendedFacilities: top.map((item) => item.facilityUri).filter((uri): uri is string => Boolean(uri)),
+      reasonSummary: decision.reasonSummary, evidence, risks, decisionMadeBy: [roo('semanticPlannerAgent')],
+      confidenceScore, nextAction: 'reservation', decisionStages,
+    });
+    return { ...rec.toObject(), itinerary: itinerary.toObject() };
   }
 
-  async getRecommendation(recommendationNo: string) {
-    return this.recModel.findOne({ recommendationNo }).lean();
-  }
-
-  async getItinerary(itineraryNo: string) {
-    return this.itineraryModel.findOne({ itineraryNo }).lean();
-  }
-
-  async listRecommendations(limit = 50) {
-    return this.recModel.find().sort({ createdAt: -1 }).limit(limit).lean();
-  }
+  getRecommendation(recommendationNo: string) { return this.recModel.findOne({ recommendationNo }).lean(); }
+  getItinerary(itineraryNo: string) { return this.itineraryModel.findOne({ itineraryNo }).lean(); }
+  listRecommendations(limit = 50) { return this.recModel.find().sort({ createdAt: -1 }).limit(limit).lean(); }
 }

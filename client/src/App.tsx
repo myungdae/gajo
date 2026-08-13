@@ -18,6 +18,7 @@ export default function App() {
           <Route path="/itinerary" element={<ItineraryPage />} />
           <Route path="/map" element={<MapPage />} />
           <Route path="/nearby-restaurants" element={<NearbyRestaurantsPage />} />
+          <Route path="/nearby-discovery" element={<NearbyRestaurantsPage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/ontology" element={<OntologyExplorerPage />} />
         </Route>

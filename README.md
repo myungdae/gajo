@@ -67,6 +67,23 @@ Implemented modules/services:
 `MONGODB_URI`, defaults to `mongodb://localhost:27017/gajo`) and a global
 `ConfigModule`.
 
+### Optional OpenAI context extraction
+
+Natural-language extraction always runs the built-in deterministic Korean parser. To additionally enable the server-side OpenAI extractor, copy `server/.env.example` to `server/.env` and set:
+
+```env
+CONTEXT_EXTRACTOR_PROVIDER=openai
+OPENAI_API_KEY=your_server_side_key
+OPENAI_CONTEXT_MODEL=your_structured_output_capable_model
+OPENAI_CONTEXT_TIMEOUT_MS=8000
+MAX_CONTEXT_LLM_CALLS_PER_SESSION=3
+# Optional admin-only estimates; set these to the configured model's current pricing.
+OPENAI_CONTEXT_INPUT_USD_PER_MILLION_TOKENS=
+OPENAI_CONTEXT_OUTPUT_USD_PER_MILLION_TOKENS=
+```
+
+Restart the server after changing these values. The key remains server-side and is never returned to the browser. If configuration is absent, the request times out, or provider output is invalid, Gajo continues with deterministic extraction only. Extraction diagnostics are stored under the runtime context's admin/debug `raw.extractionDebug` field; provider request and response bodies are not persisted.
+
 ### Run
 
 ```bash
@@ -183,3 +200,31 @@ npm run build && npm run preview
 - `/api/ontology/stats`, `/api/facilities`, `/api/admin/dashboard` 등 주요
   엔드포인트도 정상 응답 확인.
 - 프론트엔드 6개 페이지 모두 빌드 성공 및 dev 서버 기동 확인.
+
+## Live runtime weather configuration
+
+The live runtime endpoint uses Open-Meteo without an API key. The canonical default for the Gajo hot-spring area is latitude `35.7423`, longitude `127.9528`, and timezone `Asia/Seoul`.
+
+Optional server environment overrides:
+
+```text
+GAJO_LATITUDE=35.7423
+GAJO_LONGITUDE=127.9528
+GAJO_TIMEZONE=Asia/Seoul
+OPEN_METEO_TIMEOUT_MS=3500
+```
+## Nearby Restaurants 로컬 설정
+
+실제 비밀값은 소스나 클라이언트 환경변수에 넣지 않습니다. `server/.env.example`을 `server/.env`로 복사한 뒤 서버 전용 `KAKAO_REST_API_KEY`에 Kakao Developers의 **REST API 키**를 설정합니다. 선택적인 `KAKAO_LOCAL_TIMEOUT_MS`의 기본값은 5000ms입니다.
+
+Docker Compose에서는 저장소 루트 `.env`에 같은 값을 설정합니다. Compose는 키를 API 컨테이너에만 전달하며 클라이언트 번들에는 포함하지 않습니다. 환경변수는 시작 시 읽으므로 변경 후 API 서버 또는 API 컨테이너를 재시작해야 합니다.
+
+```powershell
+Invoke-RestMethod http://localhost:3000/api/nearby/status
+# configured=True, state=READY 확인
+
+Invoke-RestMethod "http://localhost:3000/api/nearby/restaurants?lat=35.6987576&lng=128.0231031&radius=2500"
+# total, resultStatus, groups 확인
+```
+
+브라우저에서는 `http://localhost:5173/nearby-restaurants`를 열고 현재 위치 사용 버튼을 선택합니다. GPS는 검색 요청에만 사용되고 저장되지 않습니다. 설정이나 외부 API에 문제가 있으면 주변 검색만 사용할 수 없다는 안내를 표시하며 나머지 컨시어지 기능은 계속 동작합니다.
