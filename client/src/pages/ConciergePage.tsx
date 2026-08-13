@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { postConciergeChat, runDemoScenario, type ConciergeChatResponse, type CreateContextInput } from '../api/client';
 import GajoLiveStatus from '../components/GajoLiveStatus';
 import VisitorLocationControl from '../components/VisitorLocationControl';
@@ -8,6 +8,7 @@ import { getSessionLocation } from '../utils/visitorLocation';
 import { mergeCommittedSpeech, renderSpeechText, SPEECH_RESTART_DELAY_MS } from '../utils/speechTranscript';
 import { buildContextSummary } from '../utils/contextSummary';
 import StructuredVisitorIntake from '../components/StructuredVisitorIntake';
+import { getQuickStartPreset } from '../quickStartPresets';
 
 interface Message {
   role: 'user' | 'ai';
@@ -28,6 +29,8 @@ function summarizeResult(result: ConciergeChatResponse): string {
 
 export default function ConciergePage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const preset = getQuickStartPreset((location.state as {quickStartPreset?:unknown}|null)?.quickStartPreset);
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'ai',
@@ -40,7 +43,7 @@ export default function ConciergePage() {
   const [voiceSupported, setVoiceSupported] = useState(true);
   const [voiceError, setVoiceError] = useState('');
   const [freeTextOpen,setFreeTextOpen]=useState(false);
-  const [structuredDraft,setStructuredDraft]=useState<CreateContextInput>({inputMode:'STRUCTURED'});
+  const [structuredDraft,setStructuredDraft]=useState<CreateContextInput>(()=>preset?.context||{inputMode:'STRUCTURED'});
   const contextSessionIdRef=useRef(sessionStorage.getItem('gajo-context-session')||crypto.randomUUID());
   const recognitionRef = useRef<any>(null);
   const userWantsListeningRef = useRef(false);
@@ -190,7 +193,7 @@ export default function ConciergePage() {
       </div>}
 
       {!hasRecommendation && <>
-        <StructuredVisitorIntake loading={loading} onChange={setStructuredDraft} onSubmit={structured=>send('',structured)}/>
+        <StructuredVisitorIntake loading={loading} initialValues={preset?.intakeValues} initialPreferences={preset?.selectedPreferences} entryMessage={preset?.entryMessage} onChange={setStructuredDraft} onSubmit={structured=>send('',structured)}/>
         <div className="free-text-option"><span>또는</span><button type="button" className="btn btn-outline btn-block" aria-expanded={freeTextOpen} onClick={()=>setFreeTextOpen(open=>!open)}>그냥 말로 알려줄게요</button><p>선택하기 번거로우시면 편하게 말씀해 주세요.</p></div>
       </>}
 

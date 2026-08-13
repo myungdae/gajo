@@ -58,4 +58,15 @@ describe('RuntimeContextService natural-language hydration', () => {
     expect(created.expandedConditions).toContain('https://gajo-wellness.kr/ontology#shortWalkingDistance');
     expect(created.expandedConditions.some((value:string)=>value.endsWith('#elderlyCompanion'))).toBe(false);
   });
+
+  it('passes a structured quick-start preset into RuntimeContext without invoking the extractor',async()=>{
+    let created:any;const model={create:jest.fn(async(value:any)=>{created=value;return{toObject:()=>value}})} as any;
+    const traversal={expandConditions:()=>({expanded:[],risks:[],evidence:[]}),evaluateRules:()=>[],individualsOfIncludingSubclasses:()=>['operation']} as any;
+    const gateway={extract:jest.fn().mockResolvedValue({decision:'SKIP_LLM',invocationReason:'NOT_REQUIRED',result:{status:'DISABLED',provider:'none',latencyMs:0,errorCode:'NOT_REQUIRED'}})} as any;
+    await new RuntimeContextService(model,traversal,{} as any,gateway).createContext({inputMode:'STRUCTURED',companions:[{relationship:'parent',healthConditions:[]}],walkingLevel:'LOW',companionConstraints:['shortWalkingDistance'],wellnessGoals:['restAndRecovery'],activityPreferences:['REST_AND_RECOVERY']});
+    expect(gateway.extract).toHaveBeenCalledWith({text:undefined,sessionId:undefined,followup:undefined});
+    expect(created).toMatchObject({walkingLevel:'LOW',companionConstraints:['shortWalkingDistance'],activityPreferences:['REST_AND_RECOVERY'],companions:[{relationship:'parent'}]});
+    expect(created.wellnessGoals[0]).toMatch(/#restAndRecovery$/);
+    expect(created.raw.extractionDebug).toMatchObject({gatewayDecision:'SKIP_LLM',extractorInvocationReason:'NOT_REQUIRED'});
+  });
 });

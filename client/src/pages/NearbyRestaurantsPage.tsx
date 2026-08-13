@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { fetchLiveRuntimeContext, fetchNavigationLinks, fetchNearbyDiscovery, fetchNearbyStatus, type NearbyCategory, type NearbyPlace } from '../api/client';
-import { isOperationalLocation, observeVisitorLocation } from '../utils/visitorLocation';
+import { getSessionLocation, isOperationalLocation, observeVisitorLocation } from '../utils/visitorLocation';
+import { getQuickStartPreset } from '../quickStartPresets';
 
 const GAJO_CENTER: [number, number] = [35.698758, 128.023103];
 const CATEGORIES: { id: NearbyCategory; emoji: string; label: string }[] = [
@@ -19,6 +21,8 @@ const canonicalIcon = L.divIcon({ className: 'nearby-marker canonical', html: '<
 function Recenter({ center }: { center: [number, number] }) { const map = useMap(); useEffect(() => { map.setView(center, 14); }, [map, center]); return null; }
 
 export default function NearbyRestaurantsPage() {
+  const routeLocation=useLocation();
+  const preset=getQuickStartPreset((routeLocation.state as {quickStartPreset?:unknown}|null)?.quickStartPreset);
   const [category, setCategory] = useState<NearbyCategory>('FOOD');
   const [origin, setOrigin] = useState<[number, number] | null>(null);
   const [distanceTrusted, setDistanceTrusted] = useState(false);
@@ -35,8 +39,8 @@ export default function NearbyRestaurantsPage() {
     fetchNearbyStatus().then(s => setConfigured(s.configured)).catch(() => setConfigured(false));
     fetchLiveRuntimeContext().then(live => setWeather(live.context?.weatherState || live.context?.weather)).catch(() => setWeather(undefined));
   }, []);
-  const locate = async () => {
-    const gps = await observeVisitorLocation(); const usable = isOperationalLocation(gps);
+  const locate = async (reuse=true) => {
+    const cached=reuse?getSessionLocation():null; const gps=isOperationalLocation(cached)?cached!:await observeVisitorLocation(); const usable = isOperationalLocation(gps);
     setOrigin(usable ? [gps.latitude!, gps.longitude!] : GAJO_CENTER); setDistanceTrusted(usable);
     if (!usable) setNotice('현재 위치를 정확하게 확인하지 못했습니다. 위치를 다시 확인하면 가까운 장소와 이동시간을 더 정확하게 안내할 수 있습니다. 가조 중심으로 장소만 둘러볼 수 있습니다.');
     else setNotice(null);
@@ -54,12 +58,12 @@ export default function NearbyRestaurantsPage() {
   const center = useMemo<[number, number]>(() => selected ? [selected.lat, selected.lng] : origin || GAJO_CENTER, [selected, origin]);
 
   return <div className="nearby-discovery">
-    <section className="card"><small className="eyebrow">주변 즐길거리 찾기</small><h1>지금 주변에서 무엇을 찾으세요?</h1><p className="text-muted">원하는 종류를 누르면 실제 주변 장소를 찾아드려요.</p></section>
-    {configured === false && <div className="card status-warning">주변 장소 검색은 현재 준비 중입니다. 다른 컨시어지 기능은 계속 이용할 수 있습니다.</div>}
+    <section className="card"><small className="eyebrow">주변 즐길거리 찾기</small><h1>지금 주변에서 무엇을 찾으세요?</h1>{preset?.id==='nearby'&&<p className="quick-start-entry-message" role="status">{preset.entryMessage}</p>}<p className="text-muted">원하는 종류를 누르면 실제 주변 장소를 찾아드려요.</p></section>
+    {configured === false && <div className="card status-warning">현재 위치를 확인하면 주변 장소와 이동 정보를 더 정확하게 안내해드릴 수 있습니다.</div>}
     <section className="nearby-category-grid" aria-label="주변 장소 종류">
       {CATEGORIES.map(item => <button key={item.id} className={`nearby-category-card ${category === item.id ? 'active' : ''}`} aria-pressed={category === item.id} onClick={() => setCategory(item.id)}><span aria-hidden>{item.emoji}</span><b>{item.label}</b></button>)}
     </section>
-    {notice && <div className="card location-confidence-message"><p>{notice}</p><button className="btn btn-outline" onClick={locate}>위치 다시 확인</button></div>}
+    {notice && <div className="card location-confidence-message"><p>{notice}</p><button className="btn btn-outline" onClick={()=>locate(false)}>위치 다시 확인</button></div>}
     {loading && <div className="loading">주변 장소를 찾고 있어요…</div>}{error && <div className="card status-warning">{error}</div>}
     {!loading && !error && origin && <>
       <div className="card nearby-map-card"><MapContainer center={center} zoom={14} style={{ height: 330, width: '100%' }}><Recenter center={center}/><TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
