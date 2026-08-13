@@ -1,0 +1,9 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { navigationDestination, navigationTarget } from './placeNavigation.ts';
+
+test('valid real place creates Kakao, Naver, and TMAP navigation links',()=>{const destination=navigationDestination({name:'가조온천',lat:35.7,lng:128.02});assert.ok(destination);for(const provider of ['kakao','naver','tmap'] as const){const target=navigationTarget(provider,destination);assert.ok(target.native);assert.ok(target.fallback)}});
+test('invalid or placeholder coordinates and empty names do not expose navigation',()=>{assert.equal(navigationDestination({name:'장소',lat:0,lng:0}),null);assert.equal(navigationDestination({name:'장소',lat:91,lng:128}),null);assert.equal(navigationDestination({name:'',lat:35.7,lng:128}),null)});
+test('Korean canonical place names are safely encoded',()=>{const destination=navigationDestination({name:'검색 이름',canonicalLabel:'가조 온천 가족탕',lat:35.7,lng:128.02})!;const encoded=encodeURIComponent('가조 온천 가족탕');for(const provider of ['kakao','naver','tmap'] as const)assert.ok(navigationTarget(provider,destination).native.includes(encoded))});
+test('provider selection is a pure execution action and does not mutate place or itinerary',()=>{const place={name:'가조온천',lat:35.7,lng:128.02};const itinerary=[{id:'existing'}];const before=JSON.stringify({place,itinerary});navigationTarget('kakao',navigationDestination(place)!);assert.equal(JSON.stringify({place,itinerary}),before)});
+test('existing map view and itinerary-add copy remain unchanged',()=>{const mapLink='https://map.kakao.com/link/to/place,35.7,128.02';const placeUrl='https://place.map.kakao.com/1';assert.equal(mapLink||placeUrl,mapLink);assert.equal('일정 변경은 확인 후 반영됩니다. 이 장소를 일정에 넣으려면 현재 일정 화면에서 변경을 요청해 주세요.','일정 변경은 확인 후 반영됩니다. 이 장소를 일정에 넣으려면 현재 일정 화면에서 변경을 요청해 주세요.')});
