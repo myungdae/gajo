@@ -1,17 +1,14 @@
-import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchOntologyStats } from '../api/client';
 import { QUICK_START_PRESETS } from '../quickStartPresets';
 
 const quickStarts=Object.values(QUICK_START_PRESETS);
 
 export default function HomePage(){
-  const navigate=useNavigate(); const[stats,setStats]=useState<any>(null); const[statsState,setStatsState]=useState<'loading'|'ready'|'unavailable'>('loading');
-  useEffect(()=>{fetchOntologyStats().then(value=>{const valid=['totalTriples','classCount','propertyCount','individualCount'].every(key=>Number.isFinite(value?.[key])&&value[key]>0);if(valid){setStats(value);setStatsState('ready')}else setStatsState('unavailable')}).catch(()=>setStatsState('unavailable'))},[]);
-  return <div>
-    <div className="hero"><h2>가조온천에 오신 것을 환영합니다</h2><p>함께 오신 분, 머무는 시간, 이동 방법과 현재 상황을 고려해 지금 가장 편안한 일정을 추천해드려요.</p></div>
-    <div className="quick-grid">{quickStarts.map(preset=><button key={preset.id} onClick={()=>navigate(preset.destination,{state:{quickStartPreset:preset.id}})}><span className="emoji">{preset.emoji}</span>{preset.title}</button>)}</div>
-    <div className="card"><h2>AI 컨시어지에게 바로 물어보세요</h2><p style={{fontSize:13,color:'var(--color-text-muted)',marginBottom:12}}>자연어로 편하게 말하거나 몇 가지 조건을 선택해 주세요.</p><button className="btn btn-primary btn-block" onClick={()=>navigate('/concierge')}>💬 AI 컨시어지 시작하기</button></div>
-    <div className="card engine-status" aria-live="polite"><h2>서비스 엔진 상태</h2>{statsState==='loading'&&<p>엔진 상태 확인 중</p>}{statsState==='unavailable'&&<p>엔진 상태를 확인할 수 없습니다.</p>}{statsState==='ready'&&stats&&<p>맞춤 일정 추천 엔진이 준비되었습니다.</p>}</div>
+  const navigate=useNavigate();
+  const descriptions:Record<string,string>={senior:'걷기 편하고 여유로운 일정','family-healing':'온천·식사·체험을 함께 즐기는 일정',indoor:'날씨 걱정 없이 즐기는 실내 일정',nearby:'지금 가까운 곳부터 찾아보기'};
+  return <div className="home-page">
+    <section className="hero"><small>거창 가조 여행 안내</small><h2>가조에 오신 것을<br/>환영합니다</h2><p>오늘의 가조를 편안하게 만나보세요.</p><span>AI Concierge</span></section>
+    <section className="quick-section" aria-labelledby="quick-title"><div className="section-heading"><small>여행 시작하기</small><h2 id="quick-title">어떤 하루를 보내고 싶으세요?</h2></div><div className="quick-list">{quickStarts.map((preset,index)=><button key={preset.id} onClick={()=>navigate(preset.destination,{state:{quickStartPreset:preset.id}})}><span className={`service-icon service-icon-${index+1}`} aria-hidden="true"/><span><b>{preset.title}</b><small>{descriptions[preset.id]}</small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>)}</div></section>
+    <section className="direct-concierge"><small>맞춤 여행 안내</small><h2>직접 이야기해 보세요</h2><p>원하는 일정이나 상황을 편하게 말씀해 주세요.</p><button className="btn btn-primary" onClick={()=>navigate('/concierge')}>대화로 일정 찾기 <span aria-hidden="true">→</span></button></section>
   </div>;
 }

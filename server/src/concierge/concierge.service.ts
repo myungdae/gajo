@@ -27,6 +27,21 @@ function detectNearbyDiscovery(message?: string): { intent: boolean; category?: 
   return { intent: !!category && (/주변|근처|가까운|인근|갈\s*만한|찾아|추천/.test(message)), category };
 }
 
+const OUT_OF_SERVICE_MESSAGE = '현재는 가조 지역을 중심으로 안내하고 있어요. 가조에서 즐길 수 있는 장소를 찾아드릴까요?';
+
+/**
+ * Named destinations outside the currently curated Gajo ontology must not be
+ * reinterpreted as local places. Keep this deliberately narrow: it is a
+ * service-area guard, not a general destination knowledge base.
+ */
+export function detectOutOfServiceDestination(message?: string): { destination: string; region: string } | undefined {
+  if (!message || message.includes('가조')) return undefined;
+  if (/해인사/.test(message) && /합천|가고|갈래|놀러|여행|방문|관광/.test(message)) {
+    return { destination: '해인사', region: '합천' };
+  }
+  return undefined;
+}
+
 /**
  * ConciergeService: the top-level Orchestrator Agent entry point that
  * implements the full architecture pipeline from the spec:
@@ -54,6 +69,23 @@ export class ConciergeService {
     const { context, evidence, firedRules } = await this.contextService.createContext(input);
     const nearbyDiscovery = detectNearbyDiscovery(input.rawMessage);
     const nearbyRestaurantIntent = nearbyDiscovery.intent && nearbyDiscovery.category === 'FOOD';
+    const outsideServiceArea = detectOutOfServiceDestination(input.rawMessage);
+
+    if (outsideServiceArea) {
+      return {
+        context,
+        evidence,
+        firedRules,
+        recommendation: null,
+        domainResult: {
+          status: 'OUT_OF_SERVICE_AREA',
+          ...outsideServiceArea,
+        },
+        visitorMessage: OUT_OF_SERVICE_MESSAGE,
+        nearbyRestaurantIntent: false,
+        nearbyDiscoveryIntent: false,
+      };
+    }
 
     if (!context.operationUri) {
       return {

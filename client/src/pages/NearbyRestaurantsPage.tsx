@@ -64,7 +64,7 @@ export default function NearbyRestaurantsPage() {
     <section className="card"><small className="eyebrow">주변 즐길거리 찾기</small><h1>지금 주변에서 무엇을 찾으세요?</h1>{preset?.id==='nearby'&&<p className="quick-start-entry-message" role="status">{preset.entryMessage}</p>}<p className="text-muted">원하는 종류를 누르면 실제 주변 장소를 찾아드려요.</p></section>
     {configured === false && <div className="card status-warning">현재 위치를 확인하면 주변 장소와 이동 정보를 더 정확하게 안내해드릴 수 있습니다.</div>}
     <section className="nearby-category-grid" aria-label="주변 장소 종류">
-      {CATEGORIES.map(item => <button key={item.id} className={`nearby-category-card ${category === item.id ? 'active' : ''}`} aria-pressed={category === item.id} onClick={() => setCategory(item.id)}><span aria-hidden>{item.emoji}</span><b>{item.label}</b></button>)}
+      {CATEGORIES.map(item => <button key={item.id} className={`nearby-category-card ${category === item.id ? 'active' : ''}`} aria-pressed={category === item.id} onClick={() => setCategory(item.id)}><span className="category-line-icon" aria-hidden/><b>{item.label}</b></button>)}
     </section>
     {notice && <div className="card location-confidence-message"><p>{notice}</p><button className="btn btn-outline" onClick={()=>locate(false)}>위치 다시 확인</button></div>}
     {loading && <div className="loading">주변 장소를 찾고 있어요…</div>}{error && <div className="card status-warning">{error}</div>}
@@ -78,7 +78,7 @@ export default function NearbyRestaurantsPage() {
         <p>{selected.roadAddress || selected.address || '주소 확인 필요'}</p>{selected.phone && <p>전화 {selected.phone}</p>}
         <p>{selected.operatingMessage}</p>{selected.availabilityMessage && <p>{selected.availabilityMessage}</p>}
         {selected.contextualReasons.map(reason => <p className="nearby-reason" key={reason}>✓ {reason}</p>)}
-        <div className="nearby-actions"><a className="btn btn-primary" href={mapLink || selected.placeUrl} target="_blank" rel="noreferrer">지도에서 보기</a>{navigationDestination(selected)&&<button className="btn btn-outline" onClick={()=>setNavigationPlace(selected)}>🚗 내비로 가기</button>}<button className="btn btn-outline" onClick={() => setNotice('일정 변경은 확인 후 반영됩니다. 이 장소를 일정에 넣으려면 현재 일정 화면에서 변경을 요청해 주세요.')}>일정에 담기</button></div>
+        <div className="nearby-actions"><a className="btn btn-primary" href={mapLink || selected.placeUrl} target="_blank" rel="noreferrer">지도에서 보기</a>{navigationDestination(selected)&&<button className="btn btn-text" onClick={()=>setNavigationPlace(selected)}>내비로 가기</button>}<button className="btn btn-text" onClick={() => setNotice('일정 변경은 확인 후 반영됩니다. 이 장소를 일정에 넣으려면 현재 일정 화면에서 변경을 요청해 주세요.')}>일정에 담기</button></div>
       </section>}
       <section className="card"><h2>{CATEGORIES.find(item => item.id === category)?.label} 목록</h2>{places.length === 0 ? <p className="text-muted">이 범위에서 확인된 장소가 없습니다.</p> : places.map(place => <button className="nearby-result" key={place.id} onClick={() => choose(place)}><span><b>{place.name}</b><small>{place.providerCategoryName}</small></span>{distanceTrusted && place.distanceMeters != null && <strong>{place.distanceMeters < 1000 ? `${place.distanceMeters}m` : `${(place.distanceMeters / 1000).toFixed(1)}km`}</strong>}</button>)}</section>
     </>}

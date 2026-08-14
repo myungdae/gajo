@@ -98,6 +98,8 @@ export interface ConciergeChatResponse {
   nearbyRestaurantIntent?: boolean;
   nearbyDiscoveryIntent?: boolean;
   nearbyCategory?: NearbyCategory;
+  visitorMessage?: string;
+  domainResult?: { status: 'OUT_OF_SERVICE_AREA'; destination: string; region: string };
 }
 
 export async function postConciergeChat(input: CreateContextInput) {
