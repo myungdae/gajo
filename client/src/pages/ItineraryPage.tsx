@@ -8,16 +8,21 @@ import VisitorLocationControl from '../components/VisitorLocationControl';
 import MovementPlan from '../components/MovementPlan';
 import { ensureTripSession } from '../tripSession';
 import { track } from '../analytics';
+import { useRegion } from '../RegionContext';
+import { regionalPath } from '../regionRouting';
+import { SHARED_VISITOR_COPY } from '../visitorCopy';
+import { liveRuntimeForRegion, runtimeContextForRegion } from '../liveRuntimeGuard';
+import { regionalRuntimeView } from '../regionalRuntime';
 
 export default function ItineraryPage() {
-  const tripSession=ensureTripSession();
+  const region=useRegion();const tripSession=ensureTripSession(region.id);const regionLink=(path:string)=>regionalPath(path,region.id);
   const location = useLocation() as { state?: { result?: ConciergeChatResponse } };
   const navigate = useNavigate();
   const [result, setResult] = useState(location.state?.result);
   const [proposal, setProposal] = useState<ReplanningProposal | null>(null);
   const [runtimeMessage, setRuntimeMessage] = useState('');
   const [observing, setObserving] = useState(false);
-  const [knownRuntimeContext, setKnownRuntimeContext] = useState<any>(location.state?.result?.context);
+  const [knownRuntimeContext, setKnownRuntimeContext] = useState<any>(()=>runtimeContextForRegion(location.state?.result?.context,region.id)||runtimeContextForRegion(tripSession.runtimeContext,region.id));
 
   if (!result || !result.recommendation) {
     return (
@@ -26,7 +31,7 @@ export default function ItineraryPage() {
         <p style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>
           AI 컨시어지와 대화하여 맞춤 일정을 먼저 생성해주세요.
         </p>
-        <button className="btn btn-primary btn-block" onClick={() => navigate('/concierge')}>
+        <button className="btn btn-primary btn-block" onClick={() => navigate(regionLink('/concierge'))}>
           AI 컨시어지로 이동
         </button>
       </div>
@@ -52,10 +57,10 @@ export default function ItineraryPage() {
     setObserving(true);
     setRuntimeMessage('');
     try {
-      const previousContext = result.context || {};
+      const previousContext = runtimeContextForRegion(result.context,region.id)||{regionId:region.id};
       const demoSteps = itinerarySteps.map((step: any) => ({ ...step, status: step.status || 'PLANNED' }));
-      const currentContext = { ...previousContext, contextNo: `${previousContext.contextNo || 'runtime'}-heavy-rain`, observedAt: new Date().toISOString(), currentTime: '13:00', precipitation: 20, weather: 'gajo:heavyRain', environmentConditions: [...(previousContext.environmentConditions || []), 'gajo:heavyRain'] };
-      const response = await observeRuntime({ previousContext, currentContext, itinerary: { ...rec.itinerary, steps: demoSteps } });
+      const currentContext = { ...previousContext, regionId:region.id,contextNo: `${previousContext.contextNo || 'runtime'}-heavy-rain`, observedAt: new Date().toISOString(), currentTime: '13:00', precipitation: 20, weather: 'gajo:heavyRain', environmentConditions: [...(previousContext.environmentConditions || []), 'gajo:heavyRain'],runtimeProvenance:{kind:'SYNTHETIC_DEMO',liveWeatherConfirmed:false} };
+      const response = await observeRuntime({ regionId:region.id,previousContext, currentContext, itinerary: { ...rec.itinerary, steps: demoSteps } });
       setProposal(response.proposedRevision);
       setRuntimeMessage(response.suppressed ? '같은 조건의 제안이 이미 거절되어 다시 알리지 않습니다.' : response.replanningRecommended ? '' : '현재 미래 일정에는 재계획이 필요한 영향이 없습니다.');
     } catch (error: any) {
@@ -71,10 +76,11 @@ export default function ItineraryPage() {
   };
 
   const observeLiveRuntime = async (live: LiveRuntimeResponse) => {
+    const owned=liveRuntimeForRegion(live,region.id);if(!owned)return;
     track('REPLAN_REQUESTED',tripSession.id,{source:'live-runtime'});
     const previousContext = knownRuntimeContext || result.context || {};
-    const response = await observeRuntime({ previousContext, currentContext: live.context, itinerary: rec.itinerary });
-    setKnownRuntimeContext(live.context);
+    const response = await observeRuntime({ regionId:region.id,previousContext, currentContext: owned.context, itinerary: rec.itinerary });
+    setKnownRuntimeContext(owned.context);
     setProposal(response.proposedRevision);
     setRuntimeMessage(response.replanningRecommended ? '' : '현재 일정에 영향을 주는 변화는 없습니다.');
   };
@@ -101,8 +107,8 @@ export default function ItineraryPage() {
 
       <div className="card">
         <h2>런타임 상황 확인</h2>
-        <VisitorLocationControl onLocation={async (gps) => observeLiveRuntime(await hydrateRuntimeLocation(knownRuntimeContext || result.context, gps))} />
-        <GajoLiveStatus contextNo={result.context?.contextNo} onLiveRefresh={observeLiveRuntime} />
+        <VisitorLocationControl onLocation={async (gps) => observeLiveRuntime(await hydrateRuntimeLocation(knownRuntimeContext || runtimeContextForRegion(result.context,region.id)||{regionId:region.id}, gps,region.id))} />
+        <GajoLiveStatus contextNo={result.context?.contextNo} regionName={region.regionName} regionId={region.id} liveEnabled={regionalRuntimeView(region).weatherEnabled} onLiveRefresh={observeLiveRuntime} />
         {runtimeMessage && <p style={{ fontSize: 12 }}>{runtimeMessage}</p>}
         <div className="demo-runtime-control">
           <small>시연·테스트 기능</small>
@@ -120,7 +126,7 @@ export default function ItineraryPage() {
           <div className="replanning-section"><b>영향받는 일정</b>{proposal.removedItems.map((step: any) => <span className="badge risk" key={step.itemId || step.order}>{step.programLabel || step.facilityLabel || step.label}</span>)}</div>
           <div className="replanning-section"><b>제안하는 대안</b>{proposal.proposedNewItems.map((step: any) => <span className="badge" key={step.itemId || step.order}>{step.programLabel || step.facilityLabel || step.label}</span>)}</div>
           <div className="replanning-section"><b>추천 이유</b><p>{proposal.explanation}</p></div>
-          <div className="sequence-comparison"><div><b>기존 남은 일정</b><p>{itinerarySteps.filter((step:any)=>step.status!=='COMPLETED'&&step.status!=='SKIPPED').map((step:any)=>step.programLabel||step.facilityLabel||step.label).join(' → ')||'-'}</p></div><div><b>가조이 제안</b><p>{proposal.proposedFutureSteps.map((step:any)=>step.programLabel||step.facilityLabel||step.label).join(' → ')||'-'}</p></div></div>
+          <div className="sequence-comparison"><div><b>기존 남은 일정</b><p>{itinerarySteps.filter((step:any)=>step.status!=='COMPLETED'&&step.status!=='SKIPPED').map((step:any)=>step.programLabel||step.facilityLabel||step.label).join(' → ')||'-'}</p></div><div><b>{SHARED_VISITOR_COPY.replanningProposal}</b><p>{proposal.proposedFutureSteps.map((step:any)=>step.programLabel||step.facilityLabel||step.label).join(' → ')||'-'}</p></div></div>
           {proposal.preservedHistory?.length>0&&<p className="preserved-history">🔒 완료된 {proposal.preservedHistory.length}개 일정은 그대로 보존됩니다.</p>}
           <div className="grid-2"><button className="btn btn-primary" onClick={approve}>변경하기</button><button className="btn btn-outline" onClick={reject}>기존 일정 유지</button></div>
         </div>
@@ -198,11 +204,11 @@ export default function ItineraryPage() {
         </div>
       )}
 
-      <button className="btn btn-primary btn-block" style={{ marginBottom: 10 }} onClick={() => navigate('/nearby-discovery')}>
+      <button className="btn btn-primary btn-block" style={{ marginBottom: 10 }} onClick={() => navigate(regionLink('/nearby-discovery'))}>
         🧭 주변 즐길거리 찾기
       </button>
 
-      <button className="btn btn-outline btn-block" onClick={() => navigate('/concierge')}>
+      <button className="btn btn-outline btn-block" onClick={() => navigate(regionLink('/concierge'))}>
         ← AI 컨시어지로 돌아가기
       </button>
     </div>

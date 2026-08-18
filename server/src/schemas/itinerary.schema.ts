@@ -37,6 +37,13 @@ export class ItineraryStep {
 
   @Prop()
   scheduledTime?: string;
+
+  @Prop() entityType?: string;
+  @Prop() accommodationType?: string;
+  @Prop() areaLabel?: string;
+  @Prop() eventAvailability?: string;
+  @Prop() accessStatus?: string;
+  @Prop() accessNotice?: string;
 }
 export const ItineraryStepSchema = SchemaFactory.createForClass(ItineraryStep);
 
@@ -47,6 +54,9 @@ export class Itinerary {
 
   @Prop({ required: true })
   runtimeContextId: string;
+
+  @Prop({ required: true, index: true, default: 'gajo' })
+  regionId: string;
 
   @Prop()
   label: string;

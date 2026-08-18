@@ -1,0 +1,9 @@
+@prefix muan: <https://muan.example/ontology#> .
+@prefix schema: <https://schema.org/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+muan:hoesanWhiteLotusPond a schema:Place ; rdfs:label "회산백련지"@ko ; schema:containedInPlace muan:hoesanWhiteLotusPondArea .
+muan:hoesanWhiteLotusPondArea a schema:Place ; rdfs:label "회산백련지 일대"@ko .
+muan:LotusEcology a schema:DefinedTerm ; rdfs:label "연꽃·생태"@ko .
+muan:MudflatCoast a schema:DefinedTerm ; rdfs:label "갯벌·해안"@ko .
+muan:FamilyTrip a schema:DefinedTerm ; rdfs:label "가족여행"@ko .
+muan:Experience a schema:DefinedTerm ; rdfs:label "체험"@ko .

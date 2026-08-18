@@ -1,0 +1,8 @@
+import test from'node:test';import assert from'node:assert/strict';import{liveRuntimeForRegion,regionalRuntimeStatusLabel,runtimeContextForRegion}from'./liveRuntimeGuard.ts';
+const live=(regionId:string,observationRegion=regionId)=>({context:{regionId,temperature:23,weatherState:'CLOUDY',weatherObservation:{regionId:observationRegion}},metadata:{regionId,observedAt:'now',source:'OPEN_METEO',status:'LIVE',stale:false,location:null}}as any);
+test('all non-Gajo regions reject a Gajo live observation',()=>{for(const region of ['okcheon','muan','gyeryong','hapcheon','daejeon-junggu'])assert.equal(liveRuntimeForRegion(live('gajo'),region),undefined)});
+test('same-region Gajo live weather remains valid',()=>assert.equal(liveRuntimeForRegion(live('gajo'),'gajo')?.context.temperature,23));
+test('mismatched observation provenance is rejected',()=>assert.equal(liveRuntimeForRegion(live('hapcheon','gajo'),'hapcheon'),undefined));
+test('TripSession runtime consumption requires the active region',()=>{assert.equal(runtimeContextForRegion({regionId:'gajo',temperature:23},'hapcheon'),undefined);assert.deepEqual(runtimeContextForRegion({regionId:'hapcheon'},'hapcheon'),{regionId:'hapcheon'})});
+test('shared live status label derives from each RegionConfig name',()=>assert.deepEqual(['가조','옥천','무안','계룡','합천','대전 중구'].map(regionalRuntimeStatusLabel),['지금 가조','지금 옥천','지금 무안','지금 계룡','지금 합천','지금 대전 중구']));
+test('forward and reverse region switches never accept the previous region weather',()=>{const regions=['gajo','okcheon','muan','gyeryong','hapcheon','daejeon-junggu'];for(const order of [regions,[...regions].reverse()])for(let i=1;i<order.length;i++)assert.equal(liveRuntimeForRegion(live(order[i-1]),order[i]),undefined)});

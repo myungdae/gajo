@@ -9,8 +9,10 @@ import { getQuickStartPreset } from '../quickStartPresets';
 import { isMobileNavigation, launchNavigation, navigationDestination, navigationTarget, type NavigationProvider } from '../utils/placeNavigation';
 import { ensureTripSession } from '../tripSession';
 import { track } from '../analytics';
+import { useRegion } from '../RegionContext';
+import { regionalRuntimeView } from '../regionalRuntime';
+import { liveRuntimeForRegion } from '../liveRuntimeGuard';
 
-const GAJO_CENTER: [number, number] = [35.698758, 128.023103];
 const CATEGORIES: { id: NearbyCategory; emoji: string; label: string }[] = [
   { id: 'FOOD', emoji: '🍽️', label: '맛집' }, { id: 'CAFE', emoji: '☕', label: '카페' },
   { id: 'LODGING', emoji: '🏨', label: '숙박' }, { id: 'HOT_SPRING_WELLNESS', emoji: '♨️', label: '온천·휴식' },
@@ -24,7 +26,9 @@ const canonicalIcon = L.divIcon({ className: 'nearby-marker canonical', html: '<
 function Recenter({ center }: { center: [number, number] }) { const map = useMap(); useEffect(() => { map.setView(center, 14); }, [map, center]); return null; }
 
 export default function NearbyRestaurantsPage() {
-  const tripSession=ensureTripSession();
+  const region=useRegion();
+  const regionalRuntime=regionalRuntimeView(region);
+  const tripSession=ensureTripSession(region.id);
   const routeLocation=useLocation();
   const preset=getQuickStartPreset((routeLocation.state as {quickStartPreset?:unknown}|null)?.quickStartPreset);
   const [category, setCategory] = useState<NearbyCategory>('FOOD');
@@ -41,16 +45,16 @@ export default function NearbyRestaurantsPage() {
   const [navigationPlace,setNavigationPlace]=useState<NearbyPlace|null>(null);
 
   useEffect(() => {
-    fetchNearbyStatus().then(s => setConfigured(s.configured)).catch(() => setConfigured(false));
-    fetchLiveRuntimeContext().then(live => setWeather(live.context?.weatherState || live.context?.weather)).catch(() => setWeather(undefined));
-  }, []);
+    if(!regionalRuntime.nearbyEnabled){setConfigured(false);return}fetchNearbyStatus().then(s => setConfigured(s.configured)).catch(() => setConfigured(false));
+    if(regionalRuntime.weatherEnabled)fetchLiveRuntimeContext(region.id).then(live =>{const owned=liveRuntimeForRegion(live,region.id);setWeather(owned?.context?.weatherState||owned?.context?.weather)}).catch(() => setWeather(undefined));
+  }, [region.id,regionalRuntime.nearbyEnabled,regionalRuntime.weatherEnabled]);
   const locate = async (reuse=true) => {
     const cached=reuse?getSessionLocation():null; const gps=isOperationalLocation(cached)?cached!:await observeVisitorLocation(); const usable = isOperationalLocation(gps);
-    setOrigin(usable ? [gps.latitude!, gps.longitude!] : GAJO_CENTER); setDistanceTrusted(usable);
-    if (!usable) setNotice('현재 위치를 정확하게 확인하지 못했습니다. 위치를 다시 확인하면 가까운 장소와 이동시간을 더 정확하게 안내할 수 있습니다. 가조 중심으로 장소만 둘러볼 수 있습니다.');
+    setOrigin(usable?[gps.latitude!,gps.longitude!]:region.center?[region.center.latitude,region.center.longitude]:null);setDistanceTrusted(usable);
+    if (!usable) setNotice(region.center?'현재 위치를 정확하게 확인하지 못했습니다. 위치를 다시 확인하면 가까운 장소와 이동시간을 더 정확하게 안내할 수 있습니다.':'현재 위치를 알려주시면 가까운 장소와 이동시간을 안내할 수 있어요.');
     else setNotice(null);
   };
-  useEffect(() => { locate(); }, []);
+  useEffect(() => { if(regionalRuntime.nearbyEnabled)locate(); }, [region.id,regionalRuntime.nearbyEnabled]);
   useEffect(() => {
     if (!origin || configured !== true) return;
     setLoading(true); setError(null); setSelected(null);
@@ -61,8 +65,9 @@ export default function NearbyRestaurantsPage() {
   }, [category, origin, distanceTrusted, configured, weather]);
   const choose = async (place: NearbyPlace) => { track('PLACE_DETAIL_OPENED',tripSession.id,{category:place.category});setSelected(place); setNotice(null); const links = await fetchNavigationLinks(place.lat, place.lng, place.name); setMapLink(links.kakaoMapWeb); };
   const navigateWith=(provider:NavigationProvider)=>{const destination=navigationPlace&&navigationDestination(navigationPlace);if(!destination)return;track('NAVIGATION_HANDOFF',tripSession.id,{provider});const gps=getSessionLocation();const origin=gps&&isOperationalLocation(gps)?{latitude:gps.latitude!,longitude:gps.longitude!}:undefined;launchNavigation(navigationTarget(provider,destination,origin),{mobile:isMobileNavigation(navigator.userAgent)});setNavigationPlace(null)};
-  const center = useMemo<[number, number]>(() => selected ? [selected.lat, selected.lng] : origin || GAJO_CENTER, [selected, origin]);
+  const center = useMemo<[number, number]>(() => selected ? [selected.lat, selected.lng] : origin!, [selected, origin]);
 
+  if(!regionalRuntime.nearbyEnabled)return <div className="nearby-discovery"><section className="card"><small className="eyebrow">주변 즐길거리 찾기</small><h1>{region.regionName} 주변 정보 준비 중</h1><p className="text-muted">현재 등록된 {region.regionName} 장소의 정확한 위치 정보를 확인하고 있습니다.</p></section></div>;
   return <div className="nearby-discovery">
     <section className="card"><small className="eyebrow">주변 즐길거리 찾기</small><h1>지금 주변에서 무엇을 찾으세요?</h1>{preset?.id==='nearby'&&<p className="quick-start-entry-message" role="status">{preset.entryMessage}</p>}<p className="text-muted">원하는 종류를 누르면 실제 주변 장소를 찾아드려요.</p></section>
     {configured === false && <div className="card status-warning">현재 위치를 확인하면 주변 장소와 이동 정보를 더 정확하게 안내해드릴 수 있습니다.</div>}

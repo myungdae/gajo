@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
 import { FacilityService } from './facility.service';
 
 @Controller('api')
@@ -6,13 +6,13 @@ export class FacilityController {
   constructor(private readonly service: FacilityService) {}
 
   @Get('facilities')
-  listFacilities() {
-    return this.service.listFacilities();
+  listFacilities(@Query('regionId') regionId='gajo') {
+    return this.service.listFacilities(regionId);
   }
 
   @Get('operational-places')
-  operationalPlaces() {
-    return this.service.operationalPlaces();
+  operationalPlaces(@Query('regionId') regionId='gajo') {
+    return this.service.operationalPlaces(regionId);
   }
 
   @Get('facilities/:uri')

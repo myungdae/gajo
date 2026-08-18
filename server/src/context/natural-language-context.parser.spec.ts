@@ -1,6 +1,8 @@
 import { parseNaturalLanguageContext } from './natural-language-context.parser';
 
 describe('parseNaturalLanguageContext', () => {
+  it('extracts the Daejeon Jung-gu parent urban-day scenario',()=>{const result=parseNaturalLanguageContext('부모님과 대전 중구에 왔어요. 많이 걷기는 힘들어하시고, 점심을 먹은 뒤 은행동과 중앙시장 쪽을 둘러보고 카페에서 쉬다가 오후 6시쯤 돌아가고 싶어요.');expect(result.companions[0]?.relationship).toBe('parent');expect(result.walkingLevel).toBe('LOW');expect(result.stayUntil).toBe('18:00');expect(result.activityPreferences).toEqual(expect.arrayContaining(['FOOD','CAFE','URBAN_CULTURE','TRADITIONAL_MARKET']))});
+  it('extracts the Hapcheon lake and pension stay scenario deterministically',()=>{const result=parseNaturalLanguageContext('가족과 합천호에 놀러 가려고 합니다. 차를 가지고 가고 많이 걷지는 않으려고 해요. 맛있는 것도 먹고 호수 주변을 둘러본 뒤 전원펜션에서 하루 묵고 싶습니다.');expect(result.transportMode).toBe('CAR');expect(result.walkingLevel).toBe('LOW');expect(result.activityPreferences).toEqual(expect.arrayContaining(['HAPCHEON_LAKE','NATURE','FOOD','ACCOMMODATION']));expect(result.explicitAccommodation).toBe('전원펜션')});
   it.each([
     ['78세 어머니와 왔습니다', 78, 'mother'],
     ['80세 부모님과 왔어요', 80, 'parent'],

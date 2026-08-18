@@ -14,6 +14,9 @@ export interface CompanionInput {
 }
 
 export interface CreateContextInput {
+  regionId?: string;
+  mustVisitPlaces?: Array<{ entityId?: string; label: string; resolved: boolean }>;
+  accommodationIntents?: Array<{ entityId?: string; label: string; resolved: boolean }>;
   rawMessage?: string;
   visitorNo?: string;
   visitorAge?: number;
@@ -112,8 +115,8 @@ export async function runDemoScenario() {
   return data;
 }
 
-export async function fetchFacilities() {
-  const { data } = await api.get('/facilities');
+export async function fetchFacilities(regionId='gajo') {
+  const { data } = await api.get('/facilities',{params:{regionId}});
   return data;
 }
 
@@ -122,8 +125,8 @@ export interface OperationalPlace {
   category?: string; operatingHours?: any[]; walkingBurden?: string; coordinateVerification: 'VERIFIED';
 }
 
-export async function fetchOperationalPlaces() {
-  const { data } = await api.get<OperationalPlace[]>('/operational-places');
+export async function fetchOperationalPlaces(regionId='gajo') {
+  const { data } = await api.get<OperationalPlace[]>('/operational-places',{params:{regionId}});
   return data;
 }
 
@@ -320,6 +323,7 @@ export interface ReplanningProposal {
 }
 
 export async function observeRuntime(payload: {
+  regionId?: string;
   previousContext?: any;
   currentContext?: any;
   itinerary?: any;
@@ -344,20 +348,21 @@ export async function rejectReplanning(proposalNo: string) {
 export interface LiveRuntimeResponse {
   context: any;
   metadata: {
+    regionId?: string;
     observedAt: string;
     source: 'OPEN_METEO' | 'UNAVAILABLE';
     status: 'LIVE' | 'STALE' | 'UNAVAILABLE';
     stale: boolean;
-    location: { latitude: number; longitude: number; timezone: string };
+    location: { latitude: number; longitude: number; timezone: string;sourceId?:string } | null;
   };
 }
 
-export async function fetchLiveRuntimeContext(contextNo?: string) {
-  const { data } = await api.get<LiveRuntimeResponse>('/runtime-context/live', { params: contextNo ? { contextNo } : undefined });
+export async function fetchLiveRuntimeContext(regionId:string,contextNo?: string) {
+  const { data } = await api.get<LiveRuntimeResponse>('/runtime-context/live', { params: {regionId,...(contextNo?{contextNo}:{})} });
   return data;
 }
 
-export async function hydrateRuntimeLocation(context: any, location: any) {
-  const { data } = await api.post<LiveRuntimeResponse>('/runtime-context/hydrate', { context, location });
+export async function hydrateRuntimeLocation(context: any, location: any,regionId:string) {
+  const { data } = await api.post<LiveRuntimeResponse>('/runtime-context/hydrate', { regionId,context:{...context,regionId}, location });
   return data;
 }

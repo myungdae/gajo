@@ -3,6 +3,15 @@ import type { EntityRuntimeState } from '../context/runtime-context.types';
 import type { Coordinates } from '../context/entity-location.service';
 
 export interface DecisionCandidate {
+  regionId?: string;
+  isMustVisit?: boolean;
+  allowUnknownDuration?: boolean;
+  entityType?: string;
+  accommodationType?: string;
+  areaLabel?: string;
+  eventAvailability?: string;
+  accessStatus?: string;
+  accessNotice?: string;
   programUri: string;
   programLabel: string;
   facilityUri?: string;
@@ -98,7 +107,7 @@ export class DecisionPipelineService {
         reasons.push('방문객의 이동 제약과 맞지 않음');
         reasonCodes.push('MOBILITY_INCOMPATIBLE');
       }
-      if (!Number.isFinite(candidate.durationMinutes) || (candidate.durationMinutes || 0) <= 0) { reasons.push('예상 소요시간 정보가 없음'); reasonCodes.push('NO_DURATION'); }
+      if (!candidate.allowUnknownDuration && (!Number.isFinite(candidate.durationMinutes) || (candidate.durationMinutes || 0) <= 0)) { reasons.push('예상 소요시간 정보가 없음'); reasonCodes.push('NO_DURATION'); }
       const travel = candidate.estimatedTravelMinutes ?? state.estimatedTravelMinutes ?? 0;
       if (context.transportMode === 'WALK' && context.maxWalkingDistanceMeters && candidate.distanceMeters && candidate.distanceMeters > context.maxWalkingDistanceMeters) {
         reasons.push('설정된 최대 보행 거리보다 멂'); reasonCodes.push('MOBILITY_INCOMPATIBLE');
@@ -119,6 +128,7 @@ export class DecisionPipelineService {
     return candidates
       .map((candidate) => {
         let score = candidate.matchedOn.length * 10 + candidate.mitigatesRisk.length * 5;
+        if (candidate.isMustVisit) score += 1000;
         if (mobilityLimited && (candidate.isAccessible || candidate.requiredMobility.some((u) => /shortWalkingDistance|elevatorAvailable/.test(u)))) score += 8;
         if (rainy) score += candidate.isIndoor ? 8 : -8;
         if (candidate.runtime?.congestion === 'HIGH') score -= 4;
@@ -151,6 +161,7 @@ export class DecisionPipelineService {
       const aUrgent = a.runtime?.operatingState === 'CLOSING_SOON' ? 0 : 1;
       const bUrgent = b.runtime?.operatingState === 'CLOSING_SOON' ? 0 : 1;
       if (aUrgent !== bUrgent) return aUrgent - bUrgent;
+      if (Boolean(a.isMustVisit) !== Boolean(b.isMustVisit)) return a.isMustVisit ? -1 : 1;
       if (aClose !== bClose) return aClose - bClose;
       const mealTime = now !== undefined && now >= 11 * 60 && now <= 14 * 60;
       if (mealTime && Boolean(a.isMeal) !== Boolean(b.isMeal)) return a.isMeal ? -1 : 1;

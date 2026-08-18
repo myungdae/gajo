@@ -18,6 +18,9 @@ import { mergeContextExtractions } from './context-extraction.merger';
 import { ContextExtractionGateway } from './context-extraction.gateway';
 
 export interface CreateContextInput {
+  regionId?: string;
+  mustVisitPlaces?: { entityId?: string; label: string; resolved: boolean }[];
+  accommodationIntents?: { entityId?: string; label: string; resolved: boolean }[];
   visitorNo?: string;
   rawMessage?: string;
   visitorAge?: number;
@@ -128,6 +131,7 @@ export class RuntimeContextService {
     let walkingLevel = input.walkingLevel;
     let companionConstraints = [...(input.companionConstraints || [])];
     let activityPreferences = [...(input.activityPreferences || [])];
+    let accommodationIntents = [...(input.accommodationIntents || [])];
     let extractionDebug: Record<string, any> | undefined;
     let stayUntilPeriod: string | undefined;
     let extractedIntent: string | undefined;
@@ -148,6 +152,7 @@ export class RuntimeContextService {
       const extracted = parseNaturalLanguageContext(input.rawMessage);
       const extractorResult: ExtractorResult = gatewayOutcome.result;
       const merged = mergeContextExtractions(extracted, extractorResult);
+      if(input.regionId==='hapcheon'&&extracted.explicitAccommodation==='전원펜션')accommodationIntents=[{entityId:'https://hapcheon.example/ontology#jeonwonPension',label:'전원펜션',resolved:true}];
       if (companions.length === 0) companions = merged.companions;
       if (merged.transportMode && (input.isFollowup || !transportMode)) transportMode = merged.transportMode as TransportMode;
       if (merged.stayUntil && (input.isFollowup || !stayUntil)) stayUntil = merged.stayUntil;
@@ -219,6 +224,7 @@ export class RuntimeContextService {
     const contextNo = `RC-${Date.now()}-${randomUUID().slice(0, 6)}`;
     const doc = await this.contextModel.create({
       contextNo,
+      regionId: input.regionId || 'gajo',
       visitorNo: input.visitorNo,
       rawMessage: input.rawMessage,
       actors,
@@ -226,6 +232,8 @@ export class RuntimeContextService {
       companions,
       wellnessGoals,
       activityPreferences,
+      mustVisitPlaces: input.mustVisitPlaces || [],
+      accommodationIntents,
       environmentConditions: [weatherUri, congestionUri].filter(Boolean) as string[],
       expandedConditions: alignedExpandedConditions,
       risks: expansion.risks,

@@ -39,13 +39,15 @@ export function buildContextSummary(context: any): ContextSummaryRow[] {
   ]);
   const transport = ({ CAR: '자동차', WALK: '도보', PUBLIC_TRANSPORT: '대중교통', PUBLIC_TRANSIT: '대중교통', TAXI: '택시' } as Record<string, string>)[context?.transportMode || input.transportMode];
   const stay = formatStayUntil(context?.stayUntil || input.stayUntil);
-  const goalLabels: Record<string, string> = { restAndRecovery: '편안한 휴식', familyHealingTrip: '가족과 함께하는 힐링', seniorFriendlyTrip: '어르신과 편안한 여행', stressRelief: '스트레스 완화', HOT_SPRING:'온천', FOOD:'맛집', CAFE:'카페', NATURE:'자연·산책', INDOOR:'실내 활동', ACTIVITY:'체험' };
-  const goals = unique([...(context?.wellnessGoals || input.wellnessGoals || []),...(context?.activityPreferences || input.activityPreferences || [])].map((goal: unknown) => goalLabels[localName(goal)]));
+  const goalLabels: Record<string, string> = { restAndRecovery: '편안한 휴식', familyHealingTrip: '가족과 함께하는 힐링', seniorFriendlyTrip: '어르신과 편안한 여행', stressRelief: '스트레스 완화', HOT_SPRING:'온천', FOOD:'맛집', CAFE:'카페', NATURE:'자연·산책', TOURISM_NATURE:'자연·산책', INDOOR:'실내 활동', ACTIVITY:'체험', LITERATURE_CULTURE:'문학·문화', TRADITIONAL_CULTURE:'전통문화체험', DAECHEONG_LAKE:'대청호', LAKE:'대청호', REST_AND_RECOVERY:'편안한 휴식', REST:'편안한 휴식', LOTUS_ECOLOGY:'연꽃·생태', FAMILY_TRIP:'가족여행', MUDFLAT_COAST:'갯벌·해안', MILITARY_CULTURE_HISTORY:'군문화·역사', FESTIVAL_EVENT:'축제·행사', FAMILY_EXPERIENCE:'가족 체험', LOCAL_CONVENIENCE:'생활편의', HAPCHEON_LAKE:'합천호·호수', SCENIC_DRIVE:'드라이브', ACCOMMODATION:'숙박', URBAN_CULTURE:'도심문화', TRADITIONAL_MARKET:'전통시장', PERFORMANCE_EXHIBITION:'공연·전시', FAMILY_OUTING:'가족 나들이', WALKING:'산책', SHOPPING:'쇼핑' };
+  const explicitInterests: unknown[] = context?.activityPreferences?.length ? context.activityPreferences : input.activityPreferences || [];
+  const displayedGoals: unknown[] = explicitInterests.length ? explicitInterests : context?.wellnessGoals || input.wellnessGoals || [];
+  const goals = unique(displayedGoals.map((goal: unknown) => goalLabels[localName(goal)]));
   return [
     companion ? { key: 'companion', icon: '👵', label: '동반', value: companion } : undefined,
     walkingFacts.length ? { key: 'walking', icon: '🚶', label: '보행', value: walkingFacts.join(' · ') } : undefined,
     transport ? { key: 'transport', icon: '🚗', label: '이동', value: transport } : undefined,
     stay ? { key: 'stay', icon: '🕔', label: '머무는 시간', value: stay } : undefined,
-    goals.length ? { key: 'style', icon: '🌿', label: '여행 방식', value: goals.join(' · ') } : undefined,
+    goals.length ? { key: 'style', icon: '🌿', label: explicitInterests.length ? '관심' : '여행 방식', value: goals.join(' · ') } : undefined,
   ].filter(Boolean) as ContextSummaryRow[];
 }

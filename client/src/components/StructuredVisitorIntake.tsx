@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { CreateContextInput } from '../api/client';
+import { SHARED_VISITOR_COPY } from '../visitorCopy';
 import { buildStructuredContext } from '../utils/structuredIntake';
 
 type Choice={value:string;label:string;hint?:string};
@@ -23,6 +24,6 @@ export default function StructuredVisitorIntake({onSubmit,onChange,loading,initi
     {groups.map((group,index)=><fieldset key={group.key} className="journey-question"><legend><span>{index+1}</span>{group.title}</legend><div className="intake-choice-grid">{group.choices.map(choice=><button type="button" key={choice.value} className={values[group.key]===choice.value?'selected':''} aria-pressed={values[group.key]===choice.value} onClick={()=>select(group.key,choice.value)}>{choice.label}</button>)}</div>{group.key==='companion'&&values.companion==='parents'&&<label className="optional-age">부모님 연령 <input type="number" min="0" max="120" inputMode="numeric" value={age} onChange={event=>setAge(event.target.value)} placeholder="선택 입력"/> 세</label>}</fieldset>)}
     <fieldset className="journey-question"><legend><span>4</span>언제까지 머무르시나요?</legend><div className="time-choice"><input type="time" value={time} onChange={event=>setTime(event.target.value)}/><button type="button" className={!time?'selected':''} onClick={()=>setTime('')}>시간 미정</button></div></fieldset>
     <fieldset className="journey-question"><legend><span>5</span>무엇을 원하시나요?</legend><div className="intake-choice-grid preference-grid">{preferences.map(choice=>{const selected=selectedPreferences.includes(choice.value);return <button type="button" key={choice.value} className={selected?'selected':''} aria-pressed={selected} onClick={()=>setPreferences(current=>selected?current.filter(value=>value!==choice.value):[...current,choice.value])}>{choice.label}</button>})}</div></fieldset>
-    <button type="button" className="btn btn-primary btn-block structured-submit" disabled={loading} onClick={submit}>가조이에게 추천받기</button>
+    <button type="button" className="btn btn-primary btn-block structured-submit" disabled={loading} onClick={submit}>{SHARED_VISITOR_COPY.recommendationButton}</button>
   </section>;
 }

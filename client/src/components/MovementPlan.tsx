@@ -16,9 +16,11 @@ export default function MovementPlan({result}:{result:ConciergeChatResponse}){
   const [loadFailed,setLoadFailed]=useState(false);
   const [visitor,setVisitor]=useState(getSessionLocation());
   const [locating,setLocating]=useState(false);
-  useEffect(()=>{fetchOperationalPlaces().then(rows=>setPlaces(rows.filter(row=>row.coordinateVerification==='VERIFIED'&&Number.isFinite(row.latitude)&&Number.isFinite(row.longitude)))).catch(()=>setLoadFailed(true)).finally(()=>setLoading(false))},[]);
   const context=result.context||{};
   const future=(result.recommendation?.itinerary?.steps||[]).filter((step:any)=>step.status!=='COMPLETED'&&step.status!=='SKIPPED');
+  const regionId=context.regionId||'gajo';
+  const futureFacilityUris=new Set(future.map((step:any)=>step.facilityUri));
+  useEffect(()=>{if(regionId!=='gajo'){setPlaces([]);setLoading(false);return}fetchOperationalPlaces().then(rows=>setPlaces(rows.filter(row=>futureFacilityUris.has(row.uri)&&row.coordinateVerification==='VERIFIED'&&Number.isFinite(row.latitude)&&Number.isFinite(row.longitude)))).catch(()=>setLoadFailed(true)).finally(()=>setLoading(false))},[regionId,result.recommendation?.itinerary?.itineraryNo]);
   const durationByFacility=new Map<string,number>(future.filter((s:any)=>Number.isFinite(s.durationMinutes)).map((s:any)=>[s.facilityUri,s.durationMinutes]));
   const contextUsable=context.locationStatus==='AVAILABLE'&&locationConfidence(Number(context.locationAccuracy))!=='UNUSABLE'&&Number.isFinite(context.latitude)&&Number.isFinite(context.longitude);
   const contextOrigin=contextUsable?{latitude:Number(context.latitude),longitude:Number(context.longitude)}:undefined;
@@ -26,7 +28,7 @@ export default function MovementPlan({result}:{result:ConciergeChatResponse}){
   const unusableGps=(visitor?.status==='AVAILABLE'&&!isOperationalLocation(visitor))||(context.locationStatus==='AVAILABLE'&&!contextUsable);
   const legs=useMemo(()=>buildLegs(places,origin,context.transportMode,context.currentTime,durationByFacility),[places,origin?.latitude,origin?.longitude,context.transportMode,context.currentTime]);
   if(loading)return <div className="card movement-plan"><h2>이동 계획</h2><p className="muted-line">검증된 실제 장소를 불러오는 중입니다.</p></div>;
-  if(loadFailed||!legs.length)return <div className="card movement-plan"><h2>이동 계획</h2><p className="muted-line">검증된 실제 장소 이동 계획을 현재 불러올 수 없습니다.</p></div>;
+  if(loadFailed||!legs.length)return <div className="card movement-plan"><h2>이동 계획</h2><p className="muted-line">{regionId!=='gajo'?'이동시간 정보 확인 필요':'검증된 실제 장소 이동 계획을 현재 불러올 수 없습니다.'}</p></div>;
   return <div className="card movement-plan"><div className="movement-heading"><div><h2>이동 계획</h2><p>검증된 실제 위치만 사용한 예상 이동 계획입니다. 도로 경로가 아닌 직선거리 기반 참고값입니다.</p></div></div>
     <div className="movement-origin"><span className="movement-dot visitor-dot"/><div><b>현재 위치</b>{unusableGps&&!origin&&<><p className="location-unusable">위치 정확도 부족 — 첫 장소까지 거리 계산 보류</p><p className="muted-line">현재 위치를 정확하게 확인하지 못했습니다.<br/>위치를 다시 확인하면 가까운 장소와 이동시간을 더 정확하게 안내할 수 있습니다.</p><button type="button" className="btn btn-outline" disabled={locating} onClick={async()=>{setLocating(true);setVisitor(await observeVisitorLocation());setLocating(false)}}>{locating?'위치 확인 중…':'위치 다시 확인'}</button></>}</div></div>
     {legs.map((leg,index)=><div key={leg.place.uri} className="movement-node">

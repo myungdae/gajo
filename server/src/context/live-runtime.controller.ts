@@ -7,13 +7,15 @@ import { LocationHydrationService, LocationObservation } from './location-hydrat
 export class LiveRuntimeController {
   constructor(private readonly hydration: LiveRuntimeHydrationService, private readonly contexts: RuntimeContextService, private readonly locationHydration: LocationHydrationService) {}
   @Get('live')
-  async live(@Query('contextNo') contextNo?: string) {
-    const base = contextNo ? await this.contexts.getContext(contextNo) : {};
-    return this.hydration.hydrateLiveRuntimeContext(base || {});
+  async live(@Query('contextNo') contextNo?: string,@Query('regionId') regionId='gajo') {
+    const base = contextNo ? await this.contexts.getContext(contextNo) : {regionId};
+    if(base?.regionId&&base.regionId!==regionId)return this.hydration.hydrateLiveRuntimeContext({regionId});
+    return this.hydration.hydrateLiveRuntimeContext(base || {regionId});
   }
   @Post('hydrate')
-  async hydrate(@Body() body: { context?: any; location?: LocationObservation }) {
-    const live = await this.hydration.hydrateLiveRuntimeContext(body.context || {});
-    return { ...live, context: this.locationHydration.hydrate(live.context, body.location) };
+  async hydrate(@Body() body: { regionId?:string;context?: any; location?: LocationObservation }) {
+    const regionId=body.regionId||body.context?.regionId||'gajo';
+    const located=this.locationHydration.hydrate({...body.context,regionId},body.location);
+    return this.hydration.hydrateLiveRuntimeContext(located);
   }
 }

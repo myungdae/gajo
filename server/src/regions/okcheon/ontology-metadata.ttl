@@ -1,0 +1,7 @@
+@prefix okcheon: <https://okcheon.example/ontology#> .
+@prefix schema: <https://schema.org/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+okcheon:jeongJiyongBirthplace a schema:Place ; rdfs:label "정지용 생가"@ko ; schema:containedInPlace okcheon:oldTownArea .
+okcheon:jeongJiyongLiteratureMuseum a schema:Museum ; rdfs:label "정지용문학관"@ko ; schema:containedInPlace okcheon:oldTownArea .
+okcheon:traditionalCultureExperienceCenter a schema:Place ; rdfs:label "옥천전통문화체험관"@ko ; schema:containedInPlace okcheon:oldTownArea .
+okcheon:oldTownArea a schema:Place ; rdfs:label "옥천 구읍 일대"@ko .

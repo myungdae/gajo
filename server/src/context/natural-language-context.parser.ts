@@ -8,12 +8,14 @@ export interface ParsedNaturalLanguageContext {
   walkingLevel?: WalkingLevel;
   companionConstraints: string[];
   activityPreferences: string[];
+  explicitAccommodation?: string;
   wellnessGoal?: string;
   weather?: string;
   congestion?: string;
 }
 
 function parseTransport(message: string): TransportMode | undefined {
+  if (/차를\s*(?:가지고|끌고)\s*(?:가|오)/.test(message)) return 'CAR';
   if (/(?:자동차|자가용|승용차)(?:로|으로)\s*(?:이동|왔|와|가|방문)/.test(message) || /(?:^|[\s,.!?])차로\s*(?:이동|왔|와|가|방문)/.test(message)) return 'CAR';
   if (/(?:대중교통|버스)(?:으로|로)\s*(?:이동|왔|와|가|방문)/.test(message)) return 'PUBLIC_TRANSPORT';
   if (/(?:도보로|걸어서)\s*(?:이동|왔|와|가|방문)?/.test(message) || /걸어\s*(?:갈|가|다닐)/.test(message)) return 'WALK';
@@ -21,6 +23,7 @@ function parseTransport(message: string): TransportMode | undefined {
 }
 
 function parseStayUntil(message: string): string | undefined {
+  const returnMatch=message.match(/(?:(오전|오후)\s*)?(\d{1,2})\s*시(?:쯤)?\s*(?:돌아가|떠나|출발)/);if(returnMatch){let hour=Number(returnMatch[2]);if(returnMatch[1]==='오후'&&hour<12)hour+=12;if(returnMatch[1]==='오전'&&hour===12)hour=0;return`${String(hour).padStart(2,'0')}:00`}
   const match = message.match(/(?:(오전|오후)\s*)?(\d{1,2})\s*시(?:\s*(\d{1,2})\s*분)?\s*(?:까지|에(?:는)?\s*(?:가야|떠나야|출발해야))/);
   if (!match) return undefined;
   let hour = Number(match[2]);
@@ -44,8 +47,9 @@ export function parseNaturalLanguageContext(message: string): ParsedNaturalLangu
     relationship: (/어머니|엄마/.test(match[2]) ? 'mother' : /아버지|아빠/.test(match[2]) ? 'father' : 'parent') as 'mother' | 'father' | 'parent',
     healthConditions: [] as string[],
   }));
+  if(companions.length===0&&/부모님(?:과|와|랑|하고|을|를|이|가|께서|\s|$)/.test(message))companions.push({age:undefined as any,relationship:'parent',healthConditions:[]});
   const comfort = /편안한\s*일정|무리(?:하지|가\s*되지)\s*않는\s*일정|여유롭게/.test(message);
-  const shortWalking = /짧게\s*걷|짧은\s*보행|걷는\s*(?:거리|시간)(?:가|를)?\s*짧/.test(message);
+  const shortWalking = /짧게\s*걷|짧은\s*보행|걷는\s*(?:거리|시간)(?:가|를)?\s*짧|많이\s*걷(?:지는|지)\s*않|많이\s*걷기는\s*힘들/.test(message);
   const companionConstraints: string[] = [];
   if (companions.some(item => item.age >= 65)) companionConstraints.push('elderlyCompanion');
   if (shortWalking || (/무릎/.test(message) && comfort)) companionConstraints.push('shortWalkingDistance');
@@ -53,12 +57,20 @@ export function parseNaturalLanguageContext(message: string): ParsedNaturalLangu
   const activityPreferences:string[]=[];
   if(/온천(?:은|을|도)?\s*(?:꼭|반드시)?\s*(?:하고|가고|이용하고)?\s*싶/.test(message)) activityPreferences.push('HOT_SPRING');
   if(/편안한\s*일정|무리(?:하지|가\s*되지)\s*않는\s*일정|여유롭게|쉬고\s*싶/.test(message)) activityPreferences.push('REST_AND_RECOVERY');
-  if(/카페(?:에|도)?\s*(?:가고)?\s*싶/.test(message)) activityPreferences.push('CAFE');
-  if(/맛집|밥\s*먹|식사/.test(message)) activityPreferences.push('FOOD');
+  if(/카페(?:에|도)?\s*(?:가고)?\s*싶|카페(?:에서|에)\s*(?:쉬|휴식)/.test(message)) activityPreferences.push('CAFE');
+  if(/맛집|맛있(?:는|게|는\s*것)|밥\s*먹|(?:점심|저녁|아침)(?:을|를)?\s*먹|식사/.test(message)) activityPreferences.push('FOOD');
+  if(/합천호|호수\s*주변/.test(message)) activityPreferences.push('HAPCHEON_LAKE','NATURE');
+  if(/둘러보|풍경|드라이브/.test(message)) activityPreferences.push('NATURE');
+  if(/(?:하루|1박|2박|묵고|숙박)/.test(message)) activityPreferences.push('ACCOMMODATION');
+  if(/은행동|중앙로|대흥동|으능정이|도심\s*문화/.test(message)) activityPreferences.push('URBAN_CULTURE');
+  if(/중앙시장|전통시장|시장\s*(?:쪽|을|보다|구경)/.test(message)) activityPreferences.push('TRADITIONAL_MARKET');
+  if(/공연|전시|문화예술/.test(message)) activityPreferences.push('PERFORMANCE_EXHIBITION');
+  if(/쇼핑/.test(message)) activityPreferences.push('SHOPPING');
 
   return {
     conditions, companions, companionConstraints,
-    activityPreferences,
+    activityPreferences:[...new Set(activityPreferences)],
+    explicitAccommodation:/전원\s*펜션/.test(message)?'전원펜션':undefined,
     transportMode: parseTransport(message),
     stayUntil: parseStayUntil(message),
     walkingLevel: shortWalking || (/무릎/.test(message) && comfort) ? 'LOW' : undefined,

@@ -26,6 +26,12 @@ export class Recommendation {
   @Prop({ required: true })
   runtimeContextId: string;
 
+  @Prop({ required: true, index: true, default: 'gajo' })
+  regionId: string;
+
+  @Prop({ type: [String], default: [] })
+  candidateRegionIds: string[];
+
   @Prop()
   itineraryNo?: string;
 

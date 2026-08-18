@@ -1,7 +1,7 @@
 import { LiveRuntimeHydrationService } from './live-runtime-hydration.service';
 
 const observation: any = { observedAt: '2026-08-09T09:42', weather: 'RAIN', temperature: 24, precipitation: 3, source: 'OPEN_METEO', status: 'LIVE', stale: false };
-const provider: any = { location: { latitude: 35.7423, longitude: 127.9528, timezone: 'Asia/Seoul' }, getCurrent: jest.fn(async () => observation) };
+const provider: any = { location: { latitude: 35.7423, longitude: 127.9528, timezone: 'Asia/Seoul',sourceId:'gajo-weather-reference' },locationFor:jest.fn(()=>({latitude:35.7423,longitude:127.9528,timezone:'Asia/Seoul',sourceId:'gajo-weather-reference'})), getCurrent: jest.fn(async () => observation) };
 
 describe('LiveRuntimeHydrationService', () => {
   const service = new LiveRuntimeHydrationService(provider);
@@ -19,4 +19,5 @@ describe('LiveRuntimeHydrationService', () => {
     service.hydrate(demo, observation, new Date('2026-08-09T00:42:30Z'));
     expect(demo).toEqual({ contextNo: 'DEMO', weather: 'clearWeather', precipitation: 0 });
   });
+  it('marks unavailable non-Gajo hydration with the requested region and no live weather values',()=>{const unavailable={...observation,weather:'UNKNOWN',temperature:undefined,precipitation:undefined,source:'UNAVAILABLE',status:'UNAVAILABLE'}as any;const result=service.hydrate({regionId:'hapcheon',temperature:23,weatherState:'CLOUDY'},unavailable,new Date('2026-08-09T00:42:30Z'),{regionId:'hapcheon'});expect(result.metadata).toMatchObject({regionId:'hapcheon',status:'UNAVAILABLE'});expect(result.context).toMatchObject({regionId:'hapcheon',weather:'UNKNOWN',weatherState:'UNKNOWN'});expect(result.context.temperature).toBeUndefined()});
 });

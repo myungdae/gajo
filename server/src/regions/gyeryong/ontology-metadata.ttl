@@ -1,0 +1,8 @@
+@prefix gyeryong: <https://gyeryong.example/ontology#> .
+@prefix schema: <https://schema.org/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+gyeryong:militaryCultureFestival a schema:Event ; rdfs:label "계룡 군문화축제"@ko ; schema:location gyeryong:militaryCultureEventZone .
+gyeryong:militaryCultureEventZone a schema:Place ; rdfs:label "계룡 군문화·행사권"@ko .
+gyeryong:MilitaryCultureHistory a schema:DefinedTerm ; rdfs:label "군문화·역사"@ko .
+gyeryong:FestivalEvent a schema:DefinedTerm ; rdfs:label "축제·행사"@ko .
+gyeryong:FamilyExperience a schema:DefinedTerm ; rdfs:label "가족 체험"@ko .

@@ -2,6 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { fetchFacility, fetchProgram, type ConciergeChatResponse, type OntologyEntityDetail } from '../api/client';
 import { Link } from 'react-router-dom';
 import { approximateDistance, estimatedTravelMinutes, getSessionLocation } from '../utils/visitorLocation';
+import { useRegion } from '../RegionContext';
+import type { RegionId } from '../regionConfig';
+import { regionalPath } from '../regionRouting';
 
 type EntityKind = 'program' | 'facility';
 
@@ -24,6 +27,7 @@ function stateLabel(value?: string) {
 }
 
 export default function RecommendationEntityDetails({ result }: { result: ConciergeChatResponse }) {
+  const region=useRegion();
   const labels = useMemo(() => deriveLabels(result), [result]);
   const [selected, setSelected] = useState<{ uri: string; kind: EntityKind } | null>(null);
   const [detail, setDetail] = useState<OntologyEntityDetail | null>(null);
@@ -70,7 +74,7 @@ export default function RecommendationEntityDetails({ result }: { result: Concie
           <section className="entity-modal" role="dialog" aria-modal="true" aria-labelledby="entity-detail-title">
             <button ref={closeRef} type="button" className="entity-modal-close" onClick={() => setSelected(null)} aria-label="상세 정보 닫기">×</button>
             {loading ? <div className="loading">상세 정보를 불러오는 중...</div> : detail ? (
-              <EntityDetail kind={selected.kind} detail={detail} relatedFacility={relatedFacility} result={result} />
+              <EntityDetail kind={selected.kind} detail={detail} relatedFacility={relatedFacility} result={result} regionId={region.id}/>
             ) : <p>현재 제공되는 상세 정보가 없습니다.</p>}
           </section>
         </div>
@@ -79,7 +83,7 @@ export default function RecommendationEntityDetails({ result }: { result: Concie
   );
 }
 
-function EntityDetail({ kind, detail, relatedFacility, result }: { kind: EntityKind; detail: OntologyEntityDetail; relatedFacility: OntologyEntityDetail | null; result: ConciergeChatResponse }) {
+function EntityDetail({ kind, detail, relatedFacility, result,regionId }: { kind: EntityKind; detail: OntologyEntityDetail; relatedFacility: OntologyEntityDetail | null; result: ConciergeChatResponse;regionId:RegionId }) {
   const runtimeStates = result.context?.runtimeStates || [];
   const facilityUri = kind === 'program' ? relatedFacility?.uri : detail.uri;
   const runtime = runtimeStates.find((state: any) => state.entityUri === detail.uri) || runtimeStates.find((state: any) => state.entityUri === facilityUri);
@@ -112,7 +116,7 @@ function EntityDetail({ kind, detail, relatedFacility, result }: { kind: EntityK
         {kind === 'program' && <><dt>현재 이용 가능 여부</dt><dd>{stateLabel(runtime?.availability)}</dd></>}
         {reservationRelevant && <><dt>예약 상태</dt><dd>{stateLabel(runtime?.reservationState || (literals.requiresReservation === 'true' ? 'REQUIRED' : 'UNKNOWN'))}</dd></>}
       </dl>
-      {hasCoordinates && facilityUri && <Link className="btn btn-primary btn-block" to={`/map?entityUri=${encodeURIComponent(facilityUri)}`}>지도에서 보기</Link>}
+      {hasCoordinates && facilityUri && <Link className="btn btn-primary btn-block" to={regionalPath(`/map?entityUri=${encodeURIComponent(facilityUri)}`,regionId)}>지도에서 보기</Link>}
     </div>
   );
 }

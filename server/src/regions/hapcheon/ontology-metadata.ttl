@@ -1,0 +1,10 @@
+@prefix schema: <https://schema.org/> .
+@prefix hc: <https://hapcheon.example/ontology#> .
+
+hc:hapcheonLake a schema:TouristAttraction ; schema:name "합천호"@ko .
+hc:hapcheonLakeTourismArea a schema:Place ; schema:name "합천호 주변 관광권"@ko .
+hc:jeonwonPension a schema:LodgingBusiness ; schema:name "전원펜션"@ko ; schema:containedInPlace hc:hapcheonLakeTourismArea .
+
+hc:HapcheonLake a schema:DefinedTerm ; schema:name "합천호·호수"@ko .
+hc:ScenicDrive a schema:DefinedTerm ; schema:name "드라이브"@ko .
+hc:Accommodation a schema:DefinedTerm ; schema:name "숙박"@ko .

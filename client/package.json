@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "test": "node --experimental-strip-types --test src/quickStartPresets.test.ts src/tripSession.test.ts src/regionalEntitySearch.test.ts src/nowContinuation.test.ts src/utils/placeNavigation.test.ts",
+    "test": "node --experimental-strip-types --test src/liveRuntimeGuard.test.ts src/regionalRuntime.test.ts src/regionRouting.test.ts src/regionConfig.test.ts src/quickStartPresets.test.ts src/tripSession.test.ts src/regionalEntitySearch.test.ts src/nowContinuation.test.ts src/visitorCopy.test.ts src/utils/contextSummary.test.ts src/utils/placeNavigation.test.ts",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",

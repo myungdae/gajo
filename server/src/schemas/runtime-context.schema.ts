@@ -13,6 +13,9 @@ export class RuntimeContext {
   @Prop({ required: true, unique: true })
   contextNo: string;
 
+  @Prop({ required: true, index: true, default: 'gajo' })
+  regionId: string;
+
   @Prop()
   visitorNo?: string;
 
@@ -38,6 +41,12 @@ export class RuntimeContext {
   /** Controlled visitor selections not yet represented as ontology WellnessGoal individuals. */
   @Prop({ type: [String], default: [] })
   activityPreferences: string[];
+
+  @Prop({ type: [Object], default: [] })
+  mustVisitPlaces: { entityId?: string; label: string; resolved: boolean }[];
+
+  @Prop({ type: [Object], default: [] })
+  accommodationIntents: { entityId?: string; label: string; resolved: boolean }[];
 
   /** URIs of gajo:WeatherCondition / gajo:CongestionCondition individuals */
   @Prop({ type: [String], default: [] })
@@ -66,6 +75,7 @@ export class RuntimeContext {
   @Prop() weatherState?: string;
   @Prop() temperature?: number;
   @Prop() precipitation?: number;
+  @Prop({ type: Object }) weatherObservation?: { regionId:string;observedAt:string;source:string;locationSourceId:string };
   @Prop() latitude?: number;
   @Prop() longitude?: number;
   @Prop() transportMode?: string;

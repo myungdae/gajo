@@ -69,8 +69,8 @@ export class ConciergeService {
     const { context, evidence, firedRules } = await this.contextService.createContext(input);
     const nearbyDiscovery = detectNearbyDiscovery(input.rawMessage);
     const nearbyRestaurantIntent = nearbyDiscovery.intent && nearbyDiscovery.category === 'FOOD';
-    const config=this.regionConfig?.current||GAJO_REGION_CONFIG;
-    const outsideServiceArea = this.regionConfig?.detectOutOfRegion(input.rawMessage)||detectOutOfServiceDestination(input.rawMessage);
+    const config=this.regionConfig?.get(input.regionId)||GAJO_REGION_CONFIG;
+    const outsideServiceArea = this.regionConfig?.detectOutOfRegion(input.rawMessage,input.regionId)||(!input.regionId||input.regionId==='gajo'?detectOutOfServiceDestination(input.rawMessage):undefined);
 
     if (outsideServiceArea) {
       return {

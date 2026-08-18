@@ -1,0 +1,4 @@
+export const GYERYONG_MASTER_DATA=[
+ {entityUri:'https://gyeryong.example/ontology#militaryCultureFestival',canonicalLabelKo:'계룡 군문화축제',alternateLabels:['군문화축제','계룡군문화축제'],category:'FESTIVAL_EVENT',tags:['MILITARY_CULTURE_HISTORY','FESTIVAL_EVENT','FAMILY_EXPERIENCE'],entityType:'EVENT',runtimeDataStatus:'UNKNOWN',eventAvailability:'UNKNOWN',accessStatus:'PUBLIC_EVENT_UNVERIFIED',accessNotice:'행사 일정과 공개구역 관람 가능 여부는 추가 확인이 필요합니다.'},
+ {entityUri:'https://gyeryong.example/ontology#militaryCultureEventZone',canonicalLabelKo:'계룡 군문화·행사권',alternateLabels:['군문화 행사권','계룡 행사권'],category:'MILITARY_CULTURE_HISTORY',tags:['MILITARY_CULTURE_HISTORY','FESTIVAL_EVENT'],entityType:'AREA',runtimeDataStatus:'UNKNOWN',eventAvailability:'UNKNOWN',accessStatus:'UNKNOWN',accessNotice:'군 관련 시설이 아닌 행사 공개구역인지와 출입 가능 여부 확인이 필요합니다.'},
+]as const;

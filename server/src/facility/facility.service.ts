@@ -20,12 +20,14 @@ export class FacilityService {
     private readonly masterData: MasterDataService,
   ) {}
 
-  async listFacilities() {
+  async listFacilities(regionId='gajo') {
+    if(regionId!=='gajo')return[];
     const rows=await this.facilityModel.find().sort({ label: 1 }).lean();
     return rows.map(row=>this.enrich(row));
   }
 
-  operationalPlaces() {
+  operationalPlaces(regionId='gajo') {
+    if(regionId!=='gajo')return[];
     return this.masterData.mapEligiblePlaces().map((place) => ({
       uri: place.entityUri, label: place.canonicalLabelKo, description: place.description,
       latitude: place.latitude, longitude: place.longitude, category: place.category,
