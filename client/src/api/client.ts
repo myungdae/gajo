@@ -207,6 +207,7 @@ export interface NearbyRestaurantsResponse {
   results: NearbyRestaurant[];
   resultStatus: 'AVAILABLE' | 'EMPTY';
 }
+export async function fetchPilotAnalytics(){const {data}=await api.get('/analytics/summary');return data}
 
 export type NearbyCategory = 'FOOD' | 'CAFE' | 'LODGING' | 'HOT_SPRING_WELLNESS' | 'GOLF_SCREEN_GOLF' | 'ACTIVITY' | 'TOURISM_NATURE' | 'CONVENIENCE' | 'OTHER';
 export interface NearbyPlace {

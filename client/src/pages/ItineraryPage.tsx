@@ -6,8 +6,11 @@ import RecommendationEntityDetails from '../components/RecommendationEntityDetai
 import GajoLiveStatus from '../components/GajoLiveStatus';
 import VisitorLocationControl from '../components/VisitorLocationControl';
 import MovementPlan from '../components/MovementPlan';
+import { ensureTripSession } from '../tripSession';
+import { track } from '../analytics';
 
 export default function ItineraryPage() {
+  const tripSession=ensureTripSession();
   const location = useLocation() as { state?: { result?: ConciergeChatResponse } };
   const navigate = useNavigate();
   const [result, setResult] = useState(location.state?.result);
@@ -45,6 +48,7 @@ export default function ItineraryPage() {
     [];
 
   const observeHeavyRain = async () => {
+    track('REPLAN_REQUESTED',tripSession.id,{source:'demo-weather-change'});
     setObserving(true);
     setRuntimeMessage('');
     try {
@@ -67,6 +71,7 @@ export default function ItineraryPage() {
   };
 
   const observeLiveRuntime = async (live: LiveRuntimeResponse) => {
+    track('REPLAN_REQUESTED',tripSession.id,{source:'live-runtime'});
     const previousContext = knownRuntimeContext || result.context || {};
     const response = await observeRuntime({ previousContext, currentContext: live.context, itinerary: rec.itinerary });
     setKnownRuntimeContext(live.context);

@@ -1,0 +1,3 @@
+import test from'node:test';import assert from'node:assert/strict';import{buildNowContinuation}from'./nowContinuation.ts';
+test('NOW continuation derives known plan facts without hardcoded visitor values',()=>{assert.deepEqual(buildNowContinuation({companions:[{relationship:'parent',healthConditions:[]}],transportMode:'CAR',walkingLevel:'LOW',interests:['HOT_SPRING','FOOD','CAFE']}),{circumstances:['부모님','자동차','짧은 보행'],interests:['온천','맛집','카페']})});
+test('NOW continuation naturally omits unknown and empty values',()=>assert.deepEqual(buildNowContinuation({transportMode:'UNKNOWN',interests:['NOT_CONFIGURED']}),{circumstances:[],interests:[]}));

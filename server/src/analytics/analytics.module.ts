@@ -1,0 +1,2 @@
+import{Module}from'@nestjs/common';import{MongooseModule}from'@nestjs/mongoose';import{PilotEvent,PilotEventSchema}from'../schemas/pilot-event.schema';import{AnalyticsService}from'./analytics.service';import{AnalyticsController}from'./analytics.controller';
+@Module({imports:[MongooseModule.forFeature([{name:PilotEvent.name,schema:PilotEventSchema}])],providers:[AnalyticsService],controllers:[AnalyticsController],exports:[AnalyticsService]})export class AnalyticsModule{}

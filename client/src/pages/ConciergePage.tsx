@@ -8,7 +8,12 @@ import { getSessionLocation } from '../utils/visitorLocation';
 import { mergeCommittedSpeech, renderSpeechText, SPEECH_RESTART_DELAY_MS } from '../utils/speechTranscript';
 import { buildContextSummary } from '../utils/contextSummary';
 import StructuredVisitorIntake from '../components/StructuredVisitorIntake';
+import PlanVisitorIntake from '../components/PlanVisitorIntake';
 import { getQuickStartPreset } from '../quickStartPresets';
+import { ensureTripSession, loadTripSession, mergeTravelContext, saveTripSession, sessionContext, type PlannedContext } from '../tripSession';
+import { REGION_CONFIG, REGION_INTEREST_OPTIONS } from '../regionConfig';
+import { track } from '../analytics';
+import { buildNowContinuation } from '../nowContinuation';
 
 interface Message {
   role: 'user' | 'ai';
@@ -31,11 +36,11 @@ function summarizeResult(result: ConciergeChatResponse): string {
 export default function ConciergePage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const preset = getQuickStartPreset((location.state as {quickStartPreset?:unknown}|null)?.quickStartPreset);
+  const entryState=(location.state as {quickStartPreset?:unknown;quickContext?:CreateContextInput;freeTextOpen?:boolean;tripMode?:'PLAN'|'NOW'}|null);const queryMode=new URLSearchParams(location.search).get('mode')?.toUpperCase();const tripMode: 'PLAN'|'NOW'|'GENERIC'=entryState?.tripMode||(queryMode==='PLAN'||queryMode==='NOW'?queryMode:'GENERIC');const preset = getQuickStartPreset(entryState?.quickStartPreset);const tripSession=ensureTripSession(REGION_CONFIG.id);
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'ai',
-      text: '안녕하세요! 함께 오신 분, 머무는 시간, 이동 방법, 걷기 편한 정도를 말씀해 주시면 지금 상황에 알맞은 일정을 안내해 드릴게요.',
+      text: tripMode==='PLAN'?'여행 날짜를 아직 정하지 않았어도 괜찮아요. 알고 있는 내용만으로 준비할게요.':tripMode==='NOW'?'필요한 선택을 누르거나 달라진 상황을 편하게 알려주세요.':'함께 오신 분, 머무는 시간, 이동 방법, 걷기 편한 정도를 알려주시면 알맞은 일정을 안내해 드릴게요.',
     },
   ]);
   const [input, setInput] = useState('');
@@ -44,8 +49,8 @@ export default function ConciergePage() {
   const [voiceSupported, setVoiceSupported] = useState(true);
   const [voiceError, setVoiceError] = useState('');
   const [requestError,setRequestError]=useState(false);
-  const [freeTextOpen,setFreeTextOpen]=useState(false);
-  const [structuredDraft,setStructuredDraft]=useState<CreateContextInput>(()=>preset?.context||{inputMode:'STRUCTURED'});
+  const [freeTextOpen,setFreeTextOpen]=useState(Boolean(entryState?.freeTextOpen));
+  const [structuredDraft,setStructuredDraft]=useState<CreateContextInput>(()=>mergeTravelContext(sessionContext(tripSession),entryState?.quickContext||preset?.context||{inputMode:'STRUCTURED'}));
   const contextSessionIdRef=useRef(sessionStorage.getItem('gajo-context-session')||crypto.randomUUID());
   const recognitionRef = useRef<any>(null);
   const userWantsListeningRef = useRef(false);
@@ -102,6 +107,7 @@ export default function ConciergePage() {
   };
 
   useEffect(()=>{sessionStorage.setItem('gajo-context-session',contextSessionIdRef.current)},[]);
+  useEffect(()=>{if(tripMode==='PLAN')track(tripSession.plannedContext?'PLAN_RESUMED':'PLAN_SESSION_STARTED',tripSession.id);if(tripMode==='NOW'){track('NOW_SESSION_STARTED',tripSession.id);if(tripSession.plannedContext)track('PLAN_NOW_CONTINUED',tripSession.id)}},[]);
 
   const send = async (overrideText?: string, structured?: CreateContextInput, retry=false) => {
     const text = (overrideText ?? input).trim();
@@ -114,8 +120,9 @@ export default function ConciergePage() {
       setInput('');
     }
     setLoading(true);
+    track(text?'FREE_LANGUAGE_REQUEST':'STRUCTURED_RECOMMENDATION_REQUESTED',tripSession.id,{mode:tripMode});
     try {
-      const gps = getSessionLocation();
+      const gps = tripMode==='PLAN'?null:getSessionLocation();
       const previousContext = [...messages].reverse().find(message => message.result?.context)?.result?.context || {};
       const previousInput = previousContext.raw?.input || previousContext;
       const carriedContext = {
@@ -136,7 +143,10 @@ export default function ConciergePage() {
         congestionState: previousContext.congestionState,
         runtimeStates: previousContext.runtimeStates,
       };
-      const result = await postConciergeChat({ ...(hasRecommendation?carriedContext:structuredDraft), ...structured, ...(text?{rawMessage:text,inputMode:'FREE_TEXT' as const}:{}), contextSessionId:contextSessionIdRef.current,isFollowup:hasRecommendation, ...(gps?.status === 'AVAILABLE' ? { latitude: gps.latitude, longitude: gps.longitude, locationAccuracy: gps.accuracy, locationObservedAt: gps.observedAt, locationStatus: gps.status } : { locationStatus: gps?.status }) });
+      const result = await postConciergeChat({ ...(hasRecommendation?carriedContext:structuredDraft), ...structured, ...(text?{rawMessage:text,inputMode:'FREE_TEXT' as const}:{}), contextSessionId:contextSessionIdRef.current,isFollowup:hasRecommendation, ...(gps?.status === 'AVAILABLE' ? { latitude: gps.latitude, longitude: gps.longitude, locationAccuracy: gps.accuracy, locationObservedAt: gps.observedAt, locationStatus: gps.status } : tripMode==='PLAN'?{}:{ locationStatus: gps?.status }) });
+      const latestSession=loadTripSession()||tripSession;saveTripSession({...latestSession,mode:tripMode==='GENERIC'?latestSession.mode:tripMode,runtimeContext:tripMode==='PLAN'?latestSession.runtimeContext:result.context,itinerary:result.recommendation?.itinerary});
+      if(tripMode==='PLAN')track('PLAN_COMPLETED',tripSession.id);if(tripMode==='NOW')track('RUNTIME_HYDRATED',tripSession.id,{location:Boolean(gps?.status==='AVAILABLE')});
+      if(result.recommendation)track('RECOMMENDATION_SHOWN',tripSession.id,{mode:tripMode});
       setMessages((prev) => [
         ...prev,
         { role: 'ai', text: summarizeResult(result), result },
@@ -144,6 +154,7 @@ export default function ConciergePage() {
     } catch (e: any) {
       console.error('[concierge] request failed',e);
       setRequestError(true);
+      track('RETRY_ERROR',tripSession.id,{stage:'recommendation'});
     } finally {
       requestInFlightRef.current=false;
       setLoading(false);
@@ -189,8 +200,10 @@ export default function ConciergePage() {
 
   return (
     <div>
-      <div ref={liveStoryRef} className="journey-live-context"><GajoLiveStatus /></div>
-      {!hasRecommendation && <div className="visitor-location-section"><VisitorLocationControl /></div>}
+      {tripMode!=='PLAN'&&<div ref={liveStoryRef} className="journey-live-context">{tripMode==='NOW'&&<header className="journey-mode-header now"><small>NOW · 여행 중</small><h1>지금 필요한 것</h1><p>현재 시간과 상황에 맞춰 지금 할 수 있는 선택을 찾아드릴게요.</p></header>}<GajoLiveStatus /></div>}
+      {tripMode==='NOW'&&tripSession.plannedContext&&<NowContinuationSummary planned={tripSession.plannedContext}/>}
+      {tripMode==='NOW'&&!hasRecommendation&&<NowImmediateActions onSelect={label=>send(label)}/>}
+      {!hasRecommendation&&tripMode!=='PLAN'&&<div className="visitor-location-section"><VisitorLocationControl /></div>}
       {!hasRecommendation && <div className="chat-window">
         {messages.map((m, i) => (
           <div key={i}>
@@ -202,11 +215,12 @@ export default function ConciergePage() {
       {requestError&&<div className="visitor-error" role="alert"><b>잠시 연결이 원활하지 않습니다.</b><p>다시 한 번 시도해 주세요.</p><button type="button" className="btn btn-outline" onClick={()=>{const last=lastRequestRef.current;if(last)send(last.text,last.structured,true)}}>다시 시도</button></div>}
 
       {!hasRecommendation && <>
-        <StructuredVisitorIntake loading={loading} initialValues={preset?.intakeValues} initialPreferences={preset?.selectedPreferences} entryMessage={preset?.entryMessage} onChange={setStructuredDraft} onSubmit={structured=>send('',structured)}/>
+        {tripMode==='PLAN'?<PlanVisitorIntake loading={loading} initial={tripSession.plannedContext} onSubmit={(structured,planned:PlannedContext)=>{saveTripSession({...tripSession,mode:'PLAN',plannedContext:planned});send('',structured)}}/>:<StructuredVisitorIntake loading={loading} initialValues={preset?.intakeValues} initialPreferences={preset?.selectedPreferences} entryMessage={preset?.entryMessage} onChange={setStructuredDraft} onSubmit={structured=>send('',structured)}/>}
         <div className="free-text-option"><span>또는</span><button type="button" className="btn btn-outline btn-block" aria-expanded={freeTextOpen} onClick={()=>setFreeTextOpen(open=>!open)}>그냥 말로 알려줄게요</button><p>선택하기 번거로우시면 편하게 말씀해 주세요.</p></div>
       </>}
 
       {hasRecommendation && latestRecommendation && <div className="recommendation-journey-start">
+        {tripMode==='PLAN'&&tripSession.plannedContext&&<PlanSummary planned={tripSession.plannedContext}/>}
         <UnderstoodContext result={latestRecommendation} />
         <ResultPanel result={latestRecommendation} onFindNearbyRestaurants={() => navigate('/nearby-discovery')} />
         <MovementPlan result={latestRecommendation} />
@@ -262,6 +276,10 @@ export default function ConciergePage() {
  * chain). Falls back to a shortened URI (gajo:xxx / roo:xxx) when no
  * label can be found, so the chat panel never shows a bare full URI.
  */
+function NowContinuationSummary({planned}:{planned:PlannedContext}){const summary=buildNowContinuation(planned);if(!summary)return null;return <section className="plan-continuity now-continuation" aria-labelledby="now-continuation-title"><h2 id="now-continuation-title">준비해 둔 여행을 이어갈게요.</h2>{summary.circumstances.length>0&&<p>{summary.circumstances.join(' · ')}</p>}{summary.interests.length>0&&<p>{summary.interests.join(' · ')}</p>}<strong>달라진 점만 알려주세요.</strong></section>}
+
+function NowImmediateActions({onSelect}:{onSelect:(label:string)=>void}){return <section className="now-needs" aria-labelledby="now-needs-title"><h2 id="now-needs-title">바로 필요한 것을 선택하세요</h2>{['지금 갈 곳','오늘 뭐 먹을까요?','한 시간 남았어요','내 주변','오늘 행사','비가 와요','쉬고 싶어요'].map(label=><button type="button" key={label} onClick={()=>onSelect(label)}>{label}</button>)}</section>}
+
 function buildLabelMap(result: ConciergeChatResponse): Record<string, string> {
   const map: Record<string, string> = {};
   for (const ul of result.riskLabels || []) map[ul.uri] = ul.label;
@@ -277,6 +295,8 @@ function buildLabelMap(result: ConciergeChatResponse): Record<string, string> {
 function labelFor(map: Record<string, string>, uri: string, fallback = '상세 정보'): string {
   return map[uri] || fallback;
 }
+
+function PlanSummary({planned}:{planned:PlannedContext}){const duration={DAY:'당일','1N2D':'1박 2일','2N3D':'2박 3일',CUSTOM:'날짜 직접 선택'}[planned.duration||'CUSTOM'];const companion=planned.companions?.[0]?.relationship;return <section className="plan-summary"><small>내 여행 준비</small><h2>{duration}</h2><p>{[companion==='parent'?'부모님과 함께':companion==='spouse'?'부부 여행':companion==='child'?'아이와 함께':companion?'가족 여행':'동행 미정',planned.transportMode==='CAR'?'자동차':planned.transportMode==='WALK'?'도보':planned.transportMode==='PUBLIC_TRANSPORT'?'대중교통':null,planned.walkingLevel==='LOW'?'짧은 보행':planned.walkingLevel==='HIGH'?'걷기 여유':planned.walkingLevel==='MODERATE'?'보통 걷기':null].filter(Boolean).join(' · ')}</p><p>{planned.interests?.map(id=>REGION_INTEREST_OPTIONS.find(x=>x.id===id)?.label||id).join(' · ')}</p>{planned.mustVisitPlaces?.length?<p>꼭 가고 싶은 곳: {planned.mustVisitPlaces.map(x=>x.label).join(', ')}</p>:null}</section>}
 
 function UnderstoodContext({ result }: { result: ConciergeChatResponse }) {
   const rows = buildContextSummary(result.context || {});

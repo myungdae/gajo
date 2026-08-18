@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { RuntimeContextService, CreateContextInput } from '../context/runtime-context.service';
 import { AgentOrchestratorService } from '../agents/agent-orchestrator.service';
 import { GraphTraversalService } from '../context/graph-traversal.service';
+import { GAJO_REGION_CONFIG, RegionConfigService } from '../region/region-config.service';
 
 /**
  * Very small keyword check: does the visitor's free-text message look like
@@ -26,8 +27,6 @@ function detectNearbyDiscovery(message?: string): { intent: boolean; category?: 
   const category = entries.find(([, pattern]) => pattern.test(message))?.[0];
   return { intent: !!category && (/주변|근처|가까운|인근|갈\s*만한|찾아|추천/.test(message)), category };
 }
-
-const OUT_OF_SERVICE_MESSAGE = '현재는 가조 지역을 중심으로 안내하고 있어요. 가조에서 즐길 수 있는 장소를 찾아드릴까요?';
 
 /**
  * Named destinations outside the currently curated Gajo ontology must not be
@@ -63,13 +62,15 @@ export class ConciergeService {
     private readonly contextService: RuntimeContextService,
     private readonly orchestrator: AgentOrchestratorService,
     private readonly traversal: GraphTraversalService,
+    @Optional() private readonly regionConfig?: RegionConfigService,
   ) {}
 
   async chat(input: CreateContextInput) {
     const { context, evidence, firedRules } = await this.contextService.createContext(input);
     const nearbyDiscovery = detectNearbyDiscovery(input.rawMessage);
     const nearbyRestaurantIntent = nearbyDiscovery.intent && nearbyDiscovery.category === 'FOOD';
-    const outsideServiceArea = detectOutOfServiceDestination(input.rawMessage);
+    const config=this.regionConfig?.current||GAJO_REGION_CONFIG;
+    const outsideServiceArea = this.regionConfig?.detectOutOfRegion(input.rawMessage)||detectOutOfServiceDestination(input.rawMessage);
 
     if (outsideServiceArea) {
       return {
@@ -81,7 +82,7 @@ export class ConciergeService {
           status: 'OUT_OF_SERVICE_AREA',
           ...outsideServiceArea,
         },
-        visitorMessage: OUT_OF_SERVICE_MESSAGE,
+        visitorMessage: config.serviceAreaMessage,
         nearbyRestaurantIntent: false,
         nearbyDiscoveryIntent: false,
       };

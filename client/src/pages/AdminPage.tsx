@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
-import { fetchAdminDashboard } from '../api/client';
+import { fetchAdminDashboard, fetchPilotAnalytics } from '../api/client';
 import { shortUri } from '../utils/uri';
 
 export default function AdminPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [pilot,setPilot]=useState<any>(null);
 
   useEffect(() => {
-    fetchAdminDashboard()
-      .then(setData)
+    Promise.all([fetchAdminDashboard(),fetchPilotAnalytics()])
+      .then(([dashboard,analytics])=>{setData(dashboard);setPilot(analytics)})
       .finally(() => setLoading(false));
   }, []);
 
@@ -17,6 +18,8 @@ export default function AdminPage() {
 
   return (
     <div>
+      {pilot&&<div className="card"><h2>관광객 파일럿 KPI</h2><p className="text-muted">개인정보나 자유 입력 원문 없이 집계한 이용 지표입니다.</p><div className="grid-2"><div className="stat-box"><div className="num">{pilot.totalTripSessions}</div><div className="label">여행 세션</div></div><div className="stat-box"><div className="num">{Math.round(pilot.recommendationCompletionRate*100)}%</div><div className="label">추천 완료율</div></div><div className="stat-box"><div className="num">{pilot.navigationHandoffCount}</div><div className="label">내비 연결</div></div><div className="stat-box"><div className="num">{pilot.itineraryAddCount}</div><div className="label">일정 담기</div></div><div className="stat-box"><div className="num">{pilot.replanningCount}</div><div className="label">일정 다시 보기</div></div><div className="stat-box"><div className="num">{pilot.errorFallbackCount}</div><div className="label">오류·재시도</div></div></div><p>구조화 요청 {pilot.structuredUsage} · 자유 입력 {pilot.freeLanguageUsage}</p><p>유입: {(pilot.sessionsByEntrySource||[]).map((x:any)=>`${x.label} ${x.total}`).join(' · ')||'아직 없음'}</p><p>빠른 선택: {(pilot.mostUsedQuickIntents||[]).map((x:any)=>`${x.label} ${x.total}`).join(' · ')||'아직 없음'}</p></div>}
+      {pilot&&<div className="card"><h2>PLAN → NOW 연속 이용</h2><p>PLAN 시작 {pilot.planSessionsStarted||0} · 완료 {pilot.planCompleted||0} · 재방문 {pilot.planResumed||0}</p><p>NOW 시작 {pilot.nowSessionsStarted||0} · 이어서 이용 {pilot.planNowContinuations||0} · 현재 상황 반영 {pilot.runtimeHydrations||0}</p></div>}
       <DataQualityPanel quality={data.dataQuality} />
       <div className="card">
         <h2>운영 현황 요약</h2>

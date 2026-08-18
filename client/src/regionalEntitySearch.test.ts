@@ -1,0 +1,2 @@
+import test from'node:test';import assert from'node:assert/strict';import{ConfigRegionalEntitySearch}from'./regionalEntitySearch.ts';
+test('partial regional place names return canonical entities',async()=>{const search=new ConfigRegionalEntitySearch([{id:'region:spa',label:'백두산천지온천',aliases:['가조온천']}]);assert.deepEqual(await search.search('천지'),[{id:'region:spa',label:'백두산천지온천',aliases:['가조온천']}]);assert.equal((await search.search('가조온'))[0].id,'region:spa')});

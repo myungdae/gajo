@@ -18,6 +18,8 @@ import { VisitorModule } from './visitor/visitor.module';
 import { DemoModule } from './demo/demo.module';
 import { NearbyModule } from './nearby/nearby.module';
 import { ReplanningModule } from './replanning/replanning.module';
+import { RegionModule } from './region/region.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -40,6 +42,8 @@ import { ReplanningModule } from './replanning/replanning.module';
     DemoModule,
     NearbyModule,
     ReplanningModule,
+    RegionModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

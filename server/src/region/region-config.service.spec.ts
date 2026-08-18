@@ -1,0 +1,2 @@
+import{RegionConfigService}from'./region-config.service';
+describe('RegionConfigService',()=>{it('returns configured copy for known out-of-region destinations',()=>{const service=new RegionConfigService();expect(service.detectOutOfRegion('해인사 관광 가고 싶어요')).toEqual({destination:'해인사',region:'합천'});expect(service.current.serviceAreaMessage).toContain(service.current.regionName)});it('does not reinterpret an ordinary local request',()=>expect(new RegionConfigService().detectOutOfRegion('가조에서 온천 가고 싶어요')).toBeUndefined())});
