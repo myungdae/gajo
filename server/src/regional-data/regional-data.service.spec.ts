@@ -1,4 +1,7 @@
 import { RegionalDataService } from './regional-data.service';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { PlaceDiscoveryService } from '../concierge/place-discovery.service';
 function model() {
   const rows: any[] = [];
   const match = (row: any, q: any) =>
@@ -37,6 +40,26 @@ const source = {
   sourceUrl: 'https://official.example/place',
 };
 describe('RegionalDataService', () => {
+  it('ingests the curated Hapcheon batch idempotently and keeps review metadata visitor-invisible until individual approval', async()=>{
+    const db=model(),service=new RegionalDataService(db as any);
+    const batch=JSON.parse(readFileSync(join(__dirname,'../../operations/hapcheon-first-batch.candidates.json'),'utf8'));
+    const first=[] as any[];for(const item of batch)first.push(await service.create(item));
+    expect(first).toHaveLength(9);
+    expect(first.find(x=>x.displayName==='합천영상테마파크')).toMatchObject({canonicalEntityId:'https://hapcheon.example/ontology#hapcheonGardenThemePark',lifecycleStatus:'CHANGE_DETECTED'});
+    expect(db.rows).toHaveLength(9);
+    const second=[] as any[];for(const item of batch)second.push(await service.create(item));
+    expect(db.rows).toHaveLength(9);expect(second.every(x=>x.ingestionOutcome==='UNCHANGED')).toBe(true);
+    const before=(await service.effectiveDataset('hapcheon'))!.records;
+    for(const name of ['대장경테마파크','해인사소리길','고바우식당','오도산자연휴양림','합천박물관'])expect(before.some(x=>x.canonicalLabelKo===name)).toBe(false);
+    const odosan=db.rows.find(x=>x.displayName==='오도산자연휴양림');await service.action(odosan.id,'APPROVE');
+    const effective=(await service.effectiveDataset('hapcheon'))!.records.find(x=>x.canonicalLabelKo==='오도산자연휴양림')!;
+    expect(effective).toMatchObject({tags:['ACCOMMODATION','NATURE','REST','FAMILY'],latitude:35.66525101,longitude:128.0528925,parking:{available:true},walkingAccess:{upperDeckAccess:expect.stringContaining('20~50m')}});
+    expect(effective.actions).toMatchObject({call:{phone:'055-930-3742'},website:{url:expect.stringContaining('foresttrip')},reserve:{url:expect.stringContaining('foresttrip')},navigate:{latitude:35.66525101,longitude:128.0528925}});
+    const discovery:any=await new PlaceDiscoveryService(service as any).discover('hapcheon','LODGING','오도산자연휴양림 근처 숙소',{});
+    expect(discovery).toMatchObject({anchorEntityId:odosan.canonicalEntityId,anchorLabel:'오도산자연휴양림'});
+    expect(discovery.entities[0]).toMatchObject({entityId:odosan.canonicalEntityId,distanceMeters:0,actions:effective.actions});
+    expect((await service.effectiveDataset('okcheon'))!.records.some(x=>x.entityUri===odosan.canonicalEntityId)).toBe(false);
+  });
   it('keeps unapproved candidates out, promotes explicitly approved records, and isolates regions', async () => {
     const db = model(),
       service = new RegionalDataService(db as any);

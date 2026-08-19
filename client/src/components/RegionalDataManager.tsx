@@ -10,7 +10,7 @@ const REGIONS = {
   "daejeon-junggu": "대전 중구",
 } as Record<string, string>;
 const SOURCE_LABELS:Record<string,string>={OFFICIAL_LOCAL_GOV:"지자체 공식 정보",OFFICIAL_BUSINESS:"공식 사업자",KTO:"한국관광공사",OFFICIAL_MAP_LISTING:"공식 지도 정보",OTHER_VERIFIED_SOURCE:"기타 검증 출처"};
-const FIELD_LABELS:Record<string,string>={displayName:"이름",entityType:"엔티티 유형",category:"카테고리",tags:"의미 태그",areaLabel:"권역",phone:"전화",address:"주소",latitude:"위도",longitude:"경도",websiteUrl:"홈페이지",reservationUrl:"예약 URL",operatingHours:"운영시간",shortDescription:"설명"};
+const FIELD_LABELS:Record<string,string>={displayName:"이름",aliases:"별칭",entityType:"엔티티 유형",category:"카테고리",tags:"의미 태그",areaLabel:"권역",phone:"전화",address:"주소",latitude:"위도",longitude:"경도",websiteUrl:"홈페이지",reservationUrl:"예약 URL",operatingHours:"운영시간",closureDays:"휴무일",parking:"주차",accessibility:"접근성",walkingAccess:"보행 특성",shortDescription:"설명"};
 export default function RegionalDataManager() {
   const [data, setData] = useState<any>({ records: [], quality: {} }),
     [filters, setFilters] = useState({
@@ -201,6 +201,7 @@ export default function RegionalDataManager() {
             <tbody>
               {[
                 "displayName",
+                "aliases",
                 "entityType",
                 "category",
                 "tags",
@@ -212,6 +213,10 @@ export default function RegionalDataManager() {
                 "websiteUrl",
                 "reservationUrl",
                 "operatingHours",
+                "closureDays",
+                "parking",
+                "accessibility",
+                "walkingAccess",
                 "shortDescription",
               ].map((field) => (
                 <tr key={field}>

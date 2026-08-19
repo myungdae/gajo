@@ -1,0 +1,287 @@
+[
+  {
+    "canonicalEntityId": "urn:regional:hapcheon:hapcheon-video-theme-park",
+    "regionId": "hapcheon",
+    "source": {
+      "sourceType": "KTO",
+      "sourceName": "대한민국 구석구석 디지털관광주민증",
+      "sourceUrl": "https://korean.visitkorea.or.kr/dgtourcard/biz/mbrb/mbrbPtcl.do?mbrbId=9e5e216d-26d5-4ab4-aca0-8350487a592a",
+      "verifiedAt": "2026-08-19",
+      "corroboratingSources": [
+        {
+          "sourceType": "OFFICIAL_LOCAL_GOV",
+          "sourceName": "합천군 영상테마파크",
+          "sourceUrl": "https://hcmoviethemepark.com/"
+        }
+      ]
+    },
+    "proposedFacts": {
+      "displayName": "합천영상테마파크",
+      "aliases": ["영상테마파크"],
+      "entityType": "ATTRACTION",
+      "category": "TOURISM_CULTURE",
+      "tags": ["TOURISM_CULTURE", "FAMILY", "PHOTO", "EXPERIENCE"],
+      "areaLabel": "용주면 · 합천호 권역",
+      "address": "경상남도 합천군 용주면 합천호수로 757",
+      "phone": "055-930-8633",
+      "websiteUrl": "https://hcmoviethemepark.com/",
+      "operatingHours": {
+        "display": "09:00~18:00",
+        "lastAdmission": "17:00"
+      },
+      "closureDays": {
+        "display": "매주 월요일, 월요일이 공휴일이면 화요일"
+      },
+      "shortDescription": "1920년대부터 1980년대까지의 시대물 촬영 세트를 관람하는 합천군 운영 영상 테마파크"
+    }
+  },
+  {
+    "canonicalEntityId": "urn:regional:hapcheon:tripitaka-theme-park",
+    "regionId": "hapcheon",
+    "source": {
+      "sourceType": "OFFICIAL_LOCAL_GOV",
+      "sourceName": "합천대장경테마파크",
+      "sourceUrl": "https://www.hc.go.kr/themeparktripitaka/sub_02_2.html",
+      "verifiedAt": "2026-08-19"
+    },
+    "proposedFacts": {
+      "displayName": "대장경테마파크",
+      "aliases": ["합천대장경테마파크", "대장경기록문화테마파크"],
+      "entityType": "ATTRACTION",
+      "category": "TOURISM_CULTURE",
+      "tags": ["TOURISM_CULTURE", "INDOOR", "EXPERIENCE", "FAMILY", "ACCESSIBILITY"],
+      "areaLabel": "가야면 · 해인사 권역",
+      "address": "경상남도 합천군 가야면 야천리 988-1",
+      "phone": "055-930-4801",
+      "accessibility": {
+        "wheelchairAccessibleTrailSegments": ["3구간", "4구간"]
+      },
+      "shortDescription": "고려대장경의 제작과 전승 과정을 전시하고 기록문화·VR 체험을 제공하는 테마파크"
+    }
+  },
+  {
+    "canonicalEntityId": "urn:regional:hapcheon:gaya-sori-trail",
+    "regionId": "hapcheon",
+    "source": {
+      "sourceType": "KTO",
+      "sourceName": "대한민국 구석구석",
+      "sourceUrl": "https://korean.visitkorea.or.kr/detail/ms_detail.do?cotid=9572ba88-2a47-403c-a2e4-085c626645b9",
+      "verifiedAt": "2026-08-19",
+      "corroboratingSources": [
+        {
+          "sourceType": "OFFICIAL_LOCAL_GOV",
+          "sourceName": "합천대장경테마파크",
+          "sourceUrl": "https://www.hc.go.kr/themeparktripitaka/sub_02_2.html"
+        }
+      ]
+    },
+    "proposedFacts": {
+      "displayName": "해인사소리길",
+      "aliases": ["가야산 소리길", "해인사 소리길"],
+      "entityType": "ATTRACTION",
+      "category": "TOURISM_NATURE",
+      "tags": ["NATURE", "WALKING", "CULTURE", "REST"],
+      "areaLabel": "가야면 · 해인사 권역",
+      "walkingAccess": {
+        "distanceKilometers": 7.3,
+        "estimatedDuration": "약 3시간",
+        "character": "홍류동 계곡을 따르는 저지대 산책로"
+      },
+      "shortDescription": "대장경테마파크에서 해인사 영산교까지 홍류동 계곡을 따라 이어지는 산책로"
+    }
+  },
+  {
+    "canonicalEntityId": "urn:regional:hapcheon:hambyeongnu",
+    "regionId": "hapcheon",
+    "source": {
+      "sourceType": "KTO",
+      "sourceName": "대한민국 구석구석",
+      "sourceUrl": "https://korean.visitkorea.or.kr/detail/ms_detail.do?cotid=61e4c2ea-6cbe-4d0f-b6b9-7590e15b6ab3",
+      "verifiedAt": "2026-08-19",
+      "corroboratingSources": [
+        {
+          "sourceType": "OTHER_VERIFIED_SOURCE",
+          "sourceName": "국가기록원 기록문화여행 길라잡이",
+          "sourceUrl": "https://www.archives.go.kr/archivesdata/upFile/palgan/1352444535812.pdf"
+        }
+      ]
+    },
+    "proposedFacts": {
+      "displayName": "함벽루",
+      "aliases": [],
+      "entityType": "ATTRACTION",
+      "category": "TOURISM_CULTURE",
+      "tags": ["TOURISM_CULTURE", "SCENIC_VIEW", "REST"],
+      "areaLabel": "합천읍 · 황강 권역",
+      "address": "경상남도 합천군 합천읍 합천대로 2900",
+      "shortDescription": "고려 충숙왕 때 창건되어 황강과 정양호 경관을 바라보는 목조 누각"
+    }
+  },
+  {
+    "canonicalEntityId": "urn:regional:hapcheon:gobau-restaurant",
+    "regionId": "hapcheon",
+    "source": {
+      "sourceType": "OFFICIAL_LOCAL_GOV",
+      "sourceName": "합천군 문화관광",
+      "sourceUrl": "https://www.hc.go.kr/06574/06591/06609.web?amode=view&idx=18",
+      "verifiedAt": "2026-08-19"
+    },
+    "proposedFacts": {
+      "displayName": "고바우식당",
+      "aliases": ["해인사 고바우식당"],
+      "entityType": "RESTAURANT",
+      "category": "FOOD",
+      "tags": ["FOOD"],
+      "areaLabel": "가야면 · 해인사 권역",
+      "address": "경상남도 합천군 가야면 치인1길 13-5",
+      "phone": "055-932-7311",
+      "operatingHours": {
+        "display": "09:00~20:00"
+      },
+      "parking": {
+        "available": true,
+        "spaces": 15,
+        "fee": "무료"
+      },
+      "shortDescription": "해인사 권역에서 산채한정식과 송이 요리를 제공하는 한식당"
+    }
+  },
+  {
+    "canonicalEntityId": "urn:regional:hapcheon:ihwajang-korean-restaurant",
+    "regionId": "hapcheon",
+    "source": {
+      "sourceType": "OTHER_VERIFIED_SOURCE",
+      "sourceName": "현재 사업체·위치 정보 교차 확인",
+      "sourceUrl": "https://www.siksinhot.com/P/752449",
+      "verifiedAt": "2026-08-19",
+      "corroboratingSources": [
+        {
+          "sourceType": "OFFICIAL_LOCAL_GOV",
+          "sourceName": "합천영상테마파크 입점시설 자료",
+          "sourceUrl": "https://www.hc.go.kr/_res/portal/data/pdf/h05000/03.pdf"
+        }
+      ]
+    },
+    "proposedFacts": {
+      "displayName": "이화장한식당",
+      "aliases": ["이화장 한식당"],
+      "entityType": "RESTAURANT",
+      "category": "FOOD",
+      "tags": ["FOOD"],
+      "areaLabel": "용주면 · 합천영상테마파크",
+      "address": "경상남도 합천군 용주면 합천호수로 757",
+      "phone": "055-931-0992",
+      "shortDescription": "합천영상테마파크 안에서 한식 정식 메뉴를 제공하는 음식점"
+    }
+  },
+  {
+    "canonicalEntityId": "urn:regional:hapcheon:moon-garden",
+    "regionId": "hapcheon",
+    "source": {
+      "sourceType": "OFFICIAL_BUSINESS",
+      "sourceName": "달의정원 공식 홈페이지",
+      "sourceUrl": "https://www.dalsgarden.co.kr/bbs/board.php?bo_table=yb_location01",
+      "verifiedAt": "2026-08-19",
+      "corroboratingSources": [
+        {
+          "sourceType": "OFFICIAL_LOCAL_GOV",
+          "sourceName": "합천군 문화관광",
+          "sourceUrl": "https://www.hc.go.kr/06574/06590/06601.web?amode=view&idx=48"
+        }
+      ]
+    },
+    "proposedFacts": {
+      "displayName": "달의정원",
+      "aliases": ["합천 해인사 달의정원"],
+      "entityType": "ACCOMMODATION",
+      "category": "ACCOMMODATION",
+      "tags": ["ACCOMMODATION", "TRADITIONAL_CULTURE", "REST"],
+      "areaLabel": "가야면 · 해인사 권역",
+      "address": "경상남도 합천군 가야면 치인1길 13-31",
+      "phone": "055-934-0107",
+      "websiteUrl": "https://www.dalsgarden.co.kr/",
+      "operatingHours": {
+        "checkIn": "15:00",
+        "checkOut": "11:00"
+      },
+      "accessibility": {
+        "accessibleToilet": false,
+        "accessibleParking": false
+      },
+      "shortDescription": "가야산과 해인사 권역에 있는 한국관광 품질인증 한옥 숙소"
+    }
+  },
+  {
+    "canonicalEntityId": "urn:regional:hapcheon:odosan-natural-recreation-forest",
+    "regionId": "hapcheon",
+    "source": {
+      "sourceType": "OTHER_VERIFIED_SOURCE",
+      "sourceName": "공공데이터포털 전국휴양림표준데이터",
+      "sourceUrl": "https://www.data.go.kr/data/15013111/standard.do?recommendDataYn=Y",
+      "verifiedAt": "2026-08-19",
+      "corroboratingSources": [
+        {
+          "sourceType": "KTO",
+          "sourceName": "대한민국 구석구석",
+          "sourceUrl": "https://korean.visitkorea.or.kr/detail/ms_detail.do?cotid=cbfe8948-e7d2-4162-a2e9-db7cd2b17204"
+        }
+      ]
+    },
+    "proposedFacts": {
+      "displayName": "오도산자연휴양림",
+      "aliases": ["오도산 자연휴양림"],
+      "entityType": "ACCOMMODATION",
+      "category": "ACCOMMODATION",
+      "tags": ["ACCOMMODATION", "NATURE", "REST", "FAMILY"],
+      "areaLabel": "봉산면 · 오도산 권역",
+      "address": "경상남도 합천군 봉산면 오도산휴양로 345",
+      "latitude": 35.66525101,
+      "longitude": 128.0528925,
+      "phone": "055-930-3742",
+      "websiteUrl": "https://www.foresttrip.go.kr/indvz/main.do?hmpgId=ID02030068",
+      "reservationUrl": "https://www.foresttrip.go.kr/indvz/main.do?hmpgId=ID02030068",
+      "parking": {
+        "available": true
+      },
+      "walkingAccess": {
+        "upperDeckAccess": "주차 후 20~50m 도보 이동이 필요한 구간이 있음"
+      },
+      "shortDescription": "숲속의 집, 야영장, 산책로와 산림치유 프로그램을 운영하는 합천군 자연휴양림"
+    }
+  },
+  {
+    "canonicalEntityId": "urn:regional:hapcheon:hapcheon-museum",
+    "regionId": "hapcheon",
+    "source": {
+      "sourceType": "OFFICIAL_LOCAL_GOV",
+      "sourceName": "합천박물관",
+      "sourceUrl": "https://www.hc.go.kr/06422/06429.web",
+      "verifiedAt": "2026-08-19",
+      "corroboratingSources": [
+        {
+          "sourceType": "KTO",
+          "sourceName": "대한민국 구석구석",
+          "sourceUrl": "https://korean.visitkorea.or.kr/detail/ms_detail.do?cotid=48247328-a322-4340-a4fc-31430db3c338"
+        }
+      ]
+    },
+    "proposedFacts": {
+      "displayName": "합천박물관",
+      "aliases": [],
+      "entityType": "ATTRACTION",
+      "category": "TOURISM_CULTURE",
+      "tags": ["TOURISM_CULTURE", "INDOOR", "FAMILY"],
+      "areaLabel": "쌍책면 · 옥전고분군 권역",
+      "address": "경상남도 합천군 쌍책면 황강옥전로 1558",
+      "phone": "055-930-4882",
+      "operatingHours": {
+        "marchToOctober": "09:00~18:00, 입장마감 17:00",
+        "novemberToFebruary": "09:00~17:00, 입장마감 16:00"
+      },
+      "closureDays": {
+        "display": "매주 월요일, 1월 1일, 설날, 추석"
+      },
+      "shortDescription": "옥전고분군과 다라국을 중심으로 합천의 역사와 문화를 전시하는 공립박물관"
+    }
+  }
+]

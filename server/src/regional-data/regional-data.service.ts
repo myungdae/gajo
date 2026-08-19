@@ -25,7 +25,7 @@ const SOURCE_TYPES = new Set([
 ]);
 const TRANSFER_SCHEMA_VERSION='1.0';
 const ENTITY_TYPES=new Set(['ATTRACTION','CAFE','ACCOMMODATION','RESTAURANT','EXPERIENCE','EVENT','FACILITY','ACTIVITY','AREA','CULTURAL_AREA','MARKET','SHOPPING_AREA','OTHER']);
-const TRANSFER_FIELDS=['displayName','entityType','category','tags','areaLabel','address','latitude','longitude','phone','websiteUrl','reservationUrl','operatingHours','shortDescription'] as const;
+const TRANSFER_FIELDS=['displayName','aliases','entityType','category','tags','areaLabel','address','latitude','longitude','phone','websiteUrl','reservationUrl','operatingHours','closureDays','parking','accessibility','walkingAccess','shortDescription'] as const;
 @Injectable()
 export class RegionalDataService implements OnModuleInit {
   constructor(
@@ -91,19 +91,24 @@ export class RegionalDataService implements OnModuleInit {
       );
     if (!SOURCE_TYPES.has(input.source.sourceType))
       throw new BadRequestException('Unsupported sourceType');
-    const canonical =
-      input.canonicalEntityId ||
+    const identityBaseline = this.findEquivalentBaseline(input.regionId, input.proposedFacts);
+    const requestedCanonical = input.canonicalEntityId;
+    const regionalRows: any[] = await this.model.find({ regionId: input.regionId }).lean();
+    const identityRow = regionalRows.find((row) => this.sameIdentity(row, input.proposedFacts));
+    const canonical = identityBaseline?.entityUri || identityRow?.canonicalEntityId || requestedCanonical ||
       `urn:regional-candidate:${input.regionId}:${randomUUID()}`;
     const baseline = this.baseline(input.regionId, canonical);
-    const existing: any = await this.model.findOne({
-      canonicalEntityId: canonical,
-      regionId: input.regionId,
-    });
+    const existing: any = await this.model.findOne({ canonicalEntityId: canonical, regionId: input.regionId });
     if (existing) {
+      if (existing.proposedFacts && this.sameFacts(existing.proposedFacts, input.proposedFacts))
+        return { ...existing.toObject(), ingestionOutcome: 'UNCHANGED' };
       const current = this.toCandidate(baseline, existing);
+      const changes = this.diffAll(current, input.proposedFacts);
+      if (existing.verificationStatus === 'VERIFIED' && changes.length === 0)
+        return { ...existing.toObject(), ingestionOutcome: 'UNCHANGED' };
       existing.source = input.source;
       existing.proposedFacts = input.proposedFacts;
-      existing.detectedChanges = this.diff(current, input.proposedFacts);
+      existing.detectedChanges = changes;
       existing.lifecycleStatus = existing.verificationStatus === 'VERIFIED'
         ? 'CHANGE_DETECTED'
         : 'NEW_CANDIDATE';
@@ -116,9 +121,9 @@ export class RegionalDataService implements OnModuleInit {
         changes: existing.detectedChanges,
       });
       await existing.save();
-      return existing.toObject();
+      return { ...existing.toObject(), ingestionOutcome: existing.verificationStatus === 'VERIFIED' ? 'CHANGE_DETECTED' : 'CANDIDATE_UPDATED' };
     }
-    return this.model.create({
+    const created: any = await this.model.create({
       id: `rd-${randomUUID()}`,
       canonicalEntityId: canonical,
       regionId: input.regionId,
@@ -138,6 +143,7 @@ export class RegionalDataService implements OnModuleInit {
         },
       ],
     });
+    return { ...created.toObject(), ingestionOutcome: baseline ? 'CHANGE_DETECTED' : 'CREATED' };
   }
   async action(
     id: string,
@@ -287,6 +293,56 @@ export class RegionalDataService implements OnModuleInit {
       (x) => x.entityUri === id,
     );
   }
+  private findEquivalentBaseline(region: string, facts: any) {
+    return REGIONAL_CANDIDATE_DATASETS[region]?.records.find((row) => this.sameIdentity(row, facts));
+  }
+  private sameIdentity(row: any, facts: any) {
+    const normalize = (value?: unknown) => typeof value === 'string'
+      ? value.normalize('NFKC').toLocaleLowerCase('ko-KR').replace(/[^0-9a-z가-힣]/g, '')
+      : undefined;
+    const names = [row.canonicalLabelKo, row.displayName, ...(row.alternateLabels || []), ...(row.aliases || []), ...(row.proposedFacts?.aliases || [])]
+      .map(normalize).filter(Boolean);
+    const proposedNames = [facts.displayName, ...(facts.aliases || [])].map(normalize).filter(Boolean);
+    if (proposedNames.some((name) => names.includes(name))) return true;
+    const sameKind = Boolean(facts.entityType && facts.entityType === (row.entityType || row.proposedFacts?.entityType))
+      || Boolean(facts.category && facts.category === (row.category || row.proposedFacts?.category));
+    const rowAddress = normalize(row.address || row.proposedFacts?.address);
+    const proposedAddress = normalize(facts.address);
+    if (sameKind && proposedAddress && proposedAddress === rowAddress) return true;
+    const phone = (value?: string) => value?.replace(/\D/g, '');
+    if (phone(facts.phone) && phone(facts.phone) === phone(row.phone || row.telephone || row.proposedFacts?.phone)) return true;
+    const rowLat = row.latitude ?? row.proposedFacts?.latitude, rowLng = row.longitude ?? row.proposedFacts?.longitude;
+    if (Number.isFinite(facts.latitude) && Number.isFinite(facts.longitude) && Number.isFinite(rowLat) && Number.isFinite(rowLng)) {
+      const latMeters = (facts.latitude - rowLat) * 111_000;
+      const lngMeters = (facts.longitude - rowLng) * 88_000;
+      if (sameKind && Math.hypot(latMeters, lngMeters) <= 30) return true;
+    }
+    return false;
+  }
+  private diffAll(base: any, facts: any) {
+    const current = this.factFields({
+      displayName: base.canonicalLabelKo || base.displayName,
+      aliases: base.alternateLabels || base.aliases,
+      entityType: base.entityType,
+      category: base.category,
+      tags: base.tags,
+      areaLabel: base.areaLabel,
+      address: base.address,
+      latitude: base.latitude,
+      longitude: base.longitude,
+      phone: base.telephone || base.phone,
+      websiteUrl: base.website || base.websiteUrl,
+      reservationUrl: base.reservationUrl,
+      operatingHours: base.operatingHours,
+      closureDays: base.closureDays,
+      parking: base.parking,
+      accessibility: base.accessibility,
+      walkingAccess: base.walkingAccess,
+      shortDescription: base.description || base.shortDescription,
+    });
+    return TRANSFER_FIELDS.filter((field) => facts[field] !== undefined && JSON.stringify(facts[field]) !== JSON.stringify(current[field]))
+      .map((field) => ({ field, previousValue: current[field], newValue: facts[field], unsafe: ['latitude', 'longitude'].includes(field) }));
+  }
   private diff(base: any, facts: any) {
     if (!base) return [];
     return [
@@ -318,6 +374,7 @@ export class RegionalDataService implements OnModuleInit {
   private factFields(f: any) {
     return {
       displayName: f.displayName,
+      aliases: Array.isArray(f.aliases) ? f.aliases : [],
       entityType: f.entityType,
       category: f.category,
       tags: Array.isArray(f.tags) ? f.tags : [],
@@ -329,6 +386,10 @@ export class RegionalDataService implements OnModuleInit {
       websiteUrl: f.websiteUrl,
       reservationUrl: f.reservationUrl,
       operatingHours: f.operatingHours,
+      closureDays: f.closureDays,
+      parking: f.parking,
+      accessibility: f.accessibility,
+      walkingAccess: f.walkingAccess,
       shortDescription: f.shortDescription,
     };
   }
@@ -355,6 +416,7 @@ export class RegionalDataService implements OnModuleInit {
       }),
       entityUri: row.canonicalEntityId,
       canonicalLabelKo: row.displayName,
+      alternateLabels: row.aliases?.length ? row.aliases : (base?.alternateLabels || []),
       category: row.category || base?.category || 'OTHER',
       entityType: row.entityType || base?.entityType,
       tags: row.tags?.length ? row.tags : (base?.tags || []),
@@ -364,6 +426,10 @@ export class RegionalDataService implements OnModuleInit {
       website: row.websiteUrl ?? base?.website,
       reservationUrl: row.reservationUrl ?? base?.reservationUrl,
       operatingHours: row.operatingHours ?? base?.operatingHours,
+      closureDays: row.closureDays ?? (base as any)?.closureDays,
+      parking: row.parking ?? (base as any)?.parking,
+      accessibility: row.accessibility ?? (base as any)?.accessibility,
+      walkingAccess: row.walkingAccess ?? (base as any)?.walkingAccess,
       latitude: coordinatesSafe ? row.latitude : undefined,
       longitude: coordinatesSafe ? row.longitude : undefined,
       description: row.shortDescription ?? base?.description,
