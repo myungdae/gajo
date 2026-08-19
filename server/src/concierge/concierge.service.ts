@@ -3,6 +3,7 @@ import { RuntimeContextService, CreateContextInput } from '../context/runtime-co
 import { AgentOrchestratorService } from '../agents/agent-orchestrator.service';
 import { GraphTraversalService } from '../context/graph-traversal.service';
 import { GAJO_REGION_CONFIG, RegionConfigService } from '../region/region-config.service';
+import{routeNaturalLanguageIntent}from'./intent-routing';import{PlaceDiscoveryService}from'./place-discovery.service';
 
 /**
  * Very small keyword check: does the visitor's free-text message look like
@@ -63,6 +64,7 @@ export class ConciergeService {
     private readonly orchestrator: AgentOrchestratorService,
     private readonly traversal: GraphTraversalService,
     @Optional() private readonly regionConfig?: RegionConfigService,
+    @Optional() private readonly placeDiscovery?:PlaceDiscoveryService,
   ) {}
 
   async chat(input: CreateContextInput) {
@@ -70,6 +72,7 @@ export class ConciergeService {
     const nearbyDiscovery = detectNearbyDiscovery(input.rawMessage);
     const nearbyRestaurantIntent = nearbyDiscovery.intent && nearbyDiscovery.category === 'FOOD';
     const config=this.regionConfig?.get(input.regionId)||GAJO_REGION_CONFIG;
+    const route=routeNaturalLanguageIntent(input);
     const outsideServiceArea = this.regionConfig?.detectOutOfRegion(input.rawMessage,input.regionId)||(!input.regionId||input.regionId==='gajo'?detectOutOfServiceDestination(input.rawMessage):undefined);
 
     if (outsideServiceArea) {
@@ -85,8 +88,11 @@ export class ConciergeService {
         visitorMessage: config.serviceAreaMessage,
         nearbyRestaurantIntent: false,
         nearbyDiscoveryIntent: false,
+        intentRoute:route.intentRoute,
       };
     }
+
+    if((route.intentRoute==='PLACE_DISCOVERY'||route.intentRoute==='IMMEDIATE_NOW')&&route.category&&this.placeDiscovery){const discovery=await this.placeDiscovery.discover(input.regionId||'gajo',route.category,input.rawMessage||'',context);return{context,evidence,firedRules,recommendation:null,discovery,intentRoute:route.intentRoute,nearbyRestaurantIntent:false,nearbyDiscoveryIntent:false,nearbyCategory:route.category}}
 
     if (!context.operationUri) {
       return {
@@ -96,6 +102,7 @@ export class ConciergeService {
         nearbyRestaurantIntent,
         nearbyDiscoveryIntent: nearbyDiscovery.intent,
         nearbyCategory: nearbyDiscovery.category,
+        intentRoute:route.intentRoute,
         message: '적용 가능한 컨시어지 운영(Operation)을 찾지 못했습니다. 온톨로지에 gajo:ConciergeOperation을 확인해주세요.',
       };
     }
@@ -127,6 +134,7 @@ export class ConciergeService {
       nearbyRestaurantIntent,
       nearbyDiscoveryIntent: nearbyDiscovery.intent,
       nearbyCategory: nearbyDiscovery.category,
+      intentRoute:route.intentRoute,
     };
   }
 }

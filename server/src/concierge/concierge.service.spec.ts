@@ -1,4 +1,5 @@
 import { ConciergeService, detectOutOfServiceDestination } from './concierge.service';
+import{GAJO_REGION_CONFIG}from'../region/region-config.service';
 
 describe('ConciergeService service-area handling', () => {
   it('recognizes the explicit Haeinsa destination without treating generic requests as external', () => {
@@ -21,4 +22,5 @@ describe('ConciergeService service-area handling', () => {
     });
     expect(orchestrator.run).not.toHaveBeenCalled();
   });
+  it('returns direct discovery and does not enter the journey orchestrator',async()=>{const contextService={createContext:jest.fn().mockResolvedValue({context:{contextNo:'RC-D',operationUri:'gajo:operation',activityPreferences:['CAFE']},evidence:[],firedRules:[]})},orchestrator={run:jest.fn()},discovery={discover:jest.fn().mockResolvedValue({regionId:'hapcheon',category:'CAFE',entities:[{entityId:'lowful'}]})};const service=new ConciergeService(contextService as any,orchestrator as any,{label:jest.fn()}as any,{get:jest.fn(()=>GAJO_REGION_CONFIG),detectOutOfRegion:jest.fn()}as any,discovery as any);const result:any=await service.chat({regionId:'hapcheon',inputMode:'FREE_TEXT',rawMessage:'합천호 주변 전망 좋은 카페 알려줘'});expect(result).toMatchObject({intentRoute:'PLACE_DISCOVERY',recommendation:null,discovery:{category:'CAFE'}});expect(discovery.discover).toHaveBeenCalled();expect(orchestrator.run).not.toHaveBeenCalled()});
 });

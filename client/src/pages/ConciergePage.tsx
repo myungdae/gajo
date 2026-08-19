@@ -31,6 +31,7 @@ function summarizeResult(result: ConciergeChatResponse): string {
     return '죄송합니다. 말씀하신 내용을 일정으로 구성하지 못했습니다. 원하는 방문 상황을 조금 더 구체적으로 말씀해 주세요.';
   }
   if (result.visitorMessage) return result.visitorMessage;
+  if(result.discovery)return result.discovery.entities.length?`${result.discovery.entities.length}곳을 조건에 맞춰 찾았습니다.`:'조건에 맞는 검증된 장소를 아직 찾지 못했습니다.';
   if (!rec) {
     return '요청을 접수했습니다. 조건을 분석했지만 아직 추천할 프로그램을 찾지 못했습니다.';
   }
@@ -104,6 +105,7 @@ export default function ConciergePage() {
       const latestSession=loadTripSession(sessionStorage,region.id)||tripSession;saveTripSession({...latestSession,mode:tripMode==='GENERIC'?latestSession.mode:tripMode,runtimeContext:tripMode==='PLAN'?latestSession.runtimeContext:result.context,itinerary:result.recommendation?.itinerary});
       if(tripMode==='PLAN')track('PLAN_COMPLETED',tripSession.id);if(tripMode==='NOW')track('RUNTIME_HYDRATED',tripSession.id,{location:Boolean(gps?.status==='AVAILABLE')});
       if(result.recommendation)track('RECOMMENDATION_SHOWN',tripSession.id,{mode:tripMode,candidateRegionIds:(result.recommendation.candidateRegionIds||[]).join(',')});
+      if(result.intentRoute)track('INTENT_ROUTED',tripSession.id,{intentRoute:result.intentRoute});
       setMessages((prev) => [
         ...prev,
         { role: 'ai', text: summarizeResult(result), result },
@@ -121,14 +123,16 @@ export default function ConciergePage() {
   useEffect(()=>{if(entryState?.autoSubmit&&entryState.initialMessage&&!homeSubmittedRef.current){homeSubmittedRef.current=true;send(entryState.initialMessage)}},[]);
 
   const hasRecommendation = messages.some(message => Boolean(message.result?.recommendation));
+  const hasPrimaryResult=messages.some(message=>Boolean(message.result?.recommendation||message.result?.discovery));
   const latestRecommendation = [...messages].reverse().find(message => message.result?.recommendation)?.result;
+  const latestPrimaryResult=[...messages].reverse().find(message=>message.result?.recommendation||message.result?.discovery)?.result;
 
   useEffect(() => {
-    if (hasRecommendation && !hadRecommendationRef.current) {
+    if (hasPrimaryResult && !hadRecommendationRef.current) {
       requestAnimationFrame(() => liveStoryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
     }
-    hadRecommendationRef.current = hasRecommendation;
-  }, [hasRecommendation]);
+    hadRecommendationRef.current = hasPrimaryResult;
+  }, [hasPrimaryResult]);
 
   const runDemo = async () => {
     setLoading(true);
@@ -161,9 +165,11 @@ export default function ConciergePage() {
     <div>
       {tripMode!=='PLAN'&&<div ref={liveStoryRef} className="journey-live-context">{tripMode==='NOW'&&<header className="journey-mode-header now"><small>NOW · 여행 중</small><h1>지금 필요한 것</h1><p>현재 시간과 상황에 맞춰 지금 할 수 있는 선택을 찾아드릴게요.</p></header>}<GajoLiveStatus regionName={region.regionName} regionId={region.id} liveEnabled={regionalRuntimeView(region).weatherEnabled}/></div>}
       {tripMode==='NOW'&&tripSession.plannedContext&&<NowContinuationSummary planned={tripSession.plannedContext}/>}
-      {tripMode==='NOW'&&!hasRecommendation&&<NowImmediateActions onSelect={label=>send(label)}/>}
-      {!hasRecommendation&&tripMode!=='PLAN'&&<div className="visitor-location-section"><VisitorLocationControl /></div>}
-      {!hasRecommendation && <div className="chat-window">
+      {tripMode==='NOW'&&!hasPrimaryResult&&(
+        <NowImmediateActions onSelect={label=>send(label)}/>
+      )}
+      {!hasPrimaryResult&&tripMode!=='PLAN'&&<div className="visitor-location-section"><VisitorLocationControl /></div>}
+      {!hasPrimaryResult && <div className="chat-window">
         {messages.map((m, i) => (
           <div key={i}>
             <div className={`chat-bubble ${m.role === 'user' ? 'user' : 'ai'}`}>{m.text}</div>
@@ -173,7 +179,7 @@ export default function ConciergePage() {
       </div>}
       {requestError&&<div className="visitor-error" role="alert"><b>잠시 연결이 원활하지 않습니다.</b><p>다시 한 번 시도해 주세요.</p><button type="button" className="btn btn-outline" onClick={()=>{const last=lastRequestRef.current;if(last)send(last.text,last.structured,true)}}>다시 시도</button></div>}
 
-      {!hasRecommendation && <>
+      {!hasPrimaryResult && <>
         {tripMode==='PLAN'?<PlanVisitorIntake loading={loading} initial={tripSession.plannedContext} onSubmit={(structured,planned:PlannedContext)=>{saveTripSession({...tripSession,mode:'PLAN',plannedContext:planned});send('',structured)}}/>:<StructuredVisitorIntake loading={loading} initialValues={preset?.intakeValues} initialPreferences={preset?.selectedPreferences} entryMessage={preset?.entryMessage} onChange={setStructuredDraft} onSubmit={structured=>send('',structured)}/>}
         <div className="free-text-option"><span>또는</span><button type="button" className="btn btn-outline btn-block" aria-expanded={freeTextOpen} onClick={()=>setFreeTextOpen(open=>!open)}>그냥 말로 알려줄게요</button><p>선택하기 번거로우시면 편하게 말씀해 주세요.</p></div>
       </>}
@@ -191,15 +197,17 @@ export default function ConciergePage() {
         {loading && <div className="loading">이어서 살펴보고 있습니다...</div>}
       </div>}
 
-      {(hasRecommendation||freeTextOpen) && <div className={hasRecommendation ? 'concierge-followup-composer' : 'concierge-input-panel'}>
+      {latestPrimaryResult?.discovery&&<div className="recommendation-journey-start"><UnderstoodContext result={latestPrimaryResult}/><PlaceDiscoveryPanel result={latestPrimaryResult}/>{loading&&<div className="loading">이어서 살펴보고 있습니다...</div>}</div>}
+
+      {(hasPrimaryResult||freeTextOpen) && <div className={hasPrimaryResult ? 'concierge-followup-composer' : 'concierge-input-panel'}>
         <div className="input-panel-heading">
-          {!hasRecommendation && <small>말하거나 직접 입력하세요</small>}
-          <h2>{hasRecommendation ? SHARED_VISITOR_COPY.followupHeading : '직접 이야기해 보세요'}</h2>
+          {!hasPrimaryResult && <small>말하거나 직접 입력하세요</small>}
+          <h2>{hasPrimaryResult ? '다른 조건도 말씀해 주세요' : '직접 이야기해 보세요'}</h2>
         </div>
         <textarea
           className={listening ? 'is-voice-listening' : undefined}
-          rows={hasRecommendation ? 2 : 5}
-          placeholder={hasRecommendation ? '일정에 대해 궁금한 것을 말씀해주세요.' : '예: 가족과 함께 편안하게 힐링할 수 있는 온천 코스를 추천해주세요.'}
+          rows={hasPrimaryResult ? 2 : 5}
+          placeholder={hasPrimaryResult ? '다른 장소나 조건을 말씀해주세요.' : '예: 가족과 함께 편안하게 힐링할 수 있는 온천 코스를 추천해주세요.'}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
@@ -215,12 +223,12 @@ export default function ConciergePage() {
             <strong>{listening?'듣고 있어요... · 말하기 끝':'말하기'}</strong>
             <span className={`voice-bars${listening?' is-listening':''}`} aria-hidden="true"><i/><i/><i/><i/><i/><i/></span>
           </button>
-          {!hasRecommendation && <p>말씀하신 내용이 위 입력창에 들어갑니다. 음성은 저장하지 않아요.</p>}
+          {!hasPrimaryResult && <p>말씀하신 내용이 위 입력창에 들어갑니다. 음성은 저장하지 않아요.</p>}
         </div>
         <p className="voice-helper" role="status">{listening?'듣고 있어요. 계속 말씀하시거나 ‘말하기 끝’을 눌러 주세요.':'말씀하신 내용이 위 입력창에 들어갑니다. 음성은 저장하지 않아요.'}</p>
         {(!voiceSupported||voiceError)&&<p className="voice-error" role="alert">{voiceError}</p>}
         <button className="btn btn-primary btn-block concierge-submit" onClick={() => send()} disabled={loading}>
-          {hasRecommendation ? '전송' : '대화로 일정 찾기'}
+          {hasPrimaryResult ? '전송' : '대화로 찾기'}
         </button>
       </div>}
     </div>
@@ -289,3 +297,5 @@ function ResultPanel({
     </section>
   );
 }
+
+function PlaceDiscoveryPanel({result}:{result:ConciergeChatResponse}){const discovery=result.discovery!,label={CAFE:'카페',FOOD:'식당',LODGING:'숙소',ACTIVITY:'체험',TOURISM_NATURE:'관광지',CONVENIENCE:'편의시설'}[discovery.category]||'장소';return <section className="recommendation-section place-discovery-results"><h2>조건에 맞는 {label}</h2><p className="text-muted">검증된 지역 운영 데이터에서 맞는 장소만 보여드려요. 현재 영업 여부는 방문 전에 확인해 주세요.</p>{discovery.entities.length?discovery.entities.map((entity:any,index:number)=><div className="place-discovery-item" key={entity.entityId}><RecommendationItineraryItem step={entity} index={index}/>{entity.reasons?.length>0&&<p className="place-discovery-reasons">{entity.reasons.join(' · ')}</p>}</div>):<p className="text-muted">현재 조건에 맞는 검증된 장소가 없습니다.</p>}</section>}
