@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { exportRegionalData,fetchRegionalData,importRegionalData,previewRegionalDataImport,regionalDataAction } from "../api/client";
+import { reviewActionsFor } from "../regionalDataReview";
 const REGIONS = {
   gajo: "가조",
   okcheon: "옥천",
@@ -9,6 +10,7 @@ const REGIONS = {
   "daejeon-junggu": "대전 중구",
 } as Record<string, string>;
 const SOURCE_LABELS:Record<string,string>={OFFICIAL_LOCAL_GOV:"지자체 공식 정보",OFFICIAL_BUSINESS:"공식 사업자",KTO:"한국관광공사",OFFICIAL_MAP_LISTING:"공식 지도 정보",OTHER_VERIFIED_SOURCE:"기타 검증 출처"};
+const FIELD_LABELS:Record<string,string>={displayName:"이름",entityType:"엔티티 유형",category:"카테고리",tags:"의미 태그",areaLabel:"권역",phone:"전화",address:"주소",latitude:"위도",longitude:"경도",websiteUrl:"홈페이지",reservationUrl:"예약 URL",operatingHours:"운영시간",shortDescription:"설명"};
 export default function RegionalDataManager() {
   const [data, setData] = useState<any>({ records: [], quality: {} }),
     [filters, setFilters] = useState({
@@ -21,7 +23,8 @@ export default function RegionalDataManager() {
     [token, setToken] = useState(
       () => sessionStorage.getItem("admin-write-token") || "",
     ),
-    [error, setError] = useState(""),[importPackage,setImportPackage]=useState<any>(),[importPreview,setImportPreview]=useState<any>(),[trustedImport,setTrustedImport]=useState(false);
+    [error, setError] = useState(""),[notice,setNotice]=useState(""),[importPackage,setImportPackage]=useState<any>(),[importPreview,setImportPreview]=useState<any>(),[trustedImport,setTrustedImport]=useState(false);
+  const reviewRef=useRef<HTMLDivElement>(null);
   const load = () =>
     fetchRegionalData(
       Object.fromEntries(Object.entries(filters).filter(([, v]) => v)),
@@ -58,7 +61,8 @@ export default function RegionalDataManager() {
       );
       setSelected(updated);
       setError("");
-      load();
+      setNotice(action==='APPROVE'||action==='APPLY_CHANGE'||action==='APPROVE_EDITED'?`${updated.displayName}이(가) ACTIVE / VERIFIED로 승인되었습니다.`:"조치가 반영되었습니다.");
+      void load();
     } catch {
       setError("조치를 적용하지 못했습니다. 권한과 출처를 확인해 주세요.");
     }
@@ -69,6 +73,7 @@ export default function RegionalDataManager() {
   const chooseImport=async(file?:File)=>{setImportPreview(undefined);setImportPackage(undefined);if(!file)return;if(file.size>1_000_000){setError("가져오기 파일은 1MB 이하여야 합니다.");return}try{const pkg=JSON.parse(await file.text());setImportPackage(pkg);setError("")}catch{setError("올바른 JSON 패키지를 선택해 주세요.")}};
   const previewImport=async()=>{if(!requireTransferContext()||!importPackage)return;try{if(importPackage.regionId!==filters.regionId)throw new Error();setImportPreview(await previewRegionalDataImport(importPackage,token,trustedImport));setError("")}catch{setError("패키지 검증에 실패했습니다. 지역·출처·스키마를 확인해 주세요.")}};
   const applyImport=async()=>{if(!requireTransferContext()||!importPackage||!importPreview)return;try{const result=await importRegionalData(importPackage,token,trustedImport);setImportPreview(result);setError("");void load()}catch{setError("데이터를 가져오지 못했습니다. 검토 결과를 확인해 주세요.")}};
+  const selectRecord=(row:any)=>{setSelected(row);setNotice("");requestAnimationFrame(()=>{reviewRef.current?.focus({preventScroll:true});reviewRef.current?.scrollIntoView({behavior:"smooth",block:"nearest"})})};
   return (
     <section className="card regional-data-manager">
       <h2>지역 데이터 관리자</h2>
@@ -162,8 +167,10 @@ export default function RegionalDataManager() {
         {(data.records || []).map((row: any) => (
           <button
             key={row.id}
-            onClick={() => setSelected(row)}
+            onClick={() => selectRecord(row)}
             className={selected?.id === row.id ? "selected" : ""}
+            aria-expanded={selected?.id === row.id}
+            aria-controls="regional-data-review"
           >
             <b>{row.displayName}</b>
             <span>
@@ -179,8 +186,9 @@ export default function RegionalDataManager() {
         ))}
       </div>
       {selected && (
-        <div className="regional-data-review">
-          <h3>{selected.displayName}</h3>
+        <div className="regional-data-review" id="regional-data-review" ref={reviewRef} tabIndex={-1}>
+          <div className="regional-review-heading"><div><small>{REGIONS[selected.regionId]||selected.regionId} · {selected.entityType||"유형 미정"} / {selected.category||"카테고리 미정"}</small><h3>{selected.displayName}</h3></div>{selected.lifecycleStatus==='NEEDS_VERIFICATION'&&<strong className="verification-waiting">운영 반영 전 검증 대기</strong>}</div>
+          <dl className="regional-review-status"><div><dt>생명주기</dt><dd>{selected.lifecycleStatus}</dd></div><div><dt>검증 상태</dt><dd>{selected.verificationStatus}</dd></div><div><dt>최종 검증일</dt><dd>{selected.lastVerifiedAt?.slice(0,10)||"미검증"}</dd></div></dl>
           <p>{selected.canonicalEntityId}</p>
           <table className="simple">
             <thead>
@@ -207,7 +215,7 @@ export default function RegionalDataManager() {
                 "shortDescription",
               ].map((field) => (
                 <tr key={field}>
-                  <td>{field}</td>
+                  <td>{FIELD_LABELS[field]||field}</td>
                   <td>{String(selected[field] ?? "-")}</td>
                   <td>{String(selected.proposedFacts?.[field] ?? "-")}</td>
                 </tr>
@@ -223,16 +231,7 @@ export default function RegionalDataManager() {
             aria-label="관리자 쓰기 토큰"
           />
           <div className="regional-data-actions">
-            {[
-              ["APPROVE", "승인"],
-              ["HOLD", "보류"],
-              ["APPROVE_EDITED", "수정 후 승인"],
-              ["REJECT", "거절"],
-              ["STOP", "운영 중지"],
-              ["REVERIFY", "재검증 필요"],
-              ["APPLY_CHANGE", "변경 반영"],
-              ["IGNORE_CHANGE", "변경 무시"],
-            ].map(([action, label]) => (
+            {reviewActionsFor(selected.lifecycleStatus).map(([action, label]) => (
               <button
                 className="btn btn-outline"
                 key={action}
@@ -244,6 +243,7 @@ export default function RegionalDataManager() {
           </div>
         </div>
       )}
+      {notice&&<p className="regional-action-notice" role="status">{notice}</p>}
       {error && (
         <p className="voice-error" role="alert">
           {error}
