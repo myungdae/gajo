@@ -6,6 +6,11 @@ export class ItineraryStep {
   @Prop()
   itemId?: string;
 
+  @Prop() entityId?:string;
+  @Prop() regionId?:string;
+  @Prop() itineraryRole?:string;
+  @Prop() dayIndex?:number;
+
   @Prop({ required: true })
   order: number;
 
@@ -41,9 +46,20 @@ export class ItineraryStep {
   @Prop() entityType?: string;
   @Prop() accommodationType?: string;
   @Prop() areaLabel?: string;
+  @Prop() description?:string;
   @Prop() eventAvailability?: string;
   @Prop() accessStatus?: string;
   @Prop() accessNotice?: string;
+  @Prop() address?:string;
+  @Prop() telephone?:string;
+  @Prop() website?:string;
+  @Prop() reservationUrl?:string;
+  @Prop() publicInformationUrl?:string;
+  @Prop({type:Object}) actions?:Record<string,unknown>;
+  @Prop({type:Object}) source?:object;
+  @Prop() lastVerifiedAt?:string;
+  @Prop() latitude?:number;
+  @Prop() longitude?:number;
 }
 export const ItineraryStepSchema = SchemaFactory.createForClass(ItineraryStep);
 

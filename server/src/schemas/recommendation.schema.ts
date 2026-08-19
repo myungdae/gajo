@@ -65,6 +65,9 @@ export class Recommendation {
 
   @Prop({ type: Object })
   decisionStages?: Record<string, any>;
+
+  @Prop({ type: Object })
+  interestCoverage?: { selected:string[];covered:string[];uncovered:string[] };
 }
 
 export type RecommendationDocument = Recommendation & Document;

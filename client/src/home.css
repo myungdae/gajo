@@ -1,0 +1,10 @@
+.home-conversation-first{width:100%;min-width:0;overflow-x:hidden}
+.home-conversation-first>*{min-width:0}
+.home-conversation-first .mode-entry button{min-width:0}
+.home-conversation-first .home-examples{max-width:100%}
+.app-main{min-width:0;overflow-x:hidden}
+.home-conversation-first .home-identity h2,.home-conversation-first .home-conversation h1{max-width:100%;overflow-wrap:anywhere}
+.home-conversation-first .mode-entry{grid-template-columns:repeat(2,minmax(0,1fr))}
+.home-conversation-first .home-conversation-form{width:100%;min-width:0}
+.home-voice-button.is-listening{color:var(--color-primary);background:#edf3ed}
+.home-voice-error{margin:8px 2px 0!important;color:#8a433a!important;font-size:12px!important}

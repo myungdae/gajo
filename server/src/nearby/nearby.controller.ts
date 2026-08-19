@@ -6,17 +6,16 @@ const CATEGORIES: NearbyCategory[] = ['FOOD', 'CAFE', 'LODGING', 'HOT_SPRING_WEL
 @Controller('api/nearby')
 export class NearbyController {
   constructor(private readonly nearby: NearbyService) {}
-  @Get('status') status() { return this.nearby.status(); }
+  @Get('status') status(@Query('regionId') regionId?:string) { return this.nearby.status(regionId); }
 
   @Get('discovery')
   async discovery(@Query('category') categoryValue: string, @Query('lat') latValue: string, @Query('lng') lngValue: string,
     @Query('radius') radiusValue?: string, @Query('weather') weather?: string, @Query('useDistance') useDistanceValue?: string,
-    @Query('transportMode') transportMode?: 'car' | 'foot') {
+    @Query('transportMode') transportMode?: 'car' | 'foot', @Query('regionId') regionId?: string) {
     if (!CATEGORIES.includes(categoryValue as NearbyCategory)) throw new BadRequestException('지원하지 않는 주변 장소 종류입니다.');
     const { lat, lng, radius } = this.validateSearch(latValue, lngValue, radiusValue);
-    this.ensureConfigured();
     try {
-      const results = await this.nearby.search(categoryValue as NearbyCategory, lat, lng, radius, { weather, useDistance: useDistanceValue !== 'false', transportMode: transportMode === 'car' ? 'car' : 'foot' });
+      const results = await this.nearby.search(categoryValue as NearbyCategory, lat, lng, radius, { weather, useDistance: useDistanceValue !== 'false', transportMode: transportMode === 'car' ? 'car' : 'foot' }, regionId);
       return { origin: { lat, lng, distanceTrusted: useDistanceValue !== 'false' }, category: categoryValue, radius, total: results.length, resultStatus: results.length ? 'AVAILABLE' : 'EMPTY', results };
     } catch (error) { this.rethrow(error); }
   }

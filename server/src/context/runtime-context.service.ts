@@ -19,6 +19,7 @@ import { ContextExtractionGateway } from './context-extraction.gateway';
 
 export interface CreateContextInput {
   regionId?: string;
+  duration?: string;
   mustVisitPlaces?: { entityId?: string; label: string; resolved: boolean }[];
   accommodationIntents?: { entityId?: string; label: string; resolved: boolean }[];
   visitorNo?: string;
@@ -152,7 +153,7 @@ export class RuntimeContextService {
       const extracted = parseNaturalLanguageContext(input.rawMessage);
       const extractorResult: ExtractorResult = gatewayOutcome.result;
       const merged = mergeContextExtractions(extracted, extractorResult);
-      if(input.regionId==='hapcheon'&&extracted.explicitAccommodation==='전원펜션')accommodationIntents=[{entityId:'https://hapcheon.example/ontology#jeonwonPension',label:'전원펜션',resolved:true}];
+      if(input.regionId==='hapcheon'&&extracted.explicitAccommodation==='합천호 스마일펜션')accommodationIntents=[{entityId:'https://hapcheon.example/ontology#hapcheonLakeSmilePension',label:'합천호 스마일펜션',resolved:true}];
       if (companions.length === 0) companions = merged.companions;
       if (merged.transportMode && (input.isFollowup || !transportMode)) transportMode = merged.transportMode as TransportMode;
       if (merged.stayUntil && (input.isFollowup || !stayUntil)) stayUntil = merged.stayUntil;
@@ -225,6 +226,7 @@ export class RuntimeContextService {
     const doc = await this.contextModel.create({
       contextNo,
       regionId: input.regionId || 'gajo',
+      duration: input.duration,
       visitorNo: input.visitorNo,
       rawMessage: input.rawMessage,
       actors,

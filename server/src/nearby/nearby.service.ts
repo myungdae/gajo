@@ -1,6 +1,8 @@
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MasterDataService } from '../master-data/master-data.service';
+import { RegionalDataService } from '../regional-data/regional-data.service';
+import { REGIONAL_CANDIDATE_DATASETS } from '../regions/regional-candidate.registry';
 
 export type NearbyCategory =
   | 'FOOD' | 'CAFE' | 'LODGING' | 'HOT_SPRING_WELLNESS'
@@ -34,7 +36,7 @@ export interface NearbyPlace {
   canonicalEntityUri?: string;
   canonicalLabel?: string;
   masterVerificationStatus?: string;
-  transient: true;
+  transient: boolean;
   relevanceScore: number;
   /** Legacy restaurant bucket, retained for /restaurants clients. */
   categoryGroup?: string;
@@ -80,19 +82,22 @@ export function normalizeNearbyCategory(name: string, providerCategory = '', cod
 @Injectable()
 export class NearbyService {
   private readonly logger = new Logger(NearbyService.name);
-  constructor(private readonly config: ConfigService, @Optional() private readonly master?: MasterDataService) {}
+  constructor(private readonly config: ConfigService, @Optional() private readonly master?: MasterDataService, @Optional() private readonly regionalData?: RegionalDataService) {}
   private get kakaoKey() { return (this.config.get<string>('KAKAO_REST_API_KEY') || process.env.KAKAO_REST_API_KEY)?.trim() || undefined; }
   private get timeoutMs() { const n = Number(this.config.get('KAKAO_LOCAL_TIMEOUT_MS') || 5000); return Number.isFinite(n) && n >= 500 && n <= 30000 ? n : 5000; }
   isConfigured() { return !!this.kakaoKey; }
-  status() { return { configured: this.isConfigured(), state: this.isConfigured() ? 'READY' : 'NOT_CONFIGURED', provider: 'KAKAO_LOCAL', timeoutMs: this.timeoutMs }; }
+  status(regionId?: string) { const configured=this.isConfigured()||Boolean(regionId&&this.regionalData&&REGIONAL_CANDIDATE_DATASETS[regionId]);return { configured, state: configured ? 'READY' : 'NOT_CONFIGURED', provider: this.isConfigured()?'KAKAO_LOCAL':'REGIONAL_OPERATIONAL_DATA', timeoutMs: this.timeoutMs }; }
 
-  async search(category: NearbyCategory, lat: number, lng: number, radius = 2000, options: NearbySearchOptions = {}): Promise<NearbyPlace[]> {
+  async search(category: NearbyCategory, lat: number, lng: number, radius = 2000, options: NearbySearchOptions = {}, regionId?: string): Promise<NearbyPlace[]> {
     const key = this.kakaoKey;
-    if (!key) throw new NearbyServiceError('NOT_CONFIGURED', '주변 장소 검색은 현재 준비 중입니다.');
     const plan = PLANS[category];
     const byId = new Map<string, NearbyPlace>();
-    for (const code of plan.codes) await this.fetchCategory(key, code, category, lat, lng, radius, byId);
-    for (const keyword of plan.keywords) await this.fetchKeyword(key, keyword, category, lat, lng, radius, byId);
+    if (key) {
+      for (const code of plan.codes) await this.fetchCategory(key, code, category, lat, lng, radius, byId);
+      for (const keyword of plan.keywords) await this.fetchKeyword(key, keyword, category, lat, lng, radius, byId);
+    }
+    if (regionId && this.regionalData) await this.addOperationalPlaces(byId, category, lat, lng, radius, regionId);
+    if (!key && byId.size === 0) throw new NearbyServiceError('NOT_CONFIGURED', '주변 장소 검색은 현재 준비 중입니다.');
     const useDistance = options.useDistance !== false;
     const rainy = options.weather === 'HEAVY_RAIN';
     for (const place of byId.values()) {
@@ -108,6 +113,35 @@ export class NearbyService {
   }
 
   async searchRestaurants(lat: number, lng: number, radius = 2000) { return this.search('FOOD', lat, lng, radius); }
+
+  private async addOperationalPlaces(byId: Map<string, NearbyPlace>, requested: NearbyCategory, lat: number, lng: number, radius: number, regionId: string) {
+    const dataset = await this.regionalData!.effectiveDataset(regionId);
+    for (const record of dataset?.records || []) {
+      if (!Number.isFinite(record.latitude) || !Number.isFinite(record.longitude)) continue;
+      const category = normalizeNearbyCategory(record.canonicalLabelKo, record.category, '', record.category as NearbyCategory);
+      if (category !== requested) continue;
+      const distanceMeters = this.distanceMeters(lat, lng, record.latitude!, record.longitude!);
+      if (distanceMeters > radius) continue;
+      const existing = [...byId.values()].find((place) => place.canonicalEntityUri === record.entityUri || place.name === record.canonicalLabelKo);
+      if (existing) {
+        existing.canonicalEntityUri = record.entityUri;
+        existing.canonicalLabel = record.canonicalLabelKo;
+        existing.masterVerificationStatus = record.runtimeDataStatus;
+        continue;
+      }
+      byId.set(`canonical:${record.entityUri}`, {
+        id: `canonical:${record.entityUri}`, name: record.canonicalLabelKo, category, categoryLabel: LABELS[category],
+        providerCategoryName: record.category, address: record.address || '', roadAddress: record.address,
+        phone: record.telephone, lat: record.latitude!, lng: record.longitude!, distanceMeters,
+        placeUrl: record.website || '', indoorRelevance: INDOOR.has(category) ? 'INDOOR' : 'UNKNOWN',
+        operatingState: 'UNKNOWN', operatingMessage: '현재 운영 여부 확인 필요', contextualReasons: ['검증된 지역 운영 데이터입니다.'],
+        canonicalEntityUri: record.entityUri, canonicalLabel: record.canonicalLabelKo,
+        masterVerificationStatus: record.runtimeDataStatus, transient: false, relevanceScore: 5,
+      });
+    }
+  }
+
+  private distanceMeters(aLat:number,aLng:number,bLat:number,bLng:number){const r=6371000,toRad=(v:number)=>v*Math.PI/180;const dLat=toRad(bLat-aLat),dLng=toRad(bLng-aLng);const h=Math.sin(dLat/2)**2+Math.cos(toRad(aLat))*Math.cos(toRad(bLat))*Math.sin(dLng/2)**2;return Math.round(2*r*Math.asin(Math.sqrt(h)))}
 
   private async fetchCategory(key: string, code: string, requested: NearbyCategory, lat: number, lng: number, radius: number, byId: Map<string, NearbyPlace>) {
     for (let page = 1; page <= 3; page++) {

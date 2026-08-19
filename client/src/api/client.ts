@@ -210,6 +210,12 @@ export interface NearbyRestaurantsResponse {
   results: NearbyRestaurant[];
   resultStatus: 'AVAILABLE' | 'EMPTY';
 }
+export async function fetchRegionalData(filters:Record<string,string>={}){const{data}=await api.get('/admin/regional-data',{params:filters});return data}
+export async function regionalDataAction(id:string,action:string,editedFacts:Record<string,unknown>|undefined,token:string){const{data}=await api.post(`/admin/regional-data/${id}/actions/${action}`,{editedFacts},{headers:{'x-admin-token':token}});return data}
+export async function createRegionalCandidate(payload:any,token:string){const{data}=await api.post('/admin/regional-data/candidates',payload,{headers:{'x-admin-token':token}});return data}
+export async function exportRegionalData(regionId:string,token:string,options:{includeChanges?:boolean;backup?:boolean}={}){const{data}=await api.get('/admin/regional-data/export',{params:{regionId,...options},headers:{'x-admin-token':token}});return data}
+export async function previewRegionalDataImport(packageValue:any,token:string,trustedVerified=false){const{data}=await api.post('/admin/regional-data/import/preview',{package:packageValue,trustedVerified},{headers:{'x-admin-token':token}});return data}
+export async function importRegionalData(packageValue:any,token:string,trustedVerified=false){const{data}=await api.post('/admin/regional-data/import',{package:packageValue,trustedVerified},{headers:{'x-admin-token':token}});return data}
 export async function fetchPilotAnalytics(){const {data}=await api.get('/analytics/summary');return data}
 
 export type NearbyCategory = 'FOOD' | 'CAFE' | 'LODGING' | 'HOT_SPRING_WELLNESS' | 'GOLF_SCREEN_GOLF' | 'ACTIVITY' | 'TOURISM_NATURE' | 'CONVENIENCE' | 'OTHER';
@@ -219,15 +225,15 @@ export interface NearbyPlace {
   estimatedTravelMinutes?: number; placeUrl: string; matchedKeyword?: string;
   indoorRelevance: 'INDOOR' | 'OUTDOOR' | 'UNKNOWN'; operatingState: 'UNKNOWN'; operatingMessage: string;
   availabilityMessage?: string; contextualReasons: string[]; canonicalEntityUri?: string; canonicalLabel?: string;
-  masterVerificationStatus?: string; transient: true; relevanceScore: number;
+  masterVerificationStatus?: string; transient: boolean; relevanceScore: number;
 }
 export interface NearbyDiscoveryResponse {
   origin: { lat: number; lng: number; distanceTrusted: boolean }; category: NearbyCategory; radius: number; total: number;
   resultStatus: 'AVAILABLE' | 'EMPTY'; results: NearbyPlace[];
 }
 
-export async function fetchNearbyStatus() {
-  const { data } = await api.get<{ configured: boolean; state: 'READY' | 'NOT_CONFIGURED'; provider: 'KAKAO_LOCAL'; timeoutMs: number }>('/nearby/status');
+export async function fetchNearbyStatus(regionId?:string) {
+  const { data } = await api.get<{ configured: boolean; state: 'READY' | 'NOT_CONFIGURED'; provider: 'KAKAO_LOCAL'|'REGIONAL_OPERATIONAL_DATA'; timeoutMs: number }>('/nearby/status',{params:{regionId}});
   return data;
 }
 
@@ -285,8 +291,8 @@ export async function createReservation(payload: {
   return data;
 }
 
-export async function fetchNearbyDiscovery(category: NearbyCategory, lat: number, lng: number, options: { radius?: number; weather?: string; useDistance?: boolean; transportMode?: 'car' | 'foot' } = {}) {
-  const { data } = await api.get<NearbyDiscoveryResponse>('/nearby/discovery', { params: { category, lat, lng, radius: options.radius || 2500, weather: options.weather, useDistance: options.useDistance !== false, transportMode: options.transportMode || 'foot' } });
+export async function fetchNearbyDiscovery(category: NearbyCategory, lat: number, lng: number, options: { radius?: number; weather?: string; useDistance?: boolean; transportMode?: 'car' | 'foot'; regionId?: string } = {}) {
+  const { data } = await api.get<NearbyDiscoveryResponse>('/nearby/discovery', { params: { category, lat, lng, radius: options.radius || 2500, weather: options.weather, useDistance: options.useDistance !== false, transportMode: options.transportMode || 'foot', regionId: options.regionId } });
   return data;
 }
 

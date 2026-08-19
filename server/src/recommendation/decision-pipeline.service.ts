@@ -7,11 +7,16 @@ export interface DecisionCandidate {
   isMustVisit?: boolean;
   allowUnknownDuration?: boolean;
   entityType?: string;
+  category?: string;
+  tags?: string[];
+  itineraryRole?: string;
+  scheduledTime?: string;
   accommodationType?: string;
   areaLabel?: string;
   eventAvailability?: string;
   accessStatus?: string;
   accessNotice?: string;
+  description?:string; address?:string; telephone?:string; website?:string; reservationUrl?:string; publicInformationUrl?:string; actions?:Record<string,unknown>; source?:object; lastVerifiedAt?:string;
   programUri: string;
   programLabel: string;
   facilityUri?: string;

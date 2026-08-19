@@ -45,6 +45,13 @@ describe('NearbyService', () => {
     const [row] = await new NearbyService(config({ KAKAO_REST_API_KEY: 'key' }), master).search('HOT_SPRING_WELLNESS', 35.7, 128);
     expect(row).toMatchObject({ canonicalEntityUri: 'gajo:baekdu', transient: true, masterVerificationStatus: 'PARTIAL', address: '검증 주소' });
   });
+  it('consumes an approved regional DB cafe directly for verified nearby distance',async()=>{
+    const regional={effectiveDataset:jest.fn(async(regionId:string)=>regionId==='hapcheon'?{records:[{entityUri:'urn:regional:hapcheon:lowful',canonicalLabelKo:'로우풀',category:'CAFE',runtimeDataStatus:'VERIFIED',address:'경상남도 합천군 대병면 회양관광단지길 28-10',telephone:'0507-1333-2434',latitude:35.525488,longitude:128.018877,actions:{navigate:{latitude:35.525488,longitude:128.018877}}}]}:{records:[]})}as any;
+    const service=new NearbyService(config({}),undefined,regional);
+    const rows=await service.search('CAFE',35.524485899856,128.01578179029,2500,{},'hapcheon');
+    expect(rows).toHaveLength(1);expect(rows[0]).toMatchObject({name:'로우풀',canonicalEntityUri:'urn:regional:hapcheon:lowful',transient:false,masterVerificationStatus:'VERIFIED'});expect(rows[0].distanceMeters).toBeGreaterThan(0);
+    await expect(service.search('CAFE',35.524485899856,128.01578179029,2500,{},'okcheon')).rejects.toMatchObject({code:'NOT_CONFIGURED'});
+  });
   it('surfaces provider errors, timeout and malformed data', async () => {
     const service = new NearbyService(config({ KAKAO_REST_API_KEY: 'key' }));
     jest.spyOn(global, 'fetch').mockResolvedValueOnce(response({}, 503)); await expect(service.search('CAFE', 35.7, 128)).rejects.toMatchObject({ code: 'UPSTREAM_ERROR' });

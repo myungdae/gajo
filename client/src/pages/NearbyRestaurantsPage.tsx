@@ -45,7 +45,7 @@ export default function NearbyRestaurantsPage() {
   const [navigationPlace,setNavigationPlace]=useState<NearbyPlace|null>(null);
 
   useEffect(() => {
-    if(!regionalRuntime.nearbyEnabled){setConfigured(false);return}fetchNearbyStatus().then(s => setConfigured(s.configured)).catch(() => setConfigured(false));
+    if(!regionalRuntime.nearbyEnabled){setConfigured(false);return}fetchNearbyStatus(region.id).then(s => setConfigured(s.configured)).catch(() => setConfigured(false));
     if(regionalRuntime.weatherEnabled)fetchLiveRuntimeContext(region.id).then(live =>{const owned=liveRuntimeForRegion(live,region.id);setWeather(owned?.context?.weatherState||owned?.context?.weather)}).catch(() => setWeather(undefined));
   }, [region.id,regionalRuntime.nearbyEnabled,regionalRuntime.weatherEnabled]);
   const locate = async (reuse=true) => {
@@ -58,7 +58,7 @@ export default function NearbyRestaurantsPage() {
   useEffect(() => {
     if (!origin || configured !== true) return;
     setLoading(true); setError(null); setSelected(null);
-    fetchNearbyDiscovery(category, origin[0], origin[1], { useDistance: distanceTrusted, transportMode: 'car', weather })
+    fetchNearbyDiscovery(category, origin[0], origin[1], { useDistance: distanceTrusted, transportMode: 'car', weather, regionId: region.id })
       .then(response => setPlaces(response.results))
       .catch(error => setError(error?.response?.data?.message || '주변 장소를 불러오지 못했습니다.'))
       .finally(() => setLoading(false));

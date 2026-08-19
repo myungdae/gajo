@@ -1,8 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable,Optional } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { OntologyIndividualDoc } from '../schemas/ontology-individual.schema';
 import { MasterDataService } from '../master-data/master-data.service';
+import { HAPCHEON_MAP_PLACES, HAPCHEON_MASTER_DATA } from '../regions/hapcheon/master-data';
+import { RegionalDataService } from '../regional-data/regional-data.service';
 
 /**
  * FacilityService: CRUD over the Mongo-materialized `facilities` and
@@ -17,17 +19,17 @@ export class FacilityService {
   constructor(
     @InjectModel('FacilityModel') private facilityModel: Model<OntologyIndividualDoc>,
     @InjectModel('ProgramModel') private programModel: Model<OntologyIndividualDoc>,
-    private readonly masterData: MasterDataService,
+    private readonly masterData: MasterDataService,@Optional() private readonly regionalData?:RegionalDataService,
   ) {}
 
   async listFacilities(regionId='gajo') {
-    if(regionId!=='gajo')return[];
+    if(regionId!=='gajo'){const dataset=this.regionalData?await this.regionalData.effectiveDataset(regionId):undefined;const records:any[]=dataset?.records||(regionId==='hapcheon'?[...HAPCHEON_MASTER_DATA]:[]);return records.map(place=>({uri:place.entityUri,label:place.canonicalLabelKo,comment:place.description,literalProps:{address:place.address,telephone:place.telephone,website:place.website,reservationUrl:place.reservationUrl,latitude:place.latitude,longitude:place.longitude,category:place.category,actions:place.actions},masterData:{verificationStatus:place.runtimeDataStatus,provenance:place.source,lastVerifiedAt:place.lastVerifiedAt}}))}
     const rows=await this.facilityModel.find().sort({ label: 1 }).lean();
     return rows.map(row=>this.enrich(row));
   }
 
-  operationalPlaces(regionId='gajo') {
-    if(regionId!=='gajo')return[];
+  async operationalPlaces(regionId='gajo') {
+    if(regionId!=='gajo'){const dataset=this.regionalData?await this.regionalData.effectiveDataset(regionId):undefined;const records:any[]=(dataset?.records||(regionId==='hapcheon'?[...HAPCHEON_MAP_PLACES]:[])).filter((place:any)=>place.actions?.navigate);return records.map(place=>({uri:place.entityUri,label:place.canonicalLabelKo,description:place.description,latitude:place.latitude,longitude:place.longitude,category:place.category,address:place.address,telephone:place.telephone,actions:place.actions,source:place.source,lastVerifiedAt:place.lastVerifiedAt,coordinateVerification:'VERIFIED'}))}
     return this.masterData.mapEligiblePlaces().map((place) => ({
       uri: place.entityUri, label: place.canonicalLabelKo, description: place.description,
       latitude: place.latitude, longitude: place.longitude, category: place.category,

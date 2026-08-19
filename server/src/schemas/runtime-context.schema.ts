@@ -17,6 +17,9 @@ export class RuntimeContext {
   regionId: string;
 
   @Prop()
+  duration?: string;
+
+  @Prop()
   visitorNo?: string;
 
   @Prop()

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { shortUri } from '../utils/uri';
 import { approveReplanning, hydrateRuntimeLocation, observeRuntime, rejectReplanning, type ConciergeChatResponse, type LiveRuntimeResponse, type ReplanningProposal } from '../api/client';
-import RecommendationEntityDetails from '../components/RecommendationEntityDetails';
+import RecommendationItineraryItem from '../components/RecommendationItineraryItem';
 import GajoLiveStatus from '../components/GajoLiveStatus';
 import VisitorLocationControl from '../components/VisitorLocationControl';
 import MovementPlan from '../components/MovementPlan';
@@ -46,11 +46,6 @@ export default function ItineraryPage() {
     const evidence = (rec.evidence || []).find((item: any) => item.subject === uri || item.object === uri);
     return evidence?.subject === uri ? evidence.subjectLabel || fallback : evidence?.objectLabel || fallback;
   };
-  const reservationChecks: any[] =
-    result.reservationCheck ||
-    (result as any).runResult?.executionLog?.find((l: any) => l.taskLabel?.includes('예약'))?.output
-      ?.reservationCheck ||
-    [];
 
   const observeHeavyRain = async () => {
     track('REPLAN_REQUESTED',tripSession.id,{source:'demo-weather-change'});
@@ -132,45 +127,10 @@ export default function ItineraryPage() {
         </div>
       )}
 
-      <div className="card">
-        <h2>추천 프로그램 &amp; 시설</h2>
-        <RecommendationEntityDetails result={result} />
-      </div>
-
       {itinerarySteps.length > 0 && (
         <div className="card">
           <h2>일정 단계</h2>
-          {itinerarySteps.map((step: any, i: number) => (
-            <div className="itinerary-step" key={i}>
-              <div className="step-index">{step.order ?? i + 1}</div>
-              <div className="step-body">
-                <h3>{step.label || step.facilityLabel || '일정 항목'}</h3>
-                {step.programLabel && <p>{step.programLabel}</p>}
-                {step.durationMinutes && <p>소요 시간: 약 {step.durationMinutes}분</p>}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {reservationChecks.length > 0 && (
-        <div className="card">
-          <h2>예약 가능 여부</h2>
-          {reservationChecks.map((r: any, i: number) => (
-            <div key={i} style={{ marginBottom: 8, fontSize: 13 }}>
-              <b>{r.facilityLabel || visitorLabel(r.facilityUri, '시설 정보')}</b> —{' '}
-              {r.available ? '✅ 예약 가능' : '❌ 예약 불가'}
-              {r.availableSlots && (
-                <div className="tag-row">
-                  {r.availableSlots.map((s: string) => (
-                    <span className="badge muted" key={s}>
-                      {s}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+          {itinerarySteps.map((step: any, i: number) => <RecommendationItineraryItem step={step} index={i} key={step.itemId||step.programUri||i}/>)}
         </div>
       )}
 

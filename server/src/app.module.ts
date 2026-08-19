@@ -20,6 +20,7 @@ import { NearbyModule } from './nearby/nearby.module';
 import { ReplanningModule } from './replanning/replanning.module';
 import { RegionModule } from './region/region.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { RegionalDataModule } from './regional-data/regional-data.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     ReplanningModule,
     RegionModule,
     AnalyticsModule,
+    RegionalDataModule,
   ],
   controllers: [AppController],
   providers: [AppService],

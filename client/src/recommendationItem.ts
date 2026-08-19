@@ -1,0 +1,7 @@
+export type OperationalActionKey='detail'|'reserve'|'call'|'website'|'navigate';
+export interface RecommendationItem{entityId?:string;programUri?:string;facilityUri?:string;programLabel?:string;facilityLabel?:string;label?:string;regionId?:string;entityType?:string;address?:string;telephone?:string;website?:string;reservationUrl?:string;publicInformationUrl?:string;latitude?:number;longitude?:number;actions?:Record<string,unknown>}
+export function canonicalEntityId(item:RecommendationItem){const id=item.entityId||item.programUri||item.facilityUri;return id&&id!=='unknown'?id:undefined}
+export function recommendationItemLabel(item:RecommendationItem){return item.programLabel||item.facilityLabel||item.label||'일정 항목'}
+export function isInteractiveRecommendationItem(item:RecommendationItem){return Boolean(canonicalEntityId(item))}
+export function supportedActionKeys(item:RecommendationItem):OperationalActionKey[]{const actions=(item.actions||{})as any;return(['detail','reserve','call','website','navigate']as OperationalActionKey[]).filter(key=>{const action=actions[key];if(!action)return false;if(key==='detail'||key==='reserve'||key==='website')return Boolean(action.url);if(key==='call')return Boolean(action.phone);return Number.isFinite(action.latitude)&&Number.isFinite(action.longitude)})}
+export function itemBelongsToRegion(item:RecommendationItem,regionId:string){const id=canonicalEntityId(item);return !id||regionId==='gajo'?!id||id.includes('gajo-wellness'):id.includes(`${regionId}.example`)||item.regionId===regionId}

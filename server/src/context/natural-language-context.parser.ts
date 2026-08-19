@@ -70,7 +70,7 @@ export function parseNaturalLanguageContext(message: string): ParsedNaturalLangu
   return {
     conditions, companions, companionConstraints,
     activityPreferences:[...new Set(activityPreferences)],
-    explicitAccommodation:/전원\s*펜션/.test(message)?'전원펜션':undefined,
+    explicitAccommodation:/(?:합천호\s*)?스마일\s*펜션/.test(message)?'합천호 스마일펜션':undefined,
     transportMode: parseTransport(message),
     stayUntil: parseStayUntil(message),
     walkingLevel: shortWalking || (/무릎/.test(message) && comfort) ? 'LOW' : undefined,

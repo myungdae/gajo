@@ -3,9 +3,9 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { postConciergeChat, runDemoScenario, type ConciergeChatResponse, type CreateContextInput } from '../api/client';
 import GajoLiveStatus from '../components/GajoLiveStatus';
 import VisitorLocationControl from '../components/VisitorLocationControl';
-import MovementPlan from '../components/MovementPlan';
+import RecommendationItineraryItem from '../components/RecommendationItineraryItem';
 import { getSessionLocation } from '../utils/visitorLocation';
-import { mergeCommittedSpeech, renderSpeechText, SPEECH_RESTART_DELAY_MS } from '../utils/speechTranscript';
+import { useSpeechInput } from '../hooks/useSpeechInput';
 import { buildContextSummary } from '../utils/contextSummary';
 import StructuredVisitorIntake from '../components/StructuredVisitorIntake';
 import PlanVisitorIntake from '../components/PlanVisitorIntake';
@@ -42,75 +42,26 @@ export default function ConciergePage() {
   const regionLink=(path:string)=>regionalPath(path,region.id);
   const navigate = useNavigate();
   const location = useLocation();
-  const entryState=(location.state as {quickStartPreset?:unknown;quickContext?:CreateContextInput;freeTextOpen?:boolean;tripMode?:'PLAN'|'NOW'}|null);const queryMode=new URLSearchParams(location.search).get('mode')?.toUpperCase();const tripMode: 'PLAN'|'NOW'|'GENERIC'=entryState?.tripMode||(queryMode==='PLAN'||queryMode==='NOW'?queryMode:'GENERIC');const preset = getQuickStartPreset(entryState?.quickStartPreset);const tripSession=ensureTripSession(region.id);
+  const entryState=(location.state as {quickStartPreset?:unknown;quickContext?:CreateContextInput;freeTextOpen?:boolean;tripMode?:'PLAN'|'NOW';initialMessage?:string;autoSubmit?:boolean}|null);const queryMode=new URLSearchParams(location.search).get('mode')?.toUpperCase();const tripMode: 'PLAN'|'NOW'|'GENERIC'=entryState?.tripMode||(queryMode==='PLAN'||queryMode==='NOW'?queryMode:'GENERIC');const preset = getQuickStartPreset(entryState?.quickStartPreset);const tripSession=ensureTripSession(region.id);
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'ai',
       text: tripMode==='PLAN'?'여행 날짜를 아직 정하지 않았어도 괜찮아요. 알고 있는 내용만으로 준비할게요.':tripMode==='NOW'?'필요한 선택을 누르거나 달라진 상황을 편하게 알려주세요.':'함께 오신 분, 머무는 시간, 이동 방법, 걷기 편한 정도를 알려주시면 알맞은 일정을 안내해 드릴게요.',
     },
   ]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState(entryState?.initialMessage||'');
   const [loading, setLoading] = useState(false);
-  const [listening, setListening] = useState(false);
-  const [voiceSupported, setVoiceSupported] = useState(true);
-  const [voiceError, setVoiceError] = useState('');
   const [requestError,setRequestError]=useState(false);
   const [freeTextOpen,setFreeTextOpen]=useState(Boolean(entryState?.freeTextOpen));
   const [structuredDraft,setStructuredDraft]=useState<CreateContextInput>(()=>mergeTravelContext(sessionContext(tripSession),entryState?.quickContext||preset?.context||{inputMode:'STRUCTURED'}));
   const contextSessionKey=`regional-context-session:${region.id}`;const contextSessionIdRef=useRef(sessionStorage.getItem(contextSessionKey)||crypto.randomUUID());
-  const recognitionRef = useRef<any>(null);
-  const userWantsListeningRef = useRef(false);
-  const recognitionActiveRef = useRef(false);
-  const restartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const restartTimesRef = useRef<number[]>([]);
-  const baseTextRef = useRef('');
-  const committedSpeechRef = useRef('');
-  const interimSpeechRef = useRef('');
-  const fatalErrorRef = useRef(false);
   const liveStoryRef = useRef<HTMLDivElement>(null);
   const hadRecommendationRef = useRef(false);
   const requestInFlightRef=useRef(false);
+  const homeSubmittedRef=useRef(false);
+  const voiceButtonRef=useRef<HTMLButtonElement>(null);
   const lastRequestRef=useRef<{text:string;structured?:CreateContextInput}|null>(null);
-
-  const renderTranscript = () => setInput(renderSpeechText(baseTextRef.current, committedSpeechRef.current, interimSpeechRef.current));
-  const stopListening = () => {
-    userWantsListeningRef.current = false;
-    if (restartTimerRef.current) clearTimeout(restartTimerRef.current);
-    restartTimerRef.current = null;
-    if (interimSpeechRef.current) committedSpeechRef.current = mergeCommittedSpeech(committedSpeechRef.current, interimSpeechRef.current);
-    interimSpeechRef.current = '';
-    renderTranscript(); setListening(false);
-    if (recognitionActiveRef.current) try { recognitionRef.current?.stop?.(); } catch { /* already ending */ }
-  };
-
-  useEffect(() => () => { userWantsListeningRef.current=false;if(restartTimerRef.current)clearTimeout(restartTimerRef.current);try{recognitionRef.current?.stop?.()}catch{/* already ending */} }, []);
-
-  const startRecognitionInstance = (SpeechRecognition:any) => {
-    if (!userWantsListeningRef.current || document.hidden) return;
-    const now=Date.now();restartTimesRef.current=restartTimesRef.current.filter(time=>now-time<30000);
-    if(restartTimesRef.current.length>=8){setVoiceError('음성 연결이 반복해서 끊겼습니다. 입력된 내용을 확인한 뒤 다시 시작해 주세요.');stopListening();return}
-    restartTimesRef.current.push(now);
-    const recognition = new SpeechRecognition();
-    const finalIndexes = new Set<number>();
-    recognition.lang = 'ko-KR'; recognition.interimResults = true; recognition.continuous = true; recognition.maxAlternatives=1;
-    recognition.onstart = () => { recognitionActiveRef.current=true; setListening(true); };
-    recognition.onresult = (event:any) => {
-      for(let index=Number(event.resultIndex||0);index<(event.results?.length||0);index+=1){const result=event.results[index];const transcript=String(result?.[0]?.transcript||'').trim();if(!transcript)continue;const isFinal=result?.isFinal!==false;if(isFinal){if(!finalIndexes.has(index)){committedSpeechRef.current=mergeCommittedSpeech(committedSpeechRef.current,transcript);finalIndexes.add(index)}interimSpeechRef.current=''}else interimSpeechRef.current=transcript}
-      renderTranscript();
-    };
-    recognition.onerror = (event:any) => { const fatal=['not-allowed','service-not-allowed','audio-capture','language-not-supported'].includes(event?.error);fatalErrorRef.current=fatal;if(fatal){setVoiceError(['not-allowed','service-not-allowed'].includes(event?.error)?'마이크 권한을 허용하면 음성으로 말씀하실 수 있습니다.':'마이크를 계속 사용할 수 없습니다. 직접 입력해 주세요.');stopListening()} };
-    recognition.onend = () => { recognitionActiveRef.current=false;recognitionRef.current=null;if(!userWantsListeningRef.current||fatalErrorRef.current)return;interimSpeechRef.current='';renderTranscript();restartTimerRef.current=setTimeout(()=>{restartTimerRef.current=null;startRecognitionInstance(SpeechRecognition)},SPEECH_RESTART_DELAY_MS); };
-    recognitionRef.current=recognition;
-    try{recognition.start()}catch{setVoiceError('음성 입력을 시작하지 못했습니다. 다시 시도해 주세요.');stopListening()}
-  };
-
-  const toggleListening = () => {
-    if (userWantsListeningRef.current) { stopListening(); return; }
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) { setVoiceSupported(false); setVoiceError('이 브라우저에서는 음성 입력을 사용할 수 없습니다. 직접 입력해 주세요.'); return; }
-    setVoiceError('');
-    baseTextRef.current=input.trim();committedSpeechRef.current='';interimSpeechRef.current='';fatalErrorRef.current=false;restartTimesRef.current=[];userWantsListeningRef.current=true;setListening(true);startRecognitionInstance(SpeechRecognition);
-  };
+  const{listening,voiceSupported,voiceError,toggleListening}=useSpeechInput(input,setInput);
 
   useEffect(()=>{sessionStorage.setItem(contextSessionKey,contextSessionIdRef.current)},[contextSessionKey]);
   useEffect(()=>{if(tripMode==='PLAN')track(tripSession.plannedContext?'PLAN_RESUMED':'PLAN_SESSION_STARTED',tripSession.id);if(tripMode==='NOW'){track('NOW_SESSION_STARTED',tripSession.id);if(tripSession.plannedContext)track('PLAN_NOW_CONTINUED',tripSession.id)}},[]);
@@ -166,6 +117,8 @@ export default function ConciergePage() {
       setLoading(false);
     }
   };
+
+  useEffect(()=>{if(entryState?.autoSubmit&&entryState.initialMessage&&!homeSubmittedRef.current){homeSubmittedRef.current=true;send(entryState.initialMessage)}},[]);
 
   const hasRecommendation = messages.some(message => Boolean(message.result?.recommendation));
   const latestRecommendation = [...messages].reverse().find(message => message.result?.recommendation)?.result;
@@ -229,7 +182,6 @@ export default function ConciergePage() {
         {tripMode==='PLAN'&&tripSession.plannedContext&&<PlanSummary planned={tripSession.plannedContext}/>}
         <UnderstoodContext result={latestRecommendation} />
         <ResultPanel result={latestRecommendation} onFindNearbyRestaurants={() => navigate(regionLink('/nearby-discovery'))} />
-        <MovementPlan result={latestRecommendation} />
         <section className="card runtime-journey-card">
           <h2>상황이 바뀌면</h2>
           <p>날씨와 현재 상황이 달라지면 남은 일정을 다시 확인할 수 있어요.</p>
@@ -258,7 +210,7 @@ export default function ConciergePage() {
           }}
         />
         <div className="voice-input">
-          <button type="button" className={`speech-session-button${listening?' is-listening':''}`} onClick={toggleListening} disabled={loading} aria-pressed={listening} aria-label={listening?'말하기 끝':'한국어로 여행 조건 말하기'}>
+          <button ref={voiceButtonRef} type="button" className={`speech-session-button${listening?' is-listening':''}`} onClick={toggleListening} disabled={loading} aria-pressed={listening} aria-label={listening?'말하기 끝':'한국어로 여행 조건 말하기'}>
             <span className="voice-dot" aria-hidden="true">●</span>
             <strong>{listening?'듣고 있어요... · 말하기 끝':'말하기'}</strong>
             <span className={`voice-bars${listening?' is-listening':''}`} aria-hidden="true"><i/><i/><i/><i/><i/><i/></span>
@@ -286,22 +238,6 @@ function NowContinuationSummary({planned}:{planned:PlannedContext}){const summar
 
 function NowImmediateActions({onSelect}:{onSelect:(label:string)=>void}){return <section className="now-needs" aria-labelledby="now-needs-title"><h2 id="now-needs-title">바로 필요한 것을 선택하세요</h2>{['지금 갈 곳','오늘 뭐 먹을까요?','한 시간 남았어요','내 주변','오늘 행사','비가 와요','쉬고 싶어요'].map(label=><button type="button" key={label} onClick={()=>onSelect(label)}>{label}</button>)}</section>}
 
-function buildLabelMap(result: ConciergeChatResponse): Record<string, string> {
-  const map: Record<string, string> = {};
-  for (const ul of result.riskLabels || []) map[ul.uri] = ul.label;
-  for (const ul of result.usedAgentLabels || []) map[ul.uri] = ul.label;
-  const rec = result.recommendation;
-  for (const e of (rec?.evidence || result.evidence || []) as any[]) {
-    if (e.subject && e.subjectLabel) map[e.subject] = e.subjectLabel;
-    if (e.object && e.objectLabel) map[e.object] = e.objectLabel;
-  }
-  return map;
-}
-
-function labelFor(map: Record<string, string>, uri: string, fallback = '상세 정보'): string {
-  return map[uri] || fallback;
-}
-
 function PlanSummary({planned}:{planned:PlannedContext}){const duration={DAY:'당일','1N2D':'1박 2일','2N3D':'2박 3일',CUSTOM:'날짜 직접 선택'}[planned.duration||'CUSTOM'];const companion=planned.companions?.[0]?.relationship;return <section className="plan-summary"><small>내 여행 준비</small><h2>{duration}</h2><p>{[companion==='parent'?'부모님과 함께':companion==='spouse'?'부부 여행':companion==='child'?'아이와 함께':companion?'가족 여행':'동행 미정',planned.transportMode==='CAR'?'자동차':planned.transportMode==='WALK'?'도보':planned.transportMode==='PUBLIC_TRANSPORT'?'대중교통':null,planned.walkingLevel==='LOW'?'짧은 보행':planned.walkingLevel==='HIGH'?'걷기 여유':planned.walkingLevel==='MODERATE'?'보통 걷기':null].filter(Boolean).join(' · ')}</p><p>{planned.interests?.map(id=>REGION_INTEREST_OPTIONS.find(x=>x.id===id)?.label||id).join(' · ')}</p>{planned.mustVisitPlaces?.length?<p>꼭 가고 싶은 곳: {planned.mustVisitPlaces.map(x=>x.label).join(', ')}</p>:null}</section>}
 
 function UnderstoodContext({ result }: { result: ConciergeChatResponse }) {
@@ -317,7 +253,6 @@ function ResultPanel({
   onFindNearbyRestaurants: () => void;
 }) {
   const rec = result.recommendation;
-  const labelMap = buildLabelMap(result);
   const itinerarySteps: any[] = rec?.itinerary?.steps || rec?.steps || [];
 
   return (
@@ -347,16 +282,7 @@ function ResultPanel({
       {rec && itinerarySteps.length > 0 && (
         <div style={{ marginBottom: 4 }}>
           <b className="itinerary-label">추천 일정</b>
-          {itinerarySteps.map((step: any, i: number) => (
-            <div className="itinerary-step" key={i} style={{ marginTop: 10 }}>
-              <div className="step-index">{step.order ?? i + 1}</div>
-              <div className="step-body">
-                <h3>{step.programLabel || step.label || labelFor(labelMap, step.programUri, '일정 항목')}</h3>
-                {step.facilityLabel && <p>{step.facilityLabel}</p>}
-                {step.durationMinutes && <p>소요 시간: 약 {step.durationMinutes}분</p>}
-              </div>
-            </div>
-          ))}
+          {itinerarySteps.map((step: any, i: number) => <RecommendationItineraryItem step={step} index={i} key={step.itemId||step.entityId||step.programUri||i}/>)}
         </div>
       )}
 
