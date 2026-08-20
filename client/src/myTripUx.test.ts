@@ -19,8 +19,27 @@ test("automatic restore is not the only My Trip access path", () => {
   const layout = source("./components/Layout.tsx"),
     continuity = source("./components/TripContinuity.tsx");
   assert.match(layout, /label:'내 여행'|label: "내 여행"/);
+  assert.match(layout, /navItems\.map/);
+  assert.doesNotMatch(layout, /hasSavedTrip/);
+  assert.match(layout, /itineraryItemCount/);
+  assert.match(layout, /my-trip-count/);
   assert.match(layout, /regionalPath\(item\.to, region\.id\)/);
   assert.match(continuity, /지난 \{region\.regionName\} 여행을 이어볼까요/);
+});
+test("post-save continuation keeps discovery in place and exposes immediate execution", () => {
+  const continuation = source("./components/ItineraryAddContinuation.tsx"),
+    actions = source("./components/EntityActions.tsx"),
+    nearby = source("./pages/NearbyRestaurantsPage.tsx");
+  for (const copy of [
+    "내 여행에 담았습니다.",
+    "으로 출발",
+    "내 여행 전체 보기",
+    "계속 장소 찾기",
+  ])
+    assert.ok(continuation.includes(copy));
+  assert.match(actions, />내 여행에 담기</);
+  assert.match(nearby, />내 여행에 담기</);
+  assert.doesNotMatch(continuation, /도착 완료/);
 });
 test("saved-place collection is independent with restrained persistent removal", () => {
   const page = source("./pages/ItineraryPage.tsx"),
@@ -44,6 +63,7 @@ test("full journey remains ordered while saved places render separately", () => 
 test("mobile My Trip controls avoid nested scrolling through 430px", () => {
   const css = source("./index.css");
   assert.match(css, /@media\(max-width:430px\).*saved-trip-entry/s);
+  assert.match(css, /safe-area-inset-bottom/);
   assert.match(css, /saved-place-card/);
   assert.doesNotMatch(css, /saved-places-section[^}]*overflow-y/);
 });

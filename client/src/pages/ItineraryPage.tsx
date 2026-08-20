@@ -280,7 +280,7 @@ export default function ItineraryPage() {
 
       {journey.current && (
         <section className="card journey-execution-card">
-          <small>현재 일정</small>
+          <small>현재 일정:</small>
           <h2>{recommendationItemLabel(journey.current)}</h2>
           {verifiedNavigation(journey.current) && (
             <p>
@@ -289,7 +289,7 @@ export default function ItineraryPage() {
           )}
           {journey.next && (
             <div className="next-stop">
-              <small>다음 일정</small>
+              <small>다음:</small>
               <strong>{recommendationItemLabel(journey.next)}</strong>
               <button
                 className="btn btn-text"

@@ -28,7 +28,7 @@ export default function ItineraryAddContinuation({
   if (result.status === "error")
     return (
       <div className="itinerary-add-error" role="alert">
-        일정에 담지 못했습니다. 다시 시도해 주세요.
+        내 여행에 담지 못했습니다. 다시 시도해 주세요.
       </div>
     );
   const itinerary = () => {
@@ -42,7 +42,7 @@ export default function ItineraryAddContinuation({
       <strong>
         ✓{" "}
         {result.status === "added"
-            ? `${objectName(name)} 내 여행에 담아두었습니다.`
+            ? `${objectName(name)} 내 여행에 담았습니다.`
             : "이미 내 여행에 담겨 있습니다."}
       </strong>
       {result.status === "added" && canStart && onStart && (
@@ -56,7 +56,7 @@ export default function ItineraryAddContinuation({
       )}
       <div className="entity-add-secondary">
         <button type="button" className="btn btn-outline" onClick={itinerary}>
-          내 여행 보기
+          내 여행 전체 보기
         </button>
         {canStart && onStart && result.status === "duplicate" && (
           <button type="button" className="btn btn-primary" onClick={onStart}>
@@ -65,7 +65,7 @@ export default function ItineraryAddContinuation({
         )}
         {result.status === "added" && onReset && (
           <button type="button" className="btn btn-text" onClick={onReset}>
-            다른 곳 더 찾기
+            계속 장소 찾기
           </button>
         )}
       </div>

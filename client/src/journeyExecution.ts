@@ -137,7 +137,11 @@ export function addEntityToRegionalItinerary(
       },
       session = ensureTripSession(regionId, storage),
       places = savedPlaceItems(session);
-    if (places.some((place) => canonicalEntityId(place) === entityId))
+    if (
+      [...itinerarySteps(session.itinerary), ...places].some(
+        (place) => canonicalEntityId(place) === entityId,
+      )
+    )
       return { status: "duplicate", entityId, session, item: normalized };
     const persisted = saveTripSession(
         {

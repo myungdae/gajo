@@ -4,13 +4,14 @@ import { useRegion } from "../RegionContext";
 import { regionalPath } from "../regionRouting";
 import ConnectionStatus from "./ConnectionStatus";
 import TripContinuity from "./TripContinuity";
-import { ensureTripSession, hasSavedTrip } from "../tripSession";
+import { ensureTripSession } from "../tripSession";
+import { itineraryItemCount } from "../tripContinuity";
 
 const navItems = [
   { to: "/", label: "홈", icon: "home", end: true },
-  { to: "/concierge", label: "여행 안내", icon: "chat" },
-  { to: "/map", label: "지도", icon: "map" },
-  { to: "/admin", label: "관리자", icon: "admin" },
+  { to: "/nearby-discovery", label: "주변 찾기", icon: "map" },
+  { to: "/itinerary", label: "내 여행", icon: "trip", end: false },
+  { to: "/concierge", label: "AI에게 묻기", icon: "chat" },
 ];
 
 function NavIcon({ name }: { name: string }) {
@@ -54,22 +55,16 @@ function NavIcon({ name }: { name: string }) {
 
 export default function Layout() {
   const region = useRegion();
-  const [saved, setSaved] = useState(() =>
-    hasSavedTrip(ensureTripSession(region.id)),
+  const [tripCount, setTripCount] = useState(() =>
+    itineraryItemCount(ensureTripSession(region.id)),
   );
   useEffect(() => {
-    const refresh = () => setSaved(hasSavedTrip(ensureTripSession(region.id)));
+    const refresh = () =>
+      setTripCount(itineraryItemCount(ensureTripSession(region.id)));
     window.addEventListener("regional-trip-saved", refresh);
     refresh();
     return () => window.removeEventListener("regional-trip-saved", refresh);
   }, [region.id]);
-  const visibleNav = saved
-    ? [
-        ...navItems.slice(0, 2),
-        { to: "/itinerary", label: "내 여행", icon: "trip", end: false },
-        ...navItems.slice(2),
-      ]
-    : navItems;
   return (
     <div className="app-shell">
       <ConnectionStatus />
@@ -84,7 +79,7 @@ export default function Layout() {
         <Outlet />
       </main>
       <nav className="bottom-nav">
-        {visibleNav.map((item) => (
+        {navItems.map((item) => (
           <NavLink
             key={item.to}
             to={
@@ -98,7 +93,14 @@ export default function Layout() {
             className={({ isActive }) => (isActive ? "active" : "")}
           >
             <NavIcon name={item.icon} />
-            <span>{item.label}</span>
+            <span className="nav-label">
+              {item.label}
+              {item.to === "/itinerary" && tripCount > 0 && (
+                <span className="my-trip-count" aria-label={`${tripCount}곳 담김`}>
+                  {tripCount}
+                </span>
+              )}
+            </span>
           </NavLink>
         ))}
       </nav>

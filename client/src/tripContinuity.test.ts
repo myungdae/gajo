@@ -20,3 +20,14 @@ test("never reconciles an anonymous trip across regions", () => {
     remote = { ...local, regionId: "gajo" };
   assert.equal(reconcileTrip(local, remote), local);
 });
+test("My Trip count deduplicates one canonical place across a full journey and saved candidates", () => {
+  const session = {
+    ...createTripSession("hapcheon"),
+    itinerary: {
+      savedAsFullJourney: true,
+      steps: [{ entityId: "a" }, { entityId: "b" }],
+    },
+    savedPlaces: [{ entityId: "b" }, { entityId: "c" }],
+  };
+  assert.equal(itineraryItemCount(session), 3);
+});

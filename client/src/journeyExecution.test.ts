@@ -199,15 +199,15 @@ test("shared add UI is wired into EntityActions and Place Discovery", () => {
       "utf8",
     ),
     css = readFileSync(new URL("./index.css", import.meta.url), "utf8");
-  assert.match(actions, /onClick=\{add\}>일정에 담기/);
+  assert.match(actions, /onClick=\{add\}>내 여행에 담기/);
   assert.match(actions, /addEntityToRegionalItinerary/);
   assert.match(nearby, /addEntityToRegionalItinerary/);
   for (const copy of [
-    "내 여행에 담아두었습니다",
+    "내 여행에 담았습니다",
     "이미 내 여행에 담겨 있습니다",
-    "일정에 담지 못했습니다",
-    "내 여행 보기",
-    "다른 곳 더 찾기",
+    "내 여행에 담지 못했습니다",
+    "내 여행 전체 보기",
+    "계속 장소 찾기",
   ])
     assert.match(continuation, new RegExp(copy));
   assert.match(itinerary, /tripSession\.itinerary/);
