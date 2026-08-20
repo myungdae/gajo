@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { shortUri } from '../utils/uri';
 import { approveReplanning, hydrateRuntimeLocation, observeRuntime, rejectReplanning, type ConciergeChatResponse, type LiveRuntimeResponse, type ReplanningProposal } from '../api/client';
@@ -6,23 +6,26 @@ import RecommendationItineraryItem from '../components/RecommendationItineraryIt
 import GajoLiveStatus from '../components/GajoLiveStatus';
 import VisitorLocationControl from '../components/VisitorLocationControl';
 import MovementPlan from '../components/MovementPlan';
-import { ensureTripSession } from '../tripSession';
+import { ensureTripSession, saveTripSession } from '../tripSession';
 import { track } from '../analytics';
 import { useRegion } from '../RegionContext';
 import { regionalPath } from '../regionRouting';
 import { SHARED_VISITOR_COPY } from '../visitorCopy';
 import { liveRuntimeForRegion, runtimeContextForRegion } from '../liveRuntimeGuard';
 import { regionalRuntimeView } from '../regionalRuntime';
+import { currentAndNext, verifiedNavigation } from '../journeyExecution';
+import { canonicalEntityId, recommendationItemLabel } from '../recommendationItem';
 
 export default function ItineraryPage() {
   const region=useRegion();const tripSession=ensureTripSession(region.id);const regionLink=(path:string)=>regionalPath(path,region.id);
   const location = useLocation() as { state?: { result?: ConciergeChatResponse } };
   const navigate = useNavigate();
-  const [result, setResult] = useState(location.state?.result);
+  const [result, setResult] = useState<ConciergeChatResponse|undefined>(()=>location.state?.result||(tripSession.itinerary?{context:tripSession.runtimeContext,recommendation:{itinerary:tripSession.itinerary,reasonSummary:'내 일정에 담은 장소를 순서대로 보여드려요.'}} as ConciergeChatResponse:undefined));
   const [proposal, setProposal] = useState<ReplanningProposal | null>(null);
   const [runtimeMessage, setRuntimeMessage] = useState('');
   const [observing, setObserving] = useState(false);
   const [knownRuntimeContext, setKnownRuntimeContext] = useState<any>(()=>runtimeContextForRegion(location.state?.result?.context,region.id)||runtimeContextForRegion(tripSession.runtimeContext,region.id));
+  useEffect(()=>{track('ITINERARY_VIEWED',tripSession.id,{source:location.state?.result?'recommendation':'saved-itinerary'})},[]);
 
   if (!result || !result.recommendation) {
     return (
@@ -40,6 +43,7 @@ export default function ItineraryPage() {
 
   const rec = result.recommendation;
   const itinerarySteps: any[] = rec.itinerary?.steps || rec.steps || [];
+  const journey=currentAndNext(itinerarySteps,tripSession.execution?.currentEntityId);
   const visitorLabel = (uri: string, fallback: string) => {
     const step = itinerarySteps.find((item: any) => item.programUri === uri || item.facilityUri === uri);
     if (step) return step.programUri === uri ? step.programLabel || fallback : step.facilityLabel || fallback;
@@ -67,6 +71,7 @@ export default function ItineraryPage() {
     if (!proposal) return;
     const response = await approveReplanning(proposal.proposalNo);
     setResult((current: any) => ({ ...current, recommendation: { ...current.recommendation, itinerary: response.itinerary } }));
+    saveTripSession({...ensureTripSession(region.id),itinerary:response.itinerary});
     setProposal(null); setRuntimeMessage('승인된 미래 일정만 반영했습니다. 완료된 일정은 그대로 유지됩니다.');
   };
 
@@ -100,6 +105,8 @@ export default function ItineraryPage() {
 
       <MovementPlan result={result} />
 
+      {journey.current&&<section className="card journey-execution-card"><small>현재 일정</small><h2>{recommendationItemLabel(journey.current)}</h2>{verifiedNavigation(journey.current)&&<p>장소를 열어 ‘출발하기’를 누르면 사용할 내비를 선택할 수 있습니다.</p>}{journey.next&&<div className="next-stop"><small>다음 일정</small><strong>{recommendationItemLabel(journey.next)}</strong><button className="btn btn-text" onClick={()=>document.getElementById(`itinerary-${canonicalEntityId(journey.next)}`)?.scrollIntoView({behavior:'smooth'})}>다음 일정 보기</button></div>}<button className="btn btn-outline btn-block" onClick={()=>{track('REPLAN_FROM_ITINERARY',tripSession.id,{source:'itinerary-summary'});navigate(regionLink('/concierge?mode=now'),{state:{freeTextOpen:true,tripMode:'NOW'}})}}>일정 변경</button></section>}
+
       <div className="card">
         <h2>런타임 상황 확인</h2>
         <VisitorLocationControl onLocation={async (gps) => observeLiveRuntime(await hydrateRuntimeLocation(knownRuntimeContext || runtimeContextForRegion(result.context,region.id)||{regionId:region.id}, gps,region.id))} />
@@ -130,7 +137,7 @@ export default function ItineraryPage() {
       {itinerarySteps.length > 0 && (
         <div className="card">
           <h2>일정 단계</h2>
-          {itinerarySteps.map((step: any, i: number) => <RecommendationItineraryItem step={step} index={i} key={step.itemId||step.programUri||i}/>)}
+          {itinerarySteps.map((step: any, i: number) => <div id={`itinerary-${canonicalEntityId(step)}`} key={step.itemId||step.programUri||step.entityId||i}><RecommendationItineraryItem step={step} index={i} execution/></div>)}
         </div>
       )}
 

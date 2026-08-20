@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -7,11 +7,13 @@ import { fetchLiveRuntimeContext, fetchNavigationLinks, fetchNearbyDiscovery, fe
 import { getSessionLocation, isOperationalLocation, observeVisitorLocation } from '../utils/visitorLocation';
 import { getQuickStartPreset } from '../quickStartPresets';
 import { isMobileNavigation, launchNavigation, navigationDestination, navigationTarget, type NavigationProvider } from '../utils/placeNavigation';
-import { ensureTripSession } from '../tripSession';
+import { ensureTripSession, saveTripSession } from '../tripSession';
 import { track } from '../analytics';
 import { useRegion } from '../RegionContext';
 import { regionalRuntimeView } from '../regionalRuntime';
 import { liveRuntimeForRegion } from '../liveRuntimeGuard';
+import { appendItineraryItem, executionState } from '../journeyExecution';
+import { regionalPath } from '../regionRouting';
 
 const CATEGORIES: { id: NearbyCategory; emoji: string; label: string }[] = [
   { id: 'FOOD', emoji: '🍽️', label: '맛집' }, { id: 'CAFE', emoji: '☕', label: '카페' },
@@ -27,12 +29,14 @@ function Recenter({ center }: { center: [number, number] }) { const map = useMap
 
 export default function NearbyRestaurantsPage() {
   const region=useRegion();
+  const navigate=useNavigate();
   const regionalRuntime=regionalRuntimeView(region);
   const tripSession=ensureTripSession(region.id);
   const routeLocation=useLocation();
-  const preset=getQuickStartPreset((routeLocation.state as {quickStartPreset?:unknown}|null)?.quickStartPreset);
-  const [category, setCategory] = useState<NearbyCategory>('FOOD');
-  const [origin, setOrigin] = useState<[number, number] | null>(null);
+  const routeState=routeLocation.state as {quickStartPreset?:unknown;category?:NearbyCategory;anchor?:{entityId:string;label:string;latitude:number;longitude:number}}|null;
+  const preset=getQuickStartPreset(routeState?.quickStartPreset),anchor=routeState?.anchor;
+  const [category, setCategory] = useState<NearbyCategory>(routeState?.category||'FOOD');
+  const [origin, setOrigin] = useState<[number, number] | null>(()=>anchor?[anchor.latitude,anchor.longitude]:null);
   const [distanceTrusted, setDistanceTrusted] = useState(false);
   const [places, setPlaces] = useState<NearbyPlace[]>([]);
   const [selected, setSelected] = useState<NearbyPlace | null>(null);
@@ -43,6 +47,8 @@ export default function NearbyRestaurantsPage() {
   const [mapLink, setMapLink] = useState<string>();
   const [weather, setWeather] = useState<string>();
   const [navigationPlace,setNavigationPlace]=useState<NearbyPlace|null>(null);
+  const [addedPlace,setAddedPlace]=useState<NearbyPlace|null>(null);
+  const [addedNow,setAddedNow]=useState(false);
 
   useEffect(() => {
     if(!regionalRuntime.nearbyEnabled){setConfigured(false);return}fetchNearbyStatus(region.id).then(s => setConfigured(s.configured)).catch(() => setConfigured(false));
@@ -54,7 +60,7 @@ export default function NearbyRestaurantsPage() {
     if (!usable) setNotice(region.center?'현재 위치를 정확하게 확인하지 못했습니다. 위치를 다시 확인하면 가까운 장소와 이동시간을 더 정확하게 안내할 수 있습니다.':'현재 위치를 알려주시면 가까운 장소와 이동시간을 안내할 수 있어요.');
     else setNotice(null);
   };
-  useEffect(() => { if(regionalRuntime.nearbyEnabled)locate(); }, [region.id,regionalRuntime.nearbyEnabled]);
+  useEffect(() => { if(regionalRuntime.nearbyEnabled&&!anchor)locate();else if(anchor){setOrigin([anchor.latitude,anchor.longitude]);setDistanceTrusted(true)} }, [region.id,regionalRuntime.nearbyEnabled,anchor?.entityId]);
   useEffect(() => {
     if (!origin || configured !== true) return;
     setLoading(true); setError(null); setSelected(null);
@@ -62,14 +68,15 @@ export default function NearbyRestaurantsPage() {
       .then(response => setPlaces(response.results))
       .catch(error => setError(error?.response?.data?.message || '주변 장소를 불러오지 못했습니다.'))
       .finally(() => setLoading(false));
-  }, [category, origin, distanceTrusted, configured, weather]);
+  }, [category, origin, distanceTrusted, configured, weather,region.id]);
   const choose = async (place: NearbyPlace) => { track('PLACE_DETAIL_OPENED',tripSession.id,{category:place.category});setSelected(place); setNotice(null); const links = await fetchNavigationLinks(place.lat, place.lng, place.name); setMapLink(links.kakaoMapWeb); };
   const navigateWith=(provider:NavigationProvider)=>{const destination=navigationPlace&&navigationDestination(navigationPlace);if(!destination)return;track('NAVIGATION_HANDOFF',tripSession.id,{provider});const gps=getSessionLocation();const origin=gps&&isOperationalLocation(gps)?{latitude:gps.latitude!,longitude:gps.longitude!}:undefined;launchNavigation(navigationTarget(provider,destination,origin),{mobile:isMobileNavigation(navigator.userAgent)});setNavigationPlace(null)};
+  const addToItinerary=(place:NearbyPlace)=>{const destination=navigationDestination(place),entityId=place.canonicalEntityUri||`urn:nearby:${region.id}:${place.id}`,item={entityId,entityUri:entityId,regionId:region.id,label:place.canonicalLabel||place.name,name:place.canonicalLabel||place.name,entityType:place.category,address:place.roadAddress||place.address,telephone:place.phone,latitude:place.lat,longitude:place.lng,actions:destination?{navigate:{latitude:destination.latitude,longitude:destination.longitude}}:undefined};const added=appendItineraryItem(ensureTripSession(region.id),item);saveTripSession(added.session);setAddedPlace(place);setAddedNow(added.added);setNotice(null);track('ITINERARY_ITEM_ADDED',tripSession.id,{entityId,category:place.category,added:added.added})};
   const center = useMemo<[number, number]>(() => selected ? [selected.lat, selected.lng] : origin!, [selected, origin]);
 
   if(!regionalRuntime.nearbyEnabled)return <div className="nearby-discovery"><section className="card"><small className="eyebrow">주변 즐길거리 찾기</small><h1>{region.regionName} 주변 정보 준비 중</h1><p className="text-muted">현재 등록된 {region.regionName} 장소의 정확한 위치 정보를 확인하고 있습니다.</p></section></div>;
   return <div className="nearby-discovery">
-    <section className="card"><small className="eyebrow">주변 즐길거리 찾기</small><h1>지금 주변에서 무엇을 찾으세요?</h1>{preset?.id==='nearby'&&<p className="quick-start-entry-message" role="status">{preset.entryMessage}</p>}<p className="text-muted">원하는 종류를 누르면 실제 주변 장소를 찾아드려요.</p></section>
+    <section className="card"><small className="eyebrow">주변 즐길거리 찾기</small><h1>{anchor?`${anchor.label} 주변에서 무엇을 찾으세요?`:'지금 주변에서 무엇을 찾으세요?'}</h1>{preset?.id==='nearby'&&<p className="quick-start-entry-message" role="status">{preset.entryMessage}</p>}<p className="text-muted">원하는 종류를 누르면 실제 주변 장소를 찾아드려요.</p></section>
     {configured === false && <div className="card status-warning">현재 위치를 확인하면 주변 장소와 이동 정보를 더 정확하게 안내해드릴 수 있습니다.</div>}
     <section className="nearby-category-grid" aria-label="주변 장소 종류">
       {CATEGORIES.map(item => <button key={item.id} className={`nearby-category-card ${category === item.id ? 'active' : ''}`} aria-pressed={category === item.id} onClick={() => setCategory(item.id)}><span className="category-line-icon" aria-hidden/><b>{item.label}</b></button>)}
@@ -78,16 +85,17 @@ export default function NearbyRestaurantsPage() {
     {loading && <div className="loading">주변 장소를 찾고 있어요…</div>}{error && <div className="card status-warning">{error}</div>}
     {!loading && !error && origin && <>
       <div className="card nearby-map-card"><MapContainer center={center} zoom={14} style={{ height: 330, width: '100%' }}><Recenter center={center}/><TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
-        {distanceTrusted && <Marker position={origin} icon={visitorIcon}><Popup>현재 위치</Popup></Marker>}
+        {distanceTrusted && <Marker position={origin} icon={visitorIcon}><Popup>{anchor?.label||'현재 위치'}</Popup></Marker>}
         {places.map(place => <Marker key={place.id} position={[place.lat, place.lng]} icon={place.canonicalEntityUri ? canonicalIcon : transientIcon} eventHandlers={{ click: () => choose(place) }}><Popup><b>{place.name}</b><br/>{place.categoryLabel}{place.canonicalEntityUri ? <><br/>등록 장소와 연결됨</> : <><br/>주변 검색 결과</>}</Popup></Marker>)}
-      </MapContainer><div className="nearby-map-legend"><span>● 현재 위치</span><span>● 주변 검색 결과</span><span>★ 등록 장소 연결</span></div></div>
+      </MapContainer><div className="nearby-map-legend"><span>● {anchor?.label||'현재 위치'}</span><span>● 주변 검색 결과</span><span>★ 등록 장소 연결</span></div></div>
       {selected && <section className="card nearby-detail"><div className="nearby-title-row"><div><small>{selected.categoryLabel}</small><h2>{selected.name}</h2></div>{selected.canonicalEntityUri && <span className="badge">등록 장소 연결</span>}</div>
-        {distanceTrusted && selected.distanceMeters != null && <p>현재 위치에서 약 {(selected.distanceMeters / 1000).toFixed(1)}km · 차량 약 {selected.estimatedTravelMinutes}분</p>}
+        {distanceTrusted && selected.distanceMeters != null && <p>{anchor?`${anchor.label}에서`:'현재 위치에서'} 약 {(selected.distanceMeters / 1000).toFixed(1)}km · 차량 약 {selected.estimatedTravelMinutes}분</p>}
         <p>{selected.roadAddress || selected.address || '주소 확인 필요'}</p>{selected.phone && <p>전화 {selected.phone}</p>}
         <p>{selected.operatingMessage}</p>{selected.availabilityMessage && <p>{selected.availabilityMessage}</p>}
         {selected.contextualReasons.map(reason => <p className="nearby-reason" key={reason}>✓ {reason}</p>)}
-        <div className="nearby-actions"><a className="btn btn-primary" href={mapLink || selected.placeUrl} target="_blank" rel="noreferrer" onClick={()=>track('MAP_OPENED',tripSession.id,{category:selected.category})}>지도에서 보기</a>{navigationDestination(selected)&&<button className="btn btn-text" onClick={()=>setNavigationPlace(selected)}>내비로 가기</button>}<button className="btn btn-text" onClick={() => {track('ITINERARY_ADD',tripSession.id,{category:selected.category});setNotice('일정 변경은 확인 후 반영됩니다. 이 장소를 일정에 넣으려면 현재 일정 화면에서 변경을 요청해 주세요.')}}>일정에 담기</button></div>
+        <div className="nearby-actions"><a className="btn btn-primary" href={mapLink || selected.placeUrl} target="_blank" rel="noreferrer" onClick={()=>track('MAP_OPENED',tripSession.id,{category:selected.category})}>지도에서 보기</a>{navigationDestination(selected)&&<button className="btn btn-text" onClick={()=>setNavigationPlace(selected)}>내비로 가기</button>}<button className="btn btn-text" onClick={()=>addToItinerary(selected)}>일정에 담기</button></div>
       </section>}
+      {addedPlace&&<section className="card post-add-continuation" aria-live="polite"><strong>✓ {addedNow?`${addedPlace.canonicalLabel||addedPlace.name}을 오늘 일정에 담았습니다.`:`${addedPlace.canonicalLabel||addedPlace.name}은 이미 내 일정에 있습니다.`}</strong><h2>다음으로 무엇을 할까요?</h2>{navigationDestination(addedPlace)&&<button className="btn btn-primary btn-block" onClick={()=>{const entityId=addedPlace.canonicalEntityUri||`urn:nearby:${region.id}:${addedPlace.id}`;saveTripSession(executionState(ensureTripSession(region.id),entityId,'READY'));track('JOURNEY_START_ACTION',tripSession.id,{entityId,source:'post-add'});setNavigationPlace(addedPlace)}}>{addedPlace.canonicalLabel||addedPlace.name}으로 출발</button>}<div className="post-add-secondary"><button className="btn btn-outline" onClick={()=>{track('ITINERARY_VIEWED',tripSession.id,{source:'post-add'});navigate(regionalPath('/itinerary',region.id))}}>내 일정 보기</button><button className="btn btn-text" onClick={()=>{setAddedPlace(null);setSelected(null)}}>다른 곳 더 찾기</button></div></section>}
       <section className="card"><h2>{CATEGORIES.find(item => item.id === category)?.label} 목록</h2>{places.length === 0 ? <p className="text-muted">이 범위에서 확인된 장소가 없습니다.</p> : places.map(place => <button className="nearby-result" key={place.id} onClick={() => choose(place)}><span><b>{place.name}</b><small>{place.providerCategoryName}</small></span>{distanceTrusted && place.distanceMeters != null && <strong>{place.distanceMeters < 1000 ? `${place.distanceMeters}m` : `${(place.distanceMeters / 1000).toFixed(1)}km`}</strong>}</button>)}</section>
     </>}
     {navigationPlace&&navigationDestination(navigationPlace)&&<div className="navigation-sheet" role="dialog" aria-modal="true" aria-labelledby="navigation-sheet-title"><button type="button" className="navigation-backdrop" aria-label="내비 선택 닫기" onClick={()=>setNavigationPlace(null)}/><section className="navigation-panel"><button type="button" className="navigation-close" aria-label="닫기" onClick={()=>setNavigationPlace(null)}>×</button><h2 id="navigation-sheet-title">어떤 내비로 이동할까요?</h2><p>{navigationDestination(navigationPlace)!.name}</p><div className="navigation-providers"><button type="button" className="btn btn-outline" onClick={()=>navigateWith('naver')}>네이버지도</button><button type="button" className="btn btn-outline" onClick={()=>navigateWith('kakao')}>카카오맵</button><button type="button" className="btn btn-outline" onClick={()=>navigateWith('tmap')}>TMAP</button></div></section></div>}

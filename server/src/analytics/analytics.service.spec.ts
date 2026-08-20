@@ -30,4 +30,5 @@ describe('AnalyticsService', () => {
     await service.record({eventType:'INTEREST_UNCOVERED',sessionId:'s2',regionId:'hapcheon',metadata:{interestId:'GOLF',rawMessage:'골프장 찾아줘'}});
     expect(create).toHaveBeenCalledWith({eventType:'INTEREST_UNCOVERED',sessionId:'s2',regionId:'hapcheon',metadata:{interestId:'GOLF',regionId:'hapcheon'}});
   });
+  it('accepts canonical journey execution events without visitor text',async()=>{const create=jest.fn(),service=new AnalyticsService({create}as any);await service.record({eventType:'JOURNEY_START_ACTION',sessionId:'s3',regionId:'hapcheon',metadata:{entityId:'https://hapcheon.example/ontology#hwangmaesanCountyPark',provider:'KAKAO',rawMessage:'황매산으로 가자'}});expect(create).toHaveBeenCalledWith({eventType:'JOURNEY_START_ACTION',sessionId:'s3',regionId:'hapcheon',metadata:{entityId:'https://hapcheon.example/ontology#hwangmaesanCountyPark',provider:'KAKAO',regionId:'hapcheon'}})});
 });

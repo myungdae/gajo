@@ -28,6 +28,11 @@ const ALLOWED = new Set([
   'MAP_OPENED',
   'NAVIGATION_HANDOFF',
   'ITINERARY_ADD',
+  'ITINERARY_ITEM_ADDED',
+  'ITINERARY_VIEWED',
+  'JOURNEY_START_ACTION',
+  'NEARBY_FROM_ITINERARY',
+  'REPLAN_FROM_ITINERARY',
   'REPLAN_REQUESTED',
   'RETRY_ERROR',
 ]);
@@ -113,7 +118,8 @@ export class AnalyticsService {
       recommendationActionConversionRate: recommendations
         ? actions / recommendations
         : 0,
-      itineraryAddCount: count('ITINERARY_ADD'),
+      itineraryAddCount: count('ITINERARY_ADD')+count('ITINERARY_ITEM_ADDED'),
+      journeyStartCount: count('JOURNEY_START_ACTION'),
       replanningCount: count('REPLAN_REQUESTED'),
       errorFallbackCount: count('RETRY_ERROR'),
     };

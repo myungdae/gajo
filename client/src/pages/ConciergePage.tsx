@@ -103,7 +103,7 @@ export default function ConciergePage() {
         runtimeStates: previousContext.runtimeStates,
       };
       const result = await postConciergeChat({ regionId:region.id,...(hasRecommendation?carriedContext:structuredDraft), ...structured, ...(text?{rawMessage:text,inputMode:'FREE_TEXT' as const}:{}), contextSessionId:contextSessionIdRef.current,isFollowup:hasRecommendation, ...(gps?.status === 'AVAILABLE' ? { latitude: gps.latitude, longitude: gps.longitude, locationAccuracy: gps.accuracy, locationObservedAt: gps.observedAt, locationStatus: gps.status } : tripMode==='PLAN'?{}:{ locationStatus: gps?.status }) });
-      const latestSession=loadTripSession(sessionStorage,region.id)||tripSession;saveTripSession({...latestSession,mode:tripMode==='GENERIC'?latestSession.mode:tripMode,runtimeContext:tripMode==='PLAN'?latestSession.runtimeContext:result.context,itinerary:result.recommendation?.itinerary});
+      const latestSession=loadTripSession(localStorage,region.id)||tripSession;saveTripSession({...latestSession,mode:tripMode==='GENERIC'?latestSession.mode:tripMode,runtimeContext:tripMode==='PLAN'?latestSession.runtimeContext:result.context,itinerary:result.recommendation?.itinerary});
       if(tripMode==='PLAN')track('PLAN_COMPLETED',tripSession.id);if(tripMode==='NOW')track('RUNTIME_HYDRATED',tripSession.id,{location:Boolean(gps?.status==='AVAILABLE')});
       if(result.recommendation)track('RECOMMENDATION_SHOWN',tripSession.id,{mode:tripMode,candidateRegionIds:(result.recommendation.candidateRegionIds||[]).join(',')});
       if(result.intentRoute)track('INTENT_ROUTED',tripSession.id,{intentRoute:result.intentRoute});
