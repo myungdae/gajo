@@ -34,12 +34,15 @@ import InstallExperience from "../components/InstallExperience";
 import FullJourneySave from "../components/FullJourneySave";
 import SavedTripEntry from "../components/SavedTripEntry";
 import AiResponseActions from "../components/AiResponseActions";
+import { beginCurrentTurn, isCurrentTurn, resolveCurrentTurn, type CurrentTurnResult } from "../currentTurnResult";
+import { isExplanationOnly } from "../aiResponseActions";
 
 interface Message {
   role: "user" | "ai";
   text: string;
   result?: ConciergeChatResponse;
   requestText?: string;
+  turnId?: string;
 }
 
 function summarizeResult(result: ConciergeChatResponse): string {
@@ -95,6 +98,7 @@ export default function ConciergePage() {
     },
   ]);
   const [input, setInput] = useState(entryState?.initialMessage || "");
+  const [currentTurn, setCurrentTurn] = useState<CurrentTurnResult<ConciergeChatResponse> | null>(null);
   const [loading, setLoading] = useState(false);
   const [requestError, setRequestError] = useState(false);
   const [freeTextOpen, setFreeTextOpen] = useState(
@@ -147,13 +151,15 @@ export default function ConciergePage() {
   ) => {
     const text = (overrideText ?? input).trim();
     if ((!text && !structured) || requestInFlightRef.current) return;
+    const turnId = crypto.randomUUID();
     requestInFlightRef.current = true;
+    setCurrentTurn(beginCurrentTurn(turnId, text));
     setRequestError(false);
     if (!retry) {
       lastRequestRef.current = { text, structured };
       setMessages((prev) => [
         ...prev,
-        { role: "user", text: text || "선택한 조건으로 일정을 추천해 주세요." },
+        { role: "user", text: text || "선택한 조건으로 일정을 추천해 주세요.", turnId },
       ]);
       setInput("");
     }
@@ -193,14 +199,14 @@ export default function ConciergePage() {
       };
       const result = await postConciergeChat({
         regionId: region.id,
-        ...(hasRecommendation ? carriedContext : structuredDraft),
+        ...(hasCompletedTurn ? carriedContext : structuredDraft),
         ...structured,
         ...(text ? { rawMessage: text, inputMode: "FREE_TEXT" as const } : {}),
         contextSessionId: contextSessionIdRef.current,
+        discoveryCategoryHint: currentResult?.discovery?.category as CreateContextInput["discoveryCategoryHint"],
         isFollowup:
-          hasRecommendation ||
-          (Boolean((tripSession.itinerary as any)?.steps?.length) &&
-            /비|눈|더워|추워|피곤|아파|상황.{0,4}(?:바뀌|달라)/.test(text)),
+          hasCompletedTurn &&
+          !/카페|커피|식당|맛집|배고|밥|숙소|호텔|펜션|관광|명소|왜|유래|역사|의미/.test(text),
         ...(gps?.status === "AVAILABLE"
           ? {
               latitude: gps.latitude,
@@ -239,8 +245,9 @@ export default function ConciergePage() {
         });
       setMessages((prev) => [
         ...prev,
-        { role: "ai", text: summarizeResult(result), result, requestText: text },
+        { role: "ai", text: summarizeResult(result), result, requestText: text, turnId },
       ]);
+      setCurrentTurn((current) => resolveCurrentTurn(current, turnId, result));
     } catch (e: any) {
       console.error("[concierge] request failed", e);
       setRequestError(true);
@@ -262,20 +269,13 @@ export default function ConciergePage() {
     }
   }, []);
 
-  const hasRecommendation = messages.some((message) =>
-    Boolean(message.result?.recommendation),
-  );
-  const hasPrimaryResult = messages.some((message) =>
-    Boolean(message.result?.recommendation || message.result?.discovery),
-  );
-  const latestRecommendation = [...messages]
-    .reverse()
-    .find((message) => message.result?.recommendation)?.result;
-  const latestPrimaryResult = [...messages]
-    .reverse()
-    .find(
-      (message) => message.result?.recommendation || message.result?.discovery,
-    )?.result;
+  const hasCompletedTurn = messages.some((message) => Boolean(message.result));
+  const currentResult = currentTurn?.status === "RESOLVED" ? currentTurn.result : undefined;
+  const currentIsKnowledge = isExplanationOnly(currentTurn?.requestText || "");
+  const hasRecommendation = !currentIsKnowledge && Boolean(currentResult?.recommendation);
+  const hasPrimaryResult = !currentIsKnowledge && Boolean(currentResult?.recommendation || currentResult?.discovery);
+  const latestRecommendation = hasRecommendation ? currentResult : undefined;
+  const latestPrimaryResult = hasPrimaryResult ? currentResult : undefined;
 
   useEffect(() => {
     if (hasPrimaryResult && !hadRecommendationRef.current) {
@@ -290,12 +290,16 @@ export default function ConciergePage() {
   }, [hasPrimaryResult]);
 
   const runDemo = async () => {
+    const turnId = crypto.randomUUID();
+    const requestText = "맑은 날 78세 어머니를 모시고 자동차로 방문합니다. 어머니는 무릎이 불편해 짧은 보행이 필요하고 오후 5시까지 머물 예정입니다.";
     setLoading(true);
+    setCurrentTurn(beginCurrentTurn(turnId, requestText));
     setMessages((prev) => [
       ...prev,
       {
         role: "user",
-        text: "맑은 날 78세 어머니를 모시고 자동차로 방문합니다. 어머니는 무릎이 불편해 짧은 보행이 필요하고 오후 5시까지 머물 예정입니다.",
+        text: requestText,
+        turnId,
       },
     ]);
     try {
@@ -307,8 +311,9 @@ export default function ConciergePage() {
       } as any;
       setMessages((prev) => [
         ...prev,
-        { role: "ai", text: summarizeResult(merged), result: merged },
+        { role: "ai", text: summarizeResult(merged), result: merged, requestText, turnId },
       ]);
+      setCurrentTurn((current) => resolveCurrentTurn(current, turnId, merged));
     } catch (e: any) {
       setMessages((prev) => [
         ...prev,
@@ -346,10 +351,10 @@ export default function ConciergePage() {
       {tripMode === "NOW" && tripSession.plannedContext && (
         <NowContinuationSummary planned={tripSession.plannedContext} />
       )}
-      {tripMode === "NOW" && !hasPrimaryResult && (
+      {tripMode === "NOW" && !hasCompletedTurn && (
         <NowImmediateActions onSelect={(label) => send(label)} />
       )}
-      {!hasPrimaryResult && tripMode !== "PLAN" && (
+      {!hasCompletedTurn && tripMode !== "PLAN" && (
         <div className="visitor-location-section">
           <VisitorLocationControl />
         </div>
@@ -362,7 +367,7 @@ export default function ConciergePage() {
               >
                 {m.text}
               </div>
-              {m.role === "ai" && m.result && <AiResponseActions rawMessage={m.requestText || ""} result={m.result} />}
+              {m.role === "ai" && m.result && isCurrentTurn(m.turnId, currentTurn) && <AiResponseActions rawMessage={m.requestText || ""} result={m.result} turnId={m.turnId!} />}
             </div>
           ))}
           {loading && (
@@ -388,7 +393,7 @@ export default function ConciergePage() {
         </div>
       )}
 
-      {!hasPrimaryResult && (
+      {!hasCompletedTurn && (
         <>
           {tripMode === "PLAN" ? (
             <PlanVisitorIntake
@@ -494,27 +499,27 @@ export default function ConciergePage() {
       )}
       <InstallExperience usefulResult={hasPrimaryResult} />
 
-      {(hasPrimaryResult || freeTextOpen) && (
+      {(hasCompletedTurn || freeTextOpen) && (
         <div
           className={
-            hasPrimaryResult
+            hasCompletedTurn
               ? "concierge-followup-composer"
               : "concierge-input-panel"
           }
         >
           <div className="input-panel-heading">
-            {!hasPrimaryResult && <small>말하거나 직접 입력하세요</small>}
+            {!hasCompletedTurn && <small>말하거나 직접 입력하세요</small>}
             <h2>
-              {hasPrimaryResult
+              {hasCompletedTurn
                 ? "다른 조건도 말씀해 주세요"
                 : "직접 이야기해 보세요"}
             </h2>
           </div>
           <textarea
             className={listening ? "is-voice-listening" : undefined}
-            rows={hasPrimaryResult ? 2 : 5}
+            rows={hasCompletedTurn ? 2 : 5}
             placeholder={
-              hasPrimaryResult
+              hasCompletedTurn
                 ? "다른 장소나 조건을 말씀해주세요."
                 : "예: 가족과 함께 편안하게 힐링할 수 있는 온천 코스를 추천해주세요."
             }
@@ -555,7 +560,7 @@ export default function ConciergePage() {
                 <i />
               </span>
             </button>
-            {!hasPrimaryResult && (
+            {!hasCompletedTurn && (
               <p>
                 말씀하신 내용이 위 입력창에 들어갑니다. 음성은 저장하지 않아요.
               </p>
@@ -576,7 +581,7 @@ export default function ConciergePage() {
             onClick={() => send()}
             disabled={loading}
           >
-            {hasPrimaryResult ? "전송" : "대화로 찾기"}
+            {hasCompletedTurn ? "전송" : "대화로 찾기"}
           </button>
         </div>
       )}

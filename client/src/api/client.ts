@@ -45,6 +45,7 @@ export interface CreateContextInput {
   contextSessionId?: string;
   inputMode?: 'STRUCTURED' | 'FREE_TEXT';
   isFollowup?: boolean;
+  discoveryCategoryHint?: 'FOOD'|'CAFE'|'LODGING'|'ACTIVITY'|'TOURISM_NATURE'|'CONVENIENCE';
 }
 
 export interface EntityRuntimeState {

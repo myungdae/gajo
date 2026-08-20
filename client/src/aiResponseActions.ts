@@ -4,11 +4,11 @@ import { verifiedNavigation } from "./journeyExecution.ts";
 export type AiResponseActionType = "NAVIGATE" | "ADD_TO_MY_TRIP" | "APPLY_REPLAN" | "FIND_ALTERNATIVES";
 export interface AiResponseActionModel { decision: { kind: "PLACE" | "REPLAN"; entity?: any; entityId?: string; label?: string }; actions: { type: AiResponseActionType; primary: boolean }[]; alternatives: any[] }
 
-const explanationOnly = (message: string) => /(?:왜|무엇|뭐가).{0,12}(?:유명|중요|특별)|(?:유래|역사|의미).{0,8}(?:알려|설명)/.test(message);
+export const isExplanationOnly = (message: string) => /(?:왜|무엇|뭐가).{0,12}(?:유명|중요|특별)|(?:유래|역사|의미).{0,8}(?:알려|설명)/.test(message);
 
 export function buildAiResponseActionModel(input: { rawMessage?: string; result?: any; hasCurrentItinerary?: boolean; excludedEntityIds?: string[] }): AiResponseActionModel | null {
   const { result } = input;
-  if (!result || result.error || explanationOnly(input.rawMessage || "")) return null;
+  if (!result || result.error || isExplanationOnly(input.rawMessage || "")) return null;
   const excluded = new Set(input.excludedEntityIds || []);
   const discovered = (result.discovery?.entities || []).filter((entity: any) => !excluded.has(canonicalEntityId(entity) || ""));
   const itinerary = result.recommendation?.itinerary?.steps || result.recommendation?.steps || [];

@@ -1,0 +1,19 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { beginCurrentTurn, isCurrentTurn, resolveCurrentTurn } from "./currentTurnResult.ts";
+import { buildAiResponseActionModel } from "./aiResponseActions.ts";
+const entity = (category: string, id: string) => ({ entityId: `https://hapcheon.example/ontology#${id}`, regionId: "hapcheon", programLabel: id, category, actions: { navigate: { latitude: 35.5, longitude: 128.1 } } });
+const discovery = (category: string, id: string) => ({ intentRoute: "PLACE_DISCOVERY", discovery: { category, entities: [entity(category, id), entity(category, `${id}-2`)] } });
+test("food to cafe to replan to knowledge replaces one current execution turn", () => {
+  let current = resolveCurrentTurn(beginCurrentTurn("food", "지금 배고파."), "food", discovery("FOOD", "restaurant"));
+  assert.equal(buildAiResponseActionModel({ rawMessage: current!.requestText, result: current!.result })?.decision.entity.category, "FOOD");
+  current = beginCurrentTurn("cafe", "카페 가고 싶어."); assert.equal(isCurrentTurn("food", current), false);
+  current = resolveCurrentTurn(current, "cafe", discovery("CAFE", "lowful")); assert.equal(buildAiResponseActionModel({ rawMessage: current!.requestText, result: current!.result })?.decision.entity.category, "CAFE");
+  current = resolveCurrentTurn(beginCurrentTurn("rain", "비가 와."), "rain", { intentRoute: "REPLAN", recommendation: { itinerary: { steps: [entity("ACTIVITY", "indoor")] } } });
+  assert.equal(buildAiResponseActionModel({ rawMessage: current!.requestText, result: current!.result, hasCurrentItinerary: true })?.actions[0].type, "APPLY_REPLAN");
+  current = resolveCurrentTurn(beginCurrentTurn("knowledge", "해인사는 왜 유명해?"), "knowledge", discovery("TOURISM_NATURE", "haeinsa"));
+  assert.equal(buildAiResponseActionModel({ rawMessage: current!.requestText, result: current!.result }), null); assert.equal(isCurrentTurn("rain", current), false);
+});
+test("late response cannot overwrite a newer turn", () => { const current = beginCurrentTurn("new", "카페 가고 싶어."); assert.equal(resolveCurrentTurn(current, "old", discovery("FOOD", "restaurant")), current); assert.equal(isCurrentTurn("old", current), false); });
+test("alternatives stay in the current category", () => { const result = discovery("CAFE", "lowful"); const next = buildAiResponseActionModel({ result, excludedEntityIds: [result.discovery.entities[0].entityId] })!; assert.equal(next.decision.entity.category, "CAFE"); });
+test("transient replacement does not mutate My Trip", () => { const trip = { anonymousTripId: "stable", savedPlaces: [entity("FOOD", "saved")] }; resolveCurrentTurn(beginCurrentTurn("new", "카페"), "new", discovery("CAFE", "lowful")); assert.equal(trip.anonymousTripId, "stable"); assert.equal(trip.savedPlaces[0].category, "FOOD"); });
