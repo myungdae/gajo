@@ -2,6 +2,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 import { useRegion } from '../RegionContext';
 import { regionalPath } from '../regionRouting';
 import ConnectionStatus from './ConnectionStatus';
+import TripContinuity from './TripContinuity';
 
 const navItems = [
   { to: '/', label: '홈', icon: 'home', end: true },
@@ -24,6 +25,7 @@ export default function Layout() {
         </div>
       </header>
       <main className="app-main">
+        <TripContinuity />
         <Outlet />
       </main>
       <nav className="bottom-nav">

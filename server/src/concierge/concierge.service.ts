@@ -20,7 +20,7 @@ import{routeNaturalLanguageIntent}from'./intent-routing';import{PlaceDiscoverySe
 function detectNearbyDiscovery(message?: string): { intent: boolean; category?: string } {
   if (!message) return { intent: false };
   const entries: [string, RegExp][] = [
-    ['LODGING', /숙박|호텔|모텔|펜션|민박/], ['CAFE', /카페|커피|다방/],
+    ['LODGING', /숙박|숙소|호텔|모텔|펜션|민박|한옥|리조트|글램핑|캠핑|야영|오토\s*캠핑|카라반|자연\s*휴양림/], ['CAFE', /카페|커피|다방/],
     ['GOLF_SCREEN_GOLF', /스크린\s*골프|골프연습장/], ['HOT_SPRING_WELLNESS', /온천|사우나|찜질|스파/],
     ['ACTIVITY', /놀거리|체험|레저/], ['TOURISM_NATURE', /산책|관광|공원|명소/],
     ['CONVENIENCE', /편의점|약국|병원/], ['FOOD', /식당|맛집|밥\s*(먹|을)|먹을\s*(곳|데)|건강식|약선|음식점|식사/],

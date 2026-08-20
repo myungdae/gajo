@@ -1,0 +1,5 @@
+import type{TripSession}from'./tripSession.ts';
+const steps=(s:TripSession)=>Array.isArray((s.itinerary as any)?.steps)?(s.itinerary as any).steps:[];
+const id=(x:any)=>x.entityId||x.entityUri||x.programUri||x.facilityUri;
+export function itineraryItemCount(s?:TripSession){return s?new Set(steps(s).map(id).filter(Boolean)).size:0}
+export function reconcileTrip(local:TripSession,remote:TripSession){if(local.regionId!==remote.regionId||local.anonymousTripId!==remote.anonymousTripId)return local;const newer=Date.parse(remote.updatedAt)>Date.parse(local.updatedAt)?remote:local,older=newer===remote?local:remote,seen=new Set<string>(),merged=[...steps(newer),...steps(older)].filter(x=>{const key=id(x);return key&&!seen.has(key)&&(seen.add(key),true)});return{...newer,itinerary:merged.length?{...((newer.itinerary as object)||{}),steps:merged}:newer.itinerary,execution:{...older.execution,...newer.execution,statusByEntityId:{...older.execution?.statusByEntityId,...newer.execution?.statusByEntityId}}}}

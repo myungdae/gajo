@@ -21,6 +21,7 @@ import { ReplanningModule } from './replanning/replanning.module';
 import { RegionModule } from './region/region.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { RegionalDataModule } from './regional-data/regional-data.module';
+import { AnonymousTripModule } from './anonymous-trip/anonymous-trip.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { RegionalDataModule } from './regional-data/regional-data.module';
     RegionModule,
     AnalyticsModule,
     RegionalDataModule,
+    AnonymousTripModule,
   ],
   controllers: [AppController],
   providers: [AppService],

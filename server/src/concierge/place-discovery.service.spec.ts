@@ -18,10 +18,13 @@ const pension = {
   entityType: 'ACCOMMODATION',
   category: 'LODGING',
   tags: ['REST'],
+  accommodationType: 'PENSION',
   runtimeDataStatus: 'VERIFIED',
   latitude: 35.524485899856,
   longitude: 128.01578179029,
 };
+const glamping={entityUri:'glamping',canonicalLabelKo:'검증된 글램핑 테스트 레코드',alternateLabels:[],entityType:'ACCOMMODATION',category:'LODGING',tags:[],accommodationType:'GLAMPING'};
+const autoCamping={entityUri:'auto-camping',canonicalLabelKo:'검증된 오토캠핑 테스트 레코드',alternateLabels:[],entityType:'ACCOMMODATION',category:'LODGING',tags:[],accommodationType:'AUTO_CAMPING'};
 const haeinsa = {
   entityUri: 'haeinsa',
   canonicalLabelKo: '해인사',
@@ -111,6 +114,8 @@ describe('PlaceDiscoveryService', () => {
     motorrad,
     moida,
     restaurant,
+    glamping,
+    autoCamping,
   ];
   const regional = {
     effectiveDataset: jest.fn(async (region: string) => ({
@@ -198,4 +203,6 @@ describe('PlaceDiscoveryService', () => {
     expect(food.entities.map((item: any) => item.entityId)).toEqual(['food']);
     expect((await service.discover('okcheon', 'CAFE', '근처 카페', {})).entities).toEqual([]);
   });
+  it('strictly filters an explicit glamping request and excludes pensions',async()=>{const result:any=await service.discover('hapcheon','LODGING','합천 글램핑 추천해줘',{});expect(result.entities.map((x:any)=>x.entityId)).toEqual(['glamping']);expect(result.entities[0].accommodationType).toBe('GLAMPING')});
+  it('distinguishes auto camping while generic lodging remains broad',async()=>{const exact:any=await service.discover('hapcheon','LODGING','오토캠핑 추천',{}),generic:any=await service.discover('hapcheon','LODGING','숙박 추천',{});expect(exact.entities.map((x:any)=>x.entityId)).toEqual(['auto-camping']);expect(generic.entities.map((x:any)=>x.entityId)).toEqual(expect.arrayContaining(['pension','glamping','auto-camping']))});
 });

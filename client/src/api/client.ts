@@ -374,3 +374,5 @@ export async function hydrateRuntimeLocation(context: any, location: any,regionI
   const { data } = await api.post<LiveRuntimeResponse>('/runtime-context/hydrate', { regionId,context:{...context,regionId}, location });
   return data;
 }
+export async function fetchAnonymousTrip(anonymousTripId:string,regionId:string){const{data}=await api.get(`/trips/anonymous/${encodeURIComponent(anonymousTripId)}`,{params:{regionId}});return data}
+export async function syncAnonymousTrip(payload:any){const{data}=await api.post('/trips/anonymous/sync',payload);return data}

@@ -1,6 +1,7 @@
 import { Injectable, Optional } from '@nestjs/common';
 import { RegionalDataService } from '../regional-data/regional-data.service';
 import type { DiscoveryCategory } from './intent-routing';
+import { recordAccommodationType, requestedAccommodationType } from './accommodation-taxonomy';
 
 const CATEGORY_MATCH: Record<DiscoveryCategory, (record: any) => boolean> = {
   CAFE: (record) => record.entityType === 'CAFE' || record.category === 'CAFE',
@@ -28,8 +29,10 @@ export class PlaceDiscoveryService {
     // A place named in the current utterance owns the origin. If it has no
     // verified point, stale session/runtime coordinates must not replace it.
     const origin = anchor ? this.coordinates(anchor) : this.contextOrigin(context);
+    const accommodationType = category === 'LODGING' ? requestedAccommodationType(message) : undefined;
     const ranked = dataset.records
       .filter(CATEGORY_MATCH[category])
+      .filter((record) => !accommodationType || recordAccommodationType(record) === accommodationType)
       .map((record) => {
         const matched = (record.tags || []).filter((tag: string) => requested.has(tag));
         const distanceMeters = this.distance(origin, this.coordinates(record));
@@ -57,6 +60,7 @@ export class PlaceDiscoveryService {
         facilityLabel: record.canonicalLabelKo,
         entityType: record.entityType,
         category: record.category,
+        accommodationType: recordAccommodationType(record),
         areaLabel: record.areaLabel,
         description: record.description,
         address: record.address,
