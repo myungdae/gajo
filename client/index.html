@@ -5,7 +5,17 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#0f766e" />
-    <link rel="manifest" href="/manifest-gajo.webmanifest" />
+    <script>
+      (() => {
+        const region = location.pathname.split('/').filter(Boolean)[0];
+        const supported = ['gajo','okcheon','muan','gyeryong','hapcheon','daejeon-junggu'];
+        const active = supported.includes(region) ? region : 'gajo';
+        const link = document.createElement('link');
+        link.rel = 'manifest';
+        link.href = `/manifest-${active}.webmanifest`;
+        document.head.appendChild(link);
+      })();
+    </script>
     <link rel="apple-touch-icon" href="/branding/regional-ai-icon-192.png" />
     <meta
       name="description"
