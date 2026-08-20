@@ -1,0 +1,6273 @@
+{
+  "source": {
+    "filename": "sight-copy.rdf",
+    "sha256": "9FC6DB71857448B4047F18B4E1D6A2500C0226C0AC8CD426C96021541372FFF9",
+    "bytes": 2934706,
+    "encoding": "UTF-8 (XML default)"
+  },
+  "namespaces": {
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "facet": "http://topbraid.org/facet#",
+    "j.0": "http://sight.eventpool.kr/resource/B&",
+    "owl": "http://www.w3.org/2002/07/owl#",
+    "dc": "http://purl.org/dc/elements/1.1/",
+    "j.1": "http://nedo.eventpool.kr/resource/",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "base": "http://sight.eventpool.kr/resource/",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "geo": "http://www.w3.org/2003/01/geo/wgs84_pos#"
+  },
+  "counts": {
+    "classes": 71,
+    "objectProperties": 154,
+    "datatypeProperties": 16,
+    "classDeclarations": 218,
+    "objectPropertyDeclarations": 518,
+    "datatypePropertyDeclarations": 27,
+    "entities": 1564,
+    "edges": 5754,
+    "literals": 5060
+  },
+  "classes": [
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_",
+      "label": "유물유적",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/인천광역시",
+      "label": "인천광역시",
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산",
+      "label": "유무형문화유산",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/유무형문화유산_테마여행",
+        "http://sight.eventpool.kr/resource/유무형문화유산_유네스코등재물",
+        "http://sight.eventpool.kr/resource/유무형문화유산_역사적사건",
+        "http://sight.eventpool.kr/resource/유무형문화유산_역사적인물",
+        "http://sight.eventpool.kr/resource/유무형문화유산_유물유적",
+        "http://sight.eventpool.kr/resource/유무형문화유산_지역",
+        "http://sight.eventpool.kr/resource/유무형문화유산_맛집",
+        "http://sight.eventpool.kr/resource/유무형문화유산_시대",
+        "http://sight.eventpool.kr/resource/유무형문화유산_숙박"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소",
+      "label": "관광명소",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/관광명소_지역",
+        "http://sight.eventpool.kr/resource/관광명소_관광명소종류",
+        "http://sight.eventpool.kr/resource/관광명소_역사적사건",
+        "http://sight.eventpool.kr/resource/관광명소_역사적인물",
+        "http://sight.eventpool.kr/resource/관광명소_유물유적",
+        "http://sight.eventpool.kr/resource/관광명소_맛집",
+        "http://sight.eventpool.kr/resource/관광명소_숙박",
+        "http://sight.eventpool.kr/resource/관광명소_여행인프라",
+        "http://sight.eventpool.kr/resource/관광명소_자연물",
+        "http://sight.eventpool.kr/resource/관광명소_문화예술",
+        "http://sight.eventpool.kr/resource/관광명소_주변동식물",
+        "http://sight.eventpool.kr/resource/관광명소_여행최적기",
+        "http://sight.eventpool.kr/resource/관광명소_부분",
+        "http://sight.eventpool.kr/resource/주요경유지_부분",
+        "http://sight.eventpool.kr/resource/관광명소_시대",
+        "http://sight.eventpool.kr/resource/관광명소_테마여행"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역",
+      "label": "지역",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/지역_관광명소",
+        "http://sight.eventpool.kr/resource/지역_여행인프라",
+        "http://sight.eventpool.kr/resource/지역_맛집",
+        "http://sight.eventpool.kr/resource/지역_숙박",
+        "http://sight.eventpool.kr/resource/지역_자연물",
+        "http://sight.eventpool.kr/resource/지역_시군구",
+        "http://sight.eventpool.kr/resource/지역_여행목적",
+        "http://sight.eventpool.kr/resource/지역_유무형문화유산",
+        "http://sight.eventpool.kr/resource/지역_특정장소",
+        "http://sight.eventpool.kr/resource/지역_유물유적",
+        "http://sight.eventpool.kr/resource/지역_서비스종류",
+        "http://sight.eventpool.kr/resource/지역_100대_명산",
+        "http://sight.eventpool.kr/resource/지역_역사적인물",
+        "http://sight.eventpool.kr/resource/지역_역사적사건",
+        "http://sight.eventpool.kr/resource/지역_테마여행",
+        "http://sight.eventpool.kr/resource/지역_특산물"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박",
+      "label": "숙박",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/숙박_숙박종류",
+        "http://sight.eventpool.kr/resource/숙박_관광명소",
+        "http://sight.eventpool.kr/resource/숙박_유무형문화유산",
+        "http://sight.eventpool.kr/resource/숙박_유물유적",
+        "http://sight.eventpool.kr/resource/숙박_특정장소",
+        "http://sight.eventpool.kr/resource/숙박_자연물",
+        "http://sight.eventpool.kr/resource/숙박_맛집",
+        "http://sight.eventpool.kr/resource/숙박_여행인프라",
+        "http://sight.eventpool.kr/resource/숙박_지역"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특정장소",
+      "label": "특정장소",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/특정장소_맛집",
+        "http://sight.eventpool.kr/resource/특정장소_숙박",
+        "http://sight.eventpool.kr/resource/특정장소_시군구",
+        "http://sight.eventpool.kr/resource/특정장소_지역"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/경상북도",
+      "label": "경상북도",
+      "subClassOf": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물",
+      "label": "자연물",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/자연물_자연물종류",
+        "http://sight.eventpool.kr/resource/자연물_관광명소",
+        "http://sight.eventpool.kr/resource/자연물_역사적인물",
+        "http://sight.eventpool.kr/resource/자연물_역사적사건",
+        "http://sight.eventpool.kr/resource/자연물_추천활동",
+        "http://sight.eventpool.kr/resource/자연물_주변동식물",
+        "http://sight.eventpool.kr/resource/자연물_숙박",
+        "http://sight.eventpool.kr/resource/자연물_맛집",
+        "http://sight.eventpool.kr/resource/자연물_지역",
+        "http://sight.eventpool.kr/resource/자연물_테마여행",
+        "http://sight.eventpool.kr/resource/자연물_유네스코등재물",
+        "http://sight.eventpool.kr/resource/자연물_100대_명산",
+        "http://sight.eventpool.kr/resource/isMemberOf",
+        "http://sight.eventpool.kr/resource/자연물_여행인프라"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/제주특별자치도",
+      "label": "제주특별자치도",
+      "subClassOf": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유네스코등재물",
+      "label": "유네스코등재물",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/유네스코등재물_유무형문화재",
+        "http://sight.eventpool.kr/resource/유네스코등재물_유물유적",
+        "http://sight.eventpool.kr/resource/유네스코등재물_자연물",
+        "http://sight.eventpool.kr/resource/유네스코등재물_유네스코등재물_종류"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/기타",
+      "label": "기타",
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적사건",
+      "label": "역사적사건",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/역사적사건_관광명소",
+        "http://sight.eventpool.kr/resource/역사적사건_유무형문화유산",
+        "http://sight.eventpool.kr/resource/역사적사건_자연물",
+        "http://sight.eventpool.kr/resource/역사적사건_지역"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/시대",
+      "label": "시대",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/시대_유물유적",
+        "http://sight.eventpool.kr/resource/시대_유무형문화유산",
+        "http://sight.eventpool.kr/resource/시대_관광명소"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/모텔",
+      "label": "모텔",
+      "subClassOf": [
+        "http://sight.eventpool.kr/resource/숙박"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/경상남도",
+      "label": "경상남도",
+      "subClassOf": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/세종특별자치시",
+      "label": "세종특별자치시",
+      "subClassOf": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소종류",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소종류",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적종류",
+      "label": "유물유적종류",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/유물유적종류_유물유적"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/리조트",
+      "label": "리조트",
+      "subClassOf": [
+        "http://sight.eventpool.kr/resource/숙박"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적인물",
+      "label": "역사적인물",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/역사적인물_관광명소",
+        "http://sight.eventpool.kr/resource/역사적인물_유무형문화유산",
+        "http://sight.eventpool.kr/resource/역사적인물_자연물",
+        "http://sight.eventpool.kr/resource/역사적인물_지역"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/부분",
+      "label": "부분",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/부분_유물유적",
+        "http://sight.eventpool.kr/resource/이전코스_추천다음코스",
+        "http://sight.eventpool.kr/resource/부분_유무형문화재",
+        "http://sight.eventpool.kr/resource/부분_주요경유지",
+        "http://sight.eventpool.kr/resource/부분_관광명소"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/서양음식전문",
+      "label": "서양음식전문",
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/축제_전시",
+      "label": "축제",
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/강원특별자치도",
+      "label": "경기특별자치도",
+      "subClassOf": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/카페점",
+      "label": "카페점",
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행최적기",
+      "label": "여행최적기",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/여행최적기_관광명소"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물종류",
+      "label": "자연물종류",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/자연물종류_자연물"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박공유플랫폼",
+      "label": "숙박공유플랫폼",
+      "subClassOf": [
+        "http://sight.eventpool.kr/resource/숙박"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화재종류",
+      "label": "유무형문화재종류",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/유무형문화재종류_유무형문화재"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행목적-",
+      "label": "여행목적",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/충청남도",
+      "label": "충청남도",
+      "subClassOf": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/베트남식",
+      "label": "베트남식",
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/종류",
+      "label": "종류",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/종류_유물유적"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/국가",
+      "label": "국가",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/글램핑_캠핑",
+      "label": "글램핑 캠핑",
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/경기도",
+      "label": "지역 1",
+      "subClassOf": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/OrderedCollection",
+      "label": "Ordered collection",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/시군구",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소종류",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/문화예술",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/부분",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/시대",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행최적기",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적사건",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적인물",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유네스코등재물_종류",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유네스코등재물",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화재종류",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적종류",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/인프라종류",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물종류",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/종류",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행종류",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특산물",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특정장소",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/주변동식물",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/추천활동",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/Collection",
+      "label": "Collection",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/hasMember"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/한식",
+      "label": "한식",
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/호텔",
+      "label": "호텔",
+      "subClassOf": [
+        "http://sight.eventpool.kr/resource/숙박"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/서울특별시",
+      "label": "서울특별시",
+      "subClassOf": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/시군구",
+      "label": "시군구",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유네스코등재물_종류",
+      "label": "유네스코등재물 종류",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/Location",
+      "label": "Location",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라",
+      "label": "여행인프라",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/여행인프라_인프라종류",
+        "http://sight.eventpool.kr/resource/여행인프라_맛집",
+        "http://sight.eventpool.kr/resource/여행인프라_숙박",
+        "http://sight.eventpool.kr/resource/여행인프라_관광명소",
+        "http://sight.eventpool.kr/resource/여행인프라_문화예술",
+        "http://sight.eventpool.kr/resource/여행인프라_자연물",
+        "http://sight.eventpool.kr/resource/여행인프라_지역"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소종류",
+      "label": "관광명소종류",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/관광명소종류_관광명소"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/패스트푸드",
+      "label": "패스트푸드",
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/전북특별자치도",
+      "label": "전북특별자치도",
+      "subClassOf": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/부산광역시",
+      "label": "부산광역시",
+      "subClassOf": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/전라남도",
+      "label": "전라남도",
+      "subClassOf": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행",
+      "label": "테마여행",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/테마여행_테마여행종류",
+        "http://sight.eventpool.kr/resource/테마여행_자연물",
+        "http://sight.eventpool.kr/resource/테마여행_유무형문화유산",
+        "http://sight.eventpool.kr/resource/테마여행_지역",
+        "http://sight.eventpool.kr/resource/테마여행_관광명소"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/대전광역시",
+      "label": "대전광역시",
+      "subClassOf": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/광주광역시",
+      "label": "광주광역시",
+      "subClassOf": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특산물",
+      "label": "특산물",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/특산물_지역"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/일식",
+      "label": "일식",
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/B&B_한옥마을_게스트하우스",
+      "label": "B&B_한옥마을_게스트하우스",
+      "subClassOf": [
+        "http://sight.eventpool.kr/resource/숙박"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/충청북도",
+      "label": "충청북도",
+      "subClassOf": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행종류",
+      "label": "테마여행종류",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/테마여행종류_테마여행"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/펜션_풀빌라",
+      "label": "펜션",
+      "subClassOf": [
+        "http://sight.eventpool.kr/resource/숙박"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집",
+      "label": "맛집",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/맛집_맛집종류",
+        "http://sight.eventpool.kr/resource/맛집_지역",
+        "http://sight.eventpool.kr/resource/맛집_숙박",
+        "http://sight.eventpool.kr/resource/맛집_관광명소",
+        "http://sight.eventpool.kr/resource/맛집_특정장소",
+        "http://sight.eventpool.kr/resource/맛집_유무형문화유산",
+        "http://sight.eventpool.kr/resource/맛집_여행인프라",
+        "http://sight.eventpool.kr/resource/맛집_자연물",
+        "http://sight.eventpool.kr/resource/맛집_유물유적"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/울산광역시",
+      "label": "울산광역시",
+      "subClassOf": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/주변동식물",
+      "label": "주변동식물",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/주변동식물_유물유적",
+        "http://sight.eventpool.kr/resource/주변동식물_자연물",
+        "http://sight.eventpool.kr/resource/주변동식물_관광명소"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/문화예술",
+      "label": "문화예술",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/문화예술_관광명소",
+        "http://sight.eventpool.kr/resource/문화예술_여행인프라"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/TableDisplay",
+      "label": "Table display",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/추천활동",
+      "label": "추천활동",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/추천활동_자연물"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/100대_명산",
+      "label": "100대 명산",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://travel.eventpool.kr/resource/100대_명산_지역",
+        "http://travel.eventpool.kr/resource/100대_명산_자연물"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/민박_게스트하우스",
+      "label": "민박",
+      "subClassOf": [
+        "http://sight.eventpool.kr/resource/숙박"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/중식",
+      "label": "중식",
+      "subClassOf": [
+        "http://sight.eventpool.kr/resource/맛집"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/인프라종류",
+      "label": "인프라종류",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/인프라종류_지역",
+        "http://sight.eventpool.kr/resource/인프라종류_여행인프라"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적",
+      "label": "유물유적",
+      "subClassOf": [
+        "http://www.w3.org/2002/07/owl#Thing"
+      ],
+      "defaultFacets": [
+        "http://sight.eventpool.kr/resource/유물유적_숙박",
+        "http://sight.eventpool.kr/resource/유물유적_관광명소",
+        "http://sight.eventpool.kr/resource/유물유적_맛집",
+        "http://sight.eventpool.kr/resource/유물유적_종류",
+        "http://sight.eventpool.kr/resource/유물유적_시대",
+        "http://sight.eventpool.kr/resource/유물유적_유무형문화유산",
+        "http://sight.eventpool.kr/resource/유물유적_유네스코등재물",
+        "http://sight.eventpool.kr/resource/유물유적_부분",
+        "http://sight.eventpool.kr/resource/유물유적_지역",
+        "http://sight.eventpool.kr/resource/유물유적_주변동식물"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/대구광역시",
+      "label": "대구광역시",
+      "subClassOf": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유네스코등재물",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유네스코등재물",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소종류",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/문화예술",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/부분",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/시대",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행최적기",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적사건",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적인물",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유네스코등재물_종류",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유네스코등재물",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화재종류",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적종류",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/인프라종류",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물종류",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/종류",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행종류",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특산물",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특정장소",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/주변동식물",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/추천활동",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특정장소",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적인물",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적사건",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특정장소",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특정장소",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소종류",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/문화예술",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/부분",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/시대",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행최적기",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적사건",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적인물",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유네스코등재물_종류",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유네스코등재물",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화재종류",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적종류",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/인프라종류",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물종류",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/종류",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행종류",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특산물",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특정장소",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/주변동식물",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/추천활동",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/Location",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/시군구",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적사건",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특정장소",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적",
+      "label": null,
+      "subClassOf": [],
+      "defaultFacets": []
+    }
+  ],
+  "objectProperties": [
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_테마여행",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_유네스코등재물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_역사적사건",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_역사적인물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_맛집",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_시대",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_숙박",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_관광명소종류",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_역사적사건",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_역사적인물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_맛집",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_숙박",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_여행인프라",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_문화예술",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_주변동식물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_여행최적기",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_부분",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/주요경유지_부분",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_시대",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_테마여행",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_여행인프라",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_맛집",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_숙박",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_시군구",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_여행목적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_유무형문화유산",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_특정장소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_서비스종류",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_100대_명산",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_역사적인물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_역사적사건",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_테마여행",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_특산물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_숙박종류",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_유무형문화유산",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_특정장소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_맛집",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_여행인프라",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특정장소_맛집",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특정장소_숙박",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특정장소_시군구",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특정장소_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_자연물종류",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_역사적인물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_역사적사건",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_추천활동",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_주변동식물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_숙박",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_맛집",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_테마여행",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_유네스코등재물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_100대_명산",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/isMemberOf",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_여행인프라",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유네스코등재물_유무형문화재",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유네스코등재물_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유네스코등재물_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유네스코등재물_유네스코등재물_종류",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적사건_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적사건_유무형문화유산",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적사건_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적사건_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/시대_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/시대_유무형문화유산",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/시대_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적종류_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적인물_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적인물_유무형문화유산",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적인물_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적인물_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/부분_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/이전코스_추천다음코스",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/부분_유무형문화재",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/부분_주요경유지",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/부분_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행최적기_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물종류_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화재종류_유무형문화재",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/종류_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적사건_유무형문화유산",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적인물_유무형문화유산",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특정장소_맛집",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_시대",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_숙박",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_특정장소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_역사적사건",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/시대_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특정장소_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_100대_명산",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특산물_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_시군구",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_부분",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_여행목적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소종류_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/추천다음코스_이전코스",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_유무형문화유산",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적사건_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_테마여행",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_역사적인물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행종류_테마여행",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_100대_명산",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_주변동식물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_숙박종류",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행최적기_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_부분",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/문화예술_여행인프라",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물__내변산",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행_테마여행종류",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_특정장소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/시대_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_역사적인물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_테마여행",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행_유무형문화유산",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_역사적사건",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_숙박",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_유무형문화유산",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_특정장소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_여행인프라",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물종류_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_역사적인물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_관광명소종류",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집종류_맛집",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적사건_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_주변동식물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유네스코등재물_유네스코등재물_종류",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_유물유적종류",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/주변동식물_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_숙박",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라_숙박",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적인물_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_유네스코등재물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/문화예술_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적인물_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_유무형문화재",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_맛집",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/주변동식물_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/인프라종류_여행인프라",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유네스코등재물_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_맛집",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_문화예술",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_유네스코등재물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_맛집",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적인물_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_서비스종류",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/이전코스_추천다음코스",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/부분_유무형문화재",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_시대",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/추천활동_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_맛집종류",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_역사적사건",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/인근관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/종류_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_여행인프라",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_여행인프라",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특정장소_숙박",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_맛집",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/부분_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_유무형문화유산",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라_인프라종류",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_추천활동",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유네스코등재물_유무형문화재",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행목적_특정장소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_숙박",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/서로_관련된_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_종류",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특정장소_여행목적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_자연물종류",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_테마여행",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_숙박",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라_맛집",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_역사적사건",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/시대_유무형문화유산",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_특산물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/인프라종류_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유네스코등재물_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_숙박",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유네스코등재물_종류_유네스코등재물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_주변동식물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_맛집",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행목적_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화재_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_여행최적기",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_유무형문화유산",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_시대",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_맛집",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적종류_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적사건_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화재종류_유무형문화재",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_테마여행",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/hasMember",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/isMemberOf",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_여행인프라",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화재_유무형문화재종류",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/주요경유지_부분",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특정장소_시군구",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_역사적인물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_유네스코등재물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박종류_숙박",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_여행인프라",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/부분_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라_문화예술",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/부분_주요경유지",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/주변동식물_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화재_부분",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/hasMember",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라_인프라종류",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라_맛집",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라_숙박",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라_문화예술",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소종류_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행_테마여행종류",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행_유무형문화유산",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특산물_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행종류_테마여행",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_맛집종류",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_숙박",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_특정장소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_유무형문화유산",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_여행인프라",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/주변동식물_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/주변동식물_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/주변동식물_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/문화예술_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/문화예술_여행인프라",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/추천활동_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://travel.eventpool.kr/resource/100대_명산_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://travel.eventpool.kr/resource/100대_명산_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/인프라종류_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/인프라종류_여행인프라",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_숙박",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_맛집",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_종류",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_시대",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_유무형문화유산",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_유네스코등재물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_부분",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_주변동식물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적인물_유무형문화유산",
+      "label": "역사적인물과 관련된 유무형문화유산",
+      "domain": [
+        "http://sight.eventpool.kr/resource/역사적인물"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유무형문화유산"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_역사적인물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적사건_유무형문화유산",
+      "label": "역사적사건과 관련된 유무형문화유산",
+      "domain": [
+        "http://sight.eventpool.kr/resource/역사적사건"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유무형문화유산"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_역사적사건",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특정장소_맛집",
+      "label": "특정장소 근처의 맛집",
+      "domain": [
+        "http://sight.eventpool.kr/resource/특정장소"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/맛집"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_특정장소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_시대",
+      "label": "이 유무형문화유산의 시대",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유무형문화유산"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/시대"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/시대_유무형문화유산",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_숙박",
+      "label": "유무형문화유산 근처 숙박지",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유무형문화유산"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/숙박"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_유무형문화유산",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_역사적사건",
+      "label": "관광명소와 관련된 역사적사건",
+      "domain": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/역사적사건"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적사건_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_특정장소",
+      "label": "이 숙박지 근처의 특정장소",
+      "domain": [
+        "http://sight.eventpool.kr/resource/숙박"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/특정장소"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특정장소_숙박",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/시대_관광명소",
+      "label": "이 시대의 관광명소",
+      "domain": [
+        "http://sight.eventpool.kr/resource/시대"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_시대",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특정장소_지역",
+      "label": "이 특정장소가 속하는 지역",
+      "domain": [
+        "http://sight.eventpool.kr/resource/특정장소"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_특정장소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_100대_명산",
+      "label": "100대 명산",
+      "domain": [
+        "http://sight.eventpool.kr/resource/자연물"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/100대_명산"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://travel.eventpool.kr/resource/100대_명산_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_시군구",
+      "label": "이 지역에 있는 시군구",
+      "domain": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/시군구"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/시군구_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특산물_지역",
+      "label": "이 특산물로 유명한 시군구",
+      "domain": [
+        "http://sight.eventpool.kr/resource/특산물"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_특산물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_부분",
+      "label": "이 유물유적에 속하는 유물",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유물유적"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/부분"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/부분_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_여행목적",
+      "label": "이 시군구와 어울리는 여행목적",
+      "domain": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/여행목적-"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행목적_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소종류_관광명소",
+      "label": "이 종류의 관광명소",
+      "domain": [
+        "http://sight.eventpool.kr/resource/관광명소종류"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_관광명소종류",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/시군구_지역",
+      "label": "시군구 지역",
+      "domain": [
+        "http://sight.eventpool.kr/resource/시군구"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/지역_시군구"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_유무형문화유산",
+      "label": "숙박지 근처의 유무형문화유산",
+      "domain": [
+        "http://sight.eventpool.kr/resource/숙박"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유무형문화유산"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/유무형문화유산_숙박"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행_자연물",
+      "label": "테마여행과 관련된 자연물",
+      "domain": [
+        "http://sight.eventpool.kr/resource/테마여행"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/자연물"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_테마여행",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/추천다음코스_이전코스",
+      "label": "이전코스",
+      "domain": [
+        "http://sight.eventpool.kr/resource/부분"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/부분"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/이전코스_추천다음코스",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적사건_자연물",
+      "label": "역사적사건과 관련된 자연물",
+      "domain": [
+        "http://sight.eventpool.kr/resource/역사적사건"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/자연물"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_역사적사건",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_자연물",
+      "label": "이 숙박지 근처의 자연물",
+      "domain": [
+        "http://sight.eventpool.kr/resource/숙박"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/자연물"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_숙박",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://travel.eventpool.kr/resource/100대_명산_지역",
+      "label": "100대 명산의 지역",
+      "domain": [
+        "http://sight.eventpool.kr/resource/100대_명산"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/시군구"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_100대_명산",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_역사적인물",
+      "label": "유무형문화유산과 관련된 역사적인물",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유무형문화유산"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/역사적인물"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/역사적인물_유무형문화유산"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_테마여행",
+      "label": "관광명소와 관련된 테마여행",
+      "domain": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/테마여행"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_100대_명산",
+      "label": "100대 명산",
+      "domain": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/100대_명산"
+      ],
+      "inverseOf": [
+        "http://travel.eventpool.kr/resource/100대_명산_지역"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행종류_테마여행",
+      "label": "테마여행",
+      "domain": [
+        "http://sight.eventpool.kr/resource/테마여행종류"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/테마여행"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행_테마여행종류",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_주변동식물",
+      "label": "자연물 주변의 서식동식물",
+      "domain": [
+        "http://sight.eventpool.kr/resource/자연물"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/주변동식물"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/주변동식물_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_숙박종류",
+      "label": "숙박종류",
+      "domain": [
+        "http://sight.eventpool.kr/resource/숙박"
+      ],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박종류_숙박",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행최적기_관광명소",
+      "label": "이 여행최적기의 관광명소",
+      "domain": [
+        "http://sight.eventpool.kr/resource/여행최적기"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_여행최적기",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_부분",
+      "label": "이 관광명소 부분",
+      "domain": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/부분"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/부분_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/문화예술_여행인프라",
+      "label": "이 문화예술과 관련된 여행인프라",
+      "domain": [
+        "http://sight.eventpool.kr/resource/문화예술"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/여행인프라"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라_문화예술",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물__내변산",
+      "label": "자연물  내변산",
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행_관광명소",
+      "label": "이 테마여행과 관련된 관광명소",
+      "domain": [
+        "http://sight.eventpool.kr/resource/테마여행"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/관광명소_테마여행"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행_테마여행종류",
+      "label": "테마여행종류",
+      "domain": [
+        "http://sight.eventpool.kr/resource/테마여행"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/테마여행종류"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/테마여행종류_테마여행"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라_자연물",
+      "label": "여행인프라 주변의 자연물",
+      "domain": [
+        "http://sight.eventpool.kr/resource/여행인프라"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/자연물"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_여행인프라",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_특정장소",
+      "label": "이 지역에 있는 특정장소",
+      "domain": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/특정장소"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/특정장소_지역"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/시대_유물유적",
+      "label": "이 시대의 유물유적",
+      "domain": [
+        "http://sight.eventpool.kr/resource/시대"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유물유적"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_시대",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_테마여행",
+      "label": "이 자연물과 관련된 테마여행",
+      "domain": [
+        "http://sight.eventpool.kr/resource/자연물"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/테마여행"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/테마여행_자연물"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_역사적인물",
+      "label": "시군구관련 역사적인물",
+      "domain": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/역사적인물"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적인물_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행_유무형문화유산",
+      "label": "테마여행 관련 유무형문화유산",
+      "domain": [
+        "http://sight.eventpool.kr/resource/테마여행"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유무형문화유산"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_테마여행",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_역사적사건",
+      "label": "자연물과 관련된 역사적사건",
+      "domain": [
+        "http://sight.eventpool.kr/resource/자연물"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/역사적사건"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/역사적사건_자연물"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/hasMember",
+      "label": "다음의 요소를 가지다",
+      "domain": [
+        "http://sight.eventpool.kr/resource/Collection"
+      ],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/isMemberOf",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_유무형문화유산",
+      "label": "맛집 근처의 유무형문화유산",
+      "domain": [
+        "http://sight.eventpool.kr/resource/맛집"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유무형문화유산"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_맛집",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_숙박",
+      "label": "이 시군구 근처의 숙박지",
+      "domain": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/숙박"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_특정장소",
+      "label": "맛집 근처의 특정장소",
+      "domain": [
+        "http://sight.eventpool.kr/resource/맛집"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/특정장소"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/특정장소_맛집"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_지역",
+      "label": "맛집이 속한 시군구",
+      "domain": [
+        "http://sight.eventpool.kr/resource/맛집"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/시군구"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_맛집",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_여행인프라",
+      "label": "맛집 근처의 여행인프라",
+      "domain": [
+        "http://sight.eventpool.kr/resource/맛집"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/여행인프라"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라_맛집",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물종류_자연물",
+      "label": "이 자연물종류의 자연물",
+      "domain": [
+        "http://sight.eventpool.kr/resource/자연물종류"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/자연물"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_자연물종류",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_관광명소종류",
+      "label": "관광명소종류",
+      "domain": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/관광명소종류"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/관광명소종류_관광명소"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_역사적인물",
+      "label": "자연물과 관련된 역사적인물",
+      "domain": [
+        "http://sight.eventpool.kr/resource/자연물"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/역사적인물"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적인물_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집종류_맛집",
+      "label": "이 종류의 맛집",
+      "domain": [],
+      "range": [
+        "http://sight.eventpool.kr/resource/맛집"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_맛집종류",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적사건_지역",
+      "label": "역사적사건관련 시군구",
+      "domain": [
+        "http://sight.eventpool.kr/resource/역사적사건"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_역사적사건",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_자연물",
+      "label": "관광명소 근처 또는 품은 자연물",
+      "domain": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/자연물"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_주변동식물",
+      "label": "이 관광명소에 있는 동식물",
+      "domain": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/주변동식물"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/주변동식물_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유네스코등재물_유네스코등재물_종류",
+      "label": "유네스코등재물 종류",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유네스코등재물"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유네스코등재물_종류"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유네스코등재물_종류_유네스코등재물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_지역",
+      "label": "이 유물유적이 있는 시군구",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유물유적"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/isMemberOf",
+      "label": "이 Collection의 요소이다",
+      "domain": [],
+      "range": [
+        "http://sight.eventpool.kr/resource/Collection"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/hasMember"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_유물유적종류",
+      "label": "유물유적 유물유적종류",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유물유적"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유물유적종류"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적종류_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/주변동식물_유물유적",
+      "label": "이 동식물이 서식하는 유물유적",
+      "domain": [
+        "http://sight.eventpool.kr/resource/주변동식물"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유물유적"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_주변동식물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_숙박",
+      "label": "이 자연물 근처의 숙박지",
+      "domain": [
+        "http://sight.eventpool.kr/resource/자연물"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/숙박"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/숙박_자연물"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라_숙박",
+      "label": "이 여행인프라 근처의 숙박",
+      "domain": [
+        "http://sight.eventpool.kr/resource/여행인프라"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/숙박"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_여행인프라",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적인물_지역",
+      "label": "역사적인물관련 시군구",
+      "domain": [
+        "http://sight.eventpool.kr/resource/역사적인물"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/지역_역사적인물"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_유네스코등재물",
+      "label": "유네스코등재물",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유물유적"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유네스코등재물"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유네스코등재물_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/문화예술_관광명소",
+      "label": "이 문화예술과 관련된 관광명소",
+      "domain": [
+        "http://sight.eventpool.kr/resource/문화예술"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_문화예술",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적인물_자연물",
+      "label": "역사적인물과 관련된 자연물",
+      "domain": [
+        "http://sight.eventpool.kr/resource/역사적인물"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/자연물"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/자연물_역사적인물"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_유무형문화재",
+      "label": "관광명소와 관련된 유무형문화재",
+      "domain": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유무형문화유산"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화재_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_맛집",
+      "label": "시군구 근처에 있는 맛집",
+      "domain": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/맛집"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/맛집_지역"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/주변동식물_자연물",
+      "label": "주변동식물이 서식하는 자연물",
+      "domain": [
+        "http://sight.eventpool.kr/resource/주변동식물"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/자연물"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/자연물_주변동식물"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라_관광명소",
+      "label": "이 여행인프라 근처의 관광명소",
+      "domain": [
+        "http://sight.eventpool.kr/resource/여행인프라"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_여행인프라",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/인프라종류_여행인프라",
+      "label": "이 종류의 여행인프라",
+      "domain": [
+        "http://sight.eventpool.kr/resource/인프라종류"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/여행인프라"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라_인프라종류",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_맛집",
+      "label": "유물유적 근처의 맛집",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유물유적"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/맛집"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유네스코등재물_유물유적",
+      "label": "유물유적",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유네스코등재물"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유물유적"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/유물유적_유네스코등재물"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_문화예술",
+      "label": "이 관광명소와 관련된 문화예술",
+      "domain": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/문화예술"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/문화예술_관광명소"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_유네스코등재물",
+      "label": "이 유무형문화유산이 유네스코등재되다",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유무형문화유산"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유네스코등재물"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유네스코등재물_유무형문화재",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_맛집",
+      "label": "이 숙박지 근처의 맛집",
+      "domain": [
+        "http://sight.eventpool.kr/resource/숙박"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/맛집"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_숙박",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적인물_관광명소",
+      "label": "역사적인물관련 관광명소",
+      "domain": [
+        "http://sight.eventpool.kr/resource/역사적인물"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_역사적인물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_유물유적",
+      "label": "이 유무형문화유산과 관련이 있는 유물유적",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유무형문화유산"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유물유적"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_유무형문화유산",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/이전코스_추천다음코스",
+      "label": "추천다음코스",
+      "domain": [
+        "http://sight.eventpool.kr/resource/부분"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/부분"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/추천다음코스_이전코스"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_서비스종류",
+      "label": "이 시군구와 관련될 수 있는 인프라종류",
+      "domain": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/인프라종류"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/인프라종류_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/부분_유무형문화재",
+      "label": "이 부분의 유무형문화재",
+      "domain": [
+        "http://sight.eventpool.kr/resource/부분"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유무형문화유산"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화재_부분",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_시대",
+      "label": "이 유물유적의 시대",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유물유적"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/시대"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/시대_유물유적"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_유물유적",
+      "label": "숙박지 근처의 유물유적",
+      "domain": [
+        "http://sight.eventpool.kr/resource/숙박"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유물유적"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_숙박",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/추천활동_자연물",
+      "label": "이 활동을 할 수 있는 자연물",
+      "domain": [
+        "http://sight.eventpool.kr/resource/추천활동"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/자연물"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_추천활동",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_맛집종류",
+      "label": "맛집종류",
+      "domain": [
+        "http://sight.eventpool.kr/resource/맛집"
+      ],
+      "range": [],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/맛집종류_맛집"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_역사적사건",
+      "label": "유무형문화유산과 관련이 있는 역사적사건",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유무형문화유산"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/역사적사건"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/역사적사건_유무형문화유산"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_관광명소",
+      "label": "숙박지 근처의 관광명소",
+      "domain": [
+        "http://sight.eventpool.kr/resource/숙박"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_숙박",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/인근관광명소",
+      "label": "인근관광명소",
+      "domain": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/인근관광명소"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/종류_유물유적",
+      "label": "이 종류의 유물유적",
+      "domain": [
+        "http://sight.eventpool.kr/resource/종류"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유물유적"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_종류",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_여행인프라",
+      "label": "관광명소 주변의 여행인프라",
+      "domain": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/여행인프라"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/여행인프라_관광명소"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_자연물",
+      "label": "맛집 근처의 자연물",
+      "domain": [
+        "http://sight.eventpool.kr/resource/맛집"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/자연물"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_맛집",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_여행인프라",
+      "label": "자연물 주변의 여행인프라",
+      "domain": [
+        "http://sight.eventpool.kr/resource/자연물"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/여행인프라"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/여행인프라_자연물"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특정장소_숙박",
+      "label": "특정장소 근처의 숙박",
+      "domain": [
+        "http://sight.eventpool.kr/resource/특정장소"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/숙박"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/숙박_특정장소"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_맛집",
+      "label": "유무형문화유산 근처 맛집",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유무형문화유산"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/맛집"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/맛집_유무형문화유산"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/부분_유물유적",
+      "label": "이 부분은 이 유물유적에 속한다",
+      "domain": [
+        "http://sight.eventpool.kr/resource/부분"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유물유적"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/유물유적_부분"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_유무형문화유산",
+      "label": "이 시군구에 있는 유무형문화유산",
+      "domain": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유무형문화유산"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_관광명소",
+      "label": "유물유적과 관련된 관광명소",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유물유적"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_유물유적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라_인프라종류",
+      "label": "여행인프라의 종류",
+      "domain": [
+        "http://sight.eventpool.kr/resource/여행인프라"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/인프라종류"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/인프라종류_여행인프라"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_지역",
+      "label": "자연물 근처의  시군구",
+      "domain": [
+        "http://sight.eventpool.kr/resource/자연물"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_자연물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유네스코등재물_유무형문화재",
+      "label": "이 유네스코등재물의 유무형문화유산",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유네스코등재물"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유무형문화유산"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/유무형문화유산_유네스코등재물"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_추천활동",
+      "label": "이 자연물에서의 추천활동",
+      "domain": [
+        "http://sight.eventpool.kr/resource/자연물"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/추천활동"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/추천활동_자연물"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행목적_특정장소",
+      "label": "이 여행목적에 부합하는 특정장소",
+      "domain": [
+        "http://sight.eventpool.kr/resource/여행목적-"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/특정장소"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특정장소_여행목적",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_관광명소",
+      "label": "이 시군구에 있는 관광명소",
+      "domain": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_지역",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_숙박",
+      "label": "유물유적 근처의 숙박지",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유물유적"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/숙박"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/숙박_유물유적"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_종류",
+      "label": "이 유물유적의 종류",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유물유적"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/종류"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/종류_유물유적"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/서로_관련된_관광명소",
+      "label": "서로 관련된 관광명소",
+      "domain": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/서로_관련된_관광명소"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_자연물",
+      "label": "시군구 부근의 자연물",
+      "domain": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/자연물"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/자연물_지역"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_자연물종류",
+      "label": "자연물종류",
+      "domain": [
+        "http://sight.eventpool.kr/resource/자연물"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/자연물종류"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/자연물종류_자연물"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특정장소_여행목적",
+      "label": "이 특정장소에 어울리는 여행목적",
+      "domain": [
+        "http://sight.eventpool.kr/resource/특정장소"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/여행목적-"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/여행목적_특정장소"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_테마여행",
+      "label": "유무형문화유산 관련 테마여행",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유무형문화유산"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/테마여행"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/테마여행_유무형문화유산"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_유물유적",
+      "label": "이 시군구에 있는 유물유적",
+      "domain": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유물유적"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/유물유적_지역"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_숙박",
+      "label": "이 맛집 근처의 숙박지",
+      "domain": [
+        "http://sight.eventpool.kr/resource/맛집"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/숙박"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/숙박_맛집"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라_맛집",
+      "label": "이 여행인프라 근처의 맛집",
+      "domain": [
+        "http://sight.eventpool.kr/resource/여행인프라"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/맛집"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/맛집_여행인프라"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_역사적사건",
+      "label": "시군구관련 역사적사건",
+      "domain": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/역사적사건"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/역사적사건_지역"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/시대_유무형문화유산",
+      "label": "이 시대의 유무형문화유산",
+      "domain": [
+        "http://sight.eventpool.kr/resource/시대"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유무형문화유산"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/유무형문화유산_시대"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_특산물",
+      "label": "이 시군구의 특산물",
+      "domain": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/특산물"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/특산물_지역"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/인프라종류_지역",
+      "label": "이 인프라 종류와 관련된 시군구",
+      "domain": [
+        "http://sight.eventpool.kr/resource/인프라종류"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/지역_서비스종류"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마여행_지역",
+      "label": "테마여행 관련된 시군구",
+      "domain": [
+        "http://sight.eventpool.kr/resource/테마여행"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_테마여행",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_유물유적",
+      "label": "맛집 근처의 유물유적",
+      "domain": [
+        "http://sight.eventpool.kr/resource/맛집"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유물유적"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/유물유적_맛집"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유네스코등재물_자연물",
+      "label": "유네스코등재물의 자연물",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유네스코등재물"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/자연물"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_유네스코등재물",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_숙박",
+      "label": "관광명소 근처의 숙박지",
+      "domain": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/숙박"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/숙박_관광명소"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유네스코등재물_종류_유네스코등재물",
+      "label": "이 종류의 유네스코등재물",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유네스코등재물_종류"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유네스코등재물"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/유네스코등재물_유네스코등재물_종류"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_유물유적",
+      "label": "이 관광명소와 관련된 유물유적",
+      "domain": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유물유적"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/유물유적_관광명소"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_주변동식물",
+      "label": "유물유적지 주변의 동식물",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유물유적"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/주변동식물"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/주변동식물_유물유적"
+      ]
+    },
+    {
+      "uri": "http://travel.eventpool.kr/resource/100대_명산_자연물",
+      "label": "자연물",
+      "domain": [
+        "http://sight.eventpool.kr/resource/100대_명산"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/자연물"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/자연물_100대_명산"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_맛집",
+      "label": "자연물 근처의 맛집",
+      "domain": [
+        "http://sight.eventpool.kr/resource/자연물"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/맛집"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/맛집_자연물"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행목적_지역",
+      "label": "여행목적에 부합하는 시군구",
+      "domain": [
+        "http://sight.eventpool.kr/resource/여행목적-"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/지역_여행목적"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화재_관광명소",
+      "label": "유무형문화재와 관련된 관광명소",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유무형문화유산"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/관광명소_유무형문화재"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_여행최적기",
+      "label": "이 관광명소 여행최적기",
+      "domain": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/여행최적기"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/여행최적기_관광명소"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적_유무형문화유산",
+      "label": "이 유물유적과 관련이 있는유무형문화유산",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유물유적"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유무형문화유산"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/유무형문화유산_유물유적"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_시대",
+      "label": "이 관광명소의 시대",
+      "domain": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/시대"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/시대_관광명소"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_맛집",
+      "label": "관광명소 근처의 맛집",
+      "domain": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/맛집"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_관광명소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유물유적종류_유물유적",
+      "label": "유물유적종류 유물유적",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유물유적종류"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유물유적"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/유물유적_유물유적종류"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화재종류_유무형문화재",
+      "label": "이 종류의 유무형문화재",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유무형문화재종류"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유무형문화유산"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화재_유무형문화재종류",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/역사적사건_관광명소",
+      "label": "역사적사건과 관련된 관광명소",
+      "domain": [
+        "http://sight.eventpool.kr/resource/역사적사건"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/관광명소_역사적사건"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_여행인프라",
+      "label": "이 숙박지 근처의 여행인프라",
+      "domain": [
+        "http://sight.eventpool.kr/resource/숙박"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/여행인프라"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/여행인프라_숙박"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화재_유무형문화재종류",
+      "label": "유무형문화재종류",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유무형문화유산"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유무형문화재종류"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/유무형문화재종류_유무형문화재"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_테마여행",
+      "label": "이 시군구와 관련된 테마여행",
+      "domain": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/테마여행"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/테마여행_지역"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박_지역",
+      "label": "이 숙박지 근처 시군구",
+      "domain": [
+        "http://sight.eventpool.kr/resource/숙박"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/지역_숙박"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_지역",
+      "label": "관광명소가 속한 시군구",
+      "domain": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/시군구"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/지역_관광명소"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_관광명소",
+      "label": "이 자연물 근처 또는 내의 관광명소",
+      "domain": [
+        "http://sight.eventpool.kr/resource/자연물"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/관광명소_자연물"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라_지역",
+      "label": "이 여행인프라가 제공되는 시군구",
+      "domain": [
+        "http://sight.eventpool.kr/resource/여행인프라"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_여행인프라",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/주요경유지_부분",
+      "label": "이 주요경유지는 이 코스의 부분",
+      "domain": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/부분"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/부분_주요경유지",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/특정장소_시군구",
+      "label": "특정장소가 속하는 시군구",
+      "domain": [
+        "http://sight.eventpool.kr/resource/특정장소"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/시군구"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/지역_특정장소"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/관광명소_역사적인물",
+      "label": "관광명소관련 역사적인물",
+      "domain": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/역사적인물"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/역사적인물_관광명소"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/맛집_관광명소",
+      "label": "맛집 근처의 관광명소",
+      "domain": [
+        "http://sight.eventpool.kr/resource/맛집"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/관광명소_맛집"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화유산_지역",
+      "label": "유무형문화유산이 있는 시군구",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유무형문화유산"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/지역_유무형문화유산"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/숙박종류_숙박",
+      "label": "이런 종류의 숙박지",
+      "domain": [],
+      "range": [
+        "http://sight.eventpool.kr/resource/숙박"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/숙박_숙박종류"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/자연물_유네스코등재물",
+      "label": "이 자연물 유네스코등재되다",
+      "domain": [
+        "http://sight.eventpool.kr/resource/자연물"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/유네스코등재물"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/유네스코등재물_자연물"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/부분_관광명소",
+      "label": "이 부분은 관광명소에 속한다",
+      "domain": [
+        "http://sight.eventpool.kr/resource/부분"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/관광명소_부분"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/지역_여행인프라",
+      "label": "시군구 근처에서 제공되는 여행인프라",
+      "domain": [
+        "http://sight.eventpool.kr/resource/지역"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/여행인프라"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/여행인프라_지역"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/여행인프라_문화예술",
+      "label": "이 여행인프라와 관련된 문화예술",
+      "domain": [
+        "http://sight.eventpool.kr/resource/여행인프라"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/문화예술"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/문화예술_여행인프라"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/부분_주요경유지",
+      "label": "이 코스의 주요경유지",
+      "domain": [
+        "http://sight.eventpool.kr/resource/부분"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/주요경유지_부분"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/유무형문화재_부분",
+      "label": "이 유무형문화재의 부분",
+      "domain": [
+        "http://sight.eventpool.kr/resource/유무형문화유산"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/부분"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/부분_유무형문화재"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/주변동식물_관광명소",
+      "label": "이 동식물이 있는 관광명소",
+      "domain": [
+        "http://sight.eventpool.kr/resource/주변동식물"
+      ],
+      "range": [
+        "http://sight.eventpool.kr/resource/관광명소"
+      ],
+      "inverseOf": [
+        "http://sight.eventpool.kr/resource/관광명소_주변동식물"
+      ]
+    }
+  ],
+  "datatypeProperties": [
+    {
+      "uri": "http://sight.eventpool.kr/resource/RealTimeTraffic",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/RealTimeEvent",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/realTimeHumidity",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/realTimeTemperature",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/RealTimeWeather",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/주소",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/homepage",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/Telephone",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/Contact_US",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/참고",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/email",
+      "label": null,
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/Telephone",
+      "label": "Telephone",
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/RealTimeEvent",
+      "label": "Real time event",
+      "domain": [
+        "http://sight.eventpool.kr/resource/시군구"
+      ],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/realTimeTemperature",
+      "label": "real time temperature",
+      "domain": [
+        "http://sight.eventpool.kr/resource/시군구"
+      ],
+      "range": [
+        "http://www.w3.org/2001/XMLSchema#float"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/주소",
+      "label": "주소",
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/참고",
+      "label": "참고",
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/email",
+      "label": "email",
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/RealTimeTraffic",
+      "label": "Real time traffic",
+      "domain": [
+        "http://sight.eventpool.kr/resource/시군구"
+      ],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/homepage",
+      "label": "homepage",
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/그림",
+      "label": "그림",
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/topic_clip",
+      "label": "topic clip",
+      "domain": [],
+      "range": [
+        "http://www.w3.org/2001/XMLSchema#string"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/realTimeHumidity",
+      "label": "real time humidity",
+      "domain": [
+        "http://sight.eventpool.kr/resource/시군구"
+      ],
+      "range": [
+        "http://www.w3.org/2001/XMLSchema#float"
+      ],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/Youtube",
+      "label": "Youtube",
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/SNS_facebook",
+      "label": "SNS facebook",
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/Contact_US",
+      "label": "Contact US",
+      "domain": [],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/높이",
+      "label": "높이",
+      "domain": [
+        "http://sight.eventpool.kr/resource/자연물"
+      ],
+      "range": [],
+      "inverseOf": []
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/RealTimeWeather",
+      "label": "Real time weather",
+      "domain": [
+        "http://sight.eventpool.kr/resource/시군구"
+      ],
+      "range": [],
+      "inverseOf": []
+    }
+  ],
+  "majorTaxonomies": {
+    "관광명소": [
+      "http://sight.eventpool.kr/resource/관광명소",
+      "http://sight.eventpool.kr/resource/관광명소종류"
+    ],
+    "지역": [
+      "http://sight.eventpool.kr/resource/경기도",
+      "http://sight.eventpool.kr/resource/지역"
+    ],
+    "숙박": [
+      "http://sight.eventpool.kr/resource/숙박",
+      "http://sight.eventpool.kr/resource/숙박공유플랫폼"
+    ],
+    "맛집": [
+      "http://sight.eventpool.kr/resource/맛집"
+    ],
+    "카페": [
+      "http://sight.eventpool.kr/resource/카페점"
+    ],
+    "글램핑": [
+      "http://sight.eventpool.kr/resource/글램핑_캠핑"
+    ],
+    "캠핑": [
+      "http://sight.eventpool.kr/resource/글램핑_캠핑"
+    ],
+    "자연물": [
+      "http://sight.eventpool.kr/resource/자연물",
+      "http://sight.eventpool.kr/resource/자연물종류"
+    ],
+    "문화유산": [
+      "http://sight.eventpool.kr/resource/유무형문화유산"
+    ],
+    "역사적인물": [
+      "http://sight.eventpool.kr/resource/역사적인물"
+    ],
+    "역사적사건": [
+      "http://sight.eventpool.kr/resource/역사적사건"
+    ],
+    "테마여행": [
+      "http://sight.eventpool.kr/resource/테마여행",
+      "http://sight.eventpool.kr/resource/테마여행종류"
+    ],
+    "여행최적기": [
+      "http://sight.eventpool.kr/resource/여행최적기"
+    ],
+    "여행인프라": [
+      "http://sight.eventpool.kr/resource/여행인프라"
+    ]
+  }
+}

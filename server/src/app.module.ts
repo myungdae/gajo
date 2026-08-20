@@ -22,6 +22,7 @@ import { RegionModule } from './region/region.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { RegionalDataModule } from './regional-data/regional-data.module';
 import { AnonymousTripModule } from './anonymous-trip/anonymous-trip.module';
+import { ExkoSemanticModule } from './exko-semantic/exko-semantic.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { AnonymousTripModule } from './anonymous-trip/anonymous-trip.module';
     AnalyticsModule,
     RegionalDataModule,
     AnonymousTripModule,
+    ExkoSemanticModule,
   ],
   controllers: [AppController],
   providers: [AppService],

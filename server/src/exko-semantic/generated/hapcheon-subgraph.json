@@ -1,0 +1,752 @@
+{
+  "seedUris": [
+    "http://sight.eventpool.kr/resource/카페_로우풀",
+    "http://sight.eventpool.kr/resource/팔만대장경",
+    "http://sight.eventpool.kr/resource/합천_가야산_소리길",
+    "http://sight.eventpool.kr/resource/합천_영상테마파크",
+    "http://sight.eventpool.kr/resource/합천군",
+    "http://sight.eventpool.kr/resource/합천댐",
+    "http://sight.eventpool.kr/resource/합천호",
+    "http://sight.eventpool.kr/resource/합천호_스마일펜션",
+    "http://sight.eventpool.kr/resource/해인사",
+    "http://sight.eventpool.kr/resource/황매산"
+  ],
+  "entities": [
+    {
+      "uri": "http://sight.eventpool.kr/resource/가야산",
+      "label": "가야산",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "자연물"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/가야산_국립공원",
+      "label": "가야산 국립공원",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "관광명소"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/계곡",
+      "label": "계곡",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "관광명소종류"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/댐",
+      "label": "댐",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "관광명소종류"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/목판_인쇄본",
+      "label": "목판 인쇄본",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "유무형문화재종류"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/북어마을",
+      "label": "북어마을",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "한식"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/사찰",
+      "label": "사찰",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "관광명소종류"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/소리길_오토_갬핑장",
+      "label": "소리길 오토 갬핑장",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "글램핑_캠핑"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/저수지",
+      "label": "저수지",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "자연물종류"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/정량늪_생태공원",
+      "label": "정량늪 생태공원",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "테마여행"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/철쭉",
+      "label": "철쭉",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "주변동식물"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/카페",
+      "label": "카페",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "인프라종류"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/카페Lowful",
+      "label": "카페Lowful",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "카페점"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/카페_로우풀",
+      "label": "카페 로우풀",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "카페점"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/테마파크",
+      "label": "테마파크",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "관광명소종류"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/트레킹",
+      "label": "트레킹",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "관광명소종류"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/팔만대장경",
+      "label": "팔만대장경",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "유무형문화유산"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/팔만대장경_유네스코",
+      "label": "팔만대장경 유네스코",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "유네스코등재물"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/폭포",
+      "label": "폭포",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "관광명소종류"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/하금식당",
+      "label": "하금식당",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "한식"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/합천_가야산_소리길",
+      "label": "합천 가야산 소리길",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "관광명소"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/합천_영상테마파크",
+      "label": "합천 영상테마파크",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "관광명소"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/합천군",
+      "label": "합천군",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "경상남도"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/합천댐",
+      "label": "합천댐",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "관광명소"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/합천호",
+      "label": "합천호",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "자연물"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/합천호_스마일펜션",
+      "label": "합천호 스마일펜션",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "펜션_풀빌라"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/해인사",
+      "label": "해인사",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "관광명소"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/해인사_성보박물관",
+      "label": "해인사 성보박물관",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "관광명소"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/황매산",
+      "label": "황매산",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "자연물"
+      ]
+    },
+    {
+      "uri": "http://sight.eventpool.kr/resource/황매산_영암사지",
+      "label": "황매산 영암사지",
+      "types": [
+        "http://sight.eventpool.kr/resource/",
+        "관광명소"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "subject": "http://sight.eventpool.kr/resource/폭포",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소종류_관광명소",
+      "object": "http://sight.eventpool.kr/resource/합천_가야산_소리길"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/카페",
+      "predicate": "http://sight.eventpool.kr/resource/인프라종류_여행인프라",
+      "object": "http://sight.eventpool.kr/resource/카페_로우풀"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/카페",
+      "predicate": "http://sight.eventpool.kr/resource/인프라종류_여행인프라",
+      "object": "http://sight.eventpool.kr/resource/카페Lowful"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/카페_로우풀",
+      "predicate": "http://sight.eventpool.kr/resource/여행인프라_맛집",
+      "object": "http://sight.eventpool.kr/resource/북어마을"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/카페_로우풀",
+      "predicate": "http://sight.eventpool.kr/resource/여행인프라_인프라종류",
+      "object": "http://sight.eventpool.kr/resource/카페"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/카페_로우풀",
+      "predicate": "http://sight.eventpool.kr/resource/여행인프라_숙박",
+      "object": "http://sight.eventpool.kr/resource/합천호_스마일펜션"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/북어마을",
+      "predicate": "http://sight.eventpool.kr/resource/맛집_여행인프라",
+      "object": "http://sight.eventpool.kr/resource/카페_로우풀"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/북어마을",
+      "predicate": "http://sight.eventpool.kr/resource/맛집_숙박",
+      "object": "http://sight.eventpool.kr/resource/합천호_스마일펜션"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천호_스마일펜션",
+      "predicate": "http://sight.eventpool.kr/resource/숙박_자연물",
+      "object": "http://sight.eventpool.kr/resource/합천호"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천호_스마일펜션",
+      "predicate": "http://sight.eventpool.kr/resource/숙박_지역",
+      "object": "http://sight.eventpool.kr/resource/합천군"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천호_스마일펜션",
+      "predicate": "http://sight.eventpool.kr/resource/숙박_여행인프라",
+      "object": "http://sight.eventpool.kr/resource/카페Lowful"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천호_스마일펜션",
+      "predicate": "http://sight.eventpool.kr/resource/숙박_맛집",
+      "object": "http://sight.eventpool.kr/resource/북어마을"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천호_스마일펜션",
+      "predicate": "http://sight.eventpool.kr/resource/숙박_관광명소",
+      "object": "http://sight.eventpool.kr/resource/합천_영상테마파크"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천호_스마일펜션",
+      "predicate": "http://sight.eventpool.kr/resource/숙박_여행인프라",
+      "object": "http://sight.eventpool.kr/resource/카페_로우풀"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천호_스마일펜션",
+      "predicate": "http://sight.eventpool.kr/resource/숙박_관광명소",
+      "object": "http://sight.eventpool.kr/resource/황매산_영암사지"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천호_스마일펜션",
+      "predicate": "http://sight.eventpool.kr/resource/숙박_맛집",
+      "object": "http://sight.eventpool.kr/resource/하금식당"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천호_스마일펜션",
+      "predicate": "http://sight.eventpool.kr/resource/숙박_자연물",
+      "object": "http://sight.eventpool.kr/resource/황매산"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천호_스마일펜션",
+      "predicate": "http://sight.eventpool.kr/resource/숙박_관광명소",
+      "object": "http://sight.eventpool.kr/resource/가야산_국립공원"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천호_스마일펜션",
+      "predicate": "http://sight.eventpool.kr/resource/숙박_관광명소",
+      "object": "http://sight.eventpool.kr/resource/해인사"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천호_스마일펜션",
+      "predicate": "http://sight.eventpool.kr/resource/숙박_관광명소",
+      "object": "http://sight.eventpool.kr/resource/합천댐"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천호",
+      "predicate": "http://sight.eventpool.kr/resource/자연물_맛집",
+      "object": "http://sight.eventpool.kr/resource/하금식당"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천호",
+      "predicate": "http://sight.eventpool.kr/resource/자연물_자연물종류",
+      "object": "http://sight.eventpool.kr/resource/저수지"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천호",
+      "predicate": "http://sight.eventpool.kr/resource/자연물_숙박",
+      "object": "http://sight.eventpool.kr/resource/합천호_스마일펜션"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/하금식당",
+      "predicate": "http://sight.eventpool.kr/resource/맛집_자연물",
+      "object": "http://sight.eventpool.kr/resource/합천호"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/하금식당",
+      "predicate": "http://sight.eventpool.kr/resource/맛집_숙박",
+      "object": "http://sight.eventpool.kr/resource/합천호_스마일펜션"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/하금식당",
+      "predicate": "http://sight.eventpool.kr/resource/맛집_지역",
+      "object": "http://sight.eventpool.kr/resource/합천군"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천군",
+      "predicate": "http://sight.eventpool.kr/resource/지역_관광명소",
+      "object": "http://sight.eventpool.kr/resource/해인사_성보박물관"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천군",
+      "predicate": "http://sight.eventpool.kr/resource/지역_숙박",
+      "object": "http://sight.eventpool.kr/resource/합천호_스마일펜션"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천군",
+      "predicate": "http://sight.eventpool.kr/resource/지역_맛집",
+      "object": "http://sight.eventpool.kr/resource/하금식당"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천군",
+      "predicate": "http://sight.eventpool.kr/resource/지역_여행인프라",
+      "object": "http://sight.eventpool.kr/resource/카페Lowful"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천군",
+      "predicate": "http://sight.eventpool.kr/resource/지역_자연물",
+      "object": "http://sight.eventpool.kr/resource/가야산"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천군",
+      "predicate": "http://sight.eventpool.kr/resource/지역_관광명소",
+      "object": "http://sight.eventpool.kr/resource/황매산_영암사지"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천군",
+      "predicate": "http://sight.eventpool.kr/resource/지역_관광명소",
+      "object": "http://sight.eventpool.kr/resource/합천_영상테마파크"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천군",
+      "predicate": "http://sight.eventpool.kr/resource/지역_자연물",
+      "object": "http://sight.eventpool.kr/resource/황매산"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천군",
+      "predicate": "http://sight.eventpool.kr/resource/지역_관광명소",
+      "object": "http://sight.eventpool.kr/resource/합천_가야산_소리길"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천군",
+      "predicate": "http://sight.eventpool.kr/resource/지역_관광명소",
+      "object": "http://sight.eventpool.kr/resource/해인사"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천군",
+      "predicate": "http://sight.eventpool.kr/resource/지역_여행인프라",
+      "object": "http://sight.eventpool.kr/resource/소리길_오토_갬핑장"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천군",
+      "predicate": "http://sight.eventpool.kr/resource/지역_테마여행",
+      "object": "http://sight.eventpool.kr/resource/정량늪_생태공원"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천군",
+      "predicate": "http://sight.eventpool.kr/resource/지역_관광명소",
+      "object": "http://sight.eventpool.kr/resource/가야산_국립공원"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천군",
+      "predicate": "http://sight.eventpool.kr/resource/지역_관광명소",
+      "object": "http://sight.eventpool.kr/resource/합천댐"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/해인사_성보박물관",
+      "predicate": "http://sight.eventpool.kr/resource/인근관광명소",
+      "object": "http://sight.eventpool.kr/resource/해인사"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/해인사_성보박물관",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소_지역",
+      "object": "http://sight.eventpool.kr/resource/합천군"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/해인사",
+      "predicate": "http://sight.eventpool.kr/resource/인근관광명소",
+      "object": "http://sight.eventpool.kr/resource/합천_가야산_소리길"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/해인사",
+      "predicate": "http://sight.eventpool.kr/resource/인근관광명소",
+      "object": "http://sight.eventpool.kr/resource/해인사_성보박물관"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/해인사",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소_테마여행",
+      "object": "http://sight.eventpool.kr/resource/정량늪_생태공원"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/해인사",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소_관광명소종류",
+      "object": "http://sight.eventpool.kr/resource/사찰"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/해인사",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소_지역",
+      "object": "http://sight.eventpool.kr/resource/합천군"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/해인사",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소_유무형문화재",
+      "object": "http://sight.eventpool.kr/resource/팔만대장경"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/해인사",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소_숙박",
+      "object": "http://sight.eventpool.kr/resource/합천호_스마일펜션"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천_가야산_소리길",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소_여행인프라",
+      "object": "http://sight.eventpool.kr/resource/소리길_오토_갬핑장"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천_가야산_소리길",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소_지역",
+      "object": "http://sight.eventpool.kr/resource/합천군"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천_가야산_소리길",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소_자연물",
+      "object": "http://sight.eventpool.kr/resource/가야산"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천_가야산_소리길",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소_관광명소종류",
+      "object": "http://sight.eventpool.kr/resource/트레킹"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천_가야산_소리길",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소_관광명소종류",
+      "object": "http://sight.eventpool.kr/resource/계곡"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천_가야산_소리길",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소_관광명소종류",
+      "object": "http://sight.eventpool.kr/resource/폭포"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천_가야산_소리길",
+      "predicate": "http://sight.eventpool.kr/resource/인근관광명소",
+      "object": "http://sight.eventpool.kr/resource/해인사"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/소리길_오토_갬핑장",
+      "predicate": "http://sight.eventpool.kr/resource/여행인프라_자연물",
+      "object": "http://sight.eventpool.kr/resource/가야산"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/소리길_오토_갬핑장",
+      "predicate": "http://sight.eventpool.kr/resource/여행인프라_지역",
+      "object": "http://sight.eventpool.kr/resource/합천군"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/소리길_오토_갬핑장",
+      "predicate": "http://sight.eventpool.kr/resource/여행인프라_관광명소",
+      "object": "http://sight.eventpool.kr/resource/합천_가야산_소리길"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/가야산",
+      "predicate": "http://sight.eventpool.kr/resource/자연물_관광명소",
+      "object": "http://sight.eventpool.kr/resource/합천_가야산_소리길"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/가야산",
+      "predicate": "http://sight.eventpool.kr/resource/자연물_여행인프라",
+      "object": "http://sight.eventpool.kr/resource/소리길_오토_갬핑장"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/가야산",
+      "predicate": "http://sight.eventpool.kr/resource/자연물_지역",
+      "object": "http://sight.eventpool.kr/resource/합천군"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/가야산",
+      "predicate": "http://sight.eventpool.kr/resource/자연물_관광명소",
+      "object": "http://sight.eventpool.kr/resource/가야산_국립공원"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/사찰",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소종류_관광명소",
+      "object": "http://sight.eventpool.kr/resource/황매산_영암사지"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/사찰",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소종류_관광명소",
+      "object": "http://sight.eventpool.kr/resource/해인사"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/테마파크",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소종류_관광명소",
+      "object": "http://sight.eventpool.kr/resource/합천_영상테마파크"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/계곡",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소종류_관광명소",
+      "object": "http://sight.eventpool.kr/resource/합천_가야산_소리길"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/저수지",
+      "predicate": "http://sight.eventpool.kr/resource/자연물종류_자연물",
+      "object": "http://sight.eventpool.kr/resource/합천호"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/트레킹",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소종류_관광명소",
+      "object": "http://sight.eventpool.kr/resource/합천_가야산_소리길"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/가야산_국립공원",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소_숙박",
+      "object": "http://sight.eventpool.kr/resource/합천호_스마일펜션"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/가야산_국립공원",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소_지역",
+      "object": "http://sight.eventpool.kr/resource/합천군"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/가야산_국립공원",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소_자연물",
+      "object": "http://sight.eventpool.kr/resource/가야산"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/철쭉",
+      "predicate": "http://sight.eventpool.kr/resource/주변동식물_자연물",
+      "object": "http://sight.eventpool.kr/resource/황매산"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/황매산",
+      "predicate": "http://sight.eventpool.kr/resource/자연물_숙박",
+      "object": "http://sight.eventpool.kr/resource/합천호_스마일펜션"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/황매산",
+      "predicate": "http://sight.eventpool.kr/resource/자연물_지역",
+      "object": "http://sight.eventpool.kr/resource/합천군"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/황매산",
+      "predicate": "http://sight.eventpool.kr/resource/자연물_주변동식물",
+      "object": "http://sight.eventpool.kr/resource/철쭉"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/황매산",
+      "predicate": "http://sight.eventpool.kr/resource/자연물_관광명소",
+      "object": "http://sight.eventpool.kr/resource/황매산_영암사지"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/황매산_영암사지",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소_관광명소종류",
+      "object": "http://sight.eventpool.kr/resource/사찰"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/황매산_영암사지",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소_지역",
+      "object": "http://sight.eventpool.kr/resource/합천군"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/황매산_영암사지",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소_숙박",
+      "object": "http://sight.eventpool.kr/resource/합천호_스마일펜션"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/황매산_영암사지",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소_자연물",
+      "object": "http://sight.eventpool.kr/resource/황매산"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천_영상테마파크",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소_관광명소종류",
+      "object": "http://sight.eventpool.kr/resource/테마파크"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천_영상테마파크",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소_숙박",
+      "object": "http://sight.eventpool.kr/resource/합천호_스마일펜션"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천_영상테마파크",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소_지역",
+      "object": "http://sight.eventpool.kr/resource/합천군"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/정량늪_생태공원",
+      "predicate": "http://sight.eventpool.kr/resource/테마여행_관광명소",
+      "object": "http://sight.eventpool.kr/resource/해인사"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/정량늪_생태공원",
+      "predicate": "http://sight.eventpool.kr/resource/테마여행_지역",
+      "object": "http://sight.eventpool.kr/resource/합천군"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/팔만대장경",
+      "predicate": "http://sight.eventpool.kr/resource/유무형문화재_관광명소",
+      "object": "http://sight.eventpool.kr/resource/해인사"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/팔만대장경",
+      "predicate": "http://sight.eventpool.kr/resource/유무형문화재_유무형문화재종류",
+      "object": "http://sight.eventpool.kr/resource/목판_인쇄본"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/팔만대장경",
+      "predicate": "http://sight.eventpool.kr/resource/유무형문화유산_유네스코등재물",
+      "object": "http://sight.eventpool.kr/resource/팔만대장경_유네스코"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/목판_인쇄본",
+      "predicate": "http://sight.eventpool.kr/resource/유무형문화재종류_유무형문화재",
+      "object": "http://sight.eventpool.kr/resource/팔만대장경"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/팔만대장경_유네스코",
+      "predicate": "http://sight.eventpool.kr/resource/유네스코등재물_유무형문화재",
+      "object": "http://sight.eventpool.kr/resource/팔만대장경"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/카페Lowful",
+      "predicate": "http://sight.eventpool.kr/resource/여행인프라_숙박",
+      "object": "http://sight.eventpool.kr/resource/합천호_스마일펜션"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/카페Lowful",
+      "predicate": "http://sight.eventpool.kr/resource/여행인프라_인프라종류",
+      "object": "http://sight.eventpool.kr/resource/카페"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/카페Lowful",
+      "predicate": "http://sight.eventpool.kr/resource/여행인프라_지역",
+      "object": "http://sight.eventpool.kr/resource/합천군"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천댐",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소_숙박",
+      "object": "http://sight.eventpool.kr/resource/합천호_스마일펜션"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천댐",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소_관광명소종류",
+      "object": "http://sight.eventpool.kr/resource/댐"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/합천댐",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소_지역",
+      "object": "http://sight.eventpool.kr/resource/합천군"
+    },
+    {
+      "subject": "http://sight.eventpool.kr/resource/댐",
+      "predicate": "http://sight.eventpool.kr/resource/관광명소종류_관광명소",
+      "object": "http://sight.eventpool.kr/resource/합천댐"
+    }
+  ],
+  "size": {
+    "entities": 30,
+    "edges": 98
+  }
+}
