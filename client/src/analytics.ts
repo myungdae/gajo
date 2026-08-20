@@ -1,5 +1,8 @@
 import { api } from "./api/client";
 export type PilotEventType =
+  | "MY_TRIP_OPENED"
+  | "SAVED_TRIP_LOADED"
+  | "SAVED_PLACE_REMOVED"
   | "FULL_ITINERARY_SAVED"
   | "FULL_ITINERARY_RESTORED"
   | "FULL_ITINERARY_UPDATED"

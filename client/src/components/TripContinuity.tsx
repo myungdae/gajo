@@ -14,6 +14,7 @@ import {
 } from "../tripSession";
 import { itineraryItemCount, reconcileTrip } from "../tripContinuity";
 import { journeyDayCounts } from "../fullJourney";
+import { itinerarySteps, savedPlaceItems } from "../journeyExecution";
 export default function TripContinuity() {
   const region = useRegion(),
     location = useLocation(),
@@ -81,10 +82,16 @@ export default function TripContinuity() {
   if (!visible || !trip) return null;
   const count = itineraryItemCount(trip);
   const dayCount = journeyDayCounts(trip.itinerary).length;
+  const fullCount = itinerarySteps(trip.itinerary).length,
+    savedCount = savedPlaceItems(trip).length;
   return (
     <section className="card trip-continuity" aria-label="지난 여행 이어가기">
       <h2>지난 {region.regionName} 여행을 이어볼까요?</h2>
-      <p>{(trip.itinerary as any)?.savedAsFullJourney?`${dayCount>1?`${dayCount-1}박${dayCount}일 · `:""}일정 ${count}곳`:`담아둔 일정 ${count}곳이 있습니다.`}</p>
+      <p>
+        {(trip.itinerary as any)?.savedAsFullJourney
+          ? `${dayCount > 1 ? `${dayCount - 1}박${dayCount}일 · ` : ""}일정 ${fullCount}곳${savedCount ? ` · 담아둔 곳 ${savedCount}곳` : ""}`
+          : `담아둔 곳 ${count}곳이 있습니다.`}
+      </p>
       <div className="entity-actions">
         <button
           className="btn btn-primary"

@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "test": "node --experimental-strip-types --test src/fullJourney.test.ts src/tripContinuity.test.ts src/journeyExecution.test.ts src/pwaInstall.test.ts src/regionalDataManager.test.ts src/homeEntry.test.ts src/liveRuntimeGuard.test.ts src/regionalRuntime.test.ts src/regionRouting.test.ts src/regionConfig.test.ts src/quickStartPresets.test.ts src/tripSession.test.ts src/regionalEntitySearch.test.ts src/recommendationItem.test.ts src/nowContinuation.test.ts src/visitorCopy.test.ts src/utils/contextSummary.test.ts src/utils/placeNavigation.test.ts",
+    "test": "node --experimental-strip-types --test src/myTripUx.test.ts src/fullJourney.test.ts src/tripContinuity.test.ts src/journeyExecution.test.ts src/pwaInstall.test.ts src/regionalDataManager.test.ts src/homeEntry.test.ts src/liveRuntimeGuard.test.ts src/regionalRuntime.test.ts src/regionRouting.test.ts src/regionConfig.test.ts src/quickStartPresets.test.ts src/tripSession.test.ts src/regionalEntitySearch.test.ts src/recommendationItem.test.ts src/nowContinuation.test.ts src/visitorCopy.test.ts src/utils/contextSummary.test.ts src/utils/placeNavigation.test.ts",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",

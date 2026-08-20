@@ -1,0 +1,49 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+const source = (path: string) =>
+  readFileSync(new URL(path, import.meta.url), "utf8");
+test("planning UI explicitly exposes saved regional trip loading and safe new-trip copy", () => {
+  const entry = source("./components/SavedTripEntry.tsx"),
+    concierge = source("./pages/ConciergePage.tsx");
+  for (const copy of [
+    "저장한 {region.regionName} 여행이 있습니다.",
+    "내 여행 불러오기",
+    "새 일정 만들기",
+    "이전 여행은 보관됩니다",
+  ])
+    assert.ok(entry.includes(copy));
+  assert.match(concierge, /tripMode\s*===\s*["']PLAN["'][\s\S]*<SavedTripEntry/);
+});
+test("automatic restore is not the only My Trip access path", () => {
+  const layout = source("./components/Layout.tsx"),
+    continuity = source("./components/TripContinuity.tsx");
+  assert.match(layout, /label:'내 여행'|label: "내 여행"/);
+  assert.match(layout, /regionalPath\(item\.to, region\.id\)/);
+  assert.match(continuity, /지난 \{region\.regionName\} 여행을 이어볼까요/);
+});
+test("saved-place collection is independent with restrained persistent removal", () => {
+  const page = source("./pages/ItineraryPage.tsx"),
+    item = source("./components/RecommendationItineraryItem.tsx");
+  assert.match(page, /담아둔 곳/);
+  assert.match(page, /모두 방문하지 않아도 괜찮아요/);
+  assert.match(page, /<details\s+className="saved-place-menu">/);
+  assert.match(page, /내 여행에서 빼기/);
+  assert.match(page, /removeSavedPlace/);
+  assert.match(item, /collection/);
+  assert.match(item, /!collection\s*&&\s*\(/);
+});
+test("full journey remains ordered while saved places render separately", () => {
+  const page = source("./pages/ItineraryPage.tsx"),
+    journey = source("./journeyExecution.ts");
+  assert.match(page, /itinerary-day-group/);
+  assert.match(page, /SavedPlacesSection/);
+  assert.match(journey, /savedPlaces:\s*\[\.\.\.places, normalized\]/);
+  assert.match(journey, /savedAsFullJourney/);
+});
+test("mobile My Trip controls avoid nested scrolling through 430px", () => {
+  const css = source("./index.css");
+  assert.match(css, /@media\(max-width:430px\).*saved-trip-entry/s);
+  assert.match(css, /saved-place-card/);
+  assert.doesNotMatch(css, /saved-places-section[^}]*overflow-y/);
+});

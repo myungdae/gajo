@@ -1,3 +1,22 @@
-import test from'node:test';import assert from'node:assert/strict';import{createTripSession}from'./tripSession.ts';import{itineraryItemCount,reconcileTrip}from'./tripContinuity.ts';
-test('reconciles local and server itinerary without duplicates',()=>{const local={...createTripSession('hapcheon'),itinerary:{steps:[{entityId:'a'}]},updatedAt:'2026-01-01T00:00:00Z'},remote={...local,itinerary:{steps:[{entityId:'a'},{entityId:'b'}]},updatedAt:'2026-01-02T00:00:00Z'};assert.equal(itineraryItemCount(reconcileTrip(local,remote)),2)});
-test('never reconciles an anonymous trip across regions',()=>{const local=createTripSession('hapcheon'),remote={...local,regionId:'gajo'};assert.equal(reconcileTrip(local,remote),local)});
+import test from "node:test";
+import assert from "node:assert/strict";
+import { createTripSession } from "./tripSession.ts";
+import { itineraryItemCount, reconcileTrip } from "./tripContinuity.ts";
+test("reconciles local and server itinerary without duplicates", () => {
+  const local = {
+      ...createTripSession("hapcheon"),
+      itinerary: { steps: [{ entityId: "a" }] },
+      updatedAt: "2026-01-01T00:00:00Z",
+    },
+    remote = {
+      ...local,
+      itinerary: { steps: [{ entityId: "a" }, { entityId: "b" }] },
+      updatedAt: "2026-01-02T00:00:00Z",
+    };
+  assert.equal(itineraryItemCount(reconcileTrip(local, remote)), 2);
+});
+test("never reconciles an anonymous trip across regions", () => {
+  const local = createTripSession("hapcheon"),
+    remote = { ...local, regionId: "gajo" };
+  assert.equal(reconcileTrip(local, remote), local);
+});
