@@ -33,11 +33,13 @@ import { SHARED_VISITOR_COPY } from "../visitorCopy";
 import InstallExperience from "../components/InstallExperience";
 import FullJourneySave from "../components/FullJourneySave";
 import SavedTripEntry from "../components/SavedTripEntry";
+import AiResponseActions from "../components/AiResponseActions";
 
 interface Message {
   role: "user" | "ai";
   text: string;
   result?: ConciergeChatResponse;
+  requestText?: string;
 }
 
 function summarizeResult(result: ConciergeChatResponse): string {
@@ -46,10 +48,12 @@ function summarizeResult(result: ConciergeChatResponse): string {
     return "죄송합니다. 말씀하신 내용을 일정으로 구성하지 못했습니다. 원하는 방문 상황을 조금 더 구체적으로 말씀해 주세요.";
   }
   if (result.visitorMessage) return result.visitorMessage;
-  if (result.discovery)
+  if (result.discovery) {
+    const first = result.discovery.entities[0];
     return result.discovery.entities.length
-      ? `${result.discovery.entities.length}곳을 조건에 맞춰 찾았습니다.`
+      ? `${first.programLabel || first.facilityLabel || first.label}으로 가는 것이 좋겠습니다.${Number.isFinite(first.distanceMeters) ? ` 기준 위치에서 약 ${first.distanceMeters}m 떨어져 있습니다.` : ""}`
       : "조건에 맞는 검증된 장소를 아직 찾지 못했습니다.";
+  }
   if (!rec) {
     return "요청을 접수했습니다. 조건을 분석했지만 아직 추천할 프로그램을 찾지 못했습니다.";
   }
@@ -193,7 +197,10 @@ export default function ConciergePage() {
         ...structured,
         ...(text ? { rawMessage: text, inputMode: "FREE_TEXT" as const } : {}),
         contextSessionId: contextSessionIdRef.current,
-        isFollowup: hasRecommendation,
+        isFollowup:
+          hasRecommendation ||
+          (Boolean((tripSession.itinerary as any)?.steps?.length) &&
+            /비|눈|더워|추워|피곤|아파|상황.{0,4}(?:바뀌|달라)/.test(text)),
         ...(gps?.status === "AVAILABLE"
           ? {
               latitude: gps.latitude,
@@ -232,7 +239,7 @@ export default function ConciergePage() {
         });
       setMessages((prev) => [
         ...prev,
-        { role: "ai", text: summarizeResult(result), result },
+        { role: "ai", text: summarizeResult(result), result, requestText: text },
       ]);
     } catch (e: any) {
       console.error("[concierge] request failed", e);
@@ -347,15 +354,15 @@ export default function ConciergePage() {
           <VisitorLocationControl />
         </div>
       )}
-      {!hasPrimaryResult && (
-        <div className="chat-window">
+      <div className="chat-window">
           {messages.map((m, i) => (
-            <div key={i}>
+            <div key={i} className="chat-message">
               <div
                 className={`chat-bubble ${m.role === "user" ? "user" : "ai"}`}
               >
                 {m.text}
               </div>
+              {m.role === "ai" && m.result && <AiResponseActions rawMessage={m.requestText || ""} result={m.result} />}
             </div>
           ))}
           {loading && (
@@ -364,7 +371,6 @@ export default function ConciergePage() {
             </div>
           )}
         </div>
-      )}
       {requestError && (
         <div className="visitor-error" role="alert">
           <b>잠시 연결이 원활하지 않습니다.</b>

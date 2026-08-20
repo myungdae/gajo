@@ -1,0 +1,11 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { buildAiResponseActionModel } from "./aiResponseActions.ts";
+const place = (id: string, coordinates = true) => ({ entityId: `https://hapcheon.example/ontology#${id}`, regionId: "hapcheon", programLabel: id, actions: coordinates ? { navigate: { latitude: 35.5, longitude: 128.1 } } : {} });
+const discovery = (entities: any[]) => ({ intentRoute: "PLACE_DISCOVERY", discovery: { category: "CAFE", entities } });
+test("actionable place answer gets verified actions", () => assert.deepEqual(buildAiResponseActionModel({ rawMessage: "근처 카페?", result: discovery([place("one"), place("two")]) })!.actions.map((x) => x.type), ["NAVIGATE", "FIND_ALTERNATIVES", "ADD_TO_MY_TRIP"]));
+test("explanation-only answer has no forced CTA", () => assert.equal(buildAiResponseActionModel({ rawMessage: "해인사는 왜 유명해?", result: discovery([place("haeinsa")]) }), null));
+test("navigation requires verified action coordinates", () => assert.equal(buildAiResponseActionModel({ result: discovery([place("one", false)]) })?.actions.some((x) => x.type === "NAVIGATE"), false));
+test("replan apply requires a current and revised itinerary", () => { const result = { intentRoute: "REPLAN", recommendation: { itinerary: { steps: [place("indoor")] } } }; assert.equal(buildAiResponseActionModel({ result, hasCurrentItinerary: false })?.actions.some((x) => x.type === "APPLY_REPLAN"), false); assert.equal(buildAiResponseActionModel({ result, hasCurrentItinerary: true })?.actions[0].type, "APPLY_REPLAN"); });
+test("alternative excludes the current canonical result", () => assert.equal(buildAiResponseActionModel({ result: discovery([place("one"), place("two")]), excludedEntityIds: [place("one").entityId] })?.decision.entityId, place("two").entityId));
+test("regional response retains its canonical region", () => assert.equal(buildAiResponseActionModel({ result: discovery([place("one")]) })?.decision.entity?.regionId, "hapcheon"));
