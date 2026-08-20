@@ -1,0 +1,2 @@
+import { useEffect, useState } from 'react';
+export default function ConnectionStatus(){const[online,setOnline]=useState(navigator.onLine);useEffect(()=>{const update=()=>setOnline(navigator.onLine);window.addEventListener('online',update);window.addEventListener('offline',update);return()=>{window.removeEventListener('online',update);window.removeEventListener('offline',update)}},[]);return online?null:<div className="connection-status" role="status"><b>인터넷 연결을 확인해 주세요.</b><span>열어 본 화면은 보일 수 있지만, 새 추천·날씨·길찾기는 연결 후 이용할 수 있습니다.</span></div>}

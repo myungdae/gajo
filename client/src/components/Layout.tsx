@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useRegion } from '../RegionContext';
 import { regionalPath } from '../regionRouting';
+import ConnectionStatus from './ConnectionStatus';
 
 const navItems = [
   { to: '/', label: '홈', icon: 'home', end: true },
@@ -15,6 +16,7 @@ export default function Layout() {
   const region=useRegion();
   return (
     <div className="app-shell">
+      <ConnectionStatus />
       <header className="app-header">
         <div>
           <h1>{region.serviceName}</h1>

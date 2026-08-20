@@ -1,0 +1,27 @@
+{
+  "id": "/hapcheon",
+  "name": "합천 AI 여행안내",
+  "short_name": "합천 여행안내",
+  "description": "합천 여행을 위한 AI 여행안내",
+  "lang": "ko",
+  "start_url": "/hapcheon",
+  "scope": "/hapcheon",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#0f766e",
+  "background_color": "#f8fafc",
+  "icons": [
+    {
+      "src": "/branding/regional-ai-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/branding/gajo-ai-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

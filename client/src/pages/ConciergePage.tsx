@@ -18,6 +18,7 @@ import { useRegion } from '../RegionContext';
 import { regionalPath } from '../regionRouting';
 import { regionalRuntimeView } from '../regionalRuntime';
 import { SHARED_VISITOR_COPY } from '../visitorCopy';
+import InstallExperience from '../components/InstallExperience';
 
 interface Message {
   role: 'user' | 'ai';
@@ -198,6 +199,7 @@ export default function ConciergePage() {
       </div>}
 
       {latestPrimaryResult?.discovery&&<div className="recommendation-journey-start"><UnderstoodContext result={latestPrimaryResult}/><PlaceDiscoveryPanel result={latestPrimaryResult}/>{loading&&<div className="loading">이어서 살펴보고 있습니다...</div>}</div>}
+      <InstallExperience usefulResult={hasPrimaryResult}/>
 
       {(hasPrimaryResult||freeTextOpen) && <div className={hasPrimaryResult ? 'concierge-followup-composer' : 'concierge-input-panel'}>
         <div className="input-panel-heading">
