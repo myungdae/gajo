@@ -3,6 +3,9 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { PilotEvent, PilotEventDocument } from '../schemas/pilot-event.schema';
 const ALLOWED = new Set([
+  'FULL_ITINERARY_SAVED',
+  'FULL_ITINERARY_RESTORED',
+  'FULL_ITINERARY_UPDATED',
   'TRIP_RESTORED',
   'TRIP_CONTINUED',
   'NEW_TRIP_STARTED',

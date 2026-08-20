@@ -19,6 +19,7 @@ import { regionalPath } from '../regionRouting';
 import { regionalRuntimeView } from '../regionalRuntime';
 import { SHARED_VISITOR_COPY } from '../visitorCopy';
 import InstallExperience from '../components/InstallExperience';
+import FullJourneySave from '../components/FullJourneySave';
 
 interface Message {
   role: 'user' | 'ai';
@@ -103,7 +104,7 @@ export default function ConciergePage() {
         runtimeStates: previousContext.runtimeStates,
       };
       const result = await postConciergeChat({ regionId:region.id,...(hasRecommendation?carriedContext:structuredDraft), ...structured, ...(text?{rawMessage:text,inputMode:'FREE_TEXT' as const}:{}), contextSessionId:contextSessionIdRef.current,isFollowup:hasRecommendation, ...(gps?.status === 'AVAILABLE' ? { latitude: gps.latitude, longitude: gps.longitude, locationAccuracy: gps.accuracy, locationObservedAt: gps.observedAt, locationStatus: gps.status } : tripMode==='PLAN'?{}:{ locationStatus: gps?.status }) });
-      const latestSession=loadTripSession(localStorage,region.id)||tripSession;saveTripSession({...latestSession,mode:tripMode==='GENERIC'?latestSession.mode:tripMode,runtimeContext:tripMode==='PLAN'?latestSession.runtimeContext:result.context,itinerary:result.recommendation?.itinerary});
+      const latestSession=loadTripSession(localStorage,region.id)||tripSession;saveTripSession({...latestSession,mode:tripMode==='GENERIC'?latestSession.mode:tripMode,runtimeContext:tripMode==='PLAN'?latestSession.runtimeContext:result.context});
       if(tripMode==='PLAN')track('PLAN_COMPLETED',tripSession.id);if(tripMode==='NOW')track('RUNTIME_HYDRATED',tripSession.id,{location:Boolean(gps?.status==='AVAILABLE')});
       if(result.recommendation)track('RECOMMENDATION_SHOWN',tripSession.id,{mode:tripMode,candidateRegionIds:(result.recommendation.candidateRegionIds||[]).join(',')});
       if(result.intentRoute)track('INTENT_ROUTED',tripSession.id,{intentRoute:result.intentRoute});
@@ -189,6 +190,7 @@ export default function ConciergePage() {
         {tripMode==='PLAN'&&tripSession.plannedContext&&<PlanSummary planned={tripSession.plannedContext}/>}
         <UnderstoodContext result={latestRecommendation} />
         <ResultPanel result={latestRecommendation} onFindNearbyRestaurants={() => navigate(regionLink('/nearby-discovery'))} />
+        <FullJourneySave itinerary={latestRecommendation.recommendation?.itinerary} durationLabel={tripSession.plannedContext?.duration==='1N2D'?'1박2일':tripSession.plannedContext?.duration==='2N3D'?'2박3일':undefined}/>
         <section className="card runtime-journey-card">
           <h2>상황이 바뀌면</h2>
           <p>날씨와 현재 상황이 달라지면 남은 일정을 다시 확인할 수 있어요.</p>

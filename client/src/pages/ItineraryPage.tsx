@@ -71,8 +71,10 @@ export default function ItineraryPage() {
     if (!proposal) return;
     const response = await approveReplanning(proposal.proposalNo);
     setResult((current: any) => ({ ...current, recommendation: { ...current.recommendation, itinerary: response.itinerary } }));
-    saveTripSession({...ensureTripSession(region.id),itinerary:response.itinerary});
-    setProposal(null); setRuntimeMessage('승인된 미래 일정만 반영했습니다. 완료된 일정은 그대로 유지됩니다.');
+    const active=ensureTripSession(region.id),wasFull=(active.itinerary as any)?.savedAsFullJourney,updatedItinerary={...((active.itinerary as object)||{}),...response.itinerary,...(wasFull?{savedAsFullJourney:true,journeyId:(active.itinerary as any).journeyId}: {})};
+    const saved=saveTripSession({...active,itinerary:updatedItinerary});
+    if(wasFull)track('FULL_ITINERARY_UPDATED',saved.id,{journeyId:(updatedItinerary as any).journeyId,itemCount:response.itinerary?.steps?.length||0,dayCount:new Set((response.itinerary?.steps||[]).map((step:any)=>step.dayIndex||1)).size});
+    setProposal(null); setRuntimeMessage(wasFull?'변경된 일정을 내 여행에 반영했습니다. 완료된 일정은 그대로 유지됩니다.':'승인된 미래 일정만 반영했습니다. 완료된 일정은 그대로 유지됩니다.');
   };
 
   const observeLiveRuntime = async (live: LiveRuntimeResponse) => {
@@ -137,7 +139,7 @@ export default function ItineraryPage() {
       {itinerarySteps.length > 0 && (
         <div className="card">
           <h2>일정 단계</h2>
-          {itinerarySteps.map((step: any, i: number) => <div id={`itinerary-${canonicalEntityId(step)}`} key={step.itemId||step.programUri||step.entityId||i}><RecommendationItineraryItem step={step} index={i} execution/></div>)}
+          {[...new Set(itinerarySteps.map((step:any)=>Number(step.dayIndex)||1))].sort((a,b)=>a-b).map(day=><section className="itinerary-day-group" key={day}>{((rec.itinerary as any)?.savedAsFullJourney||new Set(itinerarySteps.map((step:any)=>Number(step.dayIndex)||1)).size>1)&&<h3>{day}일차</h3>}{itinerarySteps.filter((step:any)=>(Number(step.dayIndex)||1)===day).map((step:any,i:number)=><div id={`itinerary-${canonicalEntityId(step)}`} key={step.itemId||step.programUri||step.entityId||i}><RecommendationItineraryItem step={step} index={i} execution/></div>)}</section>)}
         </div>
       )}
 
