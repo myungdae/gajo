@@ -6,6 +6,7 @@ import {
   requestedAccommodationType,
 } from './accommodation-taxonomy';
 import { ExkoSemanticAdapter } from '../exko-semantic/exko-semantic.service';
+import { NearbyService, NearbyServiceError } from '../nearby/nearby.service';
 
 const CATEGORY_MATCH: Record<DiscoveryCategory, (record: any) => boolean> = {
   CAFE: (record) => record.entityType === 'CAFE' || record.category === 'CAFE',
@@ -20,6 +21,8 @@ const CATEGORY_MATCH: Record<DiscoveryCategory, (record: any) => boolean> = {
     /ATTRACTION|TOURISM/.test(`${record.entityType} ${record.category}`),
   CONVENIENCE: (record) =>
     /CONVENIENCE/.test(`${record.entityType} ${record.category}`),
+  HOT_SPRING_WELLNESS: (record) =>
+    /HOT_SPRING|WELLNESS|SAUNA|BATH|SPA/.test(`${record.entityType} ${record.category}`),
 };
 
 @Injectable()
@@ -27,6 +30,7 @@ export class PlaceDiscoveryService {
   constructor(
     @Optional() private readonly regionalData?: RegionalDataService,
     @Optional() private readonly exko?: ExkoSemanticAdapter,
+    @Optional() private readonly nearby?: NearbyService,
   ) {}
 
   async discover(
@@ -43,7 +47,18 @@ export class PlaceDiscoveryService {
     if (/쉬|휴식|편안|부모님/.test(message)) requested.add('REST');
     requested.add(category);
 
-    const anchor = this.resolveExplicitAnchor(dataset.records, message);
+    const explicitAnchor = this.resolveExplicitAnchor(dataset.records, message);
+    const contextualReference = /거기|그곳|그중|그\s*(?:근처|주변|카페|식당|숙소)/.test(message);
+    const supplied = context.conversationalAnchor;
+    const datasetAnchor = contextualReference && supplied?.regionId === regionId
+      ? dataset.records.find((record) => record.entityUri === supplied.entityId)
+      : undefined;
+    const candidateAnchor = contextualReference && supplied?.regionId === regionId &&
+      supplied?.source === 'SEARCH' && Number.isFinite(supplied.latitude) && Number.isFinite(supplied.longitude)
+      ? { entityUri: supplied.entityId, canonicalLabelKo: supplied.label, entityType: supplied.entityType, category: supplied.category, latitude: supplied.latitude, longitude: supplied.longitude }
+      : undefined;
+    const contextualAnchor = datasetAnchor || candidateAnchor;
+    const anchor = explicitAnchor || contextualAnchor;
     // A place named in the current utterance owns the origin. If it has no
     // verified point, stale session/runtime coordinates must not replace it.
     const origin = anchor
@@ -94,6 +109,10 @@ export class PlaceDiscoveryService {
           a.record.entityUri.localeCompare(b.record.entityUri),
       );
 
+    const searchCandidates = ranked.length === 0 && anchor && origin && this.nearby
+      ? await this.searchFallback(regionId, category, origin, dataset.records)
+      : [];
+
     return {
       regionId,
       category,
@@ -101,6 +120,12 @@ export class PlaceDiscoveryService {
       anchorLabel: anchor?.canonicalLabelKo,
       relation: anchor ? 'NEARBY' : 'REGIONAL',
       targetCategory: category,
+      referenceResolution: {
+        mode: explicitAnchor ? 'EXPLICIT_ENTITY' : contextualAnchor ? 'CONVERSATIONAL_REFERENCE' : 'NONE',
+        sourceTurnId: contextualAnchor ? supplied.sourceTurnId : undefined,
+        currentTurnId: context.turnId,
+        resolvedEntityId: anchor?.entityUri,
+      },
       semanticDiagnostics: {
         enabled: Boolean(this.exko?.enabled(regionId)),
         entityResolved: semantic.resolved,
@@ -119,7 +144,12 @@ export class PlaceDiscoveryService {
         object: edge.object,
         source: 'EXKO',
       })),
-      entities: ranked.map(
+      searchFallback: searchCandidates.length ? {
+        used: true,
+        source: 'KAKAO_LOCAL',
+        evidenceRetention: 'REGIONAL_CANDIDATE',
+      } : undefined,
+      entities: [...ranked.map(
         ({ record, matched, distanceMeters, score }, index) => ({
           entityId: record.entityUri,
           regionId,
@@ -165,10 +195,51 @@ export class PlaceDiscoveryService {
             verificationStatus: record.runtimeDataStatus,
             runtimeDistanceCalculated: distanceMeters !== undefined,
             navigationAvailable: Boolean(record.actions?.navigate),
+            tripEligible: true,
           },
         }),
-      ),
+      ), ...searchCandidates],
     };
+  }
+
+  private async searchFallback(regionId: string, category: DiscoveryCategory, origin: { latitude: number; longitude: number }, records: readonly any[]) {
+    try {
+      const found = await this.nearby!.search(category, origin.latitude, origin.longitude, 2500, {}, regionId);
+      return found.slice(0, 5).map((place, index) => {
+        const canonical = records.find((record) =>
+          record.entityUri === place.canonicalEntityUri || this.normalize(record.canonicalLabelKo) === this.normalize(place.name),
+        );
+        if (canonical) return {
+          entityId: canonical.entityUri, regionId, order: index + 1,
+          programUri: canonical.entityUri, programLabel: canonical.canonicalLabelKo,
+          facilityUri: canonical.entityUri, facilityLabel: canonical.canonicalLabelKo,
+          entityType: canonical.entityType, category: canonical.category,
+          description: canonical.description, address: canonical.address,
+          telephone: canonical.telephone, website: canonical.website,
+          reservationUrl: canonical.reservationUrl, latitude: canonical.latitude,
+          longitude: canonical.longitude, actions: canonical.actions,
+          source: canonical.source, lastVerifiedAt: canonical.lastVerifiedAt,
+          distanceMeters: place.distanceMeters,
+          reasons: ['외부 검색 후보를 검증된 지역 엔티티와 일치시켰습니다.'],
+          operationalEvidence: { source: 'RDM', discoverySource: 'SEARCH', verificationStatus: canonical.runtimeDataStatus, navigationAvailable: Boolean(canonical.actions?.navigate), tripEligible: true },
+        };
+        return {
+          entityId: `search:${regionId}:${place.id}`, regionId, order: index + 1,
+          programLabel: place.name, facilityLabel: place.name,
+          entityType: 'SEARCH_CANDIDATE', category,
+          address: place.roadAddress || place.address || undefined,
+          latitude: place.lat, longitude: place.lng,
+          distanceMeters: place.distanceMeters,
+          reasons: ['지역 데이터에 없는 검색 후보입니다. 운영 정보는 방문 전에 확인해 주세요.'],
+          actions: {},
+          operationalEvidence: { source: 'SEARCH', verificationStatus: 'UNVERIFIED', navigationAvailable: false, tripEligible: false },
+          candidateEvidence: { sourceType: 'KAKAO_LOCAL', sourceUrl: place.placeUrl || undefined, providerCategory: place.providerCategoryName, observedPhone: place.phone || undefined, observedAddress: place.roadAddress || place.address || undefined },
+        };
+      });
+    } catch (error) {
+      if (error instanceof NearbyServiceError) return [];
+      throw error;
+    }
   }
 
   private resolveExplicitAnchor(records: readonly any[], message: string) {
@@ -181,6 +252,12 @@ export class PlaceDiscoveryService {
         ),
     );
     return matches.sort((a, b) => b.label.length - a.label.length)[0]?.record;
+  }
+
+  async resolveReference(regionId: string, message: string) {
+    const dataset = await this.regionalData?.effectiveDataset(regionId);
+    const record = dataset && this.resolveExplicitAnchor(dataset.records, message);
+    return record ? { entityId: record.entityUri, regionId, label: record.canonicalLabelKo, entityType: record.entityType, category: record.category, latitude: record.latitude, longitude: record.longitude } : undefined;
   }
 
   private normalize(value: string) {

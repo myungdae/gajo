@@ -73,6 +73,8 @@ export class ConciergeService {
     const nearbyRestaurantIntent = nearbyDiscovery.intent && nearbyDiscovery.category === 'FOOD';
     const config=this.regionConfig?.get(input.regionId)||GAJO_REGION_CONFIG;
     const route=routeNaturalLanguageIntent(input);
+    const explicitReference=await this.placeDiscovery?.resolveReference?.(input.regionId||'gajo',input.rawMessage||'');
+    const conversationalReference=explicitReference?{...explicitReference,sourceTurnId:input.turnId||'',role:'SUBJECT' as const}:undefined;
     const outsideServiceArea = this.regionConfig?.detectOutOfRegion(input.rawMessage,input.regionId)||(!input.regionId||input.regionId==='gajo'?detectOutOfServiceDestination(input.rawMessage):undefined);
 
     if (outsideServiceArea) {
@@ -89,6 +91,7 @@ export class ConciergeService {
         nearbyRestaurantIntent: false,
         nearbyDiscoveryIntent: false,
         intentRoute:route.intentRoute,
+        conversationalReference,
       };
     }
 
@@ -135,6 +138,7 @@ export class ConciergeService {
       nearbyDiscoveryIntent: nearbyDiscovery.intent,
       nearbyCategory: nearbyDiscovery.category,
       intentRoute:route.intentRoute,
+      conversationalReference,
     };
   }
 }

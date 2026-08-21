@@ -17,7 +17,9 @@ export function understoodSummary(result: any): string {
       : discovery.category === "FOOD"
         ? "주변에서 식사할 수 있는 곳을"
         : discovery.category === "TOURISM_NATURE"
-          ? "주변에서 둘러볼 만한 곳을"
+      ? "주변에서 둘러볼 만한 곳을"
+          : discovery.category === "HOT_SPRING_WELLNESS"
+            ? "주변 사우나·목욕시설을"
           : "주변에서 요청하신 조건에 맞는 장소를";
   return `${anchor} ${target} 찾았습니다.`;
 }

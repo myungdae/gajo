@@ -49,6 +49,10 @@ const ALLOWED = new Set([
   'REPLAN_FROM_ITINERARY',
   'REPLAN_REQUESTED',
   'RETRY_ERROR',
+  'SEARCH_FALLBACK_USED',
+  'SEARCH_ENTITY_RESOLVED',
+  'SEARCH_ENTITY_UNVERIFIED',
+  'SEARCH_TO_ACTION_CONTINUED',
 ]);
 const PRIVATE = /raw|text|message|query|prompt/i;
 @Injectable()

@@ -14,6 +14,8 @@ export interface CompanionInput {
 }
 
 export interface CreateContextInput {
+  turnId?: string;
+  conversationalAnchor?: { entityId: string; regionId: string; label?: string; entityType?: string; category?: string; latitude?: number; longitude?: number; source?: 'RDM'|'SEARCH'; sourceTurnId: string; role: 'RESULT'|'SUBJECT'|'SELECTED' };
   regionId?: string;
   mustVisitPlaces?: Array<{ entityId?: string; label: string; resolved: boolean }>;
   accommodationIntents?: Array<{ entityId?: string; label: string; resolved: boolean }>;
@@ -45,7 +47,7 @@ export interface CreateContextInput {
   contextSessionId?: string;
   inputMode?: 'STRUCTURED' | 'FREE_TEXT';
   isFollowup?: boolean;
-  discoveryCategoryHint?: 'FOOD'|'CAFE'|'LODGING'|'ACTIVITY'|'TOURISM_NATURE'|'CONVENIENCE';
+  discoveryCategoryHint?: 'FOOD'|'CAFE'|'LODGING'|'HOT_SPRING_WELLNESS'|'ACTIVITY'|'TOURISM_NATURE'|'CONVENIENCE';
 }
 
 export interface EntityRuntimeState {
@@ -104,7 +106,8 @@ export interface ConciergeChatResponse {
   nearbyCategory?: NearbyCategory;
   visitorMessage?: string;
   intentRoute?: 'JOURNEY_PLAN'|'PLACE_DISCOVERY'|'IMMEDIATE_NOW'|'REPLAN';
-  discovery?:{regionId:string;category:string;anchorEntityId?:string;anchorLabel?:string;relation?:'NEARBY'|'REGIONAL';targetCategory?:string;entities:any[]};
+  discovery?:{regionId:string;category:string;anchorEntityId?:string;anchorLabel?:string;relation?:'NEARBY'|'REGIONAL';targetCategory?:string;searchFallback?:{used:boolean;source:string;evidenceRetention:string};entities:any[]};
+  conversationalReference?: CreateContextInput['conversationalAnchor'];
   domainResult?: { status: 'OUT_OF_SERVICE_AREA'; destination: string; region: string };
 }
 

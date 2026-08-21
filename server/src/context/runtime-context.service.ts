@@ -18,6 +18,8 @@ import { mergeContextExtractions } from './context-extraction.merger';
 import { ContextExtractionGateway } from './context-extraction.gateway';
 
 export interface CreateContextInput {
+  turnId?: string;
+  conversationalAnchor?: { entityId: string; regionId: string; label?: string; entityType?: string; category?: string; latitude?: number; longitude?: number; source?: 'RDM'|'SEARCH'; sourceTurnId: string; role: 'RESULT'|'SUBJECT'|'SELECTED' };
   regionId?: string;
   duration?: string;
   mustVisitPlaces?: { entityId?: string; label: string; resolved: boolean }[];
@@ -267,7 +269,7 @@ export class RuntimeContextService {
     });
 
     return {
-      context: { ...doc.toObject(), latitude: input.latitude, longitude: input.longitude, locationAccuracy: input.locationAccuracy, locationObservedAt: input.locationObservedAt, locationStatus: input.locationStatus },
+      context: { ...doc.toObject(), conversationalAnchor: input.conversationalAnchor, turnId: input.turnId, latitude: input.latitude, longitude: input.longitude, locationAccuracy: input.locationAccuracy, locationObservedAt: input.locationObservedAt, locationStatus: input.locationStatus },
       evidence: expansion.evidence,
       firedRules,
     };

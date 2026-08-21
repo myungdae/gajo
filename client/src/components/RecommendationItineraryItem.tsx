@@ -131,7 +131,7 @@ export default function RecommendationItineraryItem({
               hideDetail
               navigationLabel={execution ? "출발하기" : "내비로 가기"}
               onNavigate={execution ? started : undefined}
-              showItineraryAdd={!execution}
+              showItineraryAdd={!execution && step.operationalEvidence?.tripEligible !== false}
             />
             {step.actions?.navigate && (
               <Link

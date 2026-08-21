@@ -41,6 +41,10 @@ test("post-save continuation keeps discovery in place and exposes immediate exec
   assert.match(nearby, />내 여행에 담기</);
   assert.doesNotMatch(continuation, /도착 완료/);
 });
+test("unverified search candidates cannot be added to My Trip", () => {
+  const item = source("./components/RecommendationItineraryItem.tsx");
+  assert.match(item, /operationalEvidence\?\.tripEligible\s*!==\s*false/);
+});
 test("saved-place collection is independent with restrained persistent removal", () => {
   const page = source("./pages/ItineraryPage.tsx"),
     item = source("./components/RecommendationItineraryItem.tsx");

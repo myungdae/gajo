@@ -54,6 +54,8 @@ function summarizeResult(result: ConciergeChatResponse): string {
   if (result.visitorMessage) return result.visitorMessage;
   if (result.discovery) {
     const first = result.discovery.entities[0];
+    if (first && result.discovery.searchFallback?.used)
+      return `${result.discovery.anchorLabel ? `${result.discovery.anchorLabel} 근처에서는 ` : ""}${first.programLabel || first.facilityLabel || first.label}를 확인했습니다. 현재 영업 여부는 방문 전에 확인해 주세요.`;
     return result.discovery.entities.length
       ? `${first.programLabel || first.facilityLabel || first.label}으로 가는 것이 좋겠습니다.${Number.isFinite(first.distanceMeters) ? ` 기준 위치에서 약 ${first.distanceMeters}m 떨어져 있습니다.` : ""}`
       : "조건에 맞는 검증된 장소를 아직 찾지 못했습니다.";
@@ -100,6 +102,7 @@ export default function ConciergePage() {
   ]);
   const [input, setInput] = useState(entryState?.initialMessage || "");
   const [currentTurn, setCurrentTurn] = useState<CurrentTurnResult<ConciergeChatResponse> | null>(null);
+  const [conversationAnchor, setConversationAnchor] = useState<NonNullable<CreateContextInput["conversationalAnchor"]> | null>(null);
   const [loading, setLoading] = useState(false);
   const [requestError, setRequestError] = useState(false);
   const [freeTextOpen, setFreeTextOpen] = useState(
@@ -133,6 +136,7 @@ export default function ConciergePage() {
   useEffect(() => {
     sessionStorage.setItem(contextSessionKey, contextSessionIdRef.current);
   }, [contextSessionKey]);
+  useEffect(() => setConversationAnchor(null), [region.id]);
   useEffect(() => {
     if (tripMode === "PLAN")
       track(
@@ -201,6 +205,8 @@ export default function ConciergePage() {
       };
       const result = await postConciergeChat({
         regionId: region.id,
+        turnId,
+        ...(conversationAnchor?.regionId === region.id ? { conversationalAnchor: conversationAnchor } : {}),
         ...(hasCompletedTurn ? carriedContext : structuredDraft),
         ...structured,
         ...(text ? { rawMessage: text, inputMode: "FREE_TEXT" as const } : {}),
@@ -245,11 +251,25 @@ export default function ConciergePage() {
         track("INTENT_ROUTED", tripSession.id, {
           intentRoute: result.intentRoute,
         });
+      if (result.discovery?.searchFallback?.used) {
+        const entity = result.discovery.entities[0];
+        track("SEARCH_FALLBACK_USED", tripSession.id, { category: result.discovery.category });
+        track(entity?.operationalEvidence?.source === "RDM" ? "SEARCH_ENTITY_RESOLVED" : "SEARCH_ENTITY_UNVERIFIED", tripSession.id, { category: result.discovery.category });
+      }
+      if (conversationAnchor?.source === "SEARCH" && result.discovery)
+        track("SEARCH_TO_ACTION_CONTINUED", tripSession.id, { category: result.discovery.category });
       setMessages((prev) => [
         ...prev,
         { role: "ai", text: summarizeResult(result), result, requestText: text, turnId },
       ]);
       setCurrentTurn((current) => resolveCurrentTurn(current, turnId, result));
+      const referenceEntity = result.discovery?.entities?.[0];
+      const reference = referenceEntity
+        ? { entityId: referenceEntity.entityId, regionId: referenceEntity.regionId || region.id, label: referenceEntity.programLabel || referenceEntity.facilityLabel || referenceEntity.label, entityType: referenceEntity.entityType, category: referenceEntity.category, latitude: referenceEntity.latitude, longitude: referenceEntity.longitude, source: referenceEntity.operationalEvidence?.source === "SEARCH" ? "SEARCH" as const : "RDM" as const, sourceTurnId: turnId, role: "RESULT" as const }
+        : result.conversationalReference
+          ? { ...result.conversationalReference, sourceTurnId: turnId, role: "SUBJECT" as const }
+          : null;
+      setConversationAnchor(reference?.regionId === region.id ? reference : null);
     } catch (e: any) {
       console.error("[concierge] request failed", e);
       setRequestError(true);
@@ -808,8 +828,9 @@ function PlaceDiscoveryPanel({ result }: { result: ConciergeChatResponse }) {
     <section className="recommendation-section place-discovery-results">
       <h2>조건에 맞는 {label}</h2>
       <p className="text-muted">
-        검증된 지역 운영 데이터에서 맞는 장소만 보여드려요. 현재 영업 여부는
-        방문 전에 확인해 주세요.
+        {result.discovery?.searchFallback?.used
+          ? "지역 운영 데이터에 없는 장소는 검색 후보로 구분해 안내합니다. 현재 영업 여부는 방문 전에 확인해 주세요."
+          : "검증된 지역 운영 데이터에서 맞는 장소만 보여드려요. 현재 영업 여부는 방문 전에 확인해 주세요."}
       </p>
       {discovery.entities.length ? (
         discovery.entities.map((entity: any, index: number) => (
