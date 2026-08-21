@@ -24,6 +24,7 @@ export interface CompositionContext extends DecisionContext {
   duration?: string;
   rawMessage?: string;
   selectedInterests?: string[];
+  explicitRequestedJourney?: boolean;
 }
 export interface InterestCoverage {
   selected: string[];
@@ -124,6 +125,14 @@ export function composeItinerary(
         (ROLE_BY_INTEREST[interest] || []).includes(itineraryRole(candidate)),
     );
   ranked.filter((candidate) => candidate.isMustVisit).forEach(add);
+  if (context.explicitRequestedJourney) {
+    const requested = chosen.sort((a,b)=>(a.requestedOrder??Number.MAX_SAFE_INTEGER)-(b.requestedOrder??Number.MAX_SAFE_INTEGER));
+    const covered = selected.filter(interest=>requested.some(candidate=>(candidate.tags||[]).includes(interest)));
+    return {
+      items: requested.map(candidate=>({...candidate,itineraryRole:itineraryRole(candidate)})),
+      coverage: { selected, covered, uncovered: selected.filter(interest=>!covered.includes(interest)) },
+    };
+  }
   for (const interest of selected) {
     if (covers(interest)) continue;
     for (const role of ROLE_BY_INTEREST[interest] || []) {

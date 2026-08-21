@@ -46,7 +46,7 @@ export class RuntimeContext {
   activityPreferences: string[];
 
   @Prop({ type: [Object], default: [] })
-  mustVisitPlaces: { entityId?: string; label: string; resolved: boolean }[];
+  mustVisitPlaces: { entityId?: string; label: string; requestedLabel?: string; resolved: boolean; requested?: boolean; source?: string; category?: string; entityType?: string; latitude?: number; longitude?: number; verificationStatus?: string }[];
 
   @Prop({ type: [Object], default: [] })
   accommodationIntents: { entityId?: string; label: string; resolved: boolean }[];

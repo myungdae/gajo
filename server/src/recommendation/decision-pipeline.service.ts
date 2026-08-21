@@ -7,6 +7,7 @@ export interface DecisionCandidate {
   isMustVisit?: boolean;
   requestedLabel?:string;
   canonicalLabel?:string;
+  requestedOrder?:number;
   allowUnknownDuration?: boolean;
   entityType?: string;
   category?: string;

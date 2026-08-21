@@ -71,15 +71,18 @@ export class ConciergeService {
 
   async chat(input: CreateContextInput) {
     const route=routeNaturalLanguageIntent(input),routeDetails:any=route;
-    const requestedDestinations=routeDetails.multiDestination&&this.placeDiscovery
+    const newlyRequestedDestinations=routeDetails.multiDestination&&this.placeDiscovery
       ?await this.placeDiscovery.resolveRequestedDestinations(input.regionId||'gajo',routeDetails.explicitDestinations,{latitude:input.latitude,longitude:input.longitude})
       :undefined;
+    const carriedRequestedDestinations=route.intentRoute==='REPLAN'?input.mustVisitPlaces?.filter((item:any)=>item.requested):undefined;
+    const requestedDestinations=newlyRequestedDestinations||(carriedRequestedDestinations?.length?carriedRequestedDestinations:undefined);
     const effectiveInput=requestedDestinations?{...input,mustVisitPlaces:requestedDestinations}:input;
     const { context, evidence, firedRules } = await this.contextService.createContext(effectiveInput);
     const nearbyDiscovery = detectNearbyDiscovery(input.rawMessage);
     const nearbyRestaurantIntent = nearbyDiscovery.intent && nearbyDiscovery.category === 'FOOD';
     const config=this.regionConfig?.get(input.regionId)||GAJO_REGION_CONFIG;
-    const explicitReference=await this.placeDiscovery?.resolveReference?.(input.regionId||'gajo',input.rawMessage||'');
+    const referenceCategory=(route.intentRoute==='PLACE_DISCOVERY'||route.intentRoute==='IMMEDIATE_NOW')?route.category:undefined;
+    const explicitReference=await this.placeDiscovery?.resolveReference?.(input.regionId||'gajo',input.rawMessage||'',referenceCategory);
     const conversationalReference=explicitReference?{...explicitReference,sourceTurnId:input.turnId||'',role:'SUBJECT' as const}:undefined;
     const outsideServiceArea = this.regionConfig?.detectOutOfRegion(input.rawMessage,input.regionId)||(!input.regionId||input.regionId==='gajo'?detectOutOfServiceDestination(input.rawMessage):undefined);
 
@@ -147,7 +150,17 @@ export class ConciergeService {
       nearbyCategory: nearbyDiscovery.category,
       intentRoute:route.intentRoute,
       conversationalReference,
-      ...(requestedDestinations?{requestedDestinations,visitorMessage:`${requestedDestinations.map(item=>item.requestedLabel||item.label).join('과 ')}를 함께 둘러보시려는군요. 현재 위치와 이동 시간을 고려해 두 곳을 연결해드릴게요.`}:{}),
+      ...(requestedDestinations?{requestedDestinations,visitorMessage:newlyRequestedDestinations
+        ?`${requestedDestinations.map(item=>item.requestedLabel||item.label).join('과 ')}를 함께 둘러보시려는군요.`
+        :this.orderingMessage(requestedDestinations)}:{}),
     };
+  }
+
+  private orderingMessage(destinations:any[]){
+    const labels=destinations.map(item=>item.requestedLabel||item.label).join('과 ');
+    const operational=destinations.every(item=>item.resolved&&Number.isFinite(item.latitude)&&Number.isFinite(item.longitude));
+    return operational
+      ?`${labels} 안에서 이동 순서를 살펴봤어요.`
+      :`${labels}은 그대로 유지할게요. 일부 장소의 정확한 위치가 아직 확인되지 않아 거리순 계산은 어렵습니다. 우선 말씀하신 순서대로 둘까요?`;
   }
 }

@@ -18,7 +18,7 @@ export interface CreateContextInput {
   conversationalAnchor?: { entityId: string; regionId: string; label?: string; entityType?: string; category?: string; latitude?: number; longitude?: number; source?: 'RDM'|'SEARCH'; sourceTurnId: string; role: 'RESULT'|'SUBJECT'|'SELECTED' };
   discoveryContext?: { regionId: string; anchor: { entityId: string; label?: string; latitude?: number; longitude?: number; source?: 'RDM'|'SEARCH' }; targetCategory: 'FOOD'|'CAFE'|'LODGING'|'HOT_SPRING_WELLNESS'|'ACTIVITY'|'TOURISM_NATURE'|'CONVENIENCE'|'ESSENTIAL_SHOPPING'|'CONVENIENCE_STORE'|'MART_SUPERMARKET'; relation: 'NEARBY'|'REGIONAL'; currentResult?: { entityId: string; label?: string; latitude?: number; longitude?: number; source?: 'RDM'|'SEARCH' }; shownEntityIds: string[]; sourceTurnId: string };
   regionId?: string;
-  mustVisitPlaces?: Array<{ entityId?: string; label: string; resolved: boolean }>;
+  mustVisitPlaces?: Array<{ entityId?: string; label: string; requestedLabel?: string; resolved: boolean; requested?: boolean; source?: 'RDM'|'SEARCH'|'SEMANTIC'; category?: string; entityType?: string; latitude?: number; longitude?: number; verificationStatus?: string }>;
   accommodationIntents?: Array<{ entityId?: string; label: string; resolved: boolean }>;
   rawMessage?: string;
   visitorNo?: string;

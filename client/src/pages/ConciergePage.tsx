@@ -202,6 +202,8 @@ export default function ConciergePage() {
         activityPreferences:
           previousContext.activityPreferences ||
           previousInput.activityPreferences,
+        mustVisitPlaces:
+          previousContext.mustVisitPlaces || previousInput.mustVisitPlaces,
         companions: previousContext.companions || previousInput.companions,
         weather: previousInput.weather || previousContext.weather,
         congestion: previousInput.congestion,

@@ -48,6 +48,7 @@ const CATEGORY_PATTERNS: [DiscoveryCategory, RegExp][] = [
   ],
 ];
 export function discoveryCategory(message = '') {
+  if (/숙박|자고\s*싶|묵고\s*싶|체크인/.test(message)) return 'LODGING';
   return CATEGORY_PATTERNS.map(([category, pattern]) => ({
     category,
     index: message.search(pattern),
@@ -121,7 +122,7 @@ export function routeNaturalLanguageIntent(input: {
   if (journey) return { intentRoute: 'JOURNEY_PLAN' as const, category };
   if (
     category &&
-    /주변|근처|가까운|인근|알려|찾아|보여|추천|어디|있어|아니|먹을\s*(?:곳|데)|살\s*(?:곳|데)|장\s*볼|가고\s*싶|가기\s*좋|편한|갈\s*만한|(?:아이와|부모님과)?\s*갈\s+(?:실내\s*)?(?:체험|카페|식당)/.test(
+    /주변|근처|가까운|인근|알려|찾아|보여|추천|어디|있어|아니|먹을\s*(?:곳|데)|살\s*(?:곳|데)|장\s*볼|가고\s*싶|(?:숙박|목욕|자고|묵고).{0,6}싶|가기\s*좋|편한|갈\s*만한|(?:아이와|부모님과)?\s*갈\s+(?:실내\s*)?(?:체험|카페|식당)/.test(
       message,
     )
   )

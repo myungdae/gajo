@@ -31,14 +31,17 @@ export class PlaceDiscoveryService {
   ) {
     const dataset = await this.regionalData?.effectiveDataset(regionId);
     if (!dataset) return { regionId, category, entities: [] };
+    const config = this.regionConfig?.get(regionId);
 
     const requested = new Set<string>(context.activityPreferences || []);
-    for(const preference of this.regionConfig?.get(regionId).discoveryPreferences||[])
+    for(const preference of config?.discoveryPreferences||[])
       if(preference.pattern.test(message))requested.add(preference.tag);
     if (/쉬|휴식|편안|부모님/.test(message)) requested.add('REST');
     requested.add(category);
 
-    const explicitAnchor = this.resolveExplicitAnchor(dataset.records, message);
+    const explicitAnchor =
+      this.resolveExplicitAnchor(dataset.records, message) ||
+      this.resolveConceptAnchor(config, dataset.records, message, category);
     const contextualReference =
       /거기|그곳|그중|그\s*(?:근처|주변|카페|식당|숙소)/.test(message);
     const supplied = context.conversationalAnchor;
@@ -433,10 +436,18 @@ export class PlaceDiscoveryService {
     return matches.sort((a, b) => b.label.length - a.label.length)[0]?.record;
   }
 
-  async resolveReference(regionId: string, message: string) {
+  private resolveConceptAnchor(config:any,records:readonly any[],message:string,category:DiscoveryCategory){
+    const normalized=this.normalize(message);
+    const concept=config?.placeConcepts?.find((item:any)=>[item.label,...(item.aliases||[])].some((label:string)=>normalized.includes(this.normalize(label))));
+    const relation=concept?.relations?.find((item:any)=>item.categories.includes(category));
+    return relation?records.find(record=>record.entityUri===relation.entityId):undefined;
+  }
+
+  async resolveReference(regionId: string, message: string, category?:DiscoveryCategory) {
     const dataset = await this.regionalData?.effectiveDataset(regionId);
     const record =
-      dataset && this.resolveExplicitAnchor(dataset.records, message);
+      dataset && (this.resolveExplicitAnchor(dataset.records, message) ||
+        (category?this.resolveConceptAnchor(this.regionConfig?.get(regionId),dataset.records,message,category):undefined));
     return record
       ? {
           entityId: record.entityUri,
@@ -455,6 +466,8 @@ export class PlaceDiscoveryService {
     const inside=(place:any)=>Boolean(bounds&&place.lat<=bounds.north&&place.lat>=bounds.south&&place.lng<=bounds.east&&place.lng>=bounds.west);
     const result=[] as any[];
     for(const label of labels){
+      const concept=config?.placeConcepts?.find(item=>[item.label,...(item.aliases||[])].some(name=>this.normalize(name)===this.normalize(label)));
+      if(concept){result.push({entityId:concept.entityId,label:concept.label,requestedLabel:label,resolved:false,requested:true,source:'SEMANTIC',category:concept.category,entityType:concept.entityType,verificationStatus:'UNVERIFIED',semanticRelations:concept.relations});continue}
       const canonical=dataset?.records.find(record=>[record.canonicalLabelKo,...(record.alternateLabels||[])].some(name=>this.normalize(name)===this.normalize(label)));
       if(canonical){result.push({entityId:canonical.entityUri,label:canonical.canonicalLabelKo,requestedLabel:label,resolved:true,requested:true,source:'RDM',category:canonical.category,entityType:canonical.entityType,latitude:canonical.latitude,longitude:canonical.longitude,verificationStatus:canonical.runtimeDataStatus});continue}
       let searched:any;

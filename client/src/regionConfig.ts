@@ -173,7 +173,7 @@ export const GAJO_CONFIG: RegionConfig = {
     {
       id: "https://gajo-wellness.kr/ontology#gajoHotSpringComplex",
       label: "백두산천지온천",
-      aliases: ["가조온천"],
+      aliases: ["가조 백두산천지온천"],
       category: "온천",
       runtimeDataStatus: "PARTIAL",
     },
