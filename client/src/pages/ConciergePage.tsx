@@ -11,7 +11,7 @@ import VisitorLocationControl from "../components/VisitorLocationControl";
 import RecommendationItineraryItem from "../components/RecommendationItineraryItem";
 import { getSessionLocation } from "../utils/visitorLocation";
 import { useSpeechInput } from "../hooks/useSpeechInput";
-import { buildContextSummary } from "../utils/contextSummary";
+import { buildContextSummary,withRequestedDestinations } from "../utils/contextSummary";
 import StructuredVisitorIntake from "../components/StructuredVisitorIntake";
 import PlanVisitorIntake from "../components/PlanVisitorIntake";
 import { getQuickStartPreset } from "../quickStartPresets";
@@ -749,7 +749,7 @@ function PlanSummary({ planned }: { planned: PlannedContext }) {
 }
 
 function UnderstoodContext({ result }: { result: ConciergeChatResponse }) {
-  const rows = buildContextSummary(result.context || {});
+  const rows = withRequestedDestinations(buildContextSummary(result.context || {}),result.requestedDestinations);
   if (result.discovery)
     return <section className="understood-context-card"><h2>{SHARED_VISITOR_COPY.understoodHeading}</h2><p className="muted-line">{understoodSummary(result)}</p></section>;
   return (

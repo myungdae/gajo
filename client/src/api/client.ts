@@ -106,6 +106,7 @@ export interface ConciergeChatResponse {
   nearbyDiscoveryIntent?: boolean;
   nearbyCategory?: NearbyCategory;
   visitorMessage?: string;
+  requestedDestinations?:Array<{entityId?:string;label:string;requestedLabel?:string;resolved:boolean;requested?:boolean;source?:'RDM'|'SEARCH'|'SEMANTIC';verificationStatus?:string}>;
   intentRoute?: 'JOURNEY_PLAN'|'PLACE_DISCOVERY'|'DISTANCE_INFO'|'IMMEDIATE_NOW'|'REPLAN';
   discovery?:{regionId:string;category:string;anchorEntityId?:string;anchorLabel?:string;anchorLatitude?:number;anchorLongitude?:number;relation?:'NEARBY'|'REGIONAL';targetCategory?:string;categoryFallbackNotice?:string;searchFallback?:{used:boolean;source:string;evidenceRetention:string};entities:any[]};
   distanceInfo?:{status:'RESOLVED'|'NEEDS_CLARIFICATION';message?:string;regionId?:string;fromEntityId?:string;fromLabel?:string;toEntityId?:string;toLabel?:string;distanceMeters?:number;calculation?:string};

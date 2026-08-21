@@ -236,6 +236,8 @@ export class RecommendationService {
         facilityLabel: item.facilityLabel,
         programUri: item.programUri,
         programLabel: item.programLabel,
+        canonicalLabel: item.canonicalLabel,
+        requestedLabel: item.requestedLabel,
         durationMinutes: item.durationMinutes,
         requiresReservation: item.requiresReservation,
         status: 'PLANNED',
@@ -334,6 +336,7 @@ export class RecommendationService {
         .filter((place: any) => place.entityId && (place.resolved||place.requested))
         .map((place: any) => place.entityId),
     );
+    const requestedById=new Map<string,any>((contextDoc.mustVisitPlaces||[]).filter((place:any)=>place.entityId).map((place:any)=>[place.entityId,place]));
     const selected = dataset.records.filter(
       (entity) =>
         anchorIds.has(entity.entityUri) ||
@@ -345,6 +348,8 @@ export class RecommendationService {
         regionId: dataset.regionId,
         programUri: entity.entityUri,
         programLabel: entity.canonicalLabelKo,
+        canonicalLabel:entity.canonicalLabelKo,
+        requestedLabel:requestedById.get(entity.entityUri)?.requestedLabel,
         facilityUri: entity.entityUri,
         facilityLabel: entity.canonicalLabelKo,
         matchedOn: matched.map((tag) => `${dataset.namespace}interest-${tag}`),
@@ -386,7 +391,7 @@ export class RecommendationService {
         estimatedTravelMinutes: undefined,
       };
     });
-    const unresolved=(contextDoc.mustVisitPlaces||[]).filter((place:any)=>place.requested&&place.entityId&&!dataset.records.some(entity=>entity.entityUri===place.entityId)).map((place:any)=>({regionId:dataset.regionId,programUri:place.entityId,programLabel:place.label,facilityUri:place.entityId,facilityLabel:place.label,matchedOn:[],matchedLabels:[],mitigatesRisk:[],mitigationLabels:[],requiredMobility:[],affectedByEnvironment:[],requiresReservation:false,allowUnknownDuration:true,category:place.category||'TOURISM_NATURE',tags:[],entityType:place.entityType||'ATTRACTION',accessStatus:'NEEDS_VERIFICATION',accessNotice:'지역 운영 데이터에서 검증되지 않은 요청 장소입니다. 방문 전 운영 정보를 확인해 주세요.',actions:{},source:place.source==='SEARCH'?place.evidence:{sourceType:'SEMANTIC_REFERENCE'},coordinates:Number.isFinite(place.latitude)&&Number.isFinite(place.longitude)?{latitude:place.latitude,longitude:place.longitude,sourceUri:place.entityId}:undefined,isMustVisit:true,runtime:{entityUri:place.entityId,operatingState:'UNKNOWN'},distanceStatus:'UNKNOWN' as const,estimatedTravelMinutes:undefined}));
+    const unresolved=(contextDoc.mustVisitPlaces||[]).filter((place:any)=>place.requested&&place.entityId&&!dataset.records.some(entity=>entity.entityUri===place.entityId)).map((place:any)=>({regionId:dataset.regionId,programUri:place.entityId,programLabel:place.label,canonicalLabel:place.label,requestedLabel:place.requestedLabel,facilityUri:place.entityId,facilityLabel:place.label,matchedOn:[],matchedLabels:[],mitigatesRisk:[],mitigationLabels:[],requiredMobility:[],affectedByEnvironment:[],requiresReservation:false,allowUnknownDuration:true,category:place.category||'TOURISM_NATURE',tags:[],entityType:place.entityType||'ATTRACTION',accessStatus:'NEEDS_VERIFICATION',accessNotice:'지역 운영 데이터에서 검증되지 않은 요청 장소입니다. 방문 전 운영 정보를 확인해 주세요.',actions:{},source:place.source==='SEARCH'?place.evidence:{sourceType:'SEMANTIC_REFERENCE'},coordinates:Number.isFinite(place.latitude)&&Number.isFinite(place.longitude)?{latitude:place.latitude,longitude:place.longitude,sourceUri:place.entityId}:undefined,isMustVisit:true,runtime:{entityUri:place.entityId,operatingState:'UNKNOWN'},distanceStatus:'UNKNOWN' as const,estimatedTravelMinutes:undefined}));
     return[...canonical,...unresolved];
   }
 

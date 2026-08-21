@@ -5,6 +5,8 @@ import type { Coordinates } from '../context/entity-location.service';
 export interface DecisionCandidate {
   regionId?: string;
   isMustVisit?: boolean;
+  requestedLabel?:string;
+  canonicalLabel?:string;
   allowUnknownDuration?: boolean;
   entityType?: string;
   category?: string;

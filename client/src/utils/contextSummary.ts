@@ -1,9 +1,10 @@
 export interface ContextSummaryRow {
-  key: 'companion' | 'walking' | 'transport' | 'stay' | 'style';
+  key: 'requested' | 'companion' | 'walking' | 'transport' | 'stay' | 'style';
   icon: string;
   label: string;
   value: string;
 }
+export function withRequestedDestinations(rows:ContextSummaryRow[],destinations:any[]=[]):ContextSummaryRow[]{const labels=destinations.map(item=>item.requestedLabel||item.label).filter(Boolean);return labels.length?[{key:'requested',icon:'📍',label:'꼭 가고 싶은 곳',value:labels.join(' · ')},...rows]:rows}
 
 const localName = (value: unknown) => String(value || '').split(/[\/#:]/).pop() || '';
 const unique = (values: Array<string | undefined>) => [...new Set(values.filter(Boolean) as string[])];

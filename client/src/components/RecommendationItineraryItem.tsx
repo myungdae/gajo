@@ -33,6 +33,7 @@ export default function RecommendationItineraryItem({
       isInteractiveRecommendationItem(step) &&
       itemBelongsToRegion(step, region.id),
     name = recommendationItemLabel(step),
+    canonicalName=step.canonicalLabel||step.programLabel||step.facilityLabel,
     shoppingCategory = ({
       CONVENIENCE_STORE: "편의점",
       MART: "마트",
@@ -119,6 +120,8 @@ export default function RecommendationItineraryItem({
           >
             <small>{step.areaLabel || step.entityType || "지역 장소"}</small>
             <h3>{name}</h3>
+            {canonicalName&&canonicalName!==name&&<p className="text-muted">등록명: {canonicalName}</p>}
+            {step.accessStatus==='NEEDS_VERIFICATION'&&<p className="text-muted">운영 정보 확인이 필요한 요청 장소입니다.</p>}
             {step.description && <p>{step.description}</p>}
             <dl>
               {step.address && (
