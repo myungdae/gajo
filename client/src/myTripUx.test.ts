@@ -66,7 +66,7 @@ test("full journey remains ordered while saved places render separately", () => 
 });
 test("mobile My Trip controls avoid nested scrolling through 430px", () => {
   const css = source("./index.css");
-  assert.match(css, /@media\(max-width:430px\).*saved-trip-entry/s);
+  assert.match(css, /@media\s*\(max-width:\s*430px\)[\s\S]*saved-trip-entry/);
   assert.match(css, /safe-area-inset-bottom/);
   assert.match(css, /saved-place-card/);
   assert.doesNotMatch(css, /saved-places-section[^}]*overflow-y/);

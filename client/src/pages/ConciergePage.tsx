@@ -52,6 +52,9 @@ function summarizeResult(result: ConciergeChatResponse): string {
     return "죄송합니다. 말씀하신 내용을 일정으로 구성하지 못했습니다. 원하는 방문 상황을 조금 더 구체적으로 말씀해 주세요.";
   }
   if (result.visitorMessage) return result.visitorMessage;
+  if (result.distanceInfo) return result.distanceInfo.status === "RESOLVED"
+    ? `${result.distanceInfo.fromLabel}에서 ${result.distanceInfo.toLabel}까지 직선거리로 약 ${result.distanceInfo.distanceMeters}m입니다.`
+    : result.distanceInfo.message || "거리 확인을 위해 출발 장소를 알려주세요.";
   if (result.discovery) {
     const first = result.discovery.entities[0];
     if (first && result.discovery.searchFallback?.used)
@@ -103,6 +106,7 @@ export default function ConciergePage() {
   const [input, setInput] = useState(entryState?.initialMessage || "");
   const [currentTurn, setCurrentTurn] = useState<CurrentTurnResult<ConciergeChatResponse> | null>(null);
   const [conversationAnchor, setConversationAnchor] = useState<NonNullable<CreateContextInput["conversationalAnchor"]> | null>(null);
+  const [discoveryContext, setDiscoveryContext] = useState<CreateContextInput["discoveryContext"]>();
   const currentResultRef = useRef<HTMLDivElement>(null);
   const currentTurnConversationRef = useRef<HTMLDivElement>(null);
   const followCurrentTurnRef = useRef(true);
@@ -139,7 +143,7 @@ export default function ConciergePage() {
   useEffect(() => {
     sessionStorage.setItem(contextSessionKey, contextSessionIdRef.current);
   }, [contextSessionKey]);
-  useEffect(() => setConversationAnchor(null), [region.id]);
+  useEffect(() => { setConversationAnchor(null); setDiscoveryContext(undefined); }, [region.id]);
   useEffect(() => {
     if (tripMode === "PLAN")
       track(
@@ -214,11 +218,12 @@ export default function ConciergePage() {
         regionId: region.id,
         turnId,
         ...(conversationAnchor?.regionId === region.id ? { conversationalAnchor: conversationAnchor } : {}),
+        ...(discoveryContext?.regionId === region.id ? { discoveryContext } : {}),
         ...(hasCompletedTurn ? carriedContext : structuredDraft),
         ...structured,
         ...(text ? { rawMessage: text, inputMode: "FREE_TEXT" as const } : {}),
         contextSessionId: contextSessionIdRef.current,
-        discoveryCategoryHint: currentResult?.discovery?.category as CreateContextInput["discoveryCategoryHint"],
+        discoveryCategoryHint: (discoveryContext?.targetCategory || currentResult?.discovery?.category) as CreateContextInput["discoveryCategoryHint"],
         isFollowup:
           hasCompletedTurn &&
           !/카페|커피|식당|맛집|배고|밥|숙소|호텔|펜션|관광|명소|왜|유래|역사|의미/.test(text),
@@ -276,7 +281,13 @@ export default function ConciergePage() {
         : result.conversationalReference
           ? { ...result.conversationalReference, sourceTurnId: turnId, role: "SUBJECT" as const }
           : null;
-      setConversationAnchor(reference?.regionId === region.id ? reference : null);
+      if (!result.distanceInfo) setConversationAnchor(reference?.regionId === region.id ? reference : null);
+      if (result.discovery && result.discovery.anchorEntityId && referenceEntity) {
+        setDiscoveryContext((previous) => {
+          const same = previous?.regionId === region.id && previous.anchor.entityId === result.discovery!.anchorEntityId && previous.targetCategory === result.discovery!.category;
+          return { regionId: region.id, anchor: { entityId: result.discovery!.anchorEntityId!, label: result.discovery!.anchorLabel, latitude: result.discovery!.anchorLatitude, longitude: result.discovery!.anchorLongitude, source: result.discovery!.anchorEntityId!.startsWith("search:") ? "SEARCH" : "RDM" }, targetCategory: result.discovery!.category as NonNullable<CreateContextInput["discoveryCategoryHint"]>, relation: result.discovery!.relation || "REGIONAL", currentResult: { entityId: referenceEntity.entityId, label: referenceEntity.programLabel || referenceEntity.facilityLabel, latitude: referenceEntity.latitude, longitude: referenceEntity.longitude, source: referenceEntity.operationalEvidence?.source === "SEARCH" ? "SEARCH" : "RDM" }, shownEntityIds: [...new Set([...(same ? previous!.shownEntityIds : []), referenceEntity.entityId])], sourceTurnId: turnId };
+        });
+      } else if (!result.distanceInfo) setDiscoveryContext(undefined);
     } catch (e: any) {
       console.error("[concierge] request failed", e);
       setRequestError(true);
@@ -302,12 +313,15 @@ export default function ConciergePage() {
   const currentResult = currentTurn?.status === "RESOLVED" ? currentTurn.result : undefined;
   const currentIsKnowledge = isExplanationOnly(currentTurn?.requestText || "");
   const hasRecommendation = !currentIsKnowledge && Boolean(currentResult?.recommendation);
-  const hasPrimaryResult = !currentIsKnowledge && Boolean(currentResult?.recommendation || currentResult?.discovery);
+  const hasPrimaryResult = !currentIsKnowledge && Boolean(currentResult?.recommendation || currentResult?.discovery || currentResult?.distanceInfo);
   const latestRecommendation = hasRecommendation ? currentResult : undefined;
   const latestPrimaryResult = hasPrimaryResult ? currentResult : undefined;
   useEffect(() => {
-    if (!input && textInputRef.current) textInputRef.current.style.height = "";
-  }, [input]);
+    const textarea=textInputRef.current;if(!textarea)return;
+    if(!hasCompletedTurn||!input){textarea.style.height="44px";return}
+    textarea.style.height="44px";
+    textarea.style.height=`${Math.min(Math.max(textarea.scrollHeight,44),88)}px`;
+  }, [input,hasCompletedTurn]);
 
   useEffect(() => {
     if (hasPrimaryResult && !hadRecommendationRef.current && followCurrentTurnRef.current) {
@@ -527,6 +541,9 @@ export default function ConciergePage() {
           )}
         </div>
       )}
+      {latestPrimaryResult?.distanceInfo && (
+        <div ref={currentResultRef} className="recommendation-journey-start"><DistanceInfoPanel result={latestPrimaryResult} /></div>
+      )}
       <InstallExperience usefulResult={hasPrimaryResult} />
 
       {(hasCompletedTurn || freeTextOpen) && (
@@ -556,13 +573,7 @@ export default function ConciergePage() {
                 : "예: 가족과 함께 편안하게 힐링할 수 있는 온천 코스를 추천해주세요."
             }
             value={input}
-            onChange={(e) => {
-              setInput(e.target.value);
-              if (hasCompletedTurn) {
-                e.currentTarget.style.height = "auto";
-                e.currentTarget.style.height = `${Math.min(e.currentTarget.scrollHeight, 88)}px`;
-              }
-            }}
+            onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -868,3 +879,5 @@ function PlaceDiscoveryPanel({ result }: { result: ConciergeChatResponse }) {
     </section>
   );
 }
+
+function DistanceInfoPanel({result}:{result:ConciergeChatResponse}){const info=result.distanceInfo!;return <section className="recommendation-section distance-info-result"><h2>거리 확인</h2><p>{info.status==="RESOLVED"?`${info.fromLabel}에서 ${info.toLabel}까지 직선거리로 약 ${info.distanceMeters}m입니다.`:info.message}</p>{info.status==="RESOLVED"&&<p className="text-muted">실제 이동 거리는 선택한 길과 교통수단에 따라 달라질 수 있어요.</p>}</section>}

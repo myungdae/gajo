@@ -35,9 +35,11 @@ import {
   recommendationItemLabel,
 } from "../recommendationItem";
 import TripManagement from "../components/TripManagement";
+import ItineraryItemEditor from "../components/ItineraryItemEditor";
 
 export default function ItineraryPage() {
   const region = useRegion();
+  const [, setRevision] = useState(0);
   const tripSession = ensureTripSession(region.id);
   const regionLink = (path: string) => regionalPath(path, region.id);
   const location = useLocation() as {
@@ -87,6 +89,12 @@ export default function ItineraryPage() {
     if (!updated) return;
     setSavedPlaces(savedPlaceItems(updated));
     track("SAVED_PLACE_REMOVED", updated.id, { entityId });
+  };
+  const applyPartialEdit = (session:any) => {
+    const itinerary=session.itinerary;
+    setResult((current:any)=>({...current,recommendation:{...current.recommendation,itinerary}}));
+    setRevision(value=>value+1);
+    track("FULL_ITINERARY_UPDATED",session.id,{journeyId:itinerary?.journeyId||itinerary?.itineraryNo||"saved",itemCount:itinerary?.steps?.length||0,editScope:"single-item"});
   };
   if (!hasFullJourney && savedPlaces.length)
     return (
@@ -456,6 +464,7 @@ export default function ItineraryPage() {
                   .filter((step: any) => (Number(step.dayIndex) || 1) === day)
                   .map((step: any, i: number) => (
                     <div
+                      className="editable-itinerary-item"
                       id={`itinerary-${canonicalEntityId(step)}`}
                       key={step.itemId || step.programUri || step.entityId || i}
                     >
@@ -464,6 +473,7 @@ export default function ItineraryPage() {
                         index={i}
                         execution
                       />
+                      <ItineraryItemEditor step={step} index={itinerarySteps.indexOf(step)} total={itinerarySteps.length} regionId={region.id} onChanged={applyPartialEdit}/>
                     </div>
                   ))}
               </section>

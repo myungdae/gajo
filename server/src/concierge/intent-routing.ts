@@ -1,5 +1,110 @@
-export type IntentRoute='JOURNEY_PLAN'|'PLACE_DISCOVERY'|'IMMEDIATE_NOW'|'REPLAN';
-export type DiscoveryCategory='FOOD'|'CAFE'|'LODGING'|'HOT_SPRING_WELLNESS'|'ACTIVITY'|'TOURISM_NATURE'|'CONVENIENCE';
-const CATEGORY_PATTERNS:[DiscoveryCategory,RegExp][]=[['LODGING',/숙박|숙소|호텔|모텔|펜션|민박|한옥|리조트|글램핑|캠핑|야영|오토\s*캠핑|카라반|자연\s*휴양림/],['CAFE',/카페|커피(?:\s*한\s*잔)?|다방|차\s*(?:한\s*잔|마실)/],['HOT_SPRING_WELLNESS',/온천|사우나|찜질(?:방)?|스파|목욕(?:탕|시설)?/],['ACTIVITY',/놀거리|체험|레저|실내\s*체험/],['TOURISM_NATURE',/산책|관광|공원|명소|볼\s*만한|갈\s*곳|다\s*봤|이제\s*어디/],['CONVENIENCE',/편의점|약국|병원/],['FOOD',/식당|맛집|밥집|배고|밥\s*(?:먹|을)|먹을\s*(?:곳|데)|저녁\s*먹|점심\s*먹|음식점|식사/]];
-export function discoveryCategory(message=''){return CATEGORY_PATTERNS.map(([category,pattern])=>({category,index:message.search(pattern)})).filter(x=>x.index>=0).sort((a,b)=>b.index-a.index)[0]?.category}
-export function routeNaturalLanguageIntent(input:{rawMessage?:string;inputMode?:string;isFollowup?:boolean;discoveryCategoryHint?:DiscoveryCategory}){const message=input.rawMessage?.trim()||'',explicitCategory=discoveryCategory(message),category=explicitCategory||(input.isFollowup&&/다른\s*(?:곳|데)|또\s*(?:다른)?/.test(message)?input.discoveryCategoryHint:undefined),nearbyRelation=/주변|근처|가까|인근/.test(message),relationalReference=/거기|그곳|그중|그\s*(?:근처|주변|카페|식당|숙소)/.test(message)&&/주변|근처|가까|거기서|그중/.test(message);if(input.isFollowup&&category&&(!explicitCategory||relationalReference||nearbyRelation))return{intentRoute:'PLACE_DISCOVERY' as const,category};if(input.isFollowup)return{intentRoute:'REPLAN' as const,category};if(input.inputMode!=='FREE_TEXT'||!message)return{intentRoute:'JOURNEY_PLAN' as const,category};if(/지금|현재\s*위치|내\s*주변|오늘\s*(?:저녁|점심|아침|갈|먹)/.test(message))return{intentRoute:'IMMEDIATE_NOW' as const,category};const journey=/\d+박\s*\d+일|당일\s*여행|(?:하루|내일).{0,8}(?:일정|코스)|일정\s*(?:짜|만들|추천)|여행\s*(?:짜|계획)|코스\s*(?:짜|만들)|(?:보고|갔다가|들렀다가|먹고).{0,30}(?:보고|갔다가|들렀다가|먹고|펜션|숙소)/.test(message);if(journey)return{intentRoute:'JOURNEY_PLAN' as const,category};if(category&&/주변|근처|가까운|인근|알려|찾아|추천|어디|먹을\s*(?:곳|데)|가고\s*싶|가기\s*좋|편한|갈\s*만한|(?:아이와|부모님과)?\s*갈\s+(?:실내\s*)?(?:체험|카페|식당)/.test(message))return{intentRoute:'PLACE_DISCOVERY' as const,category};return{intentRoute:'JOURNEY_PLAN' as const,category}}
+export type IntentRoute =
+  | 'JOURNEY_PLAN'
+  | 'PLACE_DISCOVERY'
+  | 'DISTANCE_INFO'
+  | 'IMMEDIATE_NOW'
+  | 'REPLAN';
+export type DiscoveryCategory =
+  | 'FOOD'
+  | 'CAFE'
+  | 'LODGING'
+  | 'HOT_SPRING_WELLNESS'
+  | 'ACTIVITY'
+  | 'TOURISM_NATURE'
+  | 'CONVENIENCE';
+const CATEGORY_PATTERNS: [DiscoveryCategory, RegExp][] = [
+  [
+    'LODGING',
+    /숙박|숙소|호텔|모텔|펜션|민박|한옥|리조트|글램핑|캠핑|야영|오토\s*캠핑|카라반|자연\s*휴양림/,
+  ],
+  ['CAFE', /카페|커피(?:\s*한\s*잔)?|다방|차\s*(?:한\s*잔|마실)/],
+  ['HOT_SPRING_WELLNESS', /온천|사우나|찜질(?:방)?|스파|목욕(?:탕|시설)?/],
+  ['ACTIVITY', /놀거리|체험|레저|실내\s*체험/],
+  [
+    'TOURISM_NATURE',
+    /산책|관광|공원|명소|볼\s*만한|갈\s*곳|다\s*봤|이제\s*어디/,
+  ],
+  ['CONVENIENCE', /편의점|약국|병원/],
+  [
+    'FOOD',
+    /식당|맛집|밥집|배고|밥\s*(?:먹|을)|먹을\s*(?:곳|데)|저녁\s*먹|점심\s*먹|음식점|식사/,
+  ],
+];
+export function discoveryCategory(message = '') {
+  return CATEGORY_PATTERNS.map(([category, pattern]) => ({
+    category,
+    index: message.search(pattern),
+  }))
+    .filter((x) => x.index >= 0)
+    .sort((a, b) => b.index - a.index)[0]?.category;
+}
+export function routeNaturalLanguageIntent(input: {
+  rawMessage?: string;
+  inputMode?: string;
+  isFollowup?: boolean;
+  discoveryCategoryHint?: DiscoveryCategory;
+}) {
+  const message = input.rawMessage?.trim() || '',
+    explicitCategory = discoveryCategory(message),
+    alternative =
+      /다른\s*(?:곳|데)|더\s*가까운\s*(?:곳|데)|첫\s*번째\s*말고|그럼\s*두\s*번째/.test(
+        message,
+      ),
+    category =
+      explicitCategory ||
+      (input.isFollowup && alternative
+        ? input.discoveryCategoryHint
+        : undefined),
+    nearbyRelation = /주변|근처|가까|인근/.test(message),
+    categoryOverride = Boolean(
+      explicitCategory &&
+      (/아니/.test(message) || /(?:은|는)\??$/.test(message)),
+    ),
+    relationalReference =
+      /거기|그곳|그중|그\s*(?:근처|주변|카페|식당|숙소)/.test(message) &&
+      /주변|근처|가까|거기서|그중/.test(message);
+  if (
+    input.isFollowup &&
+    /거긴?\s*멀|얼마나\s*멀|거리(?:는|가|를)?/.test(message)
+  )
+    return { intentRoute: 'DISTANCE_INFO' as const, category };
+  if (
+    input.isFollowup &&
+    category &&
+    (!explicitCategory ||
+      relationalReference ||
+      nearbyRelation ||
+      categoryOverride)
+  )
+    return {
+      intentRoute: 'PLACE_DISCOVERY' as const,
+      category,
+      ...(alternative
+        ? {
+            alternative: true,
+            preferCloser: /더\s*가까운/.test(message),
+            selectionIndex: /두\s*번째/.test(message) ? 1 : undefined,
+          }
+        : {}),
+    };
+  if (input.isFollowup) return { intentRoute: 'REPLAN' as const, category };
+  if (input.inputMode !== 'FREE_TEXT' || !message)
+    return { intentRoute: 'JOURNEY_PLAN' as const, category };
+  if (
+    /지금|현재\s*위치|내\s*주변|오늘\s*(?:저녁|점심|아침|갈|먹)/.test(message)
+  )
+    return { intentRoute: 'IMMEDIATE_NOW' as const, category };
+  const journey =
+    /\d+박\s*\d+일|당일\s*여행|(?:하루|내일).{0,8}(?:일정|코스)|일정\s*(?:짜|만들|추천)|여행\s*(?:짜|계획)|코스\s*(?:짜|만들)|(?:보고|갔다가|들렀다가|먹고).{0,30}(?:보고|갔다가|들렀다가|먹고|펜션|숙소)/.test(
+      message,
+    );
+  if (journey) return { intentRoute: 'JOURNEY_PLAN' as const, category };
+  if (
+    category &&
+    /주변|근처|가까운|인근|알려|찾아|추천|어디|아니|먹을\s*(?:곳|데)|가고\s*싶|가기\s*좋|편한|갈\s*만한|(?:아이와|부모님과)?\s*갈\s+(?:실내\s*)?(?:체험|카페|식당)/.test(
+      message,
+    )
+  )
+    return { intentRoute: 'PLACE_DISCOVERY' as const, category };
+  return { intentRoute: 'JOURNEY_PLAN' as const, category };
+}

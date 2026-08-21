@@ -95,7 +95,9 @@ export class ConciergeService {
       };
     }
 
-    if((route.intentRoute==='PLACE_DISCOVERY'||route.intentRoute==='IMMEDIATE_NOW')&&route.category&&this.placeDiscovery){const discovery=await this.placeDiscovery.discover(input.regionId||'gajo',route.category,input.rawMessage||'',context);return{context,evidence,firedRules,recommendation:null,discovery,intentRoute:route.intentRoute,nearbyRestaurantIntent:false,nearbyDiscoveryIntent:false,nearbyCategory:route.category}}
+    if(route.intentRoute==='DISTANCE_INFO'&&this.placeDiscovery){const distanceInfo=await this.placeDiscovery.distanceInfo(input.regionId||'gajo',context);return{context,evidence,firedRules,recommendation:null,distanceInfo,intentRoute:route.intentRoute,nearbyRestaurantIntent:false,nearbyDiscoveryIntent:false}}
+
+    if((route.intentRoute==='PLACE_DISCOVERY'||route.intentRoute==='IMMEDIATE_NOW')&&route.category&&this.placeDiscovery){const followup:any=route;const discovery=await this.placeDiscovery.discover(input.regionId||'gajo',route.category,input.rawMessage||'',{...context,discoveryAlternative:followup.alternative,preferCloser:followup.preferCloser,selectionIndex:followup.selectionIndex});return{context,evidence,firedRules,recommendation:null,discovery,intentRoute:route.intentRoute,nearbyRestaurantIntent:false,nearbyDiscoveryIntent:false,nearbyCategory:route.category}}
 
     if (!context.operationUri) {
       return {

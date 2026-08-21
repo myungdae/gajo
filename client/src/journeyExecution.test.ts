@@ -215,5 +215,5 @@ test("shared add UI is wired into EntityActions and Place Discovery", () => {
     item,
     /anchor:\s*\{[\s\S]*entityId,[\s\S]*label:\s*name,[\s\S]*latitude:\s*destination\.latitude,[\s\S]*longitude:\s*destination\.longitude/,
   );
-  assert.match(css, /@media\(max-width:430px\).*entity-add-secondary/);
+  assert.match(css, /@media\s*\(max-width:\s*430px\)[\s\S]*entity-add-secondary/);
 });

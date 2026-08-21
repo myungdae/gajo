@@ -70,7 +70,7 @@ export function normalizeNearbyCategory(name: string, providerCategory = '', cod
   const text = `${name} ${providerCategory}`;
   if (code === 'CE7' || /카페|커피|다방/.test(text)) return 'CAFE';
   if (code === 'AD5' || /호텔|모텔|펜션|민박|숙박|리조트/.test(text)) return 'LODGING';
-  if (/온천|사우나|찜질|스파|웰니스/.test(text)) return 'HOT_SPRING_WELLNESS';
+  if (/온천|사우나|찜질|스파|웰니스|spa/i.test(text)) return 'HOT_SPRING_WELLNESS';
   if (/스크린\s*골프|골프연습장/.test(text)) return 'GOLF_SCREEN_GOLF';
   if (code === 'AT4' || /관광|공원|산책|자연|명소/.test(text)) return 'TOURISM_NATURE';
   if (['CS2', 'PM9', 'HP8'].includes(code) || /편의점|약국|병원/.test(text)) return 'CONVENIENCE';

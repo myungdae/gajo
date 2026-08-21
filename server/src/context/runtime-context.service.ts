@@ -20,6 +20,7 @@ import { ContextExtractionGateway } from './context-extraction.gateway';
 export interface CreateContextInput {
   turnId?: string;
   conversationalAnchor?: { entityId: string; regionId: string; label?: string; entityType?: string; category?: string; latitude?: number; longitude?: number; source?: 'RDM'|'SEARCH'; sourceTurnId: string; role: 'RESULT'|'SUBJECT'|'SELECTED' };
+  discoveryContext?: { regionId: string; anchor: { entityId: string; label?: string; latitude?: number; longitude?: number; source?: 'RDM'|'SEARCH' }; targetCategory: 'FOOD'|'CAFE'|'LODGING'|'HOT_SPRING_WELLNESS'|'ACTIVITY'|'TOURISM_NATURE'|'CONVENIENCE'; relation: 'NEARBY'|'REGIONAL'; currentResult?: { entityId: string; label?: string; latitude?: number; longitude?: number; source?: 'RDM'|'SEARCH' }; shownEntityIds: string[]; sourceTurnId: string };
   regionId?: string;
   duration?: string;
   mustVisitPlaces?: { entityId?: string; label: string; resolved: boolean }[];
@@ -52,7 +53,7 @@ export interface CreateContextInput {
   contextSessionId?: string;
   inputMode?: 'STRUCTURED' | 'FREE_TEXT';
   isFollowup?: boolean;
-  discoveryCategoryHint?: 'FOOD'|'CAFE'|'LODGING'|'ACTIVITY'|'TOURISM_NATURE'|'CONVENIENCE';
+  discoveryCategoryHint?: 'FOOD'|'CAFE'|'LODGING'|'HOT_SPRING_WELLNESS'|'ACTIVITY'|'TOURISM_NATURE'|'CONVENIENCE';
   activityPreferences?: string[];
 }
 
@@ -269,7 +270,7 @@ export class RuntimeContextService {
     });
 
     return {
-      context: { ...doc.toObject(), conversationalAnchor: input.conversationalAnchor, turnId: input.turnId, latitude: input.latitude, longitude: input.longitude, locationAccuracy: input.locationAccuracy, locationObservedAt: input.locationObservedAt, locationStatus: input.locationStatus },
+      context: { ...doc.toObject(), conversationalAnchor: input.conversationalAnchor, discoveryContext: input.discoveryContext, turnId: input.turnId, latitude: input.latitude, longitude: input.longitude, locationAccuracy: input.locationAccuracy, locationObservedAt: input.locationObservedAt, locationStatus: input.locationStatus },
       evidence: expansion.evidence,
       firedRules,
     };

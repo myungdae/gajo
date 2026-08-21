@@ -16,6 +16,7 @@ export interface CompanionInput {
 export interface CreateContextInput {
   turnId?: string;
   conversationalAnchor?: { entityId: string; regionId: string; label?: string; entityType?: string; category?: string; latitude?: number; longitude?: number; source?: 'RDM'|'SEARCH'; sourceTurnId: string; role: 'RESULT'|'SUBJECT'|'SELECTED' };
+  discoveryContext?: { regionId: string; anchor: { entityId: string; label?: string; latitude?: number; longitude?: number; source?: 'RDM'|'SEARCH' }; targetCategory: 'FOOD'|'CAFE'|'LODGING'|'HOT_SPRING_WELLNESS'|'ACTIVITY'|'TOURISM_NATURE'|'CONVENIENCE'; relation: 'NEARBY'|'REGIONAL'; currentResult?: { entityId: string; label?: string; latitude?: number; longitude?: number; source?: 'RDM'|'SEARCH' }; shownEntityIds: string[]; sourceTurnId: string };
   regionId?: string;
   mustVisitPlaces?: Array<{ entityId?: string; label: string; resolved: boolean }>;
   accommodationIntents?: Array<{ entityId?: string; label: string; resolved: boolean }>;
@@ -105,8 +106,9 @@ export interface ConciergeChatResponse {
   nearbyDiscoveryIntent?: boolean;
   nearbyCategory?: NearbyCategory;
   visitorMessage?: string;
-  intentRoute?: 'JOURNEY_PLAN'|'PLACE_DISCOVERY'|'IMMEDIATE_NOW'|'REPLAN';
-  discovery?:{regionId:string;category:string;anchorEntityId?:string;anchorLabel?:string;relation?:'NEARBY'|'REGIONAL';targetCategory?:string;searchFallback?:{used:boolean;source:string;evidenceRetention:string};entities:any[]};
+  intentRoute?: 'JOURNEY_PLAN'|'PLACE_DISCOVERY'|'DISTANCE_INFO'|'IMMEDIATE_NOW'|'REPLAN';
+  discovery?:{regionId:string;category:string;anchorEntityId?:string;anchorLabel?:string;anchorLatitude?:number;anchorLongitude?:number;relation?:'NEARBY'|'REGIONAL';targetCategory?:string;searchFallback?:{used:boolean;source:string;evidenceRetention:string};entities:any[]};
+  distanceInfo?:{status:'RESOLVED'|'NEEDS_CLARIFICATION';message?:string;regionId?:string;fromEntityId?:string;fromLabel?:string;toEntityId?:string;toLabel?:string;distanceMeters?:number;calculation?:string};
   conversationalReference?: CreateContextInput['conversationalAnchor'];
   domainResult?: { status: 'OUT_OF_SERVICE_AREA'; destination: string; region: string };
 }
