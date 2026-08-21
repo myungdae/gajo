@@ -61,6 +61,50 @@ export const ENTITY_ALIGNMENTS = [
     status: 'POSSIBLE',
     evidence: ['RDM alias matches but canonical scope differs'],
   },
+  {
+    exkoUri: exko + '옥천구읍',
+    regionalEntityId: 'https://okcheon.example/ontology#oldTownArea',
+    regionId: 'okcheon',
+    status: 'EXACT',
+    evidence: ['exact canonical area identity', 'official Okcheon 9경 source'],
+  },
+  {
+    exkoUri: exko + '정지용_생가',
+    regionalEntityId: 'https://okcheon.example/ontology#jeongJiyongBirthplace',
+    regionId: 'okcheon',
+    status: 'EXACT',
+    evidence: ['exact normalized name', 'official county cultural source'],
+  },
+  {
+    exkoUri: exko + '정지용문학관',
+    regionalEntityId:
+      'https://okcheon.example/ontology#jeongJiyongLiteratureMuseum',
+    regionId: 'okcheon',
+    status: 'EXACT',
+    evidence: ['exact canonical name', 'official county cultural source'],
+  },
+  {
+    exkoUri: exko + '육영수_생가',
+    regionalEntityId: 'https://okcheon.example/ontology#yukYoungsooBirthplace',
+    regionId: 'okcheon',
+    status: 'EXACT',
+    evidence: ['exact normalized name', 'official county tourism source'],
+  },
+  {
+    exkoUri: exko + '옥천전통문화체험관',
+    regionalEntityId:
+      'https://okcheon.example/ontology#traditionalCultureExperienceCenter',
+    regionId: 'okcheon',
+    status: 'EXACT',
+    evidence: ['exact canonical name', 'official county facility source'],
+  },
+  {
+    exkoUri: exko + '대박집',
+    regionalEntityId: 'https://okcheon.example/ontology#daebakRestaurant',
+    regionId: 'okcheon',
+    status: 'EXACT',
+    evidence: ['exact canonical name', 'official county designated-food list'],
+  },
 ] as const;
 export const ACCOMMODATION_ALIGNMENTS = [
   { exkoUri: exko + '숙박', regionalType: 'ACCOMMODATION', relation: 'exact' },

@@ -1,6 +1,19 @@
 import { GuideService } from './guide.service';
 import { GUIDE_KNOWLEDGE } from './guide-knowledge';
 describe('public Concierge Guide Copilot', () => {
+  it.each(['EXKO가 뭐예요?', '일반 검색과 관계 기반 AI가 뭐가 다른가요?'])(
+    'explains the internal semantic layer safely for %s',
+    (question) => {
+      const answer: any = new GuideService().answer(
+        { question, audience: 'GENERAL' },
+        'exko-explanation',
+      );
+      expect(answer.answer).toContain('관계 기반 AI');
+      expect(answer.answer).toContain('내부 플랫폼 계층');
+      expect(answer.answer).toContain('운영정보');
+      expect(answer.answer).not.toContain('공개 제품');
+    },
+  );
   it('answers Okcheon status without claiming public production completion', () => {
     const answer: any = new GuideService().answer(
       { question: '옥천에서도 되나요?' },

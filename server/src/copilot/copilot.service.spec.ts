@@ -108,6 +108,39 @@ const evidence = {
 };
 
 describe('Regional Copilot Phase 1', () => {
+  it('exposes semantic diagnostics read-only within the assigned region', async () => {
+    const regionalData = regional();
+    regionalData.rows.push({
+      regionId: 'okcheon',
+      entityUri: 'okcheon:place',
+      lifecycleStatus: 'ACTIVE',
+    });
+    const exko = {
+        semanticDiagnostics: jest.fn(() => ({
+          regionId: 'okcheon',
+          nodeCount: 13,
+          relationCount: 20,
+        })),
+      },
+      service = new CopilotService(
+        candidateModel() as any,
+        regionalData as any,
+        undefined,
+        exko as any,
+      ),
+      okcheonManager = {
+        sub: 'manager-o',
+        username: 'okcheon-manager',
+        role: 'REGIONAL_MANAGER' as const,
+        regions: ['okcheon'],
+      };
+    await expect(
+      service.semanticDiagnostics(okcheonManager, 'okcheon'),
+    ).resolves.toMatchObject({ nodeCount: 13, relationCount: 20 });
+    await expect(
+      service.semanticDiagnostics(manager, 'okcheon'),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
   it('builds calculated Okcheon workbench priorities and enforces manager region scope for field decisions', async () => {
     const model = candidateModel(),
       readiness = {

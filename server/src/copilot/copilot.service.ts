@@ -23,6 +23,7 @@ import {
 import { INITIAL_CORE_DESTINATIONS } from './core-destination.config';
 import { isDiscoveryEligible } from '../concierge/discovery-eligibility';
 import okcheonEssentialShopping from '../../operations/okcheon-essential-shopping.search-candidates.json';
+import { ExkoSemanticAdapter } from '../exko-semantic/exko-semantic.service';
 
 @Injectable()
 export class CopilotService implements OnModuleInit {
@@ -33,6 +34,7 @@ export class CopilotService implements OnModuleInit {
     @Optional()
     @InjectModel(CoreDestination.name)
     private cores?: Model<CoreDestinationDocument>,
+    @Optional() private readonly exko?: ExkoSemanticAdapter,
   ) {}
   async onModuleInit() {
     for (const candidate of okcheonEssentialShopping)
@@ -299,6 +301,23 @@ export class CopilotService implements OnModuleInit {
   ) {
     assertCopilotAccess(user, regionId);
     return this.regional.operationalEntity(regionId, canonicalEntityId);
+  }
+  async semanticDiagnostics(user: CopilotPrincipal, regionId: string) {
+    assertCopilotAccess(user, regionId);
+    const dataset = await this.regional.effectiveDataset(regionId);
+    return (
+      this.exko?.semanticDiagnostics(regionId, dataset?.records || []) || {
+        regionId,
+        nodeCount: 0,
+        relationCount: 0,
+        alignedRdmEntities: [],
+        semanticNodesWithoutRdm: [],
+        brokenAlignments: [],
+        unsupportedRelationships: [],
+        ambiguousAliases: [],
+        provenanceCoverage: 0,
+      }
+    );
   }
   async proposeOperationalEvidence(
     user: CopilotPrincipal,

@@ -19,4 +19,20 @@ export class ExkoSemanticController {
       Number(depth) || 1,
     );
   }
+  @Get(':regionId/subgraph') regionalSubgraph(
+    @Param('regionId') regionId: string,
+  ) {
+    return this.adapter.getRegionalSubgraph(regionId);
+  }
+  @Get(':regionId/entity/:uri') regionalEntity(
+    @Param('regionId') regionId: string,
+    @Param('uri') uri: string,
+    @Query('depth') depth?: string,
+  ) {
+    return this.adapter.getSemanticNeighborhood(
+      decodeURIComponent(uri),
+      regionId,
+      Number(depth) || 1,
+    );
+  }
 }

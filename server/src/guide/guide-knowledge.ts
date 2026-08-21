@@ -30,6 +30,30 @@ const item = (
 
 export const GUIDE_KNOWLEDGE: GuideKnowledge[] = [
   item({
+    intent: 'EXKO_EXPLANATION',
+    audiences: ['GENERAL', 'VISITOR', 'PUBLIC_SECTOR'],
+    patterns: [
+      /EXKO.*(?:뭐|무엇|설명)|엑스코.*(?:뭐|무엇|설명)/i,
+      /일반\s*검색.*관계\s*기반|관계\s*기반\s*AI.*검색/i,
+    ],
+    shortAnswer:
+      '검색은 이름이 맞는 장소를 찾는 데 강하고, 관계 기반 AI는 사람·장소·문화·음식이 어떻게 연결되는지를 이해해 여행의 흐름을 만드는 데 도움을 줍니다. EXKO는 이런 관계를 다루는 내부 플랫폼 계층입니다. 실제 길찾기나 전화 같은 행동은 EXKO가 결정하지 않고, 지역 관리자가 확인한 운영정보와 현재 여행 상황을 다시 확인한 뒤에만 제공합니다.',
+    supportingConcepts: [
+      'semantic relationships',
+      'RDM action safety',
+      'runtime context',
+    ],
+    allowedClaims: [
+      'EXKO는 내부 관계 계층',
+      '검색과 관계 기반 이해의 역할 차이',
+      '운영 행동은 RDM 안전 경계 적용',
+    ],
+    relatedQuestions: [
+      '관계 기반 AI가 여행을 어떻게 만들어요?',
+      '관계가 있으면 바로 길찾기할 수 있나요?',
+    ],
+  }),
+  item({
     intent: 'OKCHEON_STATUS',
     audiences: ['GENERAL', 'VISITOR', 'PUBLIC_SECTOR'],
     patterns: [/옥천.*(?:되나요|되나|지원|사용|쓸\s*수)|옥천에서도/],

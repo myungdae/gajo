@@ -61,6 +61,12 @@ export class CopilotController {
   ) {
     return this.service.operationalWorkbench(req.copilotUser, regionId, filter);
   }
+  @Get('semantic-diagnostics') @UseGuards(CopilotAuthGuard) semanticDiagnostics(
+    @Req() req: any,
+    @Query('regionId') regionId: string,
+  ) {
+    return this.service.semanticDiagnostics(req.copilotUser, regionId);
+  }
   @Get('operational-entity') @UseGuards(CopilotAuthGuard) operationalEntity(
     @Req() req: any,
     @Query('regionId') regionId: string,
@@ -156,6 +162,38 @@ export class CopilotController {
       return (
         await this.service.operationalWorkbench(req.copilotUser, regionId)
       ).essentialShopping;
+    if (/RDM.*연결.*안|연결\s*안\s*된/.test(q)) {
+      const diagnostic = await this.service.semanticDiagnostics(
+        req.copilotUser,
+        regionId,
+      );
+      return diagnostic.semanticNodesWithoutRdm;
+    }
+    if (/옥천구읍.*관계/.test(q)) {
+      const diagnostic = await this.service.semanticDiagnostics(
+        req.copilotUser,
+        regionId,
+      );
+      return [
+        {
+          taskId: `semantic:${regionId}:old-town`,
+          type: 'SEMANTIC_DIAGNOSTIC',
+          reason:
+            '옥천구읍 관계는 의미 연결이며 자식 장소의 운영 행동을 상속하지 않습니다.',
+          status: 'READ_ONLY',
+          diagnostic,
+        },
+      ];
+    }
+    if (/음식\s*개념.*식당.*연결.*없는/.test(q)) {
+      const diagnostic = await this.service.semanticDiagnostics(
+        req.copilotUser,
+        regionId,
+      );
+      return diagnostic.semanticNodesWithoutRdm.filter(
+        (x: any) => x.type === 'FOOD_CONCEPT',
+      );
+    }
     if (/미검증/.test(q))
       return tasks.filter(
         (x) =>
