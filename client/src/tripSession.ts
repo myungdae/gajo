@@ -36,6 +36,8 @@ export interface TripSession {
 }
 const key = (regionId: string) =>
   `regional-concierge-trip-session-v1:${regionId}`;
+const archivePrefix = (regionId: string) =>
+  `regional-concierge-trip-archive-v1:${regionId}:`;
 const privacySafe = (value: unknown) =>
   JSON.parse(
     JSON.stringify(value, (name, field) =>
@@ -136,6 +138,53 @@ export function archiveAndStartNewTrip(
       JSON.stringify(privacySafe(current)),
     );
   return saveTripSession(createTripSession(regionId), storage);
+}
+export function updateTripRuntimeContext(
+  regionId: string,
+  runtimeContext: any,
+  storage: Pick<Storage, "getItem" | "setItem"> = localStorage,
+) {
+  const current = loadTripSession(storage, regionId);
+  if (!current) return undefined;
+  return saveTripSession({ ...current, runtimeContext }, storage);
+}
+export interface TripRestorationDiagnostics {
+  regionId: string;
+  activeStorageKey: string;
+  activeAnonymousTripId?: string;
+  hasStructuredJourney: boolean;
+  savedPlaceCount: number;
+  archiveCount?: number;
+  activeSessionPointer: "REGIONAL_STORAGE_KEY";
+  restorationSource: "LOCAL" | "SESSION_FALLBACK" | "EMPTY";
+  uiState: "CONTINUE" | "EMPTY";
+}
+export function tripRestorationDiagnostics(
+  regionId: string,
+  storage: Pick<Storage, "getItem" | "setItem"> &
+    Partial<Pick<Storage, "length" | "key">> = localStorage,
+): TripRestorationDiagnostics {
+  const storageKey = key(regionId),
+    localValue = storage.getItem(storageKey),
+    session = loadTripSession(storage, regionId),
+    length = typeof storage.length === "number" ? storage.length : undefined;
+  let archiveCount: number | undefined;
+  if (length !== undefined && typeof storage.key === "function") {
+    archiveCount = 0;
+    for (let index = 0; index < length; index += 1)
+      if (storage.key(index)?.startsWith(archivePrefix(regionId))) archiveCount += 1;
+  }
+  return {
+    regionId,
+    activeStorageKey: storageKey,
+    activeAnonymousTripId: session?.anonymousTripId,
+    hasStructuredJourney: Boolean((session?.itinerary as any)?.steps?.length),
+    savedPlaceCount: session?.savedPlaces?.length || 0,
+    archiveCount,
+    activeSessionPointer: "REGIONAL_STORAGE_KEY",
+    restorationSource: session ? (localValue ? "LOCAL" : "SESSION_FALLBACK") : "EMPTY",
+    uiState: hasSavedTrip(session) ? "CONTINUE" : "EMPTY",
+  };
 }
 export function safeTripState(session: TripSession) {
   return privacySafe(session);

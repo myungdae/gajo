@@ -12,7 +12,8 @@ export default function SavedTripEntry() {
   const region = useRegion(),
     navigate = useNavigate(),
     session = ensureTripSession(region.id),
-    [starting, setStarting] = useState(false);
+    [starting, setStarting] = useState(false),
+    [confirming, setConfirming] = useState(false);
   if (!hasSavedTrip(session)) return null;
   const load = () => {
     track("SAVED_TRIP_LOADED", session.id, { source: "planning-entry" });
@@ -34,12 +35,21 @@ export default function SavedTripEntry() {
         <button
           type="button"
           className="btn btn-outline"
-          onClick={start}
+          onClick={() => setConfirming(true)}
           disabled={starting}
         >
           {starting ? "새 일정 준비 중…" : "새 일정 만들기"}
         </button>
       </div>
+      {confirming && (
+        <div role="alertdialog" aria-labelledby="saved-entry-new-trip-title">
+          <strong id="saved-entry-new-trip-title">현재 여행은 보관하고 새 여행을 시작할까요?</strong>
+          <div className="grid-2">
+            <button type="button" className="btn btn-primary" onClick={start}>새 여행 시작</button>
+            <button type="button" className="btn btn-outline" onClick={() => setConfirming(false)}>취소</button>
+          </div>
+        </div>
+      )}
       <small>새 일정을 시작해도 이전 여행은 보관됩니다.</small>
     </section>
   );

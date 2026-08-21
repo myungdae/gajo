@@ -10,6 +10,8 @@ import {
   loadTripSession,
   safeTripState,
   saveTripSession,
+  hasSavedTrip,
+  tripRestorationDiagnostics,
   type TripSession,
 } from "../tripSession";
 import { itineraryItemCount, reconcileTrip } from "../tripContinuity";
@@ -21,13 +23,18 @@ export default function TripContinuity() {
     navigate = useNavigate(),
     [trip, setTrip] = useState<TripSession>(),
     [visible, setVisible] = useState(false),
+    [confirmingNew, setConfirmingNew] = useState(false),
     home = location.pathname === "/" || location.pathname === `/${region.id}`;
   useEffect(() => {
     if (!home) return;
     let live = true;
-    const local = ensureTripSession(region.id),
-      seen = `regional-trip-return-shown-v1:${region.id}:${local.anonymousTripId}`;
-    if (sessionStorage.getItem(seen)) return;
+    const local = ensureTripSession(region.id);
+    if (hasSavedTrip(local)) {
+      setTrip(local);
+      setVisible(true);
+    }
+    if (import.meta.env.DEV)
+      console.debug("[trip-restoration]", tripRestorationDiagnostics(region.id));
     const restore = async () => {
       let restored = local,
         source = "local";
@@ -47,7 +54,6 @@ export default function TripContinuity() {
         }).catch(() => undefined);
       }
       if (!live || !itineraryItemCount(restored)) return;
-      sessionStorage.setItem(seen, "1");
       setTrip(restored);
       setVisible(true);
       track("TRIP_RESTORED", restored.id, {
@@ -105,17 +111,25 @@ export default function TripContinuity() {
         </button>
         <button
           className="btn btn-text"
-          onClick={() => {
-            const next = archiveAndStartNewTrip(region.id);
-            track("NEW_TRIP_STARTED", next.id, {
-              previousTripId: trip.anonymousTripId,
-            });
-            setVisible(false);
-          }}
+          onClick={() => setConfirmingNew(true)}
         >
           새 여행 시작
         </button>
       </div>
+      {confirmingNew && (
+        <div role="alertdialog" aria-labelledby="continuity-new-trip-title">
+          <strong id="continuity-new-trip-title">현재 여행은 보관하고 새 여행을 시작할까요?</strong>
+          <div className="grid-2">
+            <button className="btn btn-primary" onClick={() => {
+              const next = archiveAndStartNewTrip(region.id);
+              track("NEW_TRIP_STARTED", next.id, { previousTripId: trip.anonymousTripId });
+              setConfirmingNew(false);
+              setVisible(false);
+            }}>새 여행 시작</button>
+            <button className="btn btn-outline" onClick={() => setConfirmingNew(false)}>취소</button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
