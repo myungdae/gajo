@@ -34,6 +34,7 @@ import {
   canonicalEntityId,
   recommendationItemLabel,
 } from "../recommendationItem";
+import TripManagement from "../components/TripManagement";
 
 export default function ItineraryPage() {
   const region = useRegion();
@@ -94,13 +95,14 @@ export default function ItineraryPage() {
           <h1>내 여행</h1>
           <p>담아둔 곳에서 오늘 가고 싶은 장소를 자유롭게 선택하세요.</p>
         </header>
+        <TripManagement onSavedPlacesCleared={setSavedPlaces} />
         <SavedPlacesSection places={savedPlaces} onRemove={removePlace} />
       </div>
     );
 
   if (!result || !result.recommendation) {
     return (
-      <div className="card">
+      <div><TripManagement onSavedPlacesCleared={setSavedPlaces} /><div className="card">
         <h2>표시할 일정이 없습니다</h2>
         <p style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
           AI 컨시어지와 대화하여 맞춤 일정을 먼저 생성해주세요.
@@ -111,7 +113,7 @@ export default function ItineraryPage() {
         >
           AI 컨시어지로 이동
         </button>
-      </div>
+      </div></div>
     );
   }
 
@@ -264,6 +266,7 @@ export default function ItineraryPage() {
 
   return (
     <div>
+      <TripManagement onSavedPlacesCleared={setSavedPlaces} />
       <div className="card">
         <h2>추천 근거 요약</h2>
         <p style={{ fontSize: 13 }}>{rec.reasonSummary}</p>

@@ -47,6 +47,22 @@ export function removeSavedPlace(
     storage,
   );
 }
+export function clearRegionalSavedPlaces(
+  regionId: string,
+  storage: Pick<Storage, "getItem" | "setItem"> = localStorage,
+) {
+  const session = loadTripSession(storage, regionId);
+  if (!session) return undefined;
+  const hasFullJourney = Boolean((session.itinerary as any)?.savedAsFullJourney);
+  return saveTripSession(
+    {
+      ...session,
+      savedPlaces: [],
+      ...(hasFullJourney ? {} : { itinerary: undefined }),
+    },
+    storage,
+  );
+}
 export function verifiedNavigation(item: any): NavigationDestination | null {
   const navigate = item?.actions?.navigate;
   if (!navigate) return null;

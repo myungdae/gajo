@@ -121,6 +121,7 @@ export default function ConciergePage() {
   const requestInFlightRef = useRef(false);
   const homeSubmittedRef = useRef(false);
   const voiceButtonRef = useRef<HTMLButtonElement>(null);
+  const textInputRef = useRef<HTMLTextAreaElement>(null);
   const lastRequestRef = useRef<{
     text: string;
     structured?: CreateContextInput;
@@ -395,6 +396,15 @@ export default function ConciergePage() {
 
       {!hasCompletedTurn && (
         <>
+          <section className="natural-language-entry" aria-labelledby="natural-language-title">
+            <small>AI에게 바로 물어보기</small>
+            <h2 id="natural-language-title">말하거나 입력해서 알려주세요</h2>
+            <p>“부모님과 왔는데 지금 어디 가지?”처럼 편하게 말씀하셔도 돼요.</p>
+            <button type="button" className="btn btn-primary btn-block" aria-expanded={freeTextOpen} onClick={() => { const next = !freeTextOpen; setFreeTextOpen(next); if (next) { track("NATURAL_LANGUAGE_ENTRY_SELECTED", tripSession.id, { mode: tripMode }); requestAnimationFrame(() => textInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })); requestAnimationFrame(() => textInputRef.current?.focus()); } }}>
+              말하거나 입력해서 물어보기
+            </button>
+          </section>
+          <div className="planning-choice-divider"><span>또는</span><strong>조건을 선택해서 일정 만들기</strong></div>
           {tripMode === "PLAN" ? (
             <PlanVisitorIntake
               loading={loading}
@@ -418,18 +428,6 @@ export default function ConciergePage() {
               onSubmit={(structured) => send("", structured)}
             />
           )}
-          <div className="free-text-option">
-            <span>또는</span>
-            <button
-              type="button"
-              className="btn btn-outline btn-block"
-              aria-expanded={freeTextOpen}
-              onClick={() => setFreeTextOpen((open) => !open)}
-            >
-              그냥 말로 알려줄게요
-            </button>
-            <p>선택하기 번거로우시면 편하게 말씀해 주세요.</p>
-          </div>
         </>
       )}
 
@@ -516,6 +514,7 @@ export default function ConciergePage() {
             </h2>
           </div>
           <textarea
+            ref={textInputRef}
             className={listening ? "is-voice-listening" : undefined}
             rows={hasCompletedTurn ? 2 : 5}
             placeholder={
