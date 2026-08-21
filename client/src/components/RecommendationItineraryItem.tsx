@@ -33,6 +33,19 @@ export default function RecommendationItineraryItem({
       isInteractiveRecommendationItem(step) &&
       itemBelongsToRegion(step, region.id),
     name = recommendationItemLabel(step),
+    shoppingCategory = ({
+      CONVENIENCE_STORE: "편의점",
+      MART: "마트",
+      SUPERMARKET: "슈퍼마켓",
+      MART_SUPERMARKET: "마트·슈퍼마켓",
+      GROCERY: "식료품점",
+      GROCERY_STORE: "식료품점",
+    } as Record<string, string>)[step.category] || ({
+      CONVENIENCE_STORE: "편의점",
+      MART: "마트",
+      SUPERMARKET: "슈퍼마켓",
+      GROCERY_STORE: "식료품점",
+    } as Record<string, string>)[step.entityType],
     destination = verifiedNavigation(step);
   const toggle = () => {
     if (!interactive) return;
@@ -97,6 +110,7 @@ export default function RecommendationItineraryItem({
         ) : (
           <h3>{name}</h3>
         )}
+        {shoppingCategory && <small>{shoppingCategory}</small>}
         {step.durationMinutes && <p>소요 시간: 약 {step.durationMinutes}분</p>}
         {open && (
           <section

@@ -6,7 +6,8 @@ import { REGIONAL_CANDIDATE_DATASETS } from '../regions/regional-candidate.regis
 
 export type NearbyCategory =
   | 'FOOD' | 'CAFE' | 'LODGING' | 'HOT_SPRING_WELLNESS'
-  | 'GOLF_SCREEN_GOLF' | 'ACTIVITY' | 'TOURISM_NATURE' | 'CONVENIENCE' | 'OTHER';
+  | 'GOLF_SCREEN_GOLF' | 'ACTIVITY' | 'TOURISM_NATURE' | 'CONVENIENCE'
+  | 'ESSENTIAL_SHOPPING' | 'CONVENIENCE_STORE' | 'MART_SUPERMARKET' | 'OTHER';
 
 export type NearbyFailureCode = 'NOT_CONFIGURED' | 'UPSTREAM_ERROR' | 'UPSTREAM_TIMEOUT' | 'INVALID_RESPONSE';
 export class NearbyServiceError extends Error {
@@ -51,9 +52,10 @@ export interface NearbySearchOptions {
 const LABELS: Record<NearbyCategory, string> = {
   FOOD: '맛집', CAFE: '카페', LODGING: '숙박', HOT_SPRING_WELLNESS: '온천·휴식',
   GOLF_SCREEN_GOLF: '골프·스크린골프', ACTIVITY: '놀거리·체험', TOURISM_NATURE: '산책·관광',
-  CONVENIENCE: '편의시설', OTHER: '기타',
+  CONVENIENCE: '편의시설', ESSENTIAL_SHOPPING: '생필품 쇼핑',
+  CONVENIENCE_STORE: '편의점', MART_SUPERMARKET: '마트·슈퍼마켓', OTHER: '기타',
 };
-const INDOOR = new Set<NearbyCategory>(['CAFE', 'LODGING', 'HOT_SPRING_WELLNESS', 'GOLF_SCREEN_GOLF', 'CONVENIENCE']);
+const INDOOR = new Set<NearbyCategory>(['CAFE', 'LODGING', 'HOT_SPRING_WELLNESS', 'GOLF_SCREEN_GOLF', 'CONVENIENCE', 'ESSENTIAL_SHOPPING', 'CONVENIENCE_STORE', 'MART_SUPERMARKET']);
 const PLANS: Record<NearbyCategory, { codes: string[]; keywords: string[] }> = {
   FOOD: { codes: ['FD6'], keywords: ['약선요리', '건강식당', '사찰음식', '채식뷔페'] },
   CAFE: { codes: ['CE7'], keywords: ['카페'] },
@@ -62,7 +64,10 @@ const PLANS: Record<NearbyCategory, { codes: string[]; keywords: string[] }> = {
   GOLF_SCREEN_GOLF: { codes: [], keywords: ['스크린골프', '골프연습장'] },
   ACTIVITY: { codes: [], keywords: ['체험', '놀거리', '레저'] },
   TOURISM_NATURE: { codes: ['AT4'], keywords: ['산책', '공원', '관광지'] },
-  CONVENIENCE: { codes: ['CS2', 'PM9', 'HP8'], keywords: [] },
+  CONVENIENCE: { codes: ['PM9', 'HP8'], keywords: [] },
+  CONVENIENCE_STORE: { codes: ['CS2'], keywords: ['편의점'] },
+  MART_SUPERMARKET: { codes: ['MT1'], keywords: ['마트', '슈퍼마켓', '식료품점'] },
+  ESSENTIAL_SHOPPING: { codes: ['CS2', 'MT1'], keywords: ['마트', '슈퍼마켓', '식료품점'] },
   OTHER: { codes: [], keywords: [] },
 };
 
@@ -73,7 +78,9 @@ export function normalizeNearbyCategory(name: string, providerCategory = '', cod
   if (/온천|사우나|찜질|스파|웰니스|spa/i.test(text)) return 'HOT_SPRING_WELLNESS';
   if (/스크린\s*골프|골프연습장/.test(text)) return 'GOLF_SCREEN_GOLF';
   if (code === 'AT4' || /관광|공원|산책|자연|명소/.test(text)) return 'TOURISM_NATURE';
-  if (['CS2', 'PM9', 'HP8'].includes(code) || /편의점|약국|병원/.test(text)) return 'CONVENIENCE';
+  if (code === 'CS2' || /편의점|(?:^|\s)(?:CU|GS25)(?:\s|$)|세븐일레븐|이마트24|미니스톱/i.test(text)) return 'CONVENIENCE_STORE';
+  if (code === 'MT1' || /마트|슈퍼마켓|슈퍼(?!맨)|식료품점|식료품/.test(text)) return 'MART_SUPERMARKET';
+  if (['PM9', 'HP8'].includes(code) || /약국|병원/.test(text)) return 'CONVENIENCE';
   if (/체험|레저|놀거리/.test(text)) return 'ACTIVITY';
   if (code === 'FD6' || /음식점|식당|한식|중식|일식|분식/.test(text)) return 'FOOD';
   return requested || 'OTHER';

@@ -21,6 +21,12 @@ const CATEGORY_MATCH: Record<DiscoveryCategory, (record: any) => boolean> = {
     /ATTRACTION|TOURISM/.test(`${record.entityType} ${record.category}`),
   CONVENIENCE: (record) =>
     /CONVENIENCE/.test(`${record.entityType} ${record.category}`),
+  CONVENIENCE_STORE: (record) =>
+    /CONVENIENCE_STORE/.test(`${record.entityType} ${record.category}`) || /편의점|(?:^|\s)(?:CU|GS25)(?:\s|$)|세븐일레븐|이마트24|미니스톱/i.test(record.canonicalLabelKo || ''),
+  MART_SUPERMARKET: (record) =>
+    /MART|SUPERMARKET|GROCERY/.test(`${record.entityType} ${record.category}`) || /마트|슈퍼마켓|슈퍼(?!맨)|식료품점/.test(record.canonicalLabelKo || ''),
+  ESSENTIAL_SHOPPING: (record) =>
+    CATEGORY_MATCH.CONVENIENCE_STORE(record) || CATEGORY_MATCH.MART_SUPERMARKET(record),
   HOT_SPRING_WELLNESS: (record) =>
     /HOT_SPRING|WELLNESS|SAUNA|BATH|SPA/.test(`${record.entityType} ${record.category}`),
 };
@@ -81,8 +87,11 @@ export class PlaceDiscoveryService {
     const semanticIds = new Set(semantic.regionalEntityIds);
     const accommodationType =
       category === 'LODGING' ? requestedAccommodationType(message) : undefined;
+    const preferredAvailable = dataset.records.some(CATEGORY_MATCH[category]);
+    const martFallback = category === 'CONVENIENCE_STORE' && !preferredAvailable;
+    const eligibility = martFallback ? CATEGORY_MATCH.MART_SUPERMARKET : CATEGORY_MATCH[category];
     const ranked = dataset.records
-      .filter(CATEGORY_MATCH[category])
+      .filter(eligibility)
       .filter((record) => !anchor || record.entityUri !== anchor.entityUri)
       .filter((record) => !context.discoveryAlternative || !priorDiscovery?.shownEntityIds?.includes(record.entityUri))
       .filter(
@@ -114,9 +123,15 @@ export class PlaceDiscoveryService {
           a.record.entityUri.localeCompare(b.record.entityUri),
       );
 
-    const searchCandidates = ranked.length === 0 && anchor && origin && this.nearby
+    let searchFallbackCategory: DiscoveryCategory = category;
+    let searchCandidates = ranked.length === 0 && origin && this.nearby
       ? await this.searchFallback(regionId, category, origin, dataset.records, context.discoveryAlternative ? priorDiscovery?.shownEntityIds || [] : [])
       : [];
+    if (category === 'CONVENIENCE_STORE' && ranked.length === 0 && searchCandidates.length === 0 && origin && this.nearby) {
+      searchFallbackCategory = 'MART_SUPERMARKET';
+      searchCandidates = await this.searchFallback(regionId, searchFallbackCategory, origin, dataset.records, context.discoveryAlternative ? priorDiscovery?.shownEntityIds || [] : []);
+    }
+    const usedShoppingAlternative = martFallback || searchFallbackCategory === 'MART_SUPERMARKET';
 
     return {
       regionId,
@@ -127,6 +142,9 @@ export class PlaceDiscoveryService {
       anchorLongitude: anchor?.longitude,
       relation: anchor ? 'NEARBY' : 'REGIONAL',
       targetCategory: category,
+      categoryFallbackNotice: usedShoppingAlternative
+        ? '가까운 편의점 결과가 부족해 주변 마트·슈퍼마켓도 함께 보여드렸습니다.'
+        : undefined,
       referenceResolution: {
         mode: explicitAnchor ? 'EXPLICIT_ENTITY' : priorAnchor ? 'DISCOVERY_CONTEXT' : contextualAnchor ? 'CONVERSATIONAL_REFERENCE' : 'NONE',
         sourceTurnId: priorAnchor ? priorDiscovery.sourceTurnId : contextualAnchor ? supplied.sourceTurnId : undefined,
@@ -211,8 +229,8 @@ export class PlaceDiscoveryService {
 
   private async searchFallback(regionId: string, category: DiscoveryCategory, origin: { latitude: number; longitude: number }, records: readonly any[], excludedEntityIds: readonly string[] = []) {
     try {
-      const found = await this.nearby!.search(category, origin.latitude, origin.longitude, 2500, {}, regionId);
-      return found.filter((place) => place.category === category).slice(0, 5).flatMap<any>((place, index) => {
+      const found = await this.nearby!.search(category as any, origin.latitude, origin.longitude, 2500, {}, regionId);
+      return found.filter((place) => CATEGORY_MATCH[category]({ entityType: place.category, category: place.category, canonicalLabelKo: place.name })).slice(0, 5).flatMap<any>((place, index) => {
         const canonical = records.find((record) =>
           record.entityUri === place.canonicalEntityUri || this.normalize(record.canonicalLabelKo) === this.normalize(place.name),
         );
@@ -234,7 +252,7 @@ export class PlaceDiscoveryService {
         return [{
           entityId: `search:${regionId}:${place.id}`, regionId, order: index + 1,
           programLabel: place.name, facilityLabel: place.name,
-          entityType: 'SEARCH_CANDIDATE', category,
+          entityType: 'SEARCH_CANDIDATE', category: place.category,
           address: place.roadAddress || place.address || undefined,
           latitude: place.lat, longitude: place.lng,
           distanceMeters: place.distanceMeters,

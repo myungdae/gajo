@@ -23,7 +23,9 @@ function detectNearbyDiscovery(message?: string): { intent: boolean; category?: 
     ['LODGING', /숙박|숙소|호텔|모텔|펜션|민박|한옥|리조트|글램핑|캠핑|야영|오토\s*캠핑|카라반|자연\s*휴양림/], ['CAFE', /카페|커피|다방/],
     ['GOLF_SCREEN_GOLF', /스크린\s*골프|골프연습장/], ['HOT_SPRING_WELLNESS', /온천|사우나|찜질|스파/],
     ['ACTIVITY', /놀거리|체험|레저/], ['TOURISM_NATURE', /산책|관광|공원|명소/],
-    ['CONVENIENCE', /편의점|약국|병원/], ['FOOD', /식당|맛집|밥\s*(먹|을)|먹을\s*(곳|데)|건강식|약선|음식점|식사/],
+    ['CONVENIENCE_STORE', /편의점/], ['MART_SUPERMARKET', /마트|슈퍼마켓|슈퍼(?!맨)|식료품점/],
+    ['ESSENTIAL_SHOPPING', /장\s*볼|생필품|물(?:하고|이랑|과)?\s*과자|음료수?\s*살|먹을\s*것\s*(?:좀\s*)?살/],
+    ['CONVENIENCE', /약국|병원/], ['FOOD', /식당|맛집|밥\s*(먹|을)|먹을\s*(곳|데)|건강식|약선|음식점|식사/],
   ];
   const category = entries.find(([, pattern]) => pattern.test(message))?.[0];
   return { intent: !!category && (/주변|근처|가까운|인근|갈\s*만한|찾아|추천/.test(message)), category };

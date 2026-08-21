@@ -853,6 +853,9 @@ function PlaceDiscoveryPanel({ result }: { result: ConciergeChatResponse }) {
         ACTIVITY: "체험",
         TOURISM_NATURE: "관광지",
         CONVENIENCE: "편의시설",
+        ESSENTIAL_SHOPPING: "생필품을 살 수 있는 곳",
+        CONVENIENCE_STORE: "편의점",
+        MART_SUPERMARKET: "마트·슈퍼마켓",
       }[discovery.category] || "장소";
   return (
     <section className="recommendation-section place-discovery-results">
@@ -862,6 +865,9 @@ function PlaceDiscoveryPanel({ result }: { result: ConciergeChatResponse }) {
           ? "지역 운영 데이터에 없는 장소는 검색 후보로 구분해 안내합니다. 현재 영업 여부는 방문 전에 확인해 주세요."
           : "검증된 지역 운영 데이터에서 맞는 장소만 보여드려요. 현재 영업 여부는 방문 전에 확인해 주세요."}
       </p>
+      {discovery.categoryFallbackNotice && (
+        <p className="text-muted">{discovery.categoryFallbackNotice}</p>
+      )}
       {discovery.entities.length ? (
         discovery.entities.map((entity: any, index: number) => (
           <div className="place-discovery-item" key={entity.entityId}>

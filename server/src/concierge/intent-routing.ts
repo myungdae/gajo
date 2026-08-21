@@ -11,7 +11,10 @@ export type DiscoveryCategory =
   | 'HOT_SPRING_WELLNESS'
   | 'ACTIVITY'
   | 'TOURISM_NATURE'
-  | 'CONVENIENCE';
+  | 'CONVENIENCE'
+  | 'ESSENTIAL_SHOPPING'
+  | 'CONVENIENCE_STORE'
+  | 'MART_SUPERMARKET';
 const CATEGORY_PATTERNS: [DiscoveryCategory, RegExp][] = [
   [
     'LODGING',
@@ -24,7 +27,10 @@ const CATEGORY_PATTERNS: [DiscoveryCategory, RegExp][] = [
     'TOURISM_NATURE',
     /산책|관광|공원|명소|볼\s*만한|갈\s*곳|다\s*봤|이제\s*어디/,
   ],
-  ['CONVENIENCE', /편의점|약국|병원/],
+  ['CONVENIENCE_STORE', /(?:24\s*시간\s*)?편의점/],
+  ['MART_SUPERMARKET', /마트|슈퍼마켓|슈퍼(?!맨)|식료품점|동네\s*가게/],
+  ['ESSENTIAL_SHOPPING', /장\s*볼\s*(?:곳|데)|생필품|물(?:하고|이랑|과)?\s*과자|과자(?:하고|이랑|과)?\s*물|음료수?\s*살|먹을\s*것\s*(?:좀\s*)?살|간단(?:히|하게)?\s*(?:뭐|무엇을)?\s*살\s*(?:곳|데)/],
+  ['CONVENIENCE', /약국|병원/],
   [
     'FOOD',
     /식당|맛집|밥집|배고|밥\s*(?:먹|을)|먹을\s*(?:곳|데)|저녁\s*먹|점심\s*먹|음식점|식사/,
@@ -58,7 +64,7 @@ export function routeNaturalLanguageIntent(input: {
     nearbyRelation = /주변|근처|가까|인근/.test(message),
     categoryOverride = Boolean(
       explicitCategory &&
-      (/아니/.test(message) || /(?:은|는)\??$/.test(message)),
+      (/아니|만\s*(?:보여|찾아)/.test(message) || /(?:은|는)\??$/.test(message)),
     ),
     relationalReference =
       /거기|그곳|그중|그\s*(?:근처|주변|카페|식당|숙소)/.test(message) &&
@@ -101,7 +107,7 @@ export function routeNaturalLanguageIntent(input: {
   if (journey) return { intentRoute: 'JOURNEY_PLAN' as const, category };
   if (
     category &&
-    /주변|근처|가까운|인근|알려|찾아|추천|어디|아니|먹을\s*(?:곳|데)|가고\s*싶|가기\s*좋|편한|갈\s*만한|(?:아이와|부모님과)?\s*갈\s+(?:실내\s*)?(?:체험|카페|식당)/.test(
+    /주변|근처|가까운|인근|알려|찾아|보여|추천|어디|있어|아니|먹을\s*(?:곳|데)|살\s*(?:곳|데)|장\s*볼|가고\s*싶|가기\s*좋|편한|갈\s*만한|(?:아이와|부모님과)?\s*갈\s+(?:실내\s*)?(?:체험|카페|식당)/.test(
       message,
     )
   )

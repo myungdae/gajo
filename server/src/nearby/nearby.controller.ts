@@ -1,7 +1,7 @@
 import { BadGatewayException, BadRequestException, Controller, GatewayTimeoutException, Get, Query, ServiceUnavailableException } from '@nestjs/common';
 import { NearbyCategory, NearbyService, NearbyServiceError } from './nearby.service';
 
-const CATEGORIES: NearbyCategory[] = ['FOOD', 'CAFE', 'LODGING', 'HOT_SPRING_WELLNESS', 'GOLF_SCREEN_GOLF', 'ACTIVITY', 'TOURISM_NATURE', 'CONVENIENCE', 'OTHER'];
+const CATEGORIES: NearbyCategory[] = ['FOOD', 'CAFE', 'LODGING', 'HOT_SPRING_WELLNESS', 'GOLF_SCREEN_GOLF', 'ACTIVITY', 'TOURISM_NATURE', 'CONVENIENCE', 'ESSENTIAL_SHOPPING', 'CONVENIENCE_STORE', 'MART_SUPERMARKET', 'OTHER'];
 
 @Controller('api/nearby')
 export class NearbyController {

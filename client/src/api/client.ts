@@ -16,7 +16,7 @@ export interface CompanionInput {
 export interface CreateContextInput {
   turnId?: string;
   conversationalAnchor?: { entityId: string; regionId: string; label?: string; entityType?: string; category?: string; latitude?: number; longitude?: number; source?: 'RDM'|'SEARCH'; sourceTurnId: string; role: 'RESULT'|'SUBJECT'|'SELECTED' };
-  discoveryContext?: { regionId: string; anchor: { entityId: string; label?: string; latitude?: number; longitude?: number; source?: 'RDM'|'SEARCH' }; targetCategory: 'FOOD'|'CAFE'|'LODGING'|'HOT_SPRING_WELLNESS'|'ACTIVITY'|'TOURISM_NATURE'|'CONVENIENCE'; relation: 'NEARBY'|'REGIONAL'; currentResult?: { entityId: string; label?: string; latitude?: number; longitude?: number; source?: 'RDM'|'SEARCH' }; shownEntityIds: string[]; sourceTurnId: string };
+  discoveryContext?: { regionId: string; anchor: { entityId: string; label?: string; latitude?: number; longitude?: number; source?: 'RDM'|'SEARCH' }; targetCategory: 'FOOD'|'CAFE'|'LODGING'|'HOT_SPRING_WELLNESS'|'ACTIVITY'|'TOURISM_NATURE'|'CONVENIENCE'|'ESSENTIAL_SHOPPING'|'CONVENIENCE_STORE'|'MART_SUPERMARKET'; relation: 'NEARBY'|'REGIONAL'; currentResult?: { entityId: string; label?: string; latitude?: number; longitude?: number; source?: 'RDM'|'SEARCH' }; shownEntityIds: string[]; sourceTurnId: string };
   regionId?: string;
   mustVisitPlaces?: Array<{ entityId?: string; label: string; resolved: boolean }>;
   accommodationIntents?: Array<{ entityId?: string; label: string; resolved: boolean }>;
@@ -48,7 +48,7 @@ export interface CreateContextInput {
   contextSessionId?: string;
   inputMode?: 'STRUCTURED' | 'FREE_TEXT';
   isFollowup?: boolean;
-  discoveryCategoryHint?: 'FOOD'|'CAFE'|'LODGING'|'HOT_SPRING_WELLNESS'|'ACTIVITY'|'TOURISM_NATURE'|'CONVENIENCE';
+  discoveryCategoryHint?: 'FOOD'|'CAFE'|'LODGING'|'HOT_SPRING_WELLNESS'|'ACTIVITY'|'TOURISM_NATURE'|'CONVENIENCE'|'ESSENTIAL_SHOPPING'|'CONVENIENCE_STORE'|'MART_SUPERMARKET';
 }
 
 export interface EntityRuntimeState {
@@ -107,7 +107,7 @@ export interface ConciergeChatResponse {
   nearbyCategory?: NearbyCategory;
   visitorMessage?: string;
   intentRoute?: 'JOURNEY_PLAN'|'PLACE_DISCOVERY'|'DISTANCE_INFO'|'IMMEDIATE_NOW'|'REPLAN';
-  discovery?:{regionId:string;category:string;anchorEntityId?:string;anchorLabel?:string;anchorLatitude?:number;anchorLongitude?:number;relation?:'NEARBY'|'REGIONAL';targetCategory?:string;searchFallback?:{used:boolean;source:string;evidenceRetention:string};entities:any[]};
+  discovery?:{regionId:string;category:string;anchorEntityId?:string;anchorLabel?:string;anchorLatitude?:number;anchorLongitude?:number;relation?:'NEARBY'|'REGIONAL';targetCategory?:string;categoryFallbackNotice?:string;searchFallback?:{used:boolean;source:string;evidenceRetention:string};entities:any[]};
   distanceInfo?:{status:'RESOLVED'|'NEEDS_CLARIFICATION';message?:string;regionId?:string;fromEntityId?:string;fromLabel?:string;toEntityId?:string;toLabel?:string;distanceMeters?:number;calculation?:string};
   conversationalReference?: CreateContextInput['conversationalAnchor'];
   domainResult?: { status: 'OUT_OF_SERVICE_AREA'; destination: string; region: string };
@@ -226,7 +226,7 @@ export async function previewRegionalDataImport(packageValue:any,token:string,tr
 export async function importRegionalData(packageValue:any,token:string,trustedVerified=false){const{data}=await api.post('/admin/regional-data/import',{package:packageValue,trustedVerified},{headers:{'x-admin-token':token}});return data}
 export async function fetchPilotAnalytics(){const {data}=await api.get('/analytics/summary');return data}
 
-export type NearbyCategory = 'FOOD' | 'CAFE' | 'LODGING' | 'HOT_SPRING_WELLNESS' | 'GOLF_SCREEN_GOLF' | 'ACTIVITY' | 'TOURISM_NATURE' | 'CONVENIENCE' | 'OTHER';
+export type NearbyCategory = 'FOOD' | 'CAFE' | 'LODGING' | 'HOT_SPRING_WELLNESS' | 'GOLF_SCREEN_GOLF' | 'ACTIVITY' | 'TOURISM_NATURE' | 'CONVENIENCE' | 'ESSENTIAL_SHOPPING' | 'CONVENIENCE_STORE' | 'MART_SUPERMARKET' | 'OTHER';
 export interface NearbyPlace {
   id: string; name: string; category: NearbyCategory; categoryLabel: string; providerCategoryName: string;
   address: string; roadAddress?: string; phone?: string; lat: number; lng: number; distanceMeters?: number;
