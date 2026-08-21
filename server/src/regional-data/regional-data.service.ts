@@ -23,9 +23,42 @@ const SOURCE_TYPES = new Set([
   'OFFICIAL_MAP_LISTING',
   'OTHER_VERIFIED_SOURCE',
 ]);
-const TRANSFER_SCHEMA_VERSION='1.0';
-const ENTITY_TYPES=new Set(['ATTRACTION','CAFE','ACCOMMODATION','RESTAURANT','EXPERIENCE','EVENT','FACILITY','ACTIVITY','AREA','CULTURAL_AREA','MARKET','SHOPPING_AREA','OTHER']);
-const TRANSFER_FIELDS=['displayName','aliases','entityType','category','tags','areaLabel','address','latitude','longitude','phone','websiteUrl','reservationUrl','operatingHours','closureDays','parking','accessibility','walkingAccess','shortDescription'] as const;
+const TRANSFER_SCHEMA_VERSION = '1.0';
+const ENTITY_TYPES = new Set([
+  'ATTRACTION',
+  'CAFE',
+  'ACCOMMODATION',
+  'RESTAURANT',
+  'EXPERIENCE',
+  'EVENT',
+  'FACILITY',
+  'ACTIVITY',
+  'AREA',
+  'CULTURAL_AREA',
+  'MARKET',
+  'SHOPPING_AREA',
+  'OTHER',
+]);
+const TRANSFER_FIELDS = [
+  'displayName',
+  'aliases',
+  'entityType',
+  'category',
+  'tags',
+  'areaLabel',
+  'address',
+  'latitude',
+  'longitude',
+  'phone',
+  'websiteUrl',
+  'reservationUrl',
+  'operatingHours',
+  'closureDays',
+  'parking',
+  'accessibility',
+  'walkingAccess',
+  'shortDescription',
+] as const;
 @Injectable()
 export class RegionalDataService implements OnModuleInit {
   constructor(
@@ -91,16 +124,32 @@ export class RegionalDataService implements OnModuleInit {
       );
     if (!SOURCE_TYPES.has(input.source.sourceType))
       throw new BadRequestException('Unsupported sourceType');
-    const identityBaseline = this.findEquivalentBaseline(input.regionId, input.proposedFacts);
+    const identityBaseline = this.findEquivalentBaseline(
+      input.regionId,
+      input.proposedFacts,
+    );
     const requestedCanonical = input.canonicalEntityId;
-    const regionalRows: any[] = await this.model.find({ regionId: input.regionId }).lean();
-    const identityRow = regionalRows.find((row) => this.sameIdentity(row, input.proposedFacts));
-    const canonical = identityBaseline?.entityUri || identityRow?.canonicalEntityId || requestedCanonical ||
+    const regionalRows: any[] = await this.model
+      .find({ regionId: input.regionId })
+      .lean();
+    const identityRow = regionalRows.find((row) =>
+      this.sameIdentity(row, input.proposedFacts),
+    );
+    const canonical =
+      identityBaseline?.entityUri ||
+      identityRow?.canonicalEntityId ||
+      requestedCanonical ||
       `urn:regional-candidate:${input.regionId}:${randomUUID()}`;
     const baseline = this.baseline(input.regionId, canonical);
-    const existing: any = await this.model.findOne({ canonicalEntityId: canonical, regionId: input.regionId });
+    const existing: any = await this.model.findOne({
+      canonicalEntityId: canonical,
+      regionId: input.regionId,
+    });
     if (existing) {
-      if (existing.proposedFacts && this.sameFacts(existing.proposedFacts, input.proposedFacts))
+      if (
+        existing.proposedFacts &&
+        this.sameFacts(existing.proposedFacts, input.proposedFacts)
+      )
         return { ...existing.toObject(), ingestionOutcome: 'UNCHANGED' };
       const current = this.toCandidate(baseline, existing);
       const changes = this.diffAll(current, input.proposedFacts);
@@ -109,19 +158,27 @@ export class RegionalDataService implements OnModuleInit {
       existing.source = input.source;
       existing.proposedFacts = input.proposedFacts;
       existing.detectedChanges = changes;
-      existing.lifecycleStatus = existing.verificationStatus === 'VERIFIED'
-        ? 'CHANGE_DETECTED'
-        : 'NEW_CANDIDATE';
-      existing.auditTrail.push({
-        action: existing.verificationStatus === 'VERIFIED'
+      existing.lifecycleStatus =
+        existing.verificationStatus === 'VERIFIED'
           ? 'CHANGE_DETECTED'
-          : 'CANDIDATE_UPDATED',
+          : 'NEW_CANDIDATE';
+      existing.auditTrail.push({
+        action:
+          existing.verificationStatus === 'VERIFIED'
+            ? 'CHANGE_DETECTED'
+            : 'CANDIDATE_UPDATED',
         at: new Date().toISOString(),
         source: input.source,
         changes: existing.detectedChanges,
       });
       await existing.save();
-      return { ...existing.toObject(), ingestionOutcome: existing.verificationStatus === 'VERIFIED' ? 'CHANGE_DETECTED' : 'CANDIDATE_UPDATED' };
+      return {
+        ...existing.toObject(),
+        ingestionOutcome:
+          existing.verificationStatus === 'VERIFIED'
+            ? 'CHANGE_DETECTED'
+            : 'CANDIDATE_UPDATED',
+      };
     }
     const created: any = await this.model.create({
       id: `rd-${randomUUID()}`,
@@ -143,7 +200,10 @@ export class RegionalDataService implements OnModuleInit {
         },
       ],
     });
-    return { ...created.toObject(), ingestionOutcome: baseline ? 'CHANGE_DETECTED' : 'CREATED' };
+    return {
+      ...created.toObject(),
+      ingestionOutcome: baseline ? 'CHANGE_DETECTED' : 'CREATED',
+    };
   }
   async action(
     id: string,
@@ -154,7 +214,7 @@ export class RegionalDataService implements OnModuleInit {
     const row: any = await this.model.findOne({ id });
     if (!row) throw new NotFoundException();
     const facts = { ...(row.proposedFacts || {}), ...(editedFacts || {}) };
-    const auditedChanges=[...(row.detectedChanges||[])];
+    const auditedChanges = [...(row.detectedChanges || [])];
     if (['APPROVE', 'APPLY_CHANGE', 'APPROVE_EDITED'].includes(action)) {
       if (!row.source?.sourceUrl || !SOURCE_TYPES.has(row.source?.sourceType))
         throw new BadRequestException('Verified provenance is required');
@@ -190,15 +250,46 @@ export class RegionalDataService implements OnModuleInit {
     await row.save();
     return row.toObject();
   }
+  async approveCoreCoverageFix(
+    regionId: string,
+    canonicalEntityId: string,
+    editedFacts: { category?: string; aliases?: string[] },
+    auditContext: { actorId: string },
+  ) {
+    const keys = Object.keys(editedFacts);
+    if (
+      !keys.length ||
+      keys.some((key) => !['category', 'aliases'].includes(key))
+    )
+      throw new BadRequestException(
+        'Only category or alias coverage fixes are supported',
+      );
+    const row: any = await this.model.findOne({ regionId, canonicalEntityId });
+    if (!row)
+      throw new NotFoundException('Canonical regional entity not found');
+    const facts = {
+      ...this.factFields(row),
+      ...(row.proposedFacts || {}),
+      ...editedFacts,
+    };
+    return this.action(row.id, 'APPROVE_EDITED', facts, {
+      actorId: auditContext.actorId,
+      regionId,
+      action: 'CORE_COVERAGE_FIX_APPROVED',
+    });
+  }
   async effectiveDataset(regionId: string) {
     const base = REGIONAL_CANDIDATE_DATASETS[regionId];
     if (!base) return undefined;
     const regionalRows: any[] = await this.model.find({ regionId }).lean();
     const overrides = regionalRows.filter(
-      (row) => row.verificationStatus === 'VERIFIED' &&
+      (row) =>
+        row.verificationStatus === 'VERIFIED' &&
         ['ACTIVE', 'CHANGE_DETECTED'].includes(row.lifecycleStatus),
     );
-    const questionable:any[]=await this.model.find({regionId,lifecycleStatus:'CHANGE_DETECTED'}).lean();
+    const questionable: any[] = await this.model
+      .find({ regionId, lifecycleStatus: 'CHANGE_DETECTED' })
+      .lean();
     const records = [...base.records];
     for (const row of overrides) {
       const index = records.findIndex(
@@ -211,7 +302,22 @@ export class RegionalDataService implements OnModuleInit {
       if (index >= 0) records[index] = merged;
       else records.push(merged);
     }
-    for(const row of questionable.filter(row=>row.detectedChanges?.some((change:any)=>change.unsafe))){const index=records.findIndex(item=>item.entityUri===row.canonicalEntityId);if(index<0)continue;const actions={...(records[index].actions||{})}as any;delete actions.navigate;records[index]={...records[index],latitude:undefined,longitude:undefined,actions}}
+    for (const row of questionable.filter((row) =>
+      row.detectedChanges?.some((change: any) => change.unsafe),
+    )) {
+      const index = records.findIndex(
+        (item) => item.entityUri === row.canonicalEntityId,
+      );
+      if (index < 0) continue;
+      const actions = { ...(records[index].actions || {}) } as any;
+      delete actions.navigate;
+      records[index] = {
+        ...records[index],
+        latitude: undefined,
+        longitude: undefined,
+        actions,
+      };
+    }
     return { ...base, records };
   }
   async quality() {
@@ -241,81 +347,346 @@ export class RegionalDataService implements OnModuleInit {
       ).length,
     };
   }
-  async exportPackage(regionId:string,options:{includeChanges?:boolean;backup?:boolean}={}){
-    if(!REGIONAL_CANDIDATE_DATASETS[regionId])throw new BadRequestException('Unsupported regionId');
-    const rows:any[]=await this.model.find({regionId}).lean();
-    const eligible=rows.filter(row=>options.backup?true:(row.verificationStatus==='VERIFIED'&&(row.lifecycleStatus==='ACTIVE'||(options.includeChanges&&row.lifecycleStatus==='CHANGE_DETECTED'))));
-    const exportedAt=new Date().toISOString(),exportId=`regional-export-${randomUUID()}`;
-    const packageValue={packageType:'REGIONAL_OPERATIONAL_DATA',schemaVersion:TRANSFER_SCHEMA_VERSION,exportId,exportedAt,sourceEnvironment:process.env.DEPLOYMENT_ENV||process.env.NODE_ENV||'development',regionId,mode:options.backup?'WORKFLOW_BACKUP':options.includeChanges?'ACTIVE_WITH_CHANGES':'ACTIVE_VERIFIED',records:eligible.map(row=>this.exportRecord(row,options.backup))};
-    const event={action:'DATA_EXPORT_CREATED',at:exportedAt,source:{packageVersion:TRANSFER_SCHEMA_VERSION,regionId,recordCount:eligible.length,exportId}};
-    for(const row of eligible)await this.model.updateOne({id:row.id},{$push:{auditTrail:event}});
+  async exportPackage(
+    regionId: string,
+    options: { includeChanges?: boolean; backup?: boolean } = {},
+  ) {
+    if (!REGIONAL_CANDIDATE_DATASETS[regionId])
+      throw new BadRequestException('Unsupported regionId');
+    const rows: any[] = await this.model.find({ regionId }).lean();
+    const eligible = rows.filter((row) =>
+      options.backup
+        ? true
+        : row.verificationStatus === 'VERIFIED' &&
+          (row.lifecycleStatus === 'ACTIVE' ||
+            (options.includeChanges &&
+              row.lifecycleStatus === 'CHANGE_DETECTED')),
+    );
+    const exportedAt = new Date().toISOString(),
+      exportId = `regional-export-${randomUUID()}`;
+    const packageValue = {
+      packageType: 'REGIONAL_OPERATIONAL_DATA',
+      schemaVersion: TRANSFER_SCHEMA_VERSION,
+      exportId,
+      exportedAt,
+      sourceEnvironment:
+        process.env.DEPLOYMENT_ENV || process.env.NODE_ENV || 'development',
+      regionId,
+      mode: options.backup
+        ? 'WORKFLOW_BACKUP'
+        : options.includeChanges
+          ? 'ACTIVE_WITH_CHANGES'
+          : 'ACTIVE_VERIFIED',
+      records: eligible.map((row) => this.exportRecord(row, options.backup)),
+    };
+    const event = {
+      action: 'DATA_EXPORT_CREATED',
+      at: exportedAt,
+      source: {
+        packageVersion: TRANSFER_SCHEMA_VERSION,
+        regionId,
+        recordCount: eligible.length,
+        exportId,
+      },
+    };
+    for (const row of eligible)
+      await this.model.updateOne(
+        { id: row.id },
+        { $push: { auditTrail: event } },
+      );
     return packageValue;
   }
-  async previewImport(packageValue:any,options:{trustedVerified?:boolean}={}){return this.importPackage(packageValue,{...options,dryRun:true})}
-  async importPackage(packageValue:any,options:{trustedVerified?:boolean;dryRun?:boolean}={}){
-    this.validatePackage(packageValue,options.trustedVerified===true);
-    const summary={regionId:packageValue.regionId,schemaVersion:packageValue.schemaVersion,recordCount:packageValue.records.length,newRecords:0,unchangedRecords:0,conflicts:0,stagedRecords:0,activatedRecords:0,dryRun:Boolean(options.dryRun),results:[] as any[]};
-    for(const imported of packageValue.records){
-      const existing:any=await this.model.findOne({regionId:packageValue.regionId,canonicalEntityId:imported.canonicalEntityId});
-      const facts=this.importFacts(imported);
-      const comparable=existing?(existing.proposedFacts&&existing.lifecycleStatus!=='ACTIVE'?existing.proposedFacts:this.factFields(existing)):undefined;
-      const same=existing&&this.sameFacts(comparable,facts);
-      if(same){summary.unchangedRecords++;summary.results.push({canonicalEntityId:imported.canonicalEntityId,outcome:'UNCHANGED'});continue}
-      if(existing&&existing.verificationStatus==='VERIFIED'){
-        summary.conflicts++;summary.results.push({canonicalEntityId:imported.canonicalEntityId,outcome:'CONFLICT'});
-        if(!options.dryRun){existing.proposedFacts=facts;existing.source=imported.source;existing.detectedChanges=this.diff(this.toCandidate(this.baseline(existing.regionId,existing.canonicalEntityId),existing),facts);existing.lifecycleStatus='CHANGE_DETECTED';existing.auditTrail.push({action:'DATA_IMPORT_CONFLICT',at:new Date().toISOString(),source:{packageVersion:packageValue.schemaVersion,regionId:packageValue.regionId,recordCount:packageValue.records.length,exportId:packageValue.exportId},changes:existing.detectedChanges});await existing.save()}
+  async previewImport(
+    packageValue: any,
+    options: { trustedVerified?: boolean } = {},
+  ) {
+    return this.importPackage(packageValue, { ...options, dryRun: true });
+  }
+  async importPackage(
+    packageValue: any,
+    options: { trustedVerified?: boolean; dryRun?: boolean } = {},
+  ) {
+    this.validatePackage(packageValue, options.trustedVerified === true);
+    const summary = {
+      regionId: packageValue.regionId,
+      schemaVersion: packageValue.schemaVersion,
+      recordCount: packageValue.records.length,
+      newRecords: 0,
+      unchangedRecords: 0,
+      conflicts: 0,
+      stagedRecords: 0,
+      activatedRecords: 0,
+      dryRun: Boolean(options.dryRun),
+      results: [] as any[],
+    };
+    for (const imported of packageValue.records) {
+      const existing: any = await this.model.findOne({
+        regionId: packageValue.regionId,
+        canonicalEntityId: imported.canonicalEntityId,
+      });
+      const facts = this.importFacts(imported);
+      const comparable = existing
+        ? existing.proposedFacts && existing.lifecycleStatus !== 'ACTIVE'
+          ? existing.proposedFacts
+          : this.factFields(existing)
+        : undefined;
+      const same = existing && this.sameFacts(comparable, facts);
+      if (same) {
+        summary.unchangedRecords++;
+        summary.results.push({
+          canonicalEntityId: imported.canonicalEntityId,
+          outcome: 'UNCHANGED',
+        });
         continue;
       }
-      const trusted=options.trustedVerified===true;
-      summary.newRecords++;if(trusted)summary.activatedRecords++;else summary.stagedRecords++;
-      summary.results.push({canonicalEntityId:imported.canonicalEntityId,outcome:trusted?'ACTIVATED':'STAGED'});
-      if(!options.dryRun)await this.model.create({id:`rd-${randomUUID()}`,canonicalEntityId:imported.canonicalEntityId,regionId:packageValue.regionId,displayName:imported.displayName,entityType:imported.entityType,category:imported.category,source:imported.source,lastVerifiedAt:imported.verifiedAt,verificationStatus:trusted?'VERIFIED':'REVERIFY_REQUIRED',lifecycleStatus:trusted?'ACTIVE':'NEEDS_VERIFICATION',...(trusted?this.factFields(facts):{}),proposedFacts:facts,detectedChanges:[],auditTrail:[{action:trusted?'DATA_IMPORT_ACTIVATED':'DATA_IMPORT_STAGED',at:new Date().toISOString(),source:{packageVersion:packageValue.schemaVersion,regionId:packageValue.regionId,recordCount:packageValue.records.length,exportId:packageValue.exportId}}]});
+      if (existing && existing.verificationStatus === 'VERIFIED') {
+        summary.conflicts++;
+        summary.results.push({
+          canonicalEntityId: imported.canonicalEntityId,
+          outcome: 'CONFLICT',
+        });
+        if (!options.dryRun) {
+          existing.proposedFacts = facts;
+          existing.source = imported.source;
+          existing.detectedChanges = this.diff(
+            this.toCandidate(
+              this.baseline(existing.regionId, existing.canonicalEntityId),
+              existing,
+            ),
+            facts,
+          );
+          existing.lifecycleStatus = 'CHANGE_DETECTED';
+          existing.auditTrail.push({
+            action: 'DATA_IMPORT_CONFLICT',
+            at: new Date().toISOString(),
+            source: {
+              packageVersion: packageValue.schemaVersion,
+              regionId: packageValue.regionId,
+              recordCount: packageValue.records.length,
+              exportId: packageValue.exportId,
+            },
+            changes: existing.detectedChanges,
+          });
+          await existing.save();
+        }
+        continue;
+      }
+      const trusted = options.trustedVerified === true;
+      summary.newRecords++;
+      if (trusted) summary.activatedRecords++;
+      else summary.stagedRecords++;
+      summary.results.push({
+        canonicalEntityId: imported.canonicalEntityId,
+        outcome: trusted ? 'ACTIVATED' : 'STAGED',
+      });
+      if (!options.dryRun)
+        await this.model.create({
+          id: `rd-${randomUUID()}`,
+          canonicalEntityId: imported.canonicalEntityId,
+          regionId: packageValue.regionId,
+          displayName: imported.displayName,
+          entityType: imported.entityType,
+          category: imported.category,
+          source: imported.source,
+          lastVerifiedAt: imported.verifiedAt,
+          verificationStatus: trusted ? 'VERIFIED' : 'REVERIFY_REQUIRED',
+          lifecycleStatus: trusted ? 'ACTIVE' : 'NEEDS_VERIFICATION',
+          ...(trusted ? this.factFields(facts) : {}),
+          proposedFacts: facts,
+          detectedChanges: [],
+          auditTrail: [
+            {
+              action: trusted ? 'DATA_IMPORT_ACTIVATED' : 'DATA_IMPORT_STAGED',
+              at: new Date().toISOString(),
+              source: {
+                packageVersion: packageValue.schemaVersion,
+                regionId: packageValue.regionId,
+                recordCount: packageValue.records.length,
+                exportId: packageValue.exportId,
+              },
+            },
+          ],
+        });
     }
     return summary;
   }
-  private exportRecord(row:any,includeWorkflow=false){const value:any={canonicalEntityId:row.canonicalEntityId,regionId:row.regionId,...this.factFields(row),source:row.source,verifiedAt:row.lastVerifiedAt,verificationStatus:row.verificationStatus,lifecycleStatus:row.lifecycleStatus,actionInputs:{call:row.phone||undefined,website:row.websiteUrl||undefined,reserve:row.reservationUrl||undefined,navigate:Number.isFinite(row.latitude)&&Number.isFinite(row.longitude)?{latitude:row.latitude,longitude:row.longitude}:undefined},auditSummary:{lastAction:row.auditTrail?.at(-1)?.action,lastActionAt:row.auditTrail?.at(-1)?.at}};if(includeWorkflow){value.proposedFacts=row.proposedFacts;value.detectedChanges=row.detectedChanges}return value}
-  private validatePackage(value:any,trusted:boolean){
-    if(!value||typeof value!=='object'||Array.isArray(value))throw new BadRequestException('A JSON package is required');
-    if(JSON.stringify(value).length>1_000_000)throw new BadRequestException('Package exceeds 1 MB');
-    if(value.packageType!=='REGIONAL_OPERATIONAL_DATA'||value.schemaVersion!==TRANSFER_SCHEMA_VERSION||!value.exportId||!value.exportedAt)throw new BadRequestException('Unsupported or untrusted package');
-    if(!REGIONAL_CANDIDATE_DATASETS[value.regionId]||!Array.isArray(value.records))throw new BadRequestException('Invalid package region or records');
-    const ids=new Set<string>();for(const row of value.records){
-      if(!row||row.regionId!==value.regionId||typeof row.canonicalEntityId!=='string'||!(/^(https:\/\/|urn:)/.test(row.canonicalEntityId))||ids.has(row.canonicalEntityId))throw new BadRequestException('Cross-region, malformed, or duplicate canonical identity');ids.add(row.canonicalEntityId);
-      if(!row.displayName||!ENTITY_TYPES.has(row.entityType||'OTHER'))throw new BadRequestException('Unsupported entity record');
-      if(!row.source?.sourceUrl||!SOURCE_TYPES.has(row.source?.sourceType)||!/^https:\/\//.test(row.source.sourceUrl))throw new BadRequestException('Verified provenance is required');
-      const hasLat=row.latitude!==undefined,hasLng=row.longitude!==undefined;if(hasLat!==hasLng||(hasLat&&(!Number.isFinite(row.latitude)||!Number.isFinite(row.longitude)||row.latitude < -90||row.latitude > 90||row.longitude < -180||row.longitude > 180)))throw new BadRequestException('Malformed coordinates');
-      if(this.containsExecutable(row))throw new BadRequestException('Executable content is not allowed');
-      if(trusted&&(row.verificationStatus!=='VERIFIED'||!['ACTIVE','CHANGE_DETECTED'].includes(row.lifecycleStatus)))throw new BadRequestException('Trusted import requires verified operational records');
+  private exportRecord(row: any, includeWorkflow = false) {
+    const value: any = {
+      canonicalEntityId: row.canonicalEntityId,
+      regionId: row.regionId,
+      ...this.factFields(row),
+      source: row.source,
+      verifiedAt: row.lastVerifiedAt,
+      verificationStatus: row.verificationStatus,
+      lifecycleStatus: row.lifecycleStatus,
+      actionInputs: {
+        call: row.phone || undefined,
+        website: row.websiteUrl || undefined,
+        reserve: row.reservationUrl || undefined,
+        navigate:
+          Number.isFinite(row.latitude) && Number.isFinite(row.longitude)
+            ? { latitude: row.latitude, longitude: row.longitude }
+            : undefined,
+      },
+      auditSummary: {
+        lastAction: row.auditTrail?.at(-1)?.action,
+        lastActionAt: row.auditTrail?.at(-1)?.at,
+      },
+    };
+    if (includeWorkflow) {
+      value.proposedFacts = row.proposedFacts;
+      value.detectedChanges = row.detectedChanges;
+    }
+    return value;
+  }
+  private validatePackage(value: any, trusted: boolean) {
+    if (!value || typeof value !== 'object' || Array.isArray(value))
+      throw new BadRequestException('A JSON package is required');
+    if (JSON.stringify(value).length > 1_000_000)
+      throw new BadRequestException('Package exceeds 1 MB');
+    if (
+      value.packageType !== 'REGIONAL_OPERATIONAL_DATA' ||
+      value.schemaVersion !== TRANSFER_SCHEMA_VERSION ||
+      !value.exportId ||
+      !value.exportedAt
+    )
+      throw new BadRequestException('Unsupported or untrusted package');
+    if (
+      !REGIONAL_CANDIDATE_DATASETS[value.regionId] ||
+      !Array.isArray(value.records)
+    )
+      throw new BadRequestException('Invalid package region or records');
+    const ids = new Set<string>();
+    for (const row of value.records) {
+      if (
+        !row ||
+        row.regionId !== value.regionId ||
+        typeof row.canonicalEntityId !== 'string' ||
+        !/^(https:\/\/|urn:)/.test(row.canonicalEntityId) ||
+        ids.has(row.canonicalEntityId)
+      )
+        throw new BadRequestException(
+          'Cross-region, malformed, or duplicate canonical identity',
+        );
+      ids.add(row.canonicalEntityId);
+      if (!row.displayName || !ENTITY_TYPES.has(row.entityType || 'OTHER'))
+        throw new BadRequestException('Unsupported entity record');
+      if (
+        !row.source?.sourceUrl ||
+        !SOURCE_TYPES.has(row.source?.sourceType) ||
+        !/^https:\/\//.test(row.source.sourceUrl)
+      )
+        throw new BadRequestException('Verified provenance is required');
+      const hasLat = row.latitude !== undefined,
+        hasLng = row.longitude !== undefined;
+      if (
+        hasLat !== hasLng ||
+        (hasLat &&
+          (!Number.isFinite(row.latitude) ||
+            !Number.isFinite(row.longitude) ||
+            row.latitude < -90 ||
+            row.latitude > 90 ||
+            row.longitude < -180 ||
+            row.longitude > 180))
+      )
+        throw new BadRequestException('Malformed coordinates');
+      if (this.containsExecutable(row))
+        throw new BadRequestException('Executable content is not allowed');
+      if (
+        trusted &&
+        (row.verificationStatus !== 'VERIFIED' ||
+          !['ACTIVE', 'CHANGE_DETECTED'].includes(row.lifecycleStatus))
+      )
+        throw new BadRequestException(
+          'Trusted import requires verified operational records',
+        );
     }
   }
-  private importFacts(row:any){return Object.fromEntries(TRANSFER_FIELDS.filter(field=>row[field]!==undefined).map(field=>[field,row[field]]))}
-  private sameFacts(a:any,b:any){return JSON.stringify(this.importFacts(a||{}))===JSON.stringify(this.importFacts(b||{}))}
-  private containsExecutable(value:any):boolean{if(typeof value==='string')return /<script|javascript:|data:text\/html/i.test(value);if(Array.isArray(value))return value.some(x=>this.containsExecutable(x));if(value&&typeof value==='object')return Object.entries(value).some(([key,v])=>['__proto__','constructor','prototype'].includes(key)||this.containsExecutable(v));return false}
+  private importFacts(row: any) {
+    return Object.fromEntries(
+      TRANSFER_FIELDS.filter((field) => row[field] !== undefined).map(
+        (field) => [field, row[field]],
+      ),
+    );
+  }
+  private sameFacts(a: any, b: any) {
+    return (
+      JSON.stringify(this.importFacts(a || {})) ===
+      JSON.stringify(this.importFacts(b || {}))
+    );
+  }
+  private containsExecutable(value: any): boolean {
+    if (typeof value === 'string')
+      return /<script|javascript:|data:text\/html/i.test(value);
+    if (Array.isArray(value))
+      return value.some((x) => this.containsExecutable(x));
+    if (value && typeof value === 'object')
+      return Object.entries(value).some(
+        ([key, v]) =>
+          ['__proto__', 'constructor', 'prototype'].includes(key) ||
+          this.containsExecutable(v),
+      );
+    return false;
+  }
   private baseline(region: string, id: string) {
     return REGIONAL_CANDIDATE_DATASETS[region]?.records.find(
       (x) => x.entityUri === id,
     );
   }
   private findEquivalentBaseline(region: string, facts: any) {
-    return REGIONAL_CANDIDATE_DATASETS[region]?.records.find((row) => this.sameIdentity(row, facts));
+    return REGIONAL_CANDIDATE_DATASETS[region]?.records.find((row) =>
+      this.sameIdentity(row, facts),
+    );
   }
   private sameIdentity(row: any, facts: any) {
-    const normalize = (value?: unknown) => typeof value === 'string'
-      ? value.normalize('NFKC').toLocaleLowerCase('ko-KR').replace(/[^0-9a-z가-힣]/g, '')
-      : undefined;
-    const names = [row.canonicalLabelKo, row.displayName, ...(row.alternateLabels || []), ...(row.aliases || []), ...(row.proposedFacts?.aliases || [])]
-      .map(normalize).filter(Boolean);
-    const proposedNames = [facts.displayName, ...(facts.aliases || [])].map(normalize).filter(Boolean);
+    const normalize = (value?: unknown) =>
+      typeof value === 'string'
+        ? value
+            .normalize('NFKC')
+            .toLocaleLowerCase('ko-KR')
+            .replace(/[^0-9a-z가-힣]/g, '')
+        : undefined;
+    const names = [
+      row.canonicalLabelKo,
+      row.displayName,
+      ...(row.alternateLabels || []),
+      ...(row.aliases || []),
+      ...(row.proposedFacts?.aliases || []),
+    ]
+      .map(normalize)
+      .filter(Boolean);
+    const proposedNames = [facts.displayName, ...(facts.aliases || [])]
+      .map(normalize)
+      .filter(Boolean);
     if (proposedNames.some((name) => names.includes(name))) return true;
-    const sameKind = Boolean(facts.entityType && facts.entityType === (row.entityType || row.proposedFacts?.entityType))
-      || Boolean(facts.category && facts.category === (row.category || row.proposedFacts?.category));
+    const sameKind =
+      Boolean(
+        facts.entityType &&
+        facts.entityType === (row.entityType || row.proposedFacts?.entityType),
+      ) ||
+      Boolean(
+        facts.category &&
+        facts.category === (row.category || row.proposedFacts?.category),
+      );
     const rowAddress = normalize(row.address || row.proposedFacts?.address);
     const proposedAddress = normalize(facts.address);
-    if (sameKind && proposedAddress && proposedAddress === rowAddress) return true;
+    if (sameKind && proposedAddress && proposedAddress === rowAddress)
+      return true;
     const phone = (value?: string) => value?.replace(/\D/g, '');
-    if (phone(facts.phone) && phone(facts.phone) === phone(row.phone || row.telephone || row.proposedFacts?.phone)) return true;
-    const rowLat = row.latitude ?? row.proposedFacts?.latitude, rowLng = row.longitude ?? row.proposedFacts?.longitude;
-    if (Number.isFinite(facts.latitude) && Number.isFinite(facts.longitude) && Number.isFinite(rowLat) && Number.isFinite(rowLng)) {
+    if (
+      phone(facts.phone) &&
+      phone(facts.phone) ===
+        phone(row.phone || row.telephone || row.proposedFacts?.phone)
+    )
+      return true;
+    const rowLat = row.latitude ?? row.proposedFacts?.latitude,
+      rowLng = row.longitude ?? row.proposedFacts?.longitude;
+    if (
+      Number.isFinite(facts.latitude) &&
+      Number.isFinite(facts.longitude) &&
+      Number.isFinite(rowLat) &&
+      Number.isFinite(rowLng)
+    ) {
       const latMeters = (facts.latitude - rowLat) * 111_000;
       const lngMeters = (facts.longitude - rowLng) * 88_000;
       if (sameKind && Math.hypot(latMeters, lngMeters) <= 30) return true;
@@ -343,8 +714,16 @@ export class RegionalDataService implements OnModuleInit {
       walkingAccess: base.walkingAccess,
       shortDescription: base.description || base.shortDescription,
     });
-    return TRANSFER_FIELDS.filter((field) => facts[field] !== undefined && JSON.stringify(facts[field]) !== JSON.stringify(current[field]))
-      .map((field) => ({ field, previousValue: current[field], newValue: facts[field], unsafe: ['latitude', 'longitude'].includes(field) }));
+    return TRANSFER_FIELDS.filter(
+      (field) =>
+        facts[field] !== undefined &&
+        JSON.stringify(facts[field]) !== JSON.stringify(current[field]),
+    ).map((field) => ({
+      field,
+      previousValue: current[field],
+      newValue: facts[field],
+      unsafe: ['latitude', 'longitude'].includes(field),
+    }));
   }
   private diff(base: any, facts: any) {
     if (!base) return [];
@@ -419,10 +798,12 @@ export class RegionalDataService implements OnModuleInit {
       }),
       entityUri: row.canonicalEntityId,
       canonicalLabelKo: row.displayName,
-      alternateLabels: row.aliases?.length ? row.aliases : (base?.alternateLabels || []),
+      alternateLabels: row.aliases?.length
+        ? row.aliases
+        : base?.alternateLabels || [],
       category: row.category || base?.category || 'OTHER',
       entityType: row.entityType || base?.entityType,
-      tags: row.tags?.length ? row.tags : (base?.tags || []),
+      tags: row.tags?.length ? row.tags : base?.tags || [],
       areaLabel: row.areaLabel ?? base?.areaLabel,
       address: row.address ?? base?.address,
       telephone: row.phone ?? base?.telephone,

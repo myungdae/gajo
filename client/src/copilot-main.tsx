@@ -104,15 +104,19 @@ function Home({
     ),
     [home, setHome] = useState<any>(),
     [selected, setSelected] = useState<any>(),
+    [selectedCore, setSelectedCore] = useState<any>(),
     [query, setQuery] = useState("");
   const load = () =>
     api(`/home?regionId=${encodeURIComponent(regionId)}`).then(setHome);
   useEffect(() => {
     void load();
   }, [regionId]);
-  const open = async (task: any) =>
-    task.candidate &&
-    setSelected(await api(`/candidates/${task.candidate.id}`));
+  const open = async (task: any) => {
+    if (task.candidate)
+      setSelected(await api(`/candidates/${task.candidate.id}`));
+    if (task.core)
+      setSelectedCore(await api(`/core-destinations/${task.core.id}`));
+  };
   return (
     <main className="copilot-shell">
       <header>
@@ -151,6 +155,38 @@ function Home({
           <span>미검증 정보</span>
         </article>
       </section>
+      <section className="core-coverage">
+        <div className="section-heading">
+          <div>
+            <small>
+              {regionId} 핵심 장소 {home?.coreCoverage?.total || 0}곳
+            </small>
+            <h2>핵심 장소 점검</h2>
+          </div>
+          <span>전체 보기</span>
+        </div>
+        <div className="core-counts" aria-label="핵심 장소 상태 요약">
+          <b>정상 {home?.coreCoverage?.healthy || 0}</b>
+          <b>확인 필요 {home?.coreCoverage?.warning || 0}</b>
+          <b>누락 {home?.coreCoverage?.critical || 0}</b>
+        </div>
+        <div className="core-list">
+          {home?.coreCoverage?.items?.map((item: any) => (
+            <article key={item.core.id} data-health={item.health}>
+              <small>
+                {item.health === "HEALTHY"
+                  ? "정상"
+                  : item.health === "WARNING"
+                    ? "확인 필요"
+                    : "누락"}
+              </small>
+              <h3>{item.core.displayName}</h3>
+              <p>{item.summary}</p>
+              <button onClick={() => setSelectedCore(item)}>원인 보기</button>
+            </article>
+          ))}
+        </div>
+      </section>
       <section>
         <h2>오늘 뭐부터 할까요?</h2>
         <form
@@ -171,8 +207,8 @@ function Home({
           <button>보기</button>
         </form>
         <small>
-          “오늘 확인할 일”, “검색에서 발견된 곳”, “미검증 업체”를 물어볼 수
-          있습니다.
+          “오늘 확인할 일”, “핵심 관광지 중 검증 안 된 곳”, “황계폭포는 왜 안
+          나와?”를 물어볼 수 있습니다.
         </small>
       </section>
       <section>
@@ -183,9 +219,13 @@ function Home({
               <small>
                 {task.type} · 우선순위 {task.priority}
               </small>
-              <h3>{task.candidate?.displayName || task.entity?.displayName}</h3>
+              <h3>
+                {task.candidate?.displayName ||
+                  task.entity?.displayName ||
+                  task.core?.displayName}
+              </h3>
               <p>{task.reason}</p>
-              {task.candidate && (
+              {(task.candidate || task.core) && (
                 <button onClick={() => open(task)}>검토하기</button>
               )}
             </article>
@@ -208,7 +248,120 @@ function Home({
           }}
         />
       )}
+      {selectedCore && (
+        <CoreReview
+          detail={selectedCore}
+          onClose={() => setSelectedCore(undefined)}
+          onChanged={async () => {
+            setSelectedCore(undefined);
+            await load();
+          }}
+        />
+      )}
     </main>
+  );
+}
+function CoreReview({
+  detail,
+  onClose,
+  onChanged,
+}: {
+  detail: any;
+  onClose: () => void;
+  onChanged: () => void;
+}) {
+  const [confirmFix, setConfirmFix] = useState<string>();
+  const fixType =
+    detail.recommendedAction === "카테고리 수정 검토"
+      ? "CATEGORY"
+      : detail.recommendedAction === "검색 이름 추가"
+        ? "ALIAS"
+        : undefined;
+  return (
+    <div className="copilot-modal" role="dialog" aria-modal="true">
+      <section>
+        <button className="quiet" onClick={onClose}>
+          닫기
+        </button>
+        <small>
+          {detail.core.regionId} ·{" "}
+          {detail.health === "HEALTHY"
+            ? "정상"
+            : detail.health === "WARNING"
+              ? "확인 필요"
+              : "누락"}
+        </small>
+        <h2>{detail.core.displayName}</h2>
+        <p>{detail.summary}</p>
+        <h3>왜 확인해야 하나요?</h3>
+        <ul>
+          {detail.reasons.map((reason: string) => (
+            <li key={reason}>{reason}</li>
+          ))}
+        </ul>
+        <h3>진단 근거</h3>
+        <dl>
+          <dt>검증</dt>
+          <dd>
+            {detail.evidence.verificationStatus || "canonical entity 없음"}
+          </dd>
+          <dt>운영 상태</dt>
+          <dd>{detail.evidence.lifecycleStatus || "확인 불가"}</dd>
+          <dt>카테고리</dt>
+          <dd>{detail.evidence.category || "확인 불가"}</dd>
+          <dt>좌표</dt>
+          <dd>{detail.evidence.coordinatesAvailable ? "있음" : "없음"}</dd>
+          <dt>관광지 탐색</dt>
+          <dd>{detail.evidence.discoveryEligible ? "가능" : "현재 불가"}</dd>
+        </dl>
+        <p>
+          <b>권장 조치:</b> {detail.recommendedAction}
+        </p>
+        {fixType && (
+          <button className="approve" onClick={() => setConfirmFix(fixType)}>
+            수정하기
+          </button>
+        )}
+        {!fixType && detail.health !== "HEALTHY" && (
+          <button onClick={() => setConfirmFix("REVIEW")}>확인 기록</button>
+        )}
+        {confirmFix && (
+          <div role="alertdialog" className="confirmation">
+            <b>
+              {confirmFix === "CATEGORY"
+                ? `${detail.evidence.category || "현재 분류"}를 ${detail.core.expectedCategory}로 변경할까요?`
+                : confirmFix === "ALIAS"
+                  ? `${detail.core.displayName}을 검색 이름으로 추가할까요?`
+                  : "이 진단을 확인한 것으로 기록할까요?"}
+            </b>
+            <span>
+              명시적으로 승인하기 전에는 지역 운영정보가 변경되지 않습니다.
+            </span>
+            <button
+              onClick={async () => {
+                if (confirmFix === "REVIEW")
+                  await api(`/core-destinations/${detail.core.id}/review`, {
+                    method: "POST",
+                    body: JSON.stringify({ confirmed: true }),
+                  });
+                else
+                  await api(
+                    `/core-destinations/${detail.core.id}/fixes/${confirmFix}`,
+                    {
+                      method: "POST",
+                      body: JSON.stringify({ confirmed: true }),
+                    },
+                  );
+                await onChanged();
+              }}
+            >
+              승인
+            </button>
+            <button onClick={() => setConfirmFix(undefined)}>보류</button>
+          </div>
+        )}
+      </section>
+    </div>
   );
 }
 function Review({

@@ -8,29 +8,9 @@ import {
 import { ExkoSemanticAdapter } from '../exko-semantic/exko-semantic.service';
 import { NearbyService, NearbyServiceError } from '../nearby/nearby.service';
 import { CopilotService } from '../copilot/copilot.service';
+import { DISCOVERY_CATEGORY_MATCH } from './discovery-eligibility';
 
-const CATEGORY_MATCH: Record<DiscoveryCategory, (record: any) => boolean> = {
-  CAFE: (record) => record.entityType === 'CAFE' || record.category === 'CAFE',
-  FOOD: (record) =>
-    record.entityType === 'RESTAURANT' || record.category === 'FOOD',
-  LODGING: (record) =>
-    record.entityType === 'ACCOMMODATION' ||
-    /LODGING|ACCOMMODATION/.test(record.category),
-  ACTIVITY: (record) =>
-    /EXPERIENCE|ACTIVITY/.test(`${record.entityType} ${record.category}`),
-  TOURISM_NATURE: (record) =>
-    /ATTRACTION|TOURISM/.test(`${record.entityType} ${record.category}`),
-  CONVENIENCE: (record) =>
-    /CONVENIENCE/.test(`${record.entityType} ${record.category}`),
-  CONVENIENCE_STORE: (record) =>
-    /CONVENIENCE_STORE/.test(`${record.entityType} ${record.category}`) || /편의점|(?:^|\s)(?:CU|GS25)(?:\s|$)|세븐일레븐|이마트24|미니스톱/i.test(record.canonicalLabelKo || ''),
-  MART_SUPERMARKET: (record) =>
-    /MART|SUPERMARKET|GROCERY/.test(`${record.entityType} ${record.category}`) || /마트|슈퍼마켓|슈퍼(?!맨)|식료품점/.test(record.canonicalLabelKo || ''),
-  ESSENTIAL_SHOPPING: (record) =>
-    CATEGORY_MATCH.CONVENIENCE_STORE(record) || CATEGORY_MATCH.MART_SUPERMARKET(record),
-  HOT_SPRING_WELLNESS: (record) =>
-    /HOT_SPRING|WELLNESS|SAUNA|BATH|SPA/.test(`${record.entityType} ${record.category}`),
-};
+const CATEGORY_MATCH = DISCOVERY_CATEGORY_MATCH;
 
 @Injectable()
 export class PlaceDiscoveryService {
@@ -56,19 +36,50 @@ export class PlaceDiscoveryService {
     requested.add(category);
 
     const explicitAnchor = this.resolveExplicitAnchor(dataset.records, message);
-    const contextualReference = /거기|그곳|그중|그\s*(?:근처|주변|카페|식당|숙소)/.test(message);
+    const contextualReference =
+      /거기|그곳|그중|그\s*(?:근처|주변|카페|식당|숙소)/.test(message);
     const supplied = context.conversationalAnchor;
-    const datasetAnchor = contextualReference && supplied?.regionId === regionId
-      ? dataset.records.find((record) => record.entityUri === supplied.entityId)
-      : undefined;
-    const candidateAnchor = contextualReference && supplied?.regionId === regionId &&
-      supplied?.source === 'SEARCH' && Number.isFinite(supplied.latitude) && Number.isFinite(supplied.longitude)
-      ? { entityUri: supplied.entityId, canonicalLabelKo: supplied.label, entityType: supplied.entityType, category: supplied.category, latitude: supplied.latitude, longitude: supplied.longitude }
-      : undefined;
-    const priorDiscovery = context.discoveryContext?.regionId === regionId ? context.discoveryContext : undefined;
-    const priorAnchor = context.discoveryAlternative && priorDiscovery
-      ? dataset.records.find((record) => record.entityUri === priorDiscovery.anchor?.entityId) || (priorDiscovery.anchor?.source === 'SEARCH' && Number.isFinite(priorDiscovery.anchor.latitude) && Number.isFinite(priorDiscovery.anchor.longitude) ? { entityUri: priorDiscovery.anchor.entityId, canonicalLabelKo: priorDiscovery.anchor.label, latitude: priorDiscovery.anchor.latitude, longitude: priorDiscovery.anchor.longitude } : undefined)
-      : undefined;
+    const datasetAnchor =
+      contextualReference && supplied?.regionId === regionId
+        ? dataset.records.find(
+            (record) => record.entityUri === supplied.entityId,
+          )
+        : undefined;
+    const candidateAnchor =
+      contextualReference &&
+      supplied?.regionId === regionId &&
+      supplied?.source === 'SEARCH' &&
+      Number.isFinite(supplied.latitude) &&
+      Number.isFinite(supplied.longitude)
+        ? {
+            entityUri: supplied.entityId,
+            canonicalLabelKo: supplied.label,
+            entityType: supplied.entityType,
+            category: supplied.category,
+            latitude: supplied.latitude,
+            longitude: supplied.longitude,
+          }
+        : undefined;
+    const priorDiscovery =
+      context.discoveryContext?.regionId === regionId
+        ? context.discoveryContext
+        : undefined;
+    const priorAnchor =
+      context.discoveryAlternative && priorDiscovery
+        ? dataset.records.find(
+            (record) => record.entityUri === priorDiscovery.anchor?.entityId,
+          ) ||
+          (priorDiscovery.anchor?.source === 'SEARCH' &&
+          Number.isFinite(priorDiscovery.anchor.latitude) &&
+          Number.isFinite(priorDiscovery.anchor.longitude)
+            ? {
+                entityUri: priorDiscovery.anchor.entityId,
+                canonicalLabelKo: priorDiscovery.anchor.label,
+                latitude: priorDiscovery.anchor.latitude,
+                longitude: priorDiscovery.anchor.longitude,
+              }
+            : undefined)
+        : undefined;
     const contextualAnchor = datasetAnchor || candidateAnchor || priorAnchor;
     const anchor = explicitAnchor || contextualAnchor;
     // A place named in the current utterance owns the origin. If it has no
@@ -90,12 +101,19 @@ export class PlaceDiscoveryService {
     const accommodationType =
       category === 'LODGING' ? requestedAccommodationType(message) : undefined;
     const preferredAvailable = dataset.records.some(CATEGORY_MATCH[category]);
-    const martFallback = category === 'CONVENIENCE_STORE' && !preferredAvailable;
-    const eligibility = martFallback ? CATEGORY_MATCH.MART_SUPERMARKET : CATEGORY_MATCH[category];
+    const martFallback =
+      category === 'CONVENIENCE_STORE' && !preferredAvailable;
+    const eligibility = martFallback
+      ? CATEGORY_MATCH.MART_SUPERMARKET
+      : CATEGORY_MATCH[category];
     const ranked = dataset.records
       .filter(eligibility)
       .filter((record) => !anchor || record.entityUri !== anchor.entityUri)
-      .filter((record) => !context.discoveryAlternative || !priorDiscovery?.shownEntityIds?.includes(record.entityUri))
+      .filter(
+        (record) =>
+          !context.discoveryAlternative ||
+          !priorDiscovery?.shownEntityIds?.includes(record.entityUri),
+      )
       .filter(
         (record) =>
           !accommodationType ||
@@ -120,22 +138,67 @@ export class PlaceDiscoveryService {
       })
       .sort(
         (a, b) =>
-          (context.preferCloser ? (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity) : b.score - a.score) ||
+          (context.preferCloser
+            ? (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity)
+            : b.score - a.score) ||
           (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity) ||
           a.record.entityUri.localeCompare(b.record.entityUri),
       );
 
     let searchFallbackCategory: DiscoveryCategory = category;
-    let searchCandidates = ranked.length === 0 && origin && this.nearby
-      ? await this.searchFallback(regionId, category, origin, dataset.records, context.discoveryAlternative ? priorDiscovery?.shownEntityIds || [] : [])
-      : [];
-    if (category === 'CONVENIENCE_STORE' && ranked.length === 0 && searchCandidates.length === 0 && origin && this.nearby) {
+    let searchCandidates =
+      ranked.length === 0 && origin && this.nearby
+        ? await this.searchFallback(
+            regionId,
+            category,
+            origin,
+            dataset.records,
+            context.discoveryAlternative
+              ? priorDiscovery?.shownEntityIds || []
+              : [],
+          )
+        : [];
+    if (
+      category === 'CONVENIENCE_STORE' &&
+      ranked.length === 0 &&
+      searchCandidates.length === 0 &&
+      origin &&
+      this.nearby
+    ) {
       searchFallbackCategory = 'MART_SUPERMARKET';
-      searchCandidates = await this.searchFallback(regionId, searchFallbackCategory, origin, dataset.records, context.discoveryAlternative ? priorDiscovery?.shownEntityIds || [] : []);
+      searchCandidates = await this.searchFallback(
+        regionId,
+        searchFallbackCategory,
+        origin,
+        dataset.records,
+        context.discoveryAlternative
+          ? priorDiscovery?.shownEntityIds || []
+          : [],
+      );
     }
-    const usedShoppingAlternative = martFallback || searchFallbackCategory === 'MART_SUPERMARKET';
-    for (const entity of searchCandidates.filter((item:any)=>item.operationalEvidence?.source==='SEARCH'))
-      await this.copilot?.ingestSearchCandidate({regionId,displayName:entity.programLabel,category:entity.category,entityType:entity.category,address:entity.candidateEvidence?.observedAddress,phone:entity.candidateEvidence?.observedPhone,latitude:entity.latitude,longitude:entity.longitude,evidence:{sourceType:entity.candidateEvidence?.sourceType,sourceUrl:entity.candidateEvidence?.sourceUrl,providerCategory:entity.candidateEvidence?.providerCategory,discoveredAt:new Date().toISOString()}}).catch(()=>undefined);
+    const usedShoppingAlternative =
+      martFallback || searchFallbackCategory === 'MART_SUPERMARKET';
+    for (const entity of searchCandidates.filter(
+      (item: any) => item.operationalEvidence?.source === 'SEARCH',
+    ))
+      await this.copilot
+        ?.ingestSearchCandidate({
+          regionId,
+          displayName: entity.programLabel,
+          category: entity.category,
+          entityType: entity.category,
+          address: entity.candidateEvidence?.observedAddress,
+          phone: entity.candidateEvidence?.observedPhone,
+          latitude: entity.latitude,
+          longitude: entity.longitude,
+          evidence: {
+            sourceType: entity.candidateEvidence?.sourceType,
+            sourceUrl: entity.candidateEvidence?.sourceUrl,
+            providerCategory: entity.candidateEvidence?.providerCategory,
+            discoveredAt: new Date().toISOString(),
+          },
+        })
+        .catch(() => undefined);
 
     return {
       regionId,
@@ -150,8 +213,18 @@ export class PlaceDiscoveryService {
         ? '가까운 편의점 결과가 부족해 주변 마트·슈퍼마켓도 함께 보여드렸습니다.'
         : undefined,
       referenceResolution: {
-        mode: explicitAnchor ? 'EXPLICIT_ENTITY' : priorAnchor ? 'DISCOVERY_CONTEXT' : contextualAnchor ? 'CONVERSATIONAL_REFERENCE' : 'NONE',
-        sourceTurnId: priorAnchor ? priorDiscovery.sourceTurnId : contextualAnchor ? supplied.sourceTurnId : undefined,
+        mode: explicitAnchor
+          ? 'EXPLICIT_ENTITY'
+          : priorAnchor
+            ? 'DISCOVERY_CONTEXT'
+            : contextualAnchor
+              ? 'CONVERSATIONAL_REFERENCE'
+              : 'NONE',
+        sourceTurnId: priorAnchor
+          ? priorDiscovery.sourceTurnId
+          : contextualAnchor
+            ? supplied.sourceTurnId
+            : undefined,
         currentTurnId: context.turnId,
         resolvedEntityId: anchor?.entityUri,
       },
@@ -173,99 +246,172 @@ export class PlaceDiscoveryService {
         object: edge.object,
         source: 'EXKO',
       })),
-      searchFallback: searchCandidates.length ? {
-        used: true,
-        source: 'KAKAO_LOCAL',
-        evidenceRetention: 'REGIONAL_CANDIDATE',
-      } : undefined,
-      entities: [...ranked.slice(context.selectionIndex ?? 0).map(
-        ({ record, matched, distanceMeters, score }, index) => ({
-          entityId: record.entityUri,
-          regionId,
-          order: index + 1,
-          programUri: record.entityUri,
-          programLabel: record.canonicalLabelKo,
-          facilityUri: record.entityUri,
-          facilityLabel: record.canonicalLabelKo,
-          entityType: record.entityType,
-          category: record.category,
-          accommodationType: recordAccommodationType(record),
-          areaLabel: record.areaLabel,
-          description: record.description,
-          address: record.address,
-          telephone: record.telephone,
-          website: record.website,
-          reservationUrl: record.reservationUrl,
-          latitude: record.latitude,
-          longitude: record.longitude,
-          actions: record.actions,
-          source: record.source,
-          lastVerifiedAt: record.lastVerifiedAt,
-          distanceMeters,
-          reasons: [
-            ...matched.map((tag: string) =>
-              tag === 'HAPCHEON_LAKE'
-                ? '합천호 관련 맥락'
-                : tag === 'REST'
-                  ? '휴식 맥락'
-                  : tag === category
-                    ? '요청한 장소 유형'
-                    : tag,
-            ),
-            ...(distanceMeters !== undefined
-              ? [
-                  `${anchor?.canonicalLabelKo || '현재 위치'} 기준 ${distanceMeters}m`,
-                ]
-              : []),
-          ],
-          score,
-          operationalEvidence: {
-            source: 'RDM',
-            verificationStatus: record.runtimeDataStatus,
-            runtimeDistanceCalculated: distanceMeters !== undefined,
-            navigationAvailable: Boolean(record.actions?.navigate),
-            tripEligible: true,
-          },
-        }),
-      ), ...searchCandidates],
+      searchFallback: searchCandidates.length
+        ? {
+            used: true,
+            source: 'KAKAO_LOCAL',
+            evidenceRetention: 'REGIONAL_CANDIDATE',
+          }
+        : undefined,
+      entities: [
+        ...ranked
+          .slice(context.selectionIndex ?? 0)
+          .map(({ record, matched, distanceMeters, score }, index) => ({
+            entityId: record.entityUri,
+            regionId,
+            order: index + 1,
+            programUri: record.entityUri,
+            programLabel: record.canonicalLabelKo,
+            facilityUri: record.entityUri,
+            facilityLabel: record.canonicalLabelKo,
+            entityType: record.entityType,
+            category: record.category,
+            accommodationType: recordAccommodationType(record),
+            areaLabel: record.areaLabel,
+            description: record.description,
+            address: record.address,
+            telephone: record.telephone,
+            website: record.website,
+            reservationUrl: record.reservationUrl,
+            latitude: record.latitude,
+            longitude: record.longitude,
+            actions: record.actions,
+            source: record.source,
+            lastVerifiedAt: record.lastVerifiedAt,
+            distanceMeters,
+            reasons: [
+              ...matched.map((tag: string) =>
+                tag === 'HAPCHEON_LAKE'
+                  ? '합천호 관련 맥락'
+                  : tag === 'REST'
+                    ? '휴식 맥락'
+                    : tag === category
+                      ? '요청한 장소 유형'
+                      : tag,
+              ),
+              ...(distanceMeters !== undefined
+                ? [
+                    `${anchor?.canonicalLabelKo || '현재 위치'} 기준 ${distanceMeters}m`,
+                  ]
+                : []),
+            ],
+            score,
+            operationalEvidence: {
+              source: 'RDM',
+              verificationStatus: record.runtimeDataStatus,
+              runtimeDistanceCalculated: distanceMeters !== undefined,
+              navigationAvailable: Boolean(record.actions?.navigate),
+              tripEligible: true,
+            },
+          })),
+        ...searchCandidates,
+      ],
     };
   }
 
-  private async searchFallback(regionId: string, category: DiscoveryCategory, origin: { latitude: number; longitude: number }, records: readonly any[], excludedEntityIds: readonly string[] = []) {
+  private async searchFallback(
+    regionId: string,
+    category: DiscoveryCategory,
+    origin: { latitude: number; longitude: number },
+    records: readonly any[],
+    excludedEntityIds: readonly string[] = [],
+  ) {
     try {
-      const found = await this.nearby!.search(category as any, origin.latitude, origin.longitude, 2500, {}, regionId);
-      return found.filter((place) => CATEGORY_MATCH[category]({ entityType: place.category, category: place.category, canonicalLabelKo: place.name })).slice(0, 5).flatMap<any>((place, index) => {
-        const canonical = records.find((record) =>
-          record.entityUri === place.canonicalEntityUri || this.normalize(record.canonicalLabelKo) === this.normalize(place.name),
-        );
-        if (canonical && CATEGORY_MATCH[category](canonical)) return [{
-          entityId: canonical.entityUri, regionId, order: index + 1,
-          programUri: canonical.entityUri, programLabel: canonical.canonicalLabelKo,
-          facilityUri: canonical.entityUri, facilityLabel: canonical.canonicalLabelKo,
-          entityType: canonical.entityType, category: canonical.category,
-          description: canonical.description, address: canonical.address,
-          telephone: canonical.telephone, website: canonical.website,
-          reservationUrl: canonical.reservationUrl, latitude: canonical.latitude,
-          longitude: canonical.longitude, actions: canonical.actions,
-          source: canonical.source, lastVerifiedAt: canonical.lastVerifiedAt,
-          distanceMeters: place.distanceMeters,
-          reasons: ['외부 검색 후보를 검증된 지역 엔티티와 일치시켰습니다.'],
-          operationalEvidence: { source: 'RDM', discoverySource: 'SEARCH', verificationStatus: canonical.runtimeDataStatus, navigationAvailable: Boolean(canonical.actions?.navigate), tripEligible: true },
-        }];
-        if (canonical) return [];
-        return [{
-          entityId: `search:${regionId}:${place.id}`, regionId, order: index + 1,
-          programLabel: place.name, facilityLabel: place.name,
-          entityType: 'SEARCH_CANDIDATE', category: place.category,
-          address: place.roadAddress || place.address || undefined,
-          latitude: place.lat, longitude: place.lng,
-          distanceMeters: place.distanceMeters,
-          reasons: ['지역 데이터에 없는 검색 후보입니다. 운영 정보는 방문 전에 확인해 주세요.'],
-          actions: {},
-          operationalEvidence: { source: 'SEARCH', verificationStatus: 'UNVERIFIED', navigationAvailable: false, tripEligible: false },
-          candidateEvidence: { sourceType: 'KAKAO_LOCAL', sourceUrl: place.placeUrl || undefined, providerCategory: place.providerCategoryName, observedPhone: place.phone || undefined, observedAddress: place.roadAddress || place.address || undefined },
-        }];
-      }).filter((entity: any) => !excludedEntityIds.includes(entity.entityId));
+      const found = await this.nearby!.search(
+        category as any,
+        origin.latitude,
+        origin.longitude,
+        2500,
+        {},
+        regionId,
+      );
+      return found
+        .filter((place) =>
+          CATEGORY_MATCH[category]({
+            entityType: place.category,
+            category: place.category,
+            canonicalLabelKo: place.name,
+          }),
+        )
+        .slice(0, 5)
+        .flatMap<any>((place, index) => {
+          const canonical = records.find(
+            (record) =>
+              record.entityUri === place.canonicalEntityUri ||
+              this.normalize(record.canonicalLabelKo) ===
+                this.normalize(place.name),
+          );
+          if (canonical && CATEGORY_MATCH[category](canonical))
+            return [
+              {
+                entityId: canonical.entityUri,
+                regionId,
+                order: index + 1,
+                programUri: canonical.entityUri,
+                programLabel: canonical.canonicalLabelKo,
+                facilityUri: canonical.entityUri,
+                facilityLabel: canonical.canonicalLabelKo,
+                entityType: canonical.entityType,
+                category: canonical.category,
+                description: canonical.description,
+                address: canonical.address,
+                telephone: canonical.telephone,
+                website: canonical.website,
+                reservationUrl: canonical.reservationUrl,
+                latitude: canonical.latitude,
+                longitude: canonical.longitude,
+                actions: canonical.actions,
+                source: canonical.source,
+                lastVerifiedAt: canonical.lastVerifiedAt,
+                distanceMeters: place.distanceMeters,
+                reasons: [
+                  '외부 검색 후보를 검증된 지역 엔티티와 일치시켰습니다.',
+                ],
+                operationalEvidence: {
+                  source: 'RDM',
+                  discoverySource: 'SEARCH',
+                  verificationStatus: canonical.runtimeDataStatus,
+                  navigationAvailable: Boolean(canonical.actions?.navigate),
+                  tripEligible: true,
+                },
+              },
+            ];
+          if (canonical) return [];
+          return [
+            {
+              entityId: `search:${regionId}:${place.id}`,
+              regionId,
+              order: index + 1,
+              programLabel: place.name,
+              facilityLabel: place.name,
+              entityType: 'SEARCH_CANDIDATE',
+              category: place.category,
+              address: place.roadAddress || place.address || undefined,
+              latitude: place.lat,
+              longitude: place.lng,
+              distanceMeters: place.distanceMeters,
+              reasons: [
+                '지역 데이터에 없는 검색 후보입니다. 운영 정보는 방문 전에 확인해 주세요.',
+              ],
+              actions: {},
+              operationalEvidence: {
+                source: 'SEARCH',
+                verificationStatus: 'UNVERIFIED',
+                navigationAvailable: false,
+                tripEligible: false,
+              },
+              candidateEvidence: {
+                sourceType: 'KAKAO_LOCAL',
+                sourceUrl: place.placeUrl || undefined,
+                providerCategory: place.providerCategoryName,
+                observedPhone: place.phone || undefined,
+                observedAddress:
+                  place.roadAddress || place.address || undefined,
+              },
+            },
+          ];
+        })
+        .filter((entity: any) => !excludedEntityIds.includes(entity.entityId));
     } catch (error) {
       if (error instanceof NearbyServiceError) return [];
       throw error;
@@ -286,18 +432,70 @@ export class PlaceDiscoveryService {
 
   async resolveReference(regionId: string, message: string) {
     const dataset = await this.regionalData?.effectiveDataset(regionId);
-    const record = dataset && this.resolveExplicitAnchor(dataset.records, message);
-    return record ? { entityId: record.entityUri, regionId, label: record.canonicalLabelKo, entityType: record.entityType, category: record.category, latitude: record.latitude, longitude: record.longitude } : undefined;
+    const record =
+      dataset && this.resolveExplicitAnchor(dataset.records, message);
+    return record
+      ? {
+          entityId: record.entityUri,
+          regionId,
+          label: record.canonicalLabelKo,
+          entityType: record.entityType,
+          category: record.category,
+          latitude: record.latitude,
+          longitude: record.longitude,
+        }
+      : undefined;
   }
 
   async distanceInfo(regionId: string, context: any) {
-    const discovery=context.discoveryContext;
-    if(!discovery||discovery.regionId!==regionId)return{status:'NEEDS_CLARIFICATION',message:'어느 장소까지의 거리를 확인할까요?'};
-    const dataset=await this.regionalData?.effectiveDataset(regionId),records=dataset?.records||[];
-    const resolve=(value:any)=>{const canonical=records.find((record:any)=>record.entityUri===value?.entityId);return canonical||((value?.source==='SEARCH'&&Number.isFinite(value.latitude)&&Number.isFinite(value.longitude))?{entityUri:value.entityId,canonicalLabelKo:value.label,latitude:value.latitude,longitude:value.longitude}:undefined)};
-    const from=resolve(discovery.anchor),to=resolve(discovery.currentResult),distanceMeters=this.distance(this.coordinates(from),this.coordinates(to));
-    if(!from||!to||distanceMeters===undefined)return{status:'NEEDS_CLARIFICATION',message:'출발 장소가 분명하지 않아 거리를 계산하지 못했습니다. 어디에서 출발하는지 알려주세요.'};
-    return{status:'RESOLVED',regionId,fromEntityId:from.entityUri,fromLabel:from.canonicalLabelKo,toEntityId:to.entityUri,toLabel:to.canonicalLabelKo,distanceMeters,calculation:'RUNTIME_HAVERSINE'};
+    const discovery = context.discoveryContext;
+    if (!discovery || discovery.regionId !== regionId)
+      return {
+        status: 'NEEDS_CLARIFICATION',
+        message: '어느 장소까지의 거리를 확인할까요?',
+      };
+    const dataset = await this.regionalData?.effectiveDataset(regionId),
+      records = dataset?.records || [];
+    const resolve = (value: any) => {
+      const canonical = records.find(
+        (record: any) => record.entityUri === value?.entityId,
+      );
+      return (
+        canonical ||
+        (value?.source === 'SEARCH' &&
+        Number.isFinite(value.latitude) &&
+        Number.isFinite(value.longitude)
+          ? {
+              entityUri: value.entityId,
+              canonicalLabelKo: value.label,
+              latitude: value.latitude,
+              longitude: value.longitude,
+            }
+          : undefined)
+      );
+    };
+    const from = resolve(discovery.anchor),
+      to = resolve(discovery.currentResult),
+      distanceMeters = this.distance(
+        this.coordinates(from),
+        this.coordinates(to),
+      );
+    if (!from || !to || distanceMeters === undefined)
+      return {
+        status: 'NEEDS_CLARIFICATION',
+        message:
+          '출발 장소가 분명하지 않아 거리를 계산하지 못했습니다. 어디에서 출발하는지 알려주세요.',
+      };
+    return {
+      status: 'RESOLVED',
+      regionId,
+      fromEntityId: from.entityUri,
+      fromLabel: from.canonicalLabelKo,
+      toEntityId: to.entityUri,
+      toLabel: to.canonicalLabelKo,
+      distanceMeters,
+      calculation: 'RUNTIME_HAVERSINE',
+    };
   }
 
   private normalize(value: string) {

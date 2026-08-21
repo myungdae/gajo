@@ -5,5 +5,6 @@ import { CopilotAuthGuard, CopilotAuthService } from './copilot-auth';
 import { CopilotController } from './copilot.controller';
 import { CopilotService } from './copilot.service';
 import { CopilotAssignment, CopilotAssignmentSchema } from './copilot-assignment.schema';
-@Global()@Module({imports:[MongooseModule.forFeature([{name:CopilotCandidate.name,schema:CopilotCandidateSchema},{name:CopilotAssignment.name,schema:CopilotAssignmentSchema}])],providers:[CopilotService,CopilotAuthService,CopilotAuthGuard],controllers:[CopilotController],exports:[CopilotService]})
+import { CoreDestination, CoreDestinationSchema } from './core-destination.schema';
+@Global()@Module({imports:[MongooseModule.forFeature([{name:CopilotCandidate.name,schema:CopilotCandidateSchema},{name:CopilotAssignment.name,schema:CopilotAssignmentSchema},{name:CoreDestination.name,schema:CoreDestinationSchema}])],providers:[CopilotService,CopilotAuthService,CopilotAuthGuard],controllers:[CopilotController],exports:[CopilotService]})
 export class CopilotModule{}

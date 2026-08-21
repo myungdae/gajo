@@ -1,1 +1,206 @@
-:root{font-family:Pretendard,"Noto Sans KR",system-ui;color:#17231d;background:#f2f5f2}*{box-sizing:border-box}body{margin:0}button,input{font:inherit;min-height:44px;border-radius:10px;border:1px solid #aab7af;padding:10px 12px}button{background:#194f38;color:white;font-weight:700;cursor:pointer}.quiet{background:transparent;color:#315242;border:0}.copilot-login{min-height:100dvh;display:grid;place-items:center;padding:20px}.copilot-login form{width:min(100%,420px);display:grid;gap:14px;background:white;padding:28px;border-radius:18px}.copilot-login label,.copilot-modal label{display:grid;gap:5px}.copilot-shell{width:min(100%,1050px);margin:auto;padding:20px 16px 90px}.copilot-shell header{display:flex;justify-content:space-between;gap:12px;align-items:start}.copilot-shell h1{font-size:clamp(24px,5vw,38px)}.copilot-counts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.copilot-counts article,.copilot-tasks article,.copilot-shell>section{background:white;border-radius:16px;padding:16px;margin:14px 0}.copilot-counts article{display:grid;margin:0}.copilot-counts b{font-size:28px}.copilot-query{display:flex;gap:8px}.copilot-query input{min-width:0;flex:1}.copilot-tasks{display:grid;gap:10px}.copilot-tasks article{border:1px solid #dce4df;margin:0}.copilot-shell nav{position:fixed;bottom:0;left:0;right:0;display:flex;overflow-x:auto;gap:20px;background:white;border-top:1px solid #dce4df;padding:14px max(16px,calc((100vw - 1000px)/2));white-space:nowrap}.copilot-modal{position:fixed;inset:0;background:#0008;z-index:30;overflow:auto;padding:16px}.copilot-modal>section{width:min(100%,620px);margin:auto;background:white;border-radius:18px;padding:20px;display:grid;gap:10px}.copilot-modal dl{display:grid;grid-template-columns:max-content 1fr;gap:8px 14px}.warning{background:#fff3cf;padding:12px}.approve{background:#194f38}.danger{background:#8d2929}.confirmation{display:grid;gap:10px;padding:14px;background:#eef4f0;border-radius:12px}@media(min-width:760px){.copilot-counts{grid-template-columns:repeat(4,1fr)}.copilot-tasks{grid-template-columns:repeat(2,1fr)}}
+:root {
+  font-family: Pretendard, "Noto Sans KR", system-ui;
+  color: #17231d;
+  background: #f2f5f2;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+button,
+input {
+  font: inherit;
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1px solid #aab7af;
+  padding: 10px 12px;
+}
+button {
+  background: #194f38;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+.quiet {
+  background: transparent;
+  color: #315242;
+  border: 0;
+}
+.copilot-login {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+.copilot-login form {
+  width: min(100%, 420px);
+  display: grid;
+  gap: 14px;
+  background: white;
+  padding: 28px;
+  border-radius: 18px;
+}
+.copilot-login label,
+.copilot-modal label {
+  display: grid;
+  gap: 5px;
+}
+.copilot-shell {
+  width: min(100%, 1050px);
+  margin: auto;
+  padding: 20px 16px 90px;
+}
+.copilot-shell header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+.copilot-shell h1 {
+  font-size: clamp(24px, 5vw, 38px);
+}
+.copilot-counts {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.copilot-counts article,
+.copilot-tasks article,
+.copilot-shell > section {
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  margin: 14px 0;
+}
+.copilot-counts article {
+  display: grid;
+  margin: 0;
+}
+.copilot-counts b {
+  font-size: 28px;
+}
+.copilot-query {
+  display: flex;
+  gap: 8px;
+}
+.copilot-query input {
+  min-width: 0;
+  flex: 1;
+}
+.copilot-tasks {
+  display: grid;
+  gap: 10px;
+}
+.copilot-tasks article {
+  border: 1px solid #dce4df;
+  margin: 0;
+}
+.copilot-shell nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  overflow-x: auto;
+  gap: 20px;
+  background: white;
+  border-top: 1px solid #dce4df;
+  padding: 14px max(16px, calc((100vw - 1000px) / 2));
+  white-space: nowrap;
+}
+.copilot-modal {
+  position: fixed;
+  inset: 0;
+  background: #0008;
+  z-index: 30;
+  overflow: auto;
+  padding: 16px;
+}
+.copilot-modal > section {
+  width: min(100%, 620px);
+  margin: auto;
+  background: white;
+  border-radius: 18px;
+  padding: 20px;
+  display: grid;
+  gap: 10px;
+}
+.copilot-modal dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 8px 14px;
+}
+.warning {
+  background: #fff3cf;
+  padding: 12px;
+}
+.approve {
+  background: #194f38;
+}
+.danger {
+  background: #8d2929;
+}
+.confirmation {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  background: #eef4f0;
+  border-radius: 12px;
+}
+@media (min-width: 760px) {
+  .copilot-counts {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .copilot-tasks {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.section-heading h2 {
+  margin: 0.25rem 0;
+}
+.core-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0;
+}
+.core-counts b {
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: #eef4f0;
+}
+.core-list {
+  display: grid;
+  gap: 10px;
+}
+.core-list article {
+  border: 1px solid #dce4df;
+  border-left: 5px solid #387b57;
+  border-radius: 12px;
+  padding: 14px;
+}
+.core-list article[data-health="WARNING"] {
+  border-left-color: #b27b18;
+}
+.core-list article[data-health="CRITICAL"] {
+  border-left-color: #a42c2c;
+}
+.core-list h3 {
+  margin: 0.3rem 0;
+}
+.core-list button {
+  width: 100%;
+}
+@media (min-width: 760px) {
+  .core-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
