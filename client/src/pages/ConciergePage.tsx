@@ -103,6 +103,9 @@ export default function ConciergePage() {
   const [input, setInput] = useState(entryState?.initialMessage || "");
   const [currentTurn, setCurrentTurn] = useState<CurrentTurnResult<ConciergeChatResponse> | null>(null);
   const [conversationAnchor, setConversationAnchor] = useState<NonNullable<CreateContextInput["conversationalAnchor"]> | null>(null);
+  const currentResultRef = useRef<HTMLDivElement>(null);
+  const currentTurnConversationRef = useRef<HTMLDivElement>(null);
+  const followCurrentTurnRef = useRef(true);
   const [loading, setLoading] = useState(false);
   const [requestError, setRequestError] = useState(false);
   const [freeTextOpen, setFreeTextOpen] = useState(
@@ -158,6 +161,8 @@ export default function ConciergePage() {
     const text = (overrideText ?? input).trim();
     if ((!text && !structured) || requestInFlightRef.current) return;
     const turnId = crypto.randomUUID();
+    const scrollSurface = textInputRef.current?.closest(".app-main");
+    followCurrentTurnRef.current = document.activeElement === textInputRef.current || !scrollSurface || scrollSurface.scrollHeight - scrollSurface.scrollTop - scrollSurface.clientHeight < 280;
     requestInFlightRef.current = true;
     setCurrentTurn(beginCurrentTurn(turnId, text));
     setRequestError(false);
@@ -169,6 +174,8 @@ export default function ConciergePage() {
       ]);
       setInput("");
     }
+    if (followCurrentTurnRef.current)
+      requestAnimationFrame(() => currentTurnConversationRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }));
     setLoading(true);
     track(
       text ? "FREE_LANGUAGE_REQUEST" : "STRUCTURED_RECOMMENDATION_REQUESTED",
@@ -298,13 +305,16 @@ export default function ConciergePage() {
   const hasPrimaryResult = !currentIsKnowledge && Boolean(currentResult?.recommendation || currentResult?.discovery);
   const latestRecommendation = hasRecommendation ? currentResult : undefined;
   const latestPrimaryResult = hasPrimaryResult ? currentResult : undefined;
+  useEffect(() => {
+    if (!input && textInputRef.current) textInputRef.current.style.height = "";
+  }, [input]);
 
   useEffect(() => {
-    if (hasPrimaryResult && !hadRecommendationRef.current) {
+    if (hasPrimaryResult && !hadRecommendationRef.current && followCurrentTurnRef.current) {
       requestAnimationFrame(() =>
-        liveStoryRef.current?.scrollIntoView({
+        currentResultRef.current?.scrollIntoView({
           behavior: "smooth",
-          block: "start",
+          block: "nearest",
         }),
       );
     }
@@ -350,7 +360,7 @@ export default function ConciergePage() {
   };
 
   return (
-    <div>
+    <div className={hasCompletedTurn ? "concierge-conversation has-persistent-composer" : "concierge-conversation"}>
       {tripMode === "PLAN" && <SavedTripEntry />}
       {tripMode !== "PLAN" && (
         <div ref={liveStoryRef} className="journey-live-context">
@@ -397,6 +407,7 @@ export default function ConciergePage() {
               말씀하신 상황에 맞는 일정을 살펴보고 있습니다...
             </div>
           )}
+          <div ref={currentTurnConversationRef} className="current-turn-conversation-anchor" aria-hidden="true" />
         </div>
       {requestError && (
         <div className="visitor-error" role="alert">
@@ -453,7 +464,7 @@ export default function ConciergePage() {
       )}
 
       {hasRecommendation && latestRecommendation && (
-        <div className="recommendation-journey-start">
+        <div ref={currentResultRef} className="recommendation-journey-start">
           {tripMode === "PLAN" && tripSession.plannedContext && (
             <PlanSummary planned={tripSession.plannedContext} />
           )}
@@ -508,7 +519,7 @@ export default function ConciergePage() {
       )}
 
       {latestPrimaryResult?.discovery && (
-        <div className="recommendation-journey-start">
+        <div ref={currentResultRef} className="recommendation-journey-start">
           <UnderstoodContext result={latestPrimaryResult} />
           <PlaceDiscoveryPanel result={latestPrimaryResult} />
           {loading && (
@@ -537,14 +548,21 @@ export default function ConciergePage() {
           <textarea
             ref={textInputRef}
             className={listening ? "is-voice-listening" : undefined}
-            rows={hasCompletedTurn ? 2 : 5}
+            rows={hasCompletedTurn ? 1 : 5}
+            aria-label={hasCompletedTurn ? "이어서 물어보기" : "여행 조건 입력"}
             placeholder={
               hasCompletedTurn
                 ? "다른 장소나 조건을 말씀해주세요."
                 : "예: 가족과 함께 편안하게 힐링할 수 있는 온천 코스를 추천해주세요."
             }
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              if (hasCompletedTurn) {
+                e.currentTarget.style.height = "auto";
+                e.currentTarget.style.height = `${Math.min(e.currentTarget.scrollHeight, 88)}px`;
+              }
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -600,8 +618,9 @@ export default function ConciergePage() {
             className="btn btn-primary btn-block concierge-submit"
             onClick={() => send()}
             disabled={loading}
+            aria-label={hasCompletedTurn ? "질문 전송" : "대화로 찾기"}
           >
-            {hasCompletedTurn ? "전송" : "대화로 찾기"}
+            {hasCompletedTurn ? <><span aria-hidden="true">➤</span><span className="sr-only">전송</span></> : "대화로 찾기"}
           </button>
         </div>
       )}
