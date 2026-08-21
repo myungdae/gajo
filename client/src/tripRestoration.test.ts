@@ -26,6 +26,9 @@ test("reload and PWA reopen restore the active Hapcheon trip identity and all tr
   assert.equal(tripRestorationDiagnostics("hapcheon", storage as any).uiState, "CONTINUE");
 });
 
+test("previous known-good Hapcheon serialization loads without rewrite or a new identity",()=>{
+  const storage=memory(),legacyKey='regional-concierge-trip-session-v1:hapcheon',legacy=JSON.stringify({id:'legacy-hapcheon-trip',regionId:'hapcheon',mode:'NOW',itinerary:{savedAsFullJourney:true,journeyId:'legacy-journey',steps:[{entityId:'legacy-a',status:'READY'},{entityId:'legacy-b',status:'PLANNED'}]},savedPlaces:[{entityId:'legacy-saved'}],execution:{currentEntityId:'legacy-a',statusByEntityId:{'legacy-a':'READY'}},createdAt:'2026-07-01T00:00:00.000Z',updatedAt:'2026-07-02T00:00:00.000Z'});storage.setItem(legacyKey,legacy);const restored=loadTripSession(storage as any,'hapcheon')!;assert.equal(restored.anonymousTripId,'legacy-hapcheon-trip');assert.equal((restored.itinerary as any).steps.length,2);assert.deepEqual(restored.savedPlaces,[{entityId:'legacy-saved'}]);assert.equal(restored.execution?.currentEntityId,'legacy-a');assert.equal(storage.getItem(legacyKey),legacy);const diagnostics=tripRestorationDiagnostics('hapcheon',storage as any);assert.equal(diagnostics.anonymousTripIdPresent,true);assert.equal(diagnostics.executionStatePresent,true);assert.doesNotMatch(JSON.stringify(diagnostics),/legacy-hapcheon-trip/)});
+
 test("Daebyeong to Hapcheon-eup changes runtime location without replacing the trip", () => {
   const storage = memory(), original = saveTripSession(goldenTrip(), storage as any);
   const moved = updateTripRuntimeContext("hapcheon", { regionId: "hapcheon", locality: "합천읍", latitude: 35.566, longitude: 128.165 }, storage as any)!;

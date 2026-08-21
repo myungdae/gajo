@@ -151,9 +151,11 @@ export function updateTripRuntimeContext(
 export interface TripRestorationDiagnostics {
   regionId: string;
   activeStorageKey: string;
-  activeAnonymousTripId?: string;
+  anonymousTripIdPresent: boolean;
+  anonymousTripIdHint?: string;
   hasStructuredJourney: boolean;
   savedPlaceCount: number;
+  executionStatePresent: boolean;
   archiveCount?: number;
   activeSessionPointer: "REGIONAL_STORAGE_KEY";
   restorationSource: "LOCAL" | "SESSION_FALLBACK" | "EMPTY";
@@ -177,9 +179,11 @@ export function tripRestorationDiagnostics(
   return {
     regionId,
     activeStorageKey: storageKey,
-    activeAnonymousTripId: session?.anonymousTripId,
+    anonymousTripIdPresent: Boolean(session?.anonymousTripId),
+    anonymousTripIdHint: session?.anonymousTripId ? `…${session.anonymousTripId.slice(-6)}` : undefined,
     hasStructuredJourney: Boolean((session?.itinerary as any)?.steps?.length),
     savedPlaceCount: session?.savedPlaces?.length || 0,
+    executionStatePresent: Boolean(session?.execution?.currentEntityId||Object.keys(session?.execution?.statusByEntityId||{}).length),
     archiveCount,
     activeSessionPointer: "REGIONAL_STORAGE_KEY",
     restorationSource: session ? (localValue ? "LOCAL" : "SESSION_FALLBACK") : "EMPTY",
