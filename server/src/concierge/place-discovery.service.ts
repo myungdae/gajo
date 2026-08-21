@@ -7,6 +7,7 @@ import {
 } from './accommodation-taxonomy';
 import { ExkoSemanticAdapter } from '../exko-semantic/exko-semantic.service';
 import { NearbyService, NearbyServiceError } from '../nearby/nearby.service';
+import { CopilotService } from '../copilot/copilot.service';
 
 const CATEGORY_MATCH: Record<DiscoveryCategory, (record: any) => boolean> = {
   CAFE: (record) => record.entityType === 'CAFE' || record.category === 'CAFE',
@@ -37,6 +38,7 @@ export class PlaceDiscoveryService {
     @Optional() private readonly regionalData?: RegionalDataService,
     @Optional() private readonly exko?: ExkoSemanticAdapter,
     @Optional() private readonly nearby?: NearbyService,
+    @Optional() private readonly copilot?: CopilotService,
   ) {}
 
   async discover(
@@ -132,6 +134,8 @@ export class PlaceDiscoveryService {
       searchCandidates = await this.searchFallback(regionId, searchFallbackCategory, origin, dataset.records, context.discoveryAlternative ? priorDiscovery?.shownEntityIds || [] : []);
     }
     const usedShoppingAlternative = martFallback || searchFallbackCategory === 'MART_SUPERMARKET';
+    for (const entity of searchCandidates.filter((item:any)=>item.operationalEvidence?.source==='SEARCH'))
+      await this.copilot?.ingestSearchCandidate({regionId,displayName:entity.programLabel,category:entity.category,entityType:entity.category,address:entity.candidateEvidence?.observedAddress,phone:entity.candidateEvidence?.observedPhone,latitude:entity.latitude,longitude:entity.longitude,evidence:{sourceType:entity.candidateEvidence?.sourceType,sourceUrl:entity.candidateEvidence?.sourceUrl,providerCategory:entity.candidateEvidence?.providerCategory,discoveredAt:new Date().toISOString()}}).catch(()=>undefined);
 
     return {
       regionId,

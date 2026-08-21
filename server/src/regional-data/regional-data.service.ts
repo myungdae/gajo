@@ -149,6 +149,7 @@ export class RegionalDataService implements OnModuleInit {
     id: string,
     action: string,
     editedFacts?: Record<string, unknown>,
+    auditContext?: { actorId?: string; regionId?: string; action?: string },
   ) {
     const row: any = await this.model.findOne({ id });
     if (!row) throw new NotFoundException();
@@ -179,10 +180,12 @@ export class RegionalDataService implements OnModuleInit {
       });
     else throw new BadRequestException('Unsupported action');
     row.auditTrail.push({
-      action,
+      action: auditContext?.action || action,
       at: new Date().toISOString(),
       source: row.source,
       changes: auditedChanges,
+      actorId: auditContext?.actorId,
+      regionId: auditContext?.regionId || row.regionId,
     });
     await row.save();
     return row.toObject();
