@@ -699,6 +699,8 @@ function PlanSummary({ planned }: { planned: PlannedContext }) {
 
 function UnderstoodContext({ result }: { result: ConciergeChatResponse }) {
   const rows = buildContextSummary(result.context || {});
+  if (result.discovery)
+    return <section className="understood-context-card"><h2>요청하신 장소를 찾았습니다</h2><p className="muted-line">{result.discovery.anchorLabel ? `${result.discovery.anchorLabel}을 기준으로 주변 ${result.discovery.category === "CAFE" ? "카페" : result.discovery.category === "FOOD" ? "식당" : "장소"}를 찾았습니다.` : "요청하신 조건에 맞는 장소를 찾았습니다."}</p></section>;
   return (
     <section className="understood-context-card">
       <h2>{SHARED_VISITOR_COPY.understoodHeading}</h2>

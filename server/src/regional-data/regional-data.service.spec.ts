@@ -57,7 +57,7 @@ describe('RegionalDataService', () => {
     expect(effective.actions).toMatchObject({call:{phone:'055-930-3742'},website:{url:expect.stringContaining('foresttrip')},reserve:{url:expect.stringContaining('foresttrip')},navigate:{latitude:35.66525101,longitude:128.0528925}});
     const discovery:any=await new PlaceDiscoveryService(service as any).discover('hapcheon','LODGING','오도산자연휴양림 근처 숙소',{});
     expect(discovery).toMatchObject({anchorEntityId:odosan.canonicalEntityId,anchorLabel:'오도산자연휴양림'});
-    expect(discovery.entities[0]).toMatchObject({entityId:odosan.canonicalEntityId,distanceMeters:0,actions:effective.actions});
+    expect(discovery.entities.some((item:any)=>item.entityId===odosan.canonicalEntityId)).toBe(false);
     expect((await service.effectiveDataset('okcheon'))!.records.some(x=>x.entityUri===odosan.canonicalEntityId)).toBe(false);
   });
   it('keeps unapproved candidates out, promotes explicitly approved records, and isolates regions', async () => {

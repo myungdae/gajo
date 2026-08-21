@@ -104,7 +104,7 @@ export interface ConciergeChatResponse {
   nearbyCategory?: NearbyCategory;
   visitorMessage?: string;
   intentRoute?: 'JOURNEY_PLAN'|'PLACE_DISCOVERY'|'IMMEDIATE_NOW'|'REPLAN';
-  discovery?:{regionId:string;category:string;anchorEntityId?:string;entities:any[]};
+  discovery?:{regionId:string;category:string;anchorEntityId?:string;anchorLabel?:string;relation?:'NEARBY'|'REGIONAL';targetCategory?:string;entities:any[]};
   domainResult?: { status: 'OUT_OF_SERVICE_AREA'; destination: string; region: string };
 }
 

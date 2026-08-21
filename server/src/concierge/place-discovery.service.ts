@@ -64,6 +64,7 @@ export class PlaceDiscoveryService {
       category === 'LODGING' ? requestedAccommodationType(message) : undefined;
     const ranked = dataset.records
       .filter(CATEGORY_MATCH[category])
+      .filter((record) => !anchor || record.entityUri !== anchor.entityUri)
       .filter(
         (record) =>
           !accommodationType ||
@@ -98,6 +99,8 @@ export class PlaceDiscoveryService {
       category,
       anchorEntityId: anchor?.entityUri,
       anchorLabel: anchor?.canonicalLabelKo,
+      relation: anchor ? 'NEARBY' : 'REGIONAL',
+      targetCategory: category,
       semanticDiagnostics: {
         enabled: Boolean(this.exko?.enabled(regionId)),
         entityResolved: semantic.resolved,
@@ -157,6 +160,12 @@ export class PlaceDiscoveryService {
               : []),
           ],
           score,
+          operationalEvidence: {
+            source: 'RDM',
+            verificationStatus: record.runtimeDataStatus,
+            runtimeDistanceCalculated: distanceMeters !== undefined,
+            navigationAvailable: Boolean(record.actions?.navigate),
+          },
         }),
       ),
     };
