@@ -121,6 +121,15 @@ export class NearbyService {
 
   async searchRestaurants(lat: number, lng: number, radius = 2000) { return this.search('FOOD', lat, lng, radius); }
 
+  async searchByKeyword(query:string,regionId:string,origin?:{latitude:number;longitude:number}):Promise<NearbyPlace[]>{
+    const key=this.kakaoKey;if(!key)throw new NearbyServiceError('NOT_CONFIGURED','장소명 검색은 현재 준비 중입니다.');
+    const url=new URL('https://dapi.kakao.com/v2/local/search/keyword.json');url.searchParams.set('query',query);url.searchParams.set('size','10');
+    if(origin){url.searchParams.set('x',String(origin.longitude));url.searchParams.set('y',String(origin.latitude));url.searchParams.set('sort','distance')}
+    const data=await this.kakaoGet(url,key),byId=new Map<string,NearbyPlace>();
+    for(const item of data.documents)this.upsert(byId,item,'OTHER',query);
+    return[...byId.values()].map(place=>({...place,regionId}));
+  }
+
   private async addOperationalPlaces(byId: Map<string, NearbyPlace>, requested: NearbyCategory, lat: number, lng: number, radius: number, regionId: string) {
     const dataset = await this.regionalData!.effectiveDataset(regionId);
     for (const record of dataset?.records || []) {

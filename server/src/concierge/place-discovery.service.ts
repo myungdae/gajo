@@ -450,6 +450,22 @@ export class PlaceDiscoveryService {
       : undefined;
   }
 
+  async resolveRequestedDestinations(regionId:string,labels:string[],context:any={}){
+    const dataset=await this.regionalData?.effectiveDataset(regionId),config=this.regionConfig?.get(regionId),bounds=config?.bounds;
+    const inside=(place:any)=>Boolean(bounds&&place.lat<=bounds.north&&place.lat>=bounds.south&&place.lng<=bounds.east&&place.lng>=bounds.west);
+    const result=[] as any[];
+    for(const label of labels){
+      const canonical=dataset?.records.find(record=>[record.canonicalLabelKo,...(record.alternateLabels||[])].some(name=>this.normalize(name)===this.normalize(label)));
+      if(canonical){result.push({entityId:canonical.entityUri,label:canonical.canonicalLabelKo,resolved:true,requested:true,source:'RDM',category:canonical.category,entityType:canonical.entityType,latitude:canonical.latitude,longitude:canonical.longitude,verificationStatus:canonical.runtimeDataStatus});continue}
+      let searched:any;
+      try{const found=await (this.nearby as any)?.searchByKeyword?.(label,regionId,this.contextOrigin(context));searched=found?.find((place:any)=>inside(place)&&(this.normalize(place.name).includes(this.normalize(label))||this.normalize(label).includes(this.normalize(place.name))))}catch(error){if(!(error instanceof NearbyServiceError))throw error}
+      if(searched){const destination={entityId:`search:${regionId}:${searched.id}`,label:searched.name,resolved:false,requested:true,source:'SEARCH',category:searched.category==='OTHER'?'TOURISM_NATURE':searched.category,entityType:'SEARCH_CANDIDATE',latitude:searched.lat,longitude:searched.lng,verificationStatus:'UNVERIFIED',evidence:{sourceType:'KAKAO_LOCAL',sourceUrl:searched.placeUrl,providerCategory:searched.providerCategoryName,demandSignal:'EXPLICIT_DESTINATION_REQUEST'}};result.push(destination);await this.copilot?.ingestSearchCandidate({regionId,displayName:searched.name,category:destination.category,entityType:destination.entityType,address:searched.roadAddress||searched.address,phone:searched.phone,latitude:searched.lat,longitude:searched.lng,evidence:{...destination.evidence,discoveredAt:new Date().toISOString()}}).catch(()=>undefined);continue}
+      const semantic=config?.semanticDestinations?.find(item=>[item.label,...(item.aliases||[])].some(name=>this.normalize(name)===this.normalize(label)));
+      result.push(semantic?{entityId:semantic.entityId,label:semantic.label,resolved:false,requested:true,source:'SEMANTIC',category:semantic.category,entityType:semantic.entityType,verificationStatus:'UNVERIFIED'}:{label,resolved:false,requested:true,source:'SEMANTIC',verificationStatus:'UNVERIFIED'});
+    }
+    return result;
+  }
+
   async distanceInfo(regionId: string, context: any) {
     const discovery = context.discoveryContext;
     if (!discovery || discovery.regionId !== regionId)

@@ -15,6 +15,17 @@ export type DiscoveryCategory =
   | 'ESSENTIAL_SHOPPING'
   | 'CONVENIENCE_STORE'
   | 'MART_SUPERMARKET';
+export function explicitDestinationPhrases(message = ''): string[] {
+  const desire=/(?:가고|갈래|둘러보고|보고)\s*싶|갈래|둘\s*다\s*(?:가|보)/;
+  if(!desire.test(message))return[];
+  const prefix=message.split(/(?:가고|갈래|둘러보고|보고)\s*싶|갈래/)[0]
+    .replace(/둘\s*다\s*$/,'').trim();
+  const parts=prefix.split(/\s*(?:하고|이랑|랑|와|과|,)\s*/)
+    .map(value=>value.replace(/(?:을|를|에|도)\s*$/,'').trim()).filter(Boolean);
+  if(parts.length>=2)return parts;
+  const sequence=message.match(/^\s*(.+?)\s*(?:에\s*)?갔다가\s*(.+?)\s*(?:에\s*)?갈래/);
+  return sequence?[sequence[1].trim(),sequence[2].trim()]:[];
+}
 const CATEGORY_PATTERNS: [DiscoveryCategory, RegExp][] = [
   [
     'LODGING',
@@ -69,6 +80,9 @@ export function routeNaturalLanguageIntent(input: {
     relationalReference =
       /거기|그곳|그중|그\s*(?:근처|주변|카페|식당|숙소)/.test(message) &&
       /주변|근처|가까|거기서|그중/.test(message);
+  const explicitDestinations=explicitDestinationPhrases(message);
+  if(explicitDestinations.length>=2)
+    return{intentRoute:'JOURNEY_PLAN' as const,category:undefined,multiDestination:true,explicitDestinations};
   if (
     input.isFollowup &&
     /거긴?\s*멀|얼마나\s*멀|거리(?:는|가|를)?/.test(message)

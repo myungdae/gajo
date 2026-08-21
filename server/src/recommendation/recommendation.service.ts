@@ -327,11 +327,11 @@ export class RecommendationService {
     const anchors = [
       ...(contextDoc.mustVisitPlaces || []),
       ...(contextDoc.accommodationIntents || []),
-    ].filter((place: any) => place.resolved && place.entityId);
+    ].filter((place: any) => place.entityId && (place.resolved||place.requested));
     const anchorIds = new Set(anchors.map((place: any) => place.entityId));
     const mustVisitIds = new Set(
       (contextDoc.mustVisitPlaces || [])
-        .filter((place: any) => place.resolved && place.entityId)
+        .filter((place: any) => place.entityId && (place.resolved||place.requested))
         .map((place: any) => place.entityId),
     );
     const selected = dataset.records.filter(
@@ -339,7 +339,7 @@ export class RecommendationService {
         anchorIds.has(entity.entityUri) ||
         entity.tags.some((tag) => preferences.has(tag)),
     );
-    return selected.map((entity) => {
+    const canonical=selected.map((entity) => {
       const matched = entity.tags.filter((tag) => preferences.has(tag));
       return {
         regionId: dataset.regionId,
@@ -386,6 +386,8 @@ export class RecommendationService {
         estimatedTravelMinutes: undefined,
       };
     });
+    const unresolved=(contextDoc.mustVisitPlaces||[]).filter((place:any)=>place.requested&&place.entityId&&!dataset.records.some(entity=>entity.entityUri===place.entityId)).map((place:any)=>({regionId:dataset.regionId,programUri:place.entityId,programLabel:place.label,facilityUri:place.entityId,facilityLabel:place.label,matchedOn:[],matchedLabels:[],mitigatesRisk:[],mitigationLabels:[],requiredMobility:[],affectedByEnvironment:[],requiresReservation:false,allowUnknownDuration:true,category:place.category||'TOURISM_NATURE',tags:[],entityType:place.entityType||'ATTRACTION',accessStatus:'NEEDS_VERIFICATION',accessNotice:'지역 운영 데이터에서 검증되지 않은 요청 장소입니다. 방문 전 운영 정보를 확인해 주세요.',actions:{},source:place.source==='SEARCH'?place.evidence:{sourceType:'SEMANTIC_REFERENCE'},coordinates:Number.isFinite(place.latitude)&&Number.isFinite(place.longitude)?{latitude:place.latitude,longitude:place.longitude,sourceUri:place.entityId}:undefined,isMustVisit:true,runtime:{entityUri:place.entityId,operatingState:'UNKNOWN'},distanceStatus:'UNKNOWN' as const,estimatedTravelMinutes:undefined}));
+    return[...canonical,...unresolved];
   }
 
   private compositionReason(items: DecisionCandidate[]) {

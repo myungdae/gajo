@@ -1,6 +1,7 @@
 import { PlaceDiscoveryService } from './place-discovery.service';
 import { routeNaturalLanguageIntent } from './intent-routing';
 import { GAJO_MASTER_DATA, REGIONAL_CANDIDATE_DATASETS } from '../regions/regional-candidate.registry';
+import { RegionConfigService } from '../region/region-config.service';
 
 const regional={effectiveDataset:jest.fn(async(regionId:string)=>REGIONAL_CANDIDATE_DATASETS[regionId])};
 const anchor=(record:any,sourceTurnId:string)=>({entityId:record.entityUri,regionId:'gajo',label:record.canonicalLabelKo,entityType:record.entityType,category:record.category,latitude:record.latitude,longitude:record.longitude,source:'RDM' as const,sourceTurnId,role:'RESULT' as const});
@@ -48,6 +49,10 @@ describe('Gajo shared regional concierge parity',()=>{
     expect(result).toMatchObject({status:'RESOLVED',regionId:'gajo',fromEntityId:from.entityUri,toEntityId:to.entityUri,calculation:'RUNTIME_HAVERSINE'});
     expect(result.distanceMeters).toBeGreaterThan(0);
   });
+
+  it('canonicalizes 가조온천 and preserves ontology-only 수승대 as an unverified requested destination',async()=>{const resolver=new PlaceDiscoveryService(regional as any,undefined,undefined,undefined,new RegionConfigService());const destinations:any=await resolver.resolveRequestedDestinations('gajo',['가조온천','수승대']);expect(destinations).toEqual([expect.objectContaining({entityId:'https://gajo-wellness.kr/ontology#gajoHotSpringComplex',label:'백두산천지온천',resolved:true,requested:true,source:'RDM'}),expect.objectContaining({entityId:'https://gajo-wellness.kr/ontology#suseungdae',label:'수승대',resolved:false,requested:true,source:'SEMANTIC',verificationStatus:'UNVERIFIED'})]);expect(destinations[1].actions).toBeUndefined()});
+
+  it('upgrades a missing requested destination to a safe search candidate and sends demand evidence only to Gajo Copilot',async()=>{const nearby={searchByKeyword:jest.fn(async()=>[{id:'suseungdae-search',name:'수승대',category:'TOURISM_NATURE',lat:35.66,lng:127.85,placeUrl:'https://place.map.kakao.com/suseungdae',providerCategoryName:'관광명소',roadAddress:'경상남도 거창군',phone:'055-000-0000'}])},copilot={ingestSearchCandidate:jest.fn(async()=>({}))},resolver=new PlaceDiscoveryService(regional as any,undefined,nearby as any,copilot as any,new RegionConfigService());const [destination]:any=await resolver.resolveRequestedDestinations('gajo',['수승대'],{latitude:35.7,longitude:128.02});expect(destination).toMatchObject({entityId:'search:gajo:suseungdae-search',source:'SEARCH',resolved:false,verificationStatus:'UNVERIFIED'});expect(destination.actions).toBeUndefined();expect(copilot.ingestSearchCandidate).toHaveBeenCalledWith(expect.objectContaining({regionId:'gajo',displayName:'수승대',evidence:expect.objectContaining({demandSignal:'EXPLICIT_DESTINATION_REQUEST'})}));expect(JSON.stringify(copilot.ingestSearchCandidate.mock.calls)).not.toContain('가고 싶어요')});
 
   it.each([
     ['근처 편의점 있어?','CONVENIENCE_STORE'],['장 볼 데 있어?','ESSENTIAL_SHOPPING'],['물하고 과자 살 데 있어?','ESSENTIAL_SHOPPING'],['마트는?','MART_SUPERMARKET'],

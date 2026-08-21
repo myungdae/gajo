@@ -70,11 +70,15 @@ export class ConciergeService {
   ) {}
 
   async chat(input: CreateContextInput) {
-    const { context, evidence, firedRules } = await this.contextService.createContext(input);
+    const route=routeNaturalLanguageIntent(input),routeDetails:any=route;
+    const requestedDestinations=routeDetails.multiDestination&&this.placeDiscovery
+      ?await this.placeDiscovery.resolveRequestedDestinations(input.regionId||'gajo',routeDetails.explicitDestinations,{latitude:input.latitude,longitude:input.longitude})
+      :undefined;
+    const effectiveInput=requestedDestinations?{...input,mustVisitPlaces:requestedDestinations}:input;
+    const { context, evidence, firedRules } = await this.contextService.createContext(effectiveInput);
     const nearbyDiscovery = detectNearbyDiscovery(input.rawMessage);
     const nearbyRestaurantIntent = nearbyDiscovery.intent && nearbyDiscovery.category === 'FOOD';
     const config=this.regionConfig?.get(input.regionId)||GAJO_REGION_CONFIG;
-    const route=routeNaturalLanguageIntent(input);
     const explicitReference=await this.placeDiscovery?.resolveReference?.(input.regionId||'gajo',input.rawMessage||'');
     const conversationalReference=explicitReference?{...explicitReference,sourceTurnId:input.turnId||'',role:'SUBJECT' as const}:undefined;
     const outsideServiceArea = this.regionConfig?.detectOutOfRegion(input.rawMessage,input.regionId)||(!input.regionId||input.regionId==='gajo'?detectOutOfServiceDestination(input.rawMessage):undefined);
@@ -143,6 +147,7 @@ export class ConciergeService {
       nearbyCategory: nearbyDiscovery.category,
       intentRoute:route.intentRoute,
       conversationalReference,
+      ...(requestedDestinations?{requestedDestinations,visitorMessage:`${requestedDestinations.map(item=>item.label).join('과 ')}를 함께 둘러보시려는군요. 현재 위치와 이동 시간을 고려해 두 곳을 연결해드릴게요.`}:{}),
     };
   }
 }

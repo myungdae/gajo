@@ -103,6 +103,7 @@ export class CopilotService implements OnModuleInit {
         sourceType: input.evidence.sourceType,
         sourceUrl: input.evidence.sourceUrl,
         providerCategory: input.evidence.providerCategory,
+        demandSignal: input.evidence.demandSignal,
         discoveredAt: input.evidence.discoveredAt || now,
       },
       status: 'DISCOVERED' as const,
