@@ -11,6 +11,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 COPY package*.json ./
 RUN npm ci --omit=dev
+# CopilotAuthService imports bcryptjs at runtime. Fail the production image
+# build here if the final-stage dependency set ever stops providing it.
+RUN node -e "require.resolve('bcryptjs')"
 COPY --from=build /app/dist ./dist
 
 EXPOSE 3000

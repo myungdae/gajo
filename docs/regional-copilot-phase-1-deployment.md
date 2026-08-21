@@ -13,7 +13,7 @@ Regional Copilot is built as a separate Vite entry (`copilot.html`) and a separa
 Required server environment:
 
 - `COPILOT_JWT_SECRET`: strong independent signing secret, injected from AWS Secrets Manager/SSM; never reuse `ADMIN_WRITE_TOKEN`.
-- `COPILOT_USERS_JSON`: initial Phase-1 identity configuration containing `sub`, `username`, bcrypt `passwordHash`, `role`, and assigned `regions`. Do not store plaintext passwords or this JSON in source control.
+- `COPILOT_USERS_JSON`: initial Phase-1 identity configuration containing `sub`, `username`, a standard bcrypt-format `passwordHash` verified at runtime by the production dependency `bcryptjs`, `role`, and assigned `regions`. Do not store plaintext passwords or this JSON in source control. The image smoke check must resolve `bcryptjs` (not the unused native package name `bcrypt`).
 - existing `MONGODB_URI` and normal RDM configuration.
 
 Example user object shape (values intentionally omitted):
