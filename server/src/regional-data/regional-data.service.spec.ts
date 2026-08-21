@@ -5,6 +5,17 @@ import { PlaceDiscoveryService } from '../concierge/place-discovery.service';
 import { OKCHEON_MASTER_DATA } from '../regions/okcheon/master-data';
 function model() {
   const rows: any[] = [];
+  const document = (value: any) => ({
+    ...value,
+    toObject() {
+      const { save, toObject, markModified, ...plain } = this;
+      return structuredClone(plain);
+    },
+    markModified() {},
+    async save() {
+      return this;
+    },
+  });
   const match = (row: any, q: any) =>
     Object.entries(q || {}).every(([k, v]) => row[k] === v);
   const wrap = (items: any[]) => ({
@@ -16,21 +27,13 @@ function model() {
     find: jest.fn((q: any) => wrap(rows.filter((r) => match(r, q)))),
     findOne: jest.fn(async (q: any) => rows.find((r) => match(r, q))),
     create: jest.fn(async (v: any) => {
-      const row = {
-        ...v,
-        toObject() {
-          return { ...this };
-        },
-        async save() {
-          return this;
-        },
-      };
+      const row = document(v);
       rows.push(row);
       return row;
     }),
     updateOne: jest.fn(async (q: any, u: any) => {
       const row = rows.find((r) => match(r, q));
-      if (!row && u.$setOnInsert) rows.push({ ...u.$setOnInsert });
+      if (!row && u.$setOnInsert) rows.push(document(u.$setOnInsert));
       else if (row && u.$push)
         for (const [key, value] of Object.entries(u.$push))
           (row[key] ||= []).push(value);
@@ -43,6 +46,101 @@ const source = {
   sourceUrl: 'https://official.example/place',
 };
 describe('RegionalDataService', () => {
+  it('moves Busodamak from evidence review to navigation only after explicit field approval and recomputes readiness without cross-region writes', async () => {
+    const db = model(),
+      service = new RegionalDataService(db as any);
+    await service.onModuleInit();
+    const busodamak = OKCHEON_MASTER_DATA.find(
+      (x) => x.canonicalLabelKo === '부소담악',
+    )!;
+    const gajoBefore = JSON.stringify(
+        db.rows.filter((x) => x.regionId === 'gajo'),
+      ),
+      hapcheonBefore = JSON.stringify(
+        db.rows.filter((x) => x.regionId === 'hapcheon'),
+      ),
+      before: any = await service.operationalReadiness('okcheon');
+    expect(
+      before.matrix.find(
+        (x: any) => x.canonicalEntityId === busodamak.entityUri,
+      ),
+    ).toMatchObject({
+      classification: 'NEEDS_COORDINATES',
+      navigationEligible: false,
+    });
+    await service.proposeOperationalEvidence(
+      'okcheon',
+      busodamak.entityUri,
+      'coordinates',
+      {
+        proposed: { latitude: 36.3522824857, longitude: 127.5637131168 },
+        source: {
+          sourceType: 'KTO_LINKED_DATA',
+          sourceName: '한국관광공사 관광정보 Linked Open Data',
+          sourceUrl: 'https://data.visitkorea.or.kr/linkedview/1940660',
+        },
+        observedAt: '2026-08-22T00:00:00.000Z',
+        confidence: 'MATCHED_OFFICIAL_ADDRESS',
+        evidenceStatus: 'EVIDENCE_ONLY',
+        whyReviewNeeded:
+          '공식 주소와 후보 지점이 일치하는지 길찾기 활성화 전에 확인해야 합니다.',
+      },
+      'manager-okcheon',
+    );
+    expect(
+      (await service.effectiveDataset('okcheon'))!.records.find(
+        (x) => x.entityUri === busodamak.entityUri,
+      )!.actions,
+    ).not.toHaveProperty('navigate');
+    await expect(
+      service.decideOperationalEvidence(
+        'okcheon',
+        busodamak.entityUri,
+        'coordinates',
+        'APPROVE',
+        'manager-okcheon',
+        false,
+      ),
+    ).rejects.toThrow('confirmation');
+    const approved: any = await service.decideOperationalEvidence(
+      'okcheon',
+      busodamak.entityUri,
+      'coordinates',
+      'APPROVE',
+      'manager-okcheon',
+      true,
+    );
+    expect(approved.entity).toMatchObject({
+      classification: 'ACTION_READY',
+      navigationEligible: true,
+      coordinates: { latitude: 36.3522824857, longitude: 127.5637131168 },
+    });
+    expect(approved.readiness.summary.navigationReady).toBe(
+      before.summary.navigationReady + 1,
+    );
+    const effective = (await service.effectiveDataset('okcheon'))!.records.find(
+      (x) => x.entityUri === busodamak.entityUri,
+    )!;
+    expect(effective.actions).toMatchObject({
+      navigate: { latitude: 36.3522824857, longitude: 127.5637131168 },
+    });
+    const row = db.rows.find(
+      (x) => x.canonicalEntityId === busodamak.entityUri,
+    );
+    expect(row.verificationStatus).toBe('PARTIAL');
+    expect(row.auditTrail.map((x: any) => x.action)).toEqual(
+      expect.arrayContaining([
+        'OPERATIONAL_EVIDENCE_REVIEWED',
+        'COORDINATE_APPROVED',
+      ]),
+    );
+    expect(JSON.stringify(db.rows.filter((x) => x.regionId === 'gajo'))).toBe(
+      gajoBefore,
+    );
+    expect(
+      JSON.stringify(db.rows.filter((x) => x.regionId === 'hapcheon')),
+    ).toBe(hapcheonBefore);
+  });
   it('ingests the curated Hapcheon batch idempotently and keeps review metadata visitor-invisible until individual approval', async () => {
     const db = model(),
       service = new RegionalDataService(db as any);

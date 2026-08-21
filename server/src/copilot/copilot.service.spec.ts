@@ -108,6 +108,96 @@ const evidence = {
 };
 
 describe('Regional Copilot Phase 1', () => {
+  it('builds calculated Okcheon workbench priorities and enforces manager region scope for field decisions', async () => {
+    const model = candidateModel(),
+      readiness = {
+        summary: {
+          total: 2,
+          actionReady: 1,
+          coordinateCoverage: 1,
+          callReady: 0,
+          parkingCoverage: 0,
+          accessibilityCoverage: 0,
+        },
+        matrix: [
+          {
+            canonicalEntityId: 'okcheon:scenic',
+            displayName: '부소담악',
+            category: 'TOURISM_NATURE',
+            isOfficialScenic: true,
+            officialSource: {
+              sourceUrl: 'https://www.oc.go.kr/tour/contents.do?key=3832',
+            },
+            hoursStatus: 'NOT_APPLICABLE',
+            navigationEligible: false,
+          },
+          {
+            canonicalEntityId: 'okcheon:cafe',
+            displayName: '카페',
+            category: 'CAFE',
+            officialSource: { sourceUrl: 'https://www.oc.go.kr/' },
+            hoursStatus: 'UNKNOWN_HOURS',
+            navigationEligible: true,
+          },
+        ],
+      },
+      regional = {
+        operationalReadiness: jest.fn(async () => readiness),
+        operationalEntity: jest.fn(async () => ({ regionId: 'okcheon' })),
+        proposeOperationalEvidence: jest.fn(),
+        decideOperationalEvidence: jest.fn(),
+      },
+      service = new CopilotService(model as any, regional as any),
+      admin = {
+        sub: 'admin',
+        username: 'admin',
+        role: 'PLATFORM_ADMIN' as const,
+        regions: [],
+      },
+      okcheonManager = {
+        sub: 'manager-o',
+        username: 'okcheon-manager',
+        role: 'REGIONAL_MANAGER' as const,
+        regions: ['okcheon'],
+      };
+    const workbench: any = await service.operationalWorkbench(admin, 'okcheon');
+    expect(workbench.dashboard).toMatchObject({
+      total: 2,
+      actionReady: 1,
+      coordinatesNeed: 1,
+      phoneNeed: 2,
+      hoursNeed: 1,
+    });
+    expect(workbench.officialScenicQueue[0]).toMatchObject({
+      displayName: '부소담악',
+      priority: 'P1',
+    });
+    await service.decideOperationalEvidence(
+      okcheonManager,
+      'okcheon',
+      'okcheon:scenic',
+      'coordinates',
+      { decision: 'APPROVE', confirmed: true },
+    );
+    expect(regional.decideOperationalEvidence).toHaveBeenCalledWith(
+      'okcheon',
+      'okcheon:scenic',
+      'coordinates',
+      'APPROVE',
+      'manager-o',
+      true,
+      undefined,
+    );
+    await expect(
+      service.decideOperationalEvidence(
+        manager,
+        'okcheon',
+        'okcheon:scenic',
+        'coordinates',
+        { decision: 'APPROVE', confirmed: true },
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
   it('requires configured credential authentication and issues a scoped principal', async () => {
     process.env.COPILOT_JWT_SECRET = 'test-secret-at-least-local';
     process.env.COPILOT_USERS_JSON = JSON.stringify([

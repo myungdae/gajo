@@ -22,6 +22,7 @@ import {
 } from './core-destination.schema';
 import { INITIAL_CORE_DESTINATIONS } from './core-destination.config';
 import { isDiscoveryEligible } from '../concierge/discovery-eligibility';
+import okcheonEssentialShopping from '../../operations/okcheon-essential-shopping.search-candidates.json';
 
 @Injectable()
 export class CopilotService implements OnModuleInit {
@@ -34,32 +35,34 @@ export class CopilotService implements OnModuleInit {
     private cores?: Model<CoreDestinationDocument>,
   ) {}
   async onModuleInit() {
-    if (!this.cores) return;
-    for (const [regionId, items] of Object.entries(INITIAL_CORE_DESTINATIONS))
-      for (const item of items)
-        await this.cores.updateOne(
-          { regionId, displayName: item.displayName },
-          {
-            $setOnInsert: {
-              id: `core-${regionId}-${this.normalize(item.displayName)}`,
-              regionId,
-              ...item,
-              aliases: item.aliases || [],
-              active: true,
-              auditTrail: [
-                {
-                  action: 'CORE_DESTINATION_DESIGNATED',
-                  actorId: 'SYSTEM_CONFIG',
-                  regionId,
-                  previous: false,
-                  newValue: true,
-                  at: new Date().toISOString(),
-                },
-              ],
+    for (const candidate of okcheonEssentialShopping)
+      await this.ingestSearchCandidate(candidate);
+    if (this.cores)
+      for (const [regionId, items] of Object.entries(INITIAL_CORE_DESTINATIONS))
+        for (const item of items)
+          await this.cores.updateOne(
+            { regionId, displayName: item.displayName },
+            {
+              $setOnInsert: {
+                id: `core-${regionId}-${this.normalize(item.displayName)}`,
+                regionId,
+                ...item,
+                aliases: item.aliases || [],
+                active: true,
+                auditTrail: [
+                  {
+                    action: 'CORE_DESTINATION_DESIGNATED',
+                    actorId: 'SYSTEM_CONFIG',
+                    regionId,
+                    previous: false,
+                    newValue: true,
+                    at: new Date().toISOString(),
+                  },
+                ],
+              },
             },
-          },
-          { upsert: true },
-        );
+            { upsert: true },
+          );
   }
   private normalize(value = '') {
     return value
@@ -188,6 +191,147 @@ export class CopilotService implements OnModuleInit {
     ];
     return [...new Map(tasks.map((x) => [x.taskId, x])).values()].sort(
       (a: any, b: any) => a.priority - b.priority,
+    );
+  }
+  async operationalWorkbench(
+    user: CopilotPrincipal,
+    regionId: string,
+    filter = '',
+  ) {
+    assertCopilotAccess(user, regionId);
+    const readiness: any = await this.regional.operationalReadiness(regionId),
+      candidates: any[] = await this.model
+        .find({ regionId, status: { $nin: ['ACTIVE', 'REJECTED'] } })
+        .lean(),
+      essentials = candidates.filter((x) =>
+        /CONVENIENCE|MART|SUPERMARKET|GROCERY/.test(
+          `${x.category} ${x.entityType}`,
+        ),
+      ),
+      scenic = readiness.matrix.filter((x: any) => x.isOfficialScenic),
+      rows = readiness.matrix.map((entity: any) => {
+        const isScenic = scenic.some(
+            (x: any) => x.canonicalEntityId === entity.canonicalEntityId,
+          ),
+          priority =
+            isScenic && !entity.navigationEligible
+              ? 'P1'
+              : ['FOOD', 'CAFE', 'ACCOMMODATION'].includes(entity.category)
+                ? 'P2'
+                : 'P4';
+        return {
+          ...entity,
+          isOfficialScenic: isScenic,
+          priority,
+          visitorReason:
+            priority === 'P1'
+              ? '대표 관광지 길찾기와 핵심 행동에 직접 영향을 줍니다.'
+              : priority === 'P2'
+                ? '식사·휴식·숙박 중 실제 이동과 연락에 자주 필요합니다.'
+                : '운영시간·주차·접근성의 안전한 안내에 필요합니다.',
+        };
+      }),
+      filtered = rows.filter((x: any) => {
+        if (!filter) return true;
+        if (filter === 'coordinates') return !x.coordinates;
+        if (filter === 'phone') return !x.phone;
+        if (filter === 'hours') return x.hoursStatus === 'UNKNOWN_HOURS';
+        if (filter === 'parking-accessibility')
+          return !x.parking || !x.accessibility;
+        if (filter === 'scenic') return x.isOfficialScenic;
+        if (filter === 'food') return x.category === 'FOOD';
+        if (filter === 'cafe') return x.category === 'CAFE';
+        if (filter === 'accommodation') return x.category === 'ACCOMMODATION';
+        return true;
+      });
+    return {
+      regionId,
+      dashboard: {
+        total: readiness.summary.total,
+        actionReady: readiness.summary.actionReady,
+        coordinatesNeed:
+          readiness.summary.total - readiness.summary.coordinateCoverage,
+        phoneNeed: readiness.summary.total - readiness.summary.callReady,
+        hoursNeed: rows.filter((x: any) => x.hoursStatus === 'UNKNOWN_HOURS')
+          .length,
+        parkingNeed:
+          readiness.summary.total - readiness.summary.parkingCoverage,
+        accessibilityNeed:
+          readiness.summary.total - readiness.summary.accessibilityCoverage,
+        essentialCandidates: essentials.length,
+      },
+      filters: [
+        'coordinates',
+        'phone',
+        'hours',
+        'parking-accessibility',
+        'scenic',
+        'food',
+        'cafe',
+        'accommodation',
+        'essential',
+      ],
+      queue: filtered.sort((a: any, b: any) =>
+        `${a.priority}:${a.displayName}`.localeCompare(
+          `${b.priority}:${b.displayName}`,
+          'ko',
+        ),
+      ),
+      officialScenicQueue: scenic.map((x: any) =>
+        rows.find((row: any) => row.canonicalEntityId === x.canonicalEntityId),
+      ),
+      essentialShopping: await Promise.all(
+        essentials.map(async (candidate) => ({
+          ...candidate,
+          priority: 'P3',
+          tripEligible: false,
+          operational: false,
+          possibleDuplicates: await this.duplicates(candidate),
+          regionContained: candidate.regionId === regionId,
+        })),
+      ),
+    };
+  }
+  async operationalEntity(
+    user: CopilotPrincipal,
+    regionId: string,
+    canonicalEntityId: string,
+  ) {
+    assertCopilotAccess(user, regionId);
+    return this.regional.operationalEntity(regionId, canonicalEntityId);
+  }
+  async proposeOperationalEvidence(
+    user: CopilotPrincipal,
+    regionId: string,
+    canonicalEntityId: string,
+    field: string,
+    evidence: any,
+  ) {
+    assertCopilotAccess(user, regionId, true);
+    return this.regional.proposeOperationalEvidence(
+      regionId,
+      canonicalEntityId,
+      field,
+      evidence,
+      user.sub,
+    );
+  }
+  async decideOperationalEvidence(
+    user: CopilotPrincipal,
+    regionId: string,
+    canonicalEntityId: string,
+    field: string,
+    input: any,
+  ) {
+    assertCopilotAccess(user, regionId, true);
+    return this.regional.decideOperationalEvidence(
+      regionId,
+      canonicalEntityId,
+      field,
+      input?.decision,
+      user.sub,
+      input?.confirmed === true,
+      input?.editedValue,
     );
   }
   async coreHealth(user: CopilotPrincipal, regionId: string) {

@@ -55,5 +55,33 @@ test("manager UX supports 360 390 430 widths with touch targets and card layouts
   assert.match(css, /min-height:\s*44px/);
   assert.match(css, /grid-template-columns:\s*repeat\(2,\s*1fr\)/);
   assert.match(css, /@media\s*\(min-width:\s*760px\)/);
-  assert.match(css, /\.copilot-query input\s*\{[^}]*min-width:\s*0;[^}]*flex:\s*1/);
+  assert.match(
+    css,
+    /\.copilot-query input\s*\{[^}]*min-width:\s*0;[^}]*flex:\s*1/,
+  );
+});
+test("operational workbench keeps field evidence visible and requires individual confirmation", () => {
+  for (const text of [
+    "옥천 운영 준비",
+    "Action Ready",
+    "좌표 확인 필요",
+    "전화 확인 필요",
+    "생활편의 후보",
+    "우선 확인할 항목",
+    "길찾기를 제공하려면 위치 확인이 필요합니다",
+    "현재",
+    "제안",
+    "출처",
+    "검토 이유",
+    "일괄 승인은 제공하지 않습니다",
+  ])
+    assert.match(ui, new RegExp(text));
+  for (const action of ["승인", "수정", "보류", "거부"])
+    assert.match(ui, new RegExp(`>\\s*${action}\\s*<`));
+  assert.doesNotMatch(ui, /Approve All/);
+  assert.match(css, /min-height:\s*44px/);
+  assert.match(
+    css,
+    /grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/,
+  );
 });

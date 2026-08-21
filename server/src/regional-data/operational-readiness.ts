@@ -23,12 +23,14 @@ export function operationalVerificationMatrix(
       placeConcept =
         record.entityType === 'AREA' || record.category === 'PLACE_CONCEPT',
       hoursStatus: HoursEvidenceStatus =
-        Array.isArray(record.operatingHours) && record.operatingHours.length
-          ? 'SOURCE_REPORTED_HOURS'
-          : record.entityType === 'ATTRACTION' &&
-              record.category === 'TOURISM_NATURE'
-            ? 'NOT_APPLICABLE'
-            : 'UNKNOWN_HOURS',
+        row?.fieldEvidence?.hours?.status === 'APPROVED'
+          ? 'VERIFIED_HOURS'
+          : Array.isArray(record.operatingHours) && record.operatingHours.length
+            ? 'SOURCE_REPORTED_HOURS'
+            : record.entityType === 'ATTRACTION' &&
+                record.category === 'TOURISM_NATURE'
+              ? 'NOT_APPLICABLE'
+              : 'UNKNOWN_HOURS',
       tripEligible = !placeConcept && Boolean(record.source),
       missingFields = [
         ...(!record.address ? ['address'] : []),
@@ -53,6 +55,7 @@ export function operationalVerificationMatrix(
       displayName: record.canonicalLabelKo,
       category: record.category,
       entityType: record.entityType,
+      isOfficialScenic: /옥천\s*[0-9]?경/.test(record.description || ''),
       currentRdmStatus: row?.verificationStatus || record.runtimeDataStatus,
       lifecycleStatus: row?.lifecycleStatus || 'BASELINE_ACTIVE',
       officialSource: record.source,
@@ -73,6 +76,7 @@ export function operationalVerificationMatrix(
       verificationEvidence: {
         source: record.source,
         coordinateEvidence: navigationEligible ? record.source : undefined,
+        fields: row?.fieldEvidence || {},
       },
       classification,
       recommendedManagerAction: placeConcept

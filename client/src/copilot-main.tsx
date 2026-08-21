@@ -108,6 +108,7 @@ function Home({
     [home, setHome] = useState<any>(),
     [selected, setSelected] = useState<any>(),
     [selectedCore, setSelectedCore] = useState<any>(),
+    [selectedOperational, setSelectedOperational] = useState<any>(),
     [query, setQuery] = useState("");
   const load = () =>
     api(`/home?regionId=${encodeURIComponent(regionId)}`).then(setHome);
@@ -119,6 +120,18 @@ function Home({
       setSelected(await api(`/candidates/${task.candidate.id}`));
     if (task.core)
       setSelectedCore(await api(`/core-destinations/${task.core.id}`));
+  };
+  const openOperational = async (entity: any) =>
+    setSelectedOperational(
+      await api(
+        `/operational-entity?regionId=${encodeURIComponent(regionId)}&canonicalEntityId=${encodeURIComponent(entity.canonicalEntityId)}`,
+      ),
+    );
+  const applyOperationalFilter = async (filter: string) => {
+    const operationalWorkbench = await api(
+      `/operational-workbench?regionId=${encodeURIComponent(regionId)}&filter=${encodeURIComponent(filter)}`,
+    );
+    setHome((value: any) => ({ ...value, operationalWorkbench }));
   };
   return (
     <main className="copilot-shell">
@@ -157,6 +170,74 @@ function Home({
           <b>{home?.counts?.unverified || 0}</b>
           <span>미검증 정보</span>
         </article>
+      </section>
+      <section className="operational-workbench">
+        <div className="section-heading">
+          <div>
+            <small>{regionId} · 사람이 확인한 정보만 운영 반영</small>
+            <h2>{regionId === "okcheon" ? "옥천 운영 준비" : "운영 준비"}</h2>
+          </div>
+          <b>
+            Action Ready{" "}
+            {home?.operationalWorkbench?.dashboard?.actionReady || 0}
+          </b>
+        </div>
+        <div className="operational-counts" aria-label="운영 준비 상태">
+          {[
+            ["전체 장소", "total"],
+            ["좌표 확인 필요", "coordinatesNeed"],
+            ["전화 확인 필요", "phoneNeed"],
+            ["운영시간 확인 필요", "hoursNeed"],
+            ["주차 확인 필요", "parkingNeed"],
+            ["접근성 확인 필요", "accessibilityNeed"],
+            ["생활편의 후보", "essentialCandidates"],
+          ].map(([label, key]) => (
+            <article key={key}>
+              <b>{home?.operationalWorkbench?.dashboard?.[key] || 0}</b>
+              <span>{label}</span>
+            </article>
+          ))}
+        </div>
+        <div className="verification-filters" aria-label="확인 항목 필터">
+          {[
+            ["우선 확인할 항목", ""],
+            ["좌표 필요", "coordinates"],
+            ["전화 필요", "phone"],
+            ["운영시간 필요", "hours"],
+            ["주차/접근성", "parking-accessibility"],
+            ["9경", "scenic"],
+            ["음식", "food"],
+            ["카페", "cafe"],
+            ["숙박", "accommodation"],
+          ].map(([label, value]) => (
+            <button key={value} onClick={() => applyOperationalFilter(value)}>
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="operational-queue">
+          {home?.operationalWorkbench?.queue
+            ?.slice(0, 12)
+            .map((entity: any) => (
+              <article key={entity.canonicalEntityId}>
+                <small>
+                  {entity.priority} ·{" "}
+                  {entity.isOfficialScenic ? "옥천 9경 · " : ""}
+                  {entity.category}
+                </small>
+                <h3>{entity.displayName}</h3>
+                <p>{entity.visitorReason}</p>
+                <p>
+                  {entity.navigationEligible
+                    ? "길찾기 가능"
+                    : "길찾기를 제공하려면 위치 확인이 필요합니다."}
+                </p>
+                <button onClick={() => openOperational(entity)}>
+                  근거 확인
+                </button>
+              </article>
+            ))}
+        </div>
       </section>
       <section className="core-coverage">
         <div className="section-heading">
@@ -261,7 +342,157 @@ function Home({
           }}
         />
       )}
+      {selectedOperational && (
+        <OperationalReview
+          detail={selectedOperational}
+          onClose={() => setSelectedOperational(undefined)}
+          onChanged={async () => {
+            setSelectedOperational(undefined);
+            await load();
+          }}
+        />
+      )}
     </main>
+  );
+}
+function OperationalReview({
+  detail,
+  onClose,
+  onChanged,
+}: {
+  detail: any;
+  onClose: () => void;
+  onChanged: () => void;
+}) {
+  const [pending, setPending] = useState<any>();
+  const [editedValue, setEditedValue] = useState("");
+  const fields = ["coordinates", "phone", "hours", "parking", "accessibility"];
+  const decide = async (field: string, decision: string) => {
+    let parsedEditedValue: any;
+    if (decision === "MODIFY") {
+      try {
+        parsedEditedValue = JSON.parse(editedValue);
+      } catch {
+        parsedEditedValue = editedValue;
+      }
+    }
+    await api("/operational-evidence/decision", {
+      method: "POST",
+      body: JSON.stringify({
+        regionId: detail.regionId,
+        canonicalEntityId: detail.canonicalEntityId,
+        field,
+        decision,
+        confirmed: true,
+        editedValue: parsedEditedValue,
+      }),
+    });
+    await onChanged();
+  };
+  return (
+    <div className="copilot-modal" role="dialog" aria-modal="true">
+      <section>
+        <button className="quiet" onClick={onClose}>
+          닫기
+        </button>
+        <small>
+          {detail.category} · {detail.currentRdmStatus}
+        </small>
+        <h2>{detail.displayName}</h2>
+        <p>{detail.address || "공식 주소 증거가 없습니다."}</p>
+        <p className="warning">
+          공식 출처는 높은 권위의 증거지만 관리자 승인을 대신하지 않습니다.
+        </p>
+        {fields.map((field) => {
+          const evidence = detail.fieldEvidence?.[field];
+          return (
+            <article className="field-evidence" key={field}>
+              <h3>{field}</h3>
+              <dl>
+                <dt>현재</dt>
+                <dd>
+                  {JSON.stringify(evidence?.current ?? detail[field]) || "없음"}
+                </dd>
+                <dt>제안</dt>
+                <dd>
+                  {JSON.stringify(evidence?.proposed) || "후보 근거 없음"}
+                </dd>
+                <dt>출처</dt>
+                <dd>
+                  {evidence?.source?.sourceName ||
+                    evidence?.source?.sourceType ||
+                    "없음"}
+                </dd>
+                <dt>검토 이유</dt>
+                <dd>
+                  {evidence?.whyReviewNeeded ||
+                    "운영 근거가 추가되면 검토할 수 있습니다."}
+                </dd>
+              </dl>
+              {field === "coordinates" &&
+                Number.isFinite(evidence?.proposed?.latitude) &&
+                Number.isFinite(evidence?.proposed?.longitude) && (
+                  <a
+                    className="map-confirmation"
+                    href={`https://www.openstreetmap.org/?mlat=${evidence.proposed.latitude}&mlon=${evidence.proposed.longitude}#map=17/${evidence.proposed.latitude}/${evidence.proposed.longitude}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    공식 주소와 후보 위치를 지도에서 비교
+                  </a>
+                )}
+              {evidence?.status === "PROPOSED" && (
+                <div className="field-actions">
+                  <button
+                    onClick={() => setPending({ field, decision: "APPROVE" })}
+                  >
+                    승인
+                  </button>
+                  <button
+                    onClick={() => setPending({ field, decision: "MODIFY" })}
+                  >
+                    수정
+                  </button>
+                  <button
+                    className="quiet"
+                    onClick={() => setPending({ field, decision: "HOLD" })}
+                  >
+                    보류
+                  </button>
+                  <button
+                    className="danger"
+                    onClick={() => setPending({ field, decision: "REJECT" })}
+                  >
+                    거부
+                  </button>
+                </div>
+              )}
+            </article>
+          );
+        })}
+        {pending && (
+          <div role="alertdialog" className="confirmation">
+            <b>
+              {pending.field} 근거를 {pending.decision} 처리할까요?
+            </b>
+            <span>각 사실은 개별 승인되며 일괄 승인은 제공하지 않습니다.</span>
+            {pending.decision === "MODIFY" && (
+              <label>
+                수정 값(JSON 또는 텍스트)
+                <input
+                  value={editedValue}
+                  onChange={(event) => setEditedValue(event.target.value)}
+                />
+              </label>
+            )}
+            <button onClick={() => decide(pending.field, pending.decision)}>
+              명시적으로 확인
+            </button>
+            <button onClick={() => setPending(undefined)}>취소</button>
+          </div>
+        )}
+      </section>
+    </div>
   );
 }
 function CoreReview({

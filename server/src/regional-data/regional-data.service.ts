@@ -64,6 +64,13 @@ const TRANSFER_FIELDS = [
   'walkingAccess',
   'shortDescription',
 ] as const;
+const OPERATIONAL_FIELDS = new Set([
+  'coordinates',
+  'phone',
+  'hours',
+  'parking',
+  'accessibility',
+]);
 @Injectable()
 export class RegionalDataService implements OnModuleInit {
   constructor(
@@ -293,8 +300,11 @@ export class RegionalDataService implements OnModuleInit {
     const regionalRows: any[] = await this.model.find({ regionId }).lean();
     const overrides = regionalRows.filter(
       (row) =>
-        row.verificationStatus === 'VERIFIED' &&
-        ['ACTIVE', 'CHANGE_DETECTED'].includes(row.lifecycleStatus),
+        ['ACTIVE', 'CHANGE_DETECTED'].includes(row.lifecycleStatus) &&
+        (row.verificationStatus === 'VERIFIED' ||
+          Object.values(row.fieldEvidence || {}).some(
+            (e: any) => e?.status === 'APPROVED',
+          )),
     );
     const questionable: any[] = await this.model
       .find({ regionId, lifecycleStatus: 'CHANGE_DETECTED' })
@@ -366,6 +376,136 @@ export class RegionalDataService implements OnModuleInit {
       summary: operationalReadinessSummary(matrix),
       matrix,
       tasks: operationalVerificationTasks(regionId, matrix),
+    };
+  }
+  async operationalEntity(regionId: string, canonicalEntityId: string) {
+    const readiness = await this.operationalReadiness(regionId),
+      entity = readiness.matrix.find(
+        (x) => x.canonicalEntityId === canonicalEntityId,
+      ),
+      document: any = await this.model.findOne({ regionId, canonicalEntityId }),
+      row: any = document?.toObject ? document.toObject() : document;
+    if (!entity || !row) throw new NotFoundException();
+    return {
+      regionId,
+      ...entity,
+      fieldEvidence: row.fieldEvidence || {},
+      auditTrail: row.auditTrail || [],
+    };
+  }
+  async proposeOperationalEvidence(
+    regionId: string,
+    canonicalEntityId: string,
+    field: string,
+    proposal: any,
+    actorId: string,
+  ) {
+    if (!OPERATIONAL_FIELDS.has(field))
+      throw new BadRequestException('Unsupported operational field');
+    if (
+      !proposal?.source?.sourceType ||
+      !/^https:\/\//.test(proposal?.source?.sourceUrl || '') ||
+      !proposal?.observedAt ||
+      proposal.proposed === undefined
+    )
+      throw new BadRequestException(
+        'Proposed value, source URL and observed timestamp are required',
+      );
+    this.validateOperationalValue(field, proposal.proposed);
+    const row: any = await this.model.findOne({ regionId, canonicalEntityId });
+    if (!row) throw new NotFoundException();
+    const current = this.operationalCurrent(row, field),
+      evidence = {
+        current,
+        proposed: proposal.proposed,
+        source: proposal.source,
+        observedAt: proposal.observedAt,
+        confidence: proposal.confidence || 'EVIDENCE_ONLY',
+        evidenceStatus: proposal.evidenceStatus || 'UNVERIFIED_EVIDENCE',
+        whyReviewNeeded:
+          proposal.whyReviewNeeded ||
+          '운영 기능에 사용하기 전에 관리자의 명시적 확인이 필요합니다.',
+        status: 'PROPOSED',
+      };
+    row.fieldEvidence = { ...(row.fieldEvidence || {}), [field]: evidence };
+    row.markModified?.('fieldEvidence');
+    row.auditTrail.push({
+      action: 'OPERATIONAL_EVIDENCE_REVIEWED',
+      actorId,
+      regionId,
+      entityId: canonicalEntityId,
+      field,
+      previousValue: current,
+      newValue: proposal.proposed,
+      evidenceSource: proposal.source,
+      at: new Date().toISOString(),
+    });
+    await row.save();
+    return this.operationalEntity(regionId, canonicalEntityId);
+  }
+  async decideOperationalEvidence(
+    regionId: string,
+    canonicalEntityId: string,
+    field: string,
+    decision: string,
+    actorId: string,
+    confirmed: boolean,
+    editedValue?: unknown,
+  ) {
+    if (!confirmed)
+      throw new BadRequestException('Explicit human confirmation required');
+    if (!OPERATIONAL_FIELDS.has(field))
+      throw new BadRequestException('Unsupported operational field');
+    if (!['APPROVE', 'MODIFY', 'HOLD', 'REJECT'].includes(decision))
+      throw new BadRequestException('Unsupported evidence decision');
+    const row: any = await this.model.findOne({ regionId, canonicalEntityId });
+    if (!row) throw new NotFoundException();
+    const evidence = row.fieldEvidence?.[field];
+    if (!evidence || evidence.status !== 'PROPOSED')
+      throw new BadRequestException('Proposed field evidence is required');
+    const nextValue = decision === 'MODIFY' ? editedValue : evidence.proposed;
+    if (['APPROVE', 'MODIFY'].includes(decision)) {
+      this.validateOperationalValue(field, nextValue);
+      this.applyOperationalValue(row, field, nextValue);
+      evidence.proposed = nextValue;
+      evidence.status = 'APPROVED';
+      row.verificationStatus =
+        row.verificationStatus === 'UNVERIFIED'
+          ? 'PARTIAL'
+          : row.verificationStatus;
+      row.lifecycleStatus = 'ACTIVE';
+      row.lastVerifiedAt = new Date().toISOString();
+    } else evidence.status = decision === 'HOLD' ? 'HELD' : 'REJECTED';
+    evidence.reviewedAt = new Date().toISOString();
+    evidence.reviewedBy = actorId;
+    row.fieldEvidence = { ...(row.fieldEvidence || {}), [field]: evidence };
+    row.markModified?.('fieldEvidence');
+    const eventByField: Record<string, string> = {
+      coordinates: 'COORDINATE_APPROVED',
+      phone: 'PHONE_APPROVED',
+      hours: 'HOURS_APPROVED',
+      parking: 'PARKING_APPROVED',
+      accessibility: 'ACCESSIBILITY_APPROVED',
+    };
+    row.auditTrail.push({
+      action: ['APPROVE', 'MODIFY'].includes(decision)
+        ? eventByField[field]
+        : `OPERATIONAL_EVIDENCE_${decision === 'HOLD' ? 'HELD' : 'REJECTED'}`,
+      actorId,
+      regionId,
+      entityId: canonicalEntityId,
+      field,
+      previousValue: evidence.current,
+      newValue: ['APPROVE', 'MODIFY'].includes(decision)
+        ? nextValue
+        : undefined,
+      evidenceSource: evidence.source,
+      at: evidence.reviewedAt,
+    });
+    await row.save();
+    return {
+      entity: await this.operationalEntity(regionId, canonicalEntityId),
+      readiness: await this.operationalReadiness(regionId),
     };
   }
   async exportPackage(
@@ -803,7 +943,9 @@ export class RegionalDataService implements OnModuleInit {
     const coordinatesSafe =
       !row.detectedChanges?.some((x: any) => x.unsafe) &&
       Number.isFinite(row.latitude) &&
-      Number.isFinite(row.longitude);
+      Number.isFinite(row.longitude) &&
+      (row.verificationStatus === 'VERIFIED' ||
+        row.fieldEvidence?.coordinates?.status === 'APPROVED');
     const actions: any = { ...(base?.actions || {}) };
     if (row.phone) actions.call = { phone: row.phone };
     if (row.websiteUrl) actions.website = { url: row.websiteUrl };
@@ -842,5 +984,41 @@ export class RegionalDataService implements OnModuleInit {
       lastVerifiedAt: row.lastVerifiedAt,
       actions,
     };
+  }
+  private operationalCurrent(row: any, field: string) {
+    if (field === 'coordinates')
+      return Number.isFinite(row.latitude) && Number.isFinite(row.longitude)
+        ? { latitude: row.latitude, longitude: row.longitude }
+        : undefined;
+    if (field === 'hours') return row.operatingHours;
+    return row[field];
+  }
+  private validateOperationalValue(field: string, value: any) {
+    if (
+      field === 'coordinates' &&
+      (!Number.isFinite(value?.latitude) ||
+        !Number.isFinite(value?.longitude) ||
+        value.latitude < -90 ||
+        value.latitude > 90 ||
+        value.longitude < -180 ||
+        value.longitude > 180)
+    )
+      throw new BadRequestException('Valid coordinate pair is required');
+    if (field === 'phone' && (typeof value !== 'string' || !value.trim()))
+      throw new BadRequestException('A non-empty phone value is required');
+    if (field === 'hours' && !Array.isArray(value))
+      throw new BadRequestException('Hours must be an array');
+    if (
+      ['parking', 'accessibility'].includes(field) &&
+      (!value || typeof value !== 'object' || Array.isArray(value))
+    )
+      throw new BadRequestException('Structured operational evidence required');
+  }
+  private applyOperationalValue(row: any, field: string, value: any) {
+    if (field === 'coordinates') {
+      row.latitude = value.latitude;
+      row.longitude = value.longitude;
+    } else if (field === 'hours') row.operatingHours = value;
+    else row[field] = value;
   }
 }

@@ -31,9 +31,10 @@ export class CopilotController {
     @Req() req: any,
     @Query('regionId') regionId: string,
   ) {
-    const [tasks, coreCoverage] = await Promise.all([
+    const [tasks, coreCoverage, operationalWorkbench] = await Promise.all([
       this.service.queue(req.copilotUser, regionId),
       this.service.coreHealth(req.copilotUser, regionId),
+      this.service.operationalWorkbench(req.copilotUser, regionId),
     ]);
     return {
       regionId,
@@ -49,8 +50,50 @@ export class CopilotController {
         unverified: tasks.filter((x) => x.type === 'UNVERIFIED_ENTITY').length,
       },
       coreCoverage,
+      operationalWorkbench,
       tasks,
     };
+  }
+  @Get('operational-workbench') @UseGuards(CopilotAuthGuard) workbench(
+    @Req() req: any,
+    @Query('regionId') regionId: string,
+    @Query('filter') filter = '',
+  ) {
+    return this.service.operationalWorkbench(req.copilotUser, regionId, filter);
+  }
+  @Get('operational-entity') @UseGuards(CopilotAuthGuard) operationalEntity(
+    @Req() req: any,
+    @Query('regionId') regionId: string,
+    @Query('canonicalEntityId') canonicalEntityId: string,
+  ) {
+    return this.service.operationalEntity(
+      req.copilotUser,
+      regionId,
+      canonicalEntityId,
+    );
+  }
+  @Post('operational-evidence') @UseGuards(CopilotAuthGuard) proposeEvidence(
+    @Req() req: any,
+    @Body() body: any,
+  ) {
+    return this.service.proposeOperationalEvidence(
+      req.copilotUser,
+      body?.regionId,
+      body?.canonicalEntityId,
+      body?.field,
+      body?.evidence,
+    );
+  }
+  @Post('operational-evidence/decision')
+  @UseGuards(CopilotAuthGuard)
+  decideEvidence(@Req() req: any, @Body() body: any) {
+    return this.service.decideOperationalEvidence(
+      req.copilotUser,
+      body?.regionId,
+      body?.canonicalEntityId,
+      body?.field,
+      body,
+    );
   }
   @Get('tasks') @UseGuards(CopilotAuthGuard) async tasks(
     @Req() req: any,
@@ -82,6 +125,37 @@ export class CopilotController {
     }
     if (/검색.*발견/.test(q))
       return tasks.filter((x) => x.type === 'SEARCH_DISCOVERED_ENTITY');
+    if (/좌표\s*없는|길찾기\s*안\s*되는/.test(q))
+      return (
+        await this.service.operationalWorkbench(
+          req.copilotUser,
+          regionId,
+          /9경/.test(q) ? 'scenic' : 'coordinates',
+        )
+      ).queue.filter((x: any) => !x.navigationEligible);
+    if (/전화\s*가능.*몇/.test(q)) {
+      const workbench = await this.service.operationalWorkbench(
+        req.copilotUser,
+        regionId,
+      );
+      return [
+        {
+          taskId: `diagnostic:${regionId}:call-ready`,
+          regionId,
+          type: 'READINESS_DIAGNOSTIC',
+          reason: `전화 가능한 곳은 ${workbench.dashboard.total - workbench.dashboard.phoneNeed}곳입니다.`,
+          status: 'READ_ONLY',
+        },
+      ];
+    }
+    if (/무엇부터|뭐부터/.test(q))
+      return (
+        await this.service.operationalWorkbench(req.copilotUser, regionId)
+      ).queue.slice(0, 10);
+    if (/생활편의/.test(q))
+      return (
+        await this.service.operationalWorkbench(req.copilotUser, regionId)
+      ).essentialShopping;
     if (/미검증/.test(q))
       return tasks.filter(
         (x) =>
