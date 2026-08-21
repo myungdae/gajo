@@ -9,6 +9,7 @@ import { ExkoSemanticAdapter } from '../exko-semantic/exko-semantic.service';
 import { NearbyService, NearbyServiceError } from '../nearby/nearby.service';
 import { CopilotService } from '../copilot/copilot.service';
 import { DISCOVERY_CATEGORY_MATCH } from './discovery-eligibility';
+import { RegionConfigService } from '../region/region-config.service';
 
 const CATEGORY_MATCH = DISCOVERY_CATEGORY_MATCH;
 
@@ -19,6 +20,7 @@ export class PlaceDiscoveryService {
     @Optional() private readonly exko?: ExkoSemanticAdapter,
     @Optional() private readonly nearby?: NearbyService,
     @Optional() private readonly copilot?: CopilotService,
+    @Optional() private readonly regionConfig?: RegionConfigService,
   ) {}
 
   async discover(
@@ -31,7 +33,8 @@ export class PlaceDiscoveryService {
     if (!dataset) return { regionId, category, entities: [] };
 
     const requested = new Set<string>(context.activityPreferences || []);
-    if (/합천호|호수|전망|풍경/.test(message)) requested.add('HAPCHEON_LAKE');
+    for(const preference of this.regionConfig?.get(regionId).discoveryPreferences||[])
+      if(preference.pattern.test(message))requested.add(preference.tag);
     if (/쉬|휴식|편안|부모님/.test(message)) requested.add('REST');
     requested.add(category);
 

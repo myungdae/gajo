@@ -10,6 +10,7 @@ import { randomUUID } from 'crypto';
 import {
   REGIONAL_CANDIDATE_DATASETS,
   RegionalCandidateRecord,
+  GAJO_MASTER_DATA,
 } from '../regions/regional-candidate.registry';
 import { HAPCHEON_MASTER_DATA } from '../regions/hapcheon/master-data';
 import {
@@ -66,14 +67,14 @@ export class RegionalDataService implements OnModuleInit {
     private model: Model<RegionalDataRecordDocument>,
   ) {}
   async onModuleInit() {
-    for (const item of HAPCHEON_MASTER_DATA) {
+    for (const [regionId, items] of [['gajo',GAJO_MASTER_DATA],['hapcheon',HAPCHEON_MASTER_DATA]] as const) for (const item of items) {
       await this.model.updateOne(
-        { canonicalEntityId: item.entityUri, regionId: 'hapcheon' },
+        { canonicalEntityId: item.entityUri, regionId },
         {
           $setOnInsert: {
-            id: `seed-${item.canonicalId}`,
+            id: `seed-${regionId}-${'canonicalId' in item?item.canonicalId:item.entityUri.split('#').pop()}`,
             canonicalEntityId: item.entityUri,
-            regionId: 'hapcheon',
+            regionId,
             displayName: item.canonicalLabelKo,
             entityType: item.entityType,
             category: item.category,
@@ -86,7 +87,7 @@ export class RegionalDataService implements OnModuleInit {
             shortDescription: item.description,
             source: item.source,
             lastVerifiedAt: item.lastVerifiedAt,
-            verificationStatus: 'VERIFIED',
+            verificationStatus: item.runtimeDataStatus==='VERIFIED'?'VERIFIED':'UNVERIFIED',
             lifecycleStatus: 'ACTIVE',
             auditTrail: [
               {

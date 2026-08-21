@@ -14,6 +14,7 @@ import type {
 } from './runtime-context.types';
 import { parseNaturalLanguageContext } from './natural-language-context.parser';
 import type { ExtractorResult } from './context-extractor.types';
+import { REGIONAL_CANDIDATE_DATASETS } from '../regions/regional-candidate.registry';
 import { mergeContextExtractions } from './context-extraction.merger';
 import { ContextExtractionGateway } from './context-extraction.gateway';
 
@@ -157,7 +158,7 @@ export class RuntimeContextService {
       const extracted = parseNaturalLanguageContext(input.rawMessage);
       const extractorResult: ExtractorResult = gatewayOutcome.result;
       const merged = mergeContextExtractions(extracted, extractorResult);
-      if(input.regionId==='hapcheon'&&extracted.explicitAccommodation==='합천호 스마일펜션')accommodationIntents=[{entityId:'https://hapcheon.example/ontology#hapcheonLakeSmilePension',label:'합천호 스마일펜션',resolved:true}];
+      if(extracted.explicitAccommodation){const normalized=extracted.explicitAccommodation.replace(/\s/g,'');const match=REGIONAL_CANDIDATE_DATASETS[input.regionId||'gajo']?.records.find(record=>record.entityType==='ACCOMMODATION'&&[record.canonicalLabelKo,...record.alternateLabels].some(label=>label.replace(/\s/g,'')===normalized));if(match)accommodationIntents=[{entityId:match.entityUri,label:match.canonicalLabelKo,resolved:true}]}
       if (companions.length === 0) companions = merged.companions;
       if (merged.transportMode && (input.isFollowup || !transportMode)) transportMode = merged.transportMode as TransportMode;
       if (merged.stayUntil && (input.isFollowup || !stayUntil)) stayUntil = merged.stayUntil;
