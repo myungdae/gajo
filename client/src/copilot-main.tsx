@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./copilot.css";
+import { runCopilotServiceWorkerRecovery } from "./copilotSwRecovery";
+
+void runCopilotServiceWorkerRecovery();
 const api = async (path: string, options: any = {}) => {
   const token = sessionStorage.getItem("copilot-access-token");
   const response = await fetch(`/api/copilot${path}`, {

@@ -1,4 +1,5 @@
 import test from "node:test";
+import "./copilotPwaIsolation.test.ts";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 const ui = readFileSync(new URL("./copilot-main.tsx", import.meta.url), "utf8"),
