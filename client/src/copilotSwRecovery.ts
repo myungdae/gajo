@@ -39,4 +39,5 @@ export const runCopilotServiceWorkerRecovery = () =>
   });
 
 export const isCopilotProductionOrigin = (hostname: string) =>
-  hostname === 'copilot.odex.kr';
+  isCopilotWorkerOrigin(hostname);
+import { isCopilotWorkerOrigin } from './copilotSwMigration.ts';

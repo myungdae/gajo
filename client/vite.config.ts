@@ -8,6 +8,9 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       registerType: 'autoUpdate',
       // Registration is deliberately owned by the visitor entry. The plugin's
       // HTML transform otherwise injects registerSW.js into every Rollup HTML
@@ -17,20 +20,10 @@ export default defineConfig({
       // Small region-specific manifests preserve the path used to install;
       // every region continues to share this one app and service worker.
       manifest: false,
-      workbox: {
+      injectManifest: {
         // Copilot's HTML is never part of the visitor offline application shell.
         // Shared JS chunks remain precached because the visitor bundle needs them.
         globIgnores: ['**/copilot.html'],
-        // Never cache the app shell/service worker itself stale — always
-        // revalidate index.html and the API so PWA users see fresh builds
-        // (lesson learned from the sibling report.odex.kr project).
-        navigateFallbackDenylist: [/^\/api\//, /^\/copilot(?:\.html)?$/],
-        runtimeCaching: [
-          {
-            urlPattern: /^\/api\//,
-            handler: 'NetworkOnly',
-          },
-        ],
       },
     }),
   ],
