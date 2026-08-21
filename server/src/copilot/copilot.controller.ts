@@ -31,10 +31,11 @@ export class CopilotController {
     @Req() req: any,
     @Query('regionId') regionId: string,
   ) {
-    const [tasks, coreCoverage, operationalWorkbench] = await Promise.all([
+    const [tasks, coreCoverage, operationalWorkbench, fieldDemoWorkbench] = await Promise.all([
       this.service.queue(req.copilotUser, regionId),
       this.service.coreHealth(req.copilotUser, regionId),
       this.service.operationalWorkbench(req.copilotUser, regionId),
+      this.service.fieldDemoWorkbench(req.copilotUser, regionId),
     ]);
     return {
       regionId,
@@ -51,8 +52,15 @@ export class CopilotController {
       },
       coreCoverage,
       operationalWorkbench,
+      fieldDemoWorkbench,
       tasks,
     };
+  }
+  @Get('field-demo-readiness') @UseGuards(CopilotAuthGuard) fieldDemoReadiness(
+    @Req() req: any,
+    @Query('regionId') regionId: string,
+  ) {
+    return this.service.fieldDemoWorkbench(req.copilotUser, regionId);
   }
   @Get('operational-workbench') @UseGuards(CopilotAuthGuard) workbench(
     @Req() req: any,
@@ -162,6 +170,8 @@ export class CopilotController {
       return (
         await this.service.operationalWorkbench(req.copilotUser, regionId)
       ).essentialShopping;
+    if (/옥천\s*데모\s*준비\s*상태|현장\s*데모\s*준비/.test(q))
+      return [await this.service.fieldDemoWorkbench(req.copilotUser, regionId)];
     if (/RDM.*연결.*안|연결\s*안\s*된/.test(q)) {
       const diagnostic = await this.service.semanticDiagnostics(
         req.copilotUser,

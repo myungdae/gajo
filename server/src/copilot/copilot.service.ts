@@ -24,6 +24,14 @@ import { INITIAL_CORE_DESTINATIONS } from './core-destination.config';
 import { isDiscoveryEligible } from '../concierge/discovery-eligibility';
 import okcheonEssentialShopping from '../../operations/okcheon-essential-shopping.search-candidates.json';
 import { ExkoSemanticAdapter } from '../exko-semantic/exko-semantic.service';
+import {
+  OKCHEON_FIELD_DEMO_EVIDENCE_PROPOSALS,
+  okcheonFieldDemoEntityIds,
+} from '../regions/okcheon/field-demo.config';
+import {
+  fieldDemoReadiness,
+  minimalFieldDemoTasks,
+} from '../regional-data/field-demo-readiness';
 
 @Injectable()
 export class CopilotService implements OnModuleInit {
@@ -292,6 +300,117 @@ export class CopilotService implements OnModuleInit {
           regionContained: candidate.regionId === regionId,
         })),
       ),
+    };
+  }
+
+  async fieldDemoWorkbench(user: CopilotPrincipal, regionId: string) {
+    assertCopilotAccess(user, regionId);
+    if (regionId !== 'okcheon')
+      return {
+        regionId,
+        title: '현장 데모 준비',
+        configured: false,
+        decision: 'NOT_CONFIGURED',
+        matrix: [],
+        summary: [],
+        tasks: [],
+        approvalPack: [],
+      };
+    const dataset = await this.regional.effectiveDataset(regionId),
+      diagnostics = await this.semanticDiagnostics(user, regionId),
+      aligned = new Set(
+        diagnostics.alignedRdmEntities.map((x: any) => x.rdmEntityId),
+      ),
+      selected = (dataset?.records || [])
+        .filter((record: any) => okcheonFieldDemoEntityIds.has(record.entityUri))
+        .map((record: any) => ({
+          record,
+          role: okcheonFieldDemoEntityIds.get(record.entityUri)!,
+          semanticReady: aligned.has(record.entityUri),
+        })),
+      readiness = fieldDemoReadiness(selected),
+      essentialCandidates: any[] = await this.model
+        .find({
+          regionId,
+          status: { $nin: ['ACTIVE', 'REJECTED'] },
+          category: 'CONVENIENCE_STORE',
+        })
+        .lean(),
+      essential = essentialCandidates.find(
+        (x) => x.displayName === 'CU 옥천역전점',
+      ),
+      tasks: any[] = minimalFieldDemoTasks(regionId, readiness.matrix),
+      approvalPack: any[] = readiness.matrix
+        .filter((x) => x.actionsAfterApproval.length)
+        .map((x) => {
+          const proposal = (OKCHEON_FIELD_DEMO_EVIDENCE_PROPOSALS as any)[
+            x.canonicalEntityId
+          ];
+          return {
+            entity: x.displayName,
+            canonicalEntityId: x.canonicalEntityId,
+            currentFact: x.actionsAvailable,
+            proposedFact: proposal?.proposed,
+            source: proposal?.source,
+            evidenceState: proposal
+              ? 'EVIDENCE_READY'
+              : 'EVIDENCE_COLLECTION_REQUIRED',
+            whyNeeded: proposal?.whyNeeded || x.blockers,
+            approvalEffect: proposal?.approvalEffect || x.actionsAfterApproval,
+          };
+        });
+    if (essential) {
+      readiness.summary.push({
+        role: 'ESSENTIAL_SHOPPING',
+        total: 1,
+        actionReady: 0,
+      });
+      approvalPack.push({
+        entity: essential.displayName,
+        canonicalEntityId: undefined,
+        currentFact: [],
+        proposedFact: {
+          address: essential.address,
+          phone: essential.phone,
+        },
+        source: essential.evidence?.sourceUrl,
+        evidenceState: 'EVIDENCE_READY',
+        whyNeeded: ['생활편의 탐색·전화 후보 검토'],
+        approvalEffect: ['DISCOVERY', ...(essential.phone ? ['CALL'] : [])],
+      });
+      tasks.push({
+        taskId: `field-demo:${regionId}:ESSENTIAL_SHOPPING_APPROVAL`,
+        regionId,
+        type: 'ESSENTIAL_SHOPPING_APPROVAL',
+        priority: 'DEMO_CRITICAL',
+        status: 'NEEDS_VERIFICATION',
+        label: '생활편의 후보 승인 필요',
+        unlocks: 'DISCOVERY',
+        entities: [
+          { canonicalEntityId: undefined, displayName: essential.displayName },
+        ],
+      });
+    }
+    const blockers = tasks.reduce(
+      (sum, task) => sum + task.entities.length,
+      0,
+    );
+    return {
+      regionId,
+      title: '옥천 현장 데모 준비',
+      configured: true,
+      priorityMeaning:
+        'DEMO_CRITICAL은 선택된 현장 검증 시나리오의 확인 우선순위이며 방문객 추천 순위가 아닙니다.',
+      decision:
+        blockers === 0 ? 'FIELD_DEMO_READY' : 'READY_FOR_MANAGER_VERIFICATION',
+      matrix: readiness.matrix,
+      summary: readiness.summary,
+      blockers,
+      tasks,
+      approvalPack,
+      essentialShopping: essential
+        ? { displayName: essential.displayName, status: essential.status }
+        : undefined,
     };
   }
   async operationalEntity(

@@ -39,6 +39,17 @@ describe('public Concierge Guide Copilot', () => {
         /기본 연결은 구현.*현장 검증은 계속 필요.*완전한 운영 서비스라고 주장하지는 않습니다/s,
       ),
     }));
+  it('reports the Phase 5 semantic layer separately from operational verification', () => {
+    const answer: any = new GuideService().answer(
+      { question: '옥천은 어느 정도 준비됐나요?' },
+      'okcheon-readiness',
+    );
+    expect(answer.intent).toBe('OKCHEON_STATUS');
+    expect(answer.answer).toMatch(
+      /EXKO 의미 관계.*작동.*현장 검증.*관리자 확인 준비 단계/s,
+    );
+    expect(answer.answer).not.toContain('FIELD-DEMO READY');
+  });
   const golden: [string, string][] = [
     ['ChatGPT하고 뭐가 다른가요?', 'CHATGPT_DIFFERENCE'],
     ['구글이 있는데 왜 필요해요?', 'MAP_DIFFERENCE'],

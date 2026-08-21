@@ -185,7 +185,7 @@ export class ConciergeService {
           input.rawMessage || '',
         ) ||
           (semanticFollowup &&
-            /(관련\s*장소만|음식은\s*빼|시간이\s*두\s*시간)/.test(
+            /(관련\s*장소만|음식은\s*빼|다른\s*곳도|시간이\s*(?:한|두)\s*시간)/.test(
               input.rawMessage || '',
             )));
     if (semanticQuery && this.exko && this.regionalData) {
@@ -208,7 +208,11 @@ export class ConciergeService {
           {
             weather: /비/.test(raw) ? '비' : undefined,
             elderly: /70대|어머니|어르신/.test(raw),
-            remainingMinutes: /두\s*시간|2\s*시간/.test(raw) ? 120 : undefined,
+            remainingMinutes: /한\s*시간|1\s*시간/.test(raw)
+              ? 60
+              : /두\s*시간|2\s*시간/.test(raw)
+                ? 120
+                : undefined,
           },
         );
       return {

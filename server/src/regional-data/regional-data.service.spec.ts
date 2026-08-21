@@ -124,6 +124,29 @@ describe('RegionalDataService', () => {
     expect(effective.actions).toMatchObject({
       navigate: { latitude: 36.3522824857, longitude: 127.5637131168 },
     });
+    const conciergeDiscovery = new PlaceDiscoveryService(service as any),
+      visitorStops: any[] = await conciergeDiscovery.resolveRequestedDestinations(
+        'okcheon',
+        ['부소담악'],
+      ),
+      visitorDiscovery: any = await conciergeDiscovery.discover(
+        'okcheon',
+        'TOURISM_NATURE',
+        '옥천 경치 좋은 곳',
+        {},
+      );
+    expect(visitorStops[0]).toMatchObject({
+      label: '부소담악',
+      latitude: 36.3522824857,
+      longitude: 127.5637131168,
+    });
+    expect(
+      visitorDiscovery.entities.find((x: any) => x.programLabel === '부소담악'),
+    ).toMatchObject({
+      actions: {
+        navigate: { latitude: 36.3522824857, longitude: 127.5637131168 },
+      },
+    });
     const row = db.rows.find(
       (x) => x.canonicalEntityId === busodamak.entityUri,
     );

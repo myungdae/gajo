@@ -58,6 +58,45 @@ test("restoration remains region isolated", () => {
   assert.deepEqual(loadTripSession(storage as any, "gajo")!.savedPlaces, [{ entityId: "gajo-only" }]);
 });
 
+test("Okcheon field journey survives reopen and movement with semantic and execution continuity", () => {
+  const storage = memory(), original = saveTripSession({
+    ...createTripSession("okcheon"),
+    plannedContext: {
+      mustVisitPlaces: [
+        { label: "정지용 생가", entityId: "okcheon:birthplace", resolved: true },
+        { label: "정지용문학관", entityId: "okcheon:museum", resolved: true },
+      ],
+    },
+    itinerary: { savedAsFullJourney: true, journeyId: "okcheon-literary", steps: [
+      { entityId: "okcheon:birthplace", programLabel: "정지용 생가" },
+      { entityId: "okcheon:museum", programLabel: "정지용문학관" },
+    ] },
+    savedPlaces: [{ entityId: "okcheon:birthplace" }],
+    execution: { currentEntityId: "okcheon:birthplace", statusByEntityId: { "okcheon:birthplace": "EN_ROUTE" as const } },
+    runtimeContext: {
+      regionId: "okcheon",
+      locality: "옥천구읍",
+      semanticContext: { anchorLabels: ["정지용", "옥천구읍"] },
+    },
+  }, storage as any);
+  const moved = updateTripRuntimeContext("okcheon", {
+    ...original.runtimeContext,
+    regionId: "okcheon",
+    locality: "옥천읍",
+    latitude: 36.3,
+    longitude: 127.57,
+  }, storage as any)!, reopened = loadTripSession(storage as any, "okcheon")!;
+  assert.equal(reopened.anonymousTripId, original.anonymousTripId);
+  assert.deepEqual(reopened.itinerary, original.itinerary);
+  assert.deepEqual(reopened.savedPlaces, original.savedPlaces);
+  assert.deepEqual(reopened.execution, original.execution);
+  assert.deepEqual(reopened.plannedContext, original.plannedContext);
+  assert.deepEqual(reopened.runtimeContext.semanticContext, original.runtimeContext.semanticContext);
+  assert.equal(reopened.runtimeContext.locality, "옥천읍");
+  assert.equal(moved.anonymousTripId, original.anonymousTripId);
+  assert.equal(tripRestorationDiagnostics("okcheon", storage as any).uiState, "CONTINUE");
+});
+
 test("home continuation remains visible and every new-trip entry requires confirmation", () => {
   const continuity = readFileSync(new URL("./components/TripContinuity.tsx", import.meta.url), "utf8"), savedEntry = readFileSync(new URL("./components/SavedTripEntry.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(continuity, /regional-trip-return-shown|sessionStorage\.getItem\(seen\)/);

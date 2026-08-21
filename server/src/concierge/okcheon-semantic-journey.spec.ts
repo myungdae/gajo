@@ -81,6 +81,18 @@ describe('Okcheon semantic Local Concierge', () => {
         inputMode: 'FREE_TEXT',
         rawMessage: '시간이 두 시간밖에 없어.',
         semanticContext: first.semanticContext,
+      } as any),
+      alternatives: any = await concierge.chat({
+        regionId: 'okcheon',
+        inputMode: 'FREE_TEXT',
+        rawMessage: '다른 곳도 있어?',
+        semanticContext: first.semanticContext,
+      } as any),
+      oneHour: any = await concierge.chat({
+        regionId: 'okcheon',
+        inputMode: 'FREE_TEXT',
+        rawMessage: '시간이 한 시간밖에 없어.',
+        semanticContext: first.semanticContext,
       } as any);
     expect(cafe.semanticContext).toEqual(first.semanticContext);
     expect(discovery.discover).toHaveBeenCalledWith(
@@ -98,5 +110,9 @@ describe('Okcheon semantic Local Concierge', () => {
     expect(twoHours.recommendation.itinerary.steps.length).toBeLessThanOrEqual(
       3,
     );
+    expect(alternatives.intentRoute).toBe('SEMANTIC_JOURNEY');
+    expect(alternatives.semanticContext).toEqual(first.semanticContext);
+    expect(oneHour.semanticResult.rooDecisions.join(' ')).toContain('60');
+    expect(oneHour.recommendation.itinerary.steps).toHaveLength(1);
   });
 });

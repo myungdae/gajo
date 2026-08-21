@@ -171,6 +171,35 @@ function Home({
           <span>미검증 정보</span>
         </article>
       </section>
+      {home?.fieldDemoWorkbench?.configured && (
+        <section className="operational-workbench field-demo-workbench">
+          <div className="section-heading">
+            <div>
+              <small>DEMO_CRITICAL · 방문객 추천 순위와 무관</small>
+              <h2>{home.fieldDemoWorkbench.title}</h2>
+            </div>
+            <b>{home.fieldDemoWorkbench.decision}</b>
+          </div>
+          <div className="operational-counts" aria-label="현장 데모 준비 요약">
+            {home.fieldDemoWorkbench.summary.map((item: any) => (
+              <article key={item.role}>
+                <b>{item.actionReady}/{item.total}</b>
+                <span>{item.role}</span>
+              </article>
+            ))}
+          </div>
+          <div className="operational-queue">
+            {home.fieldDemoWorkbench.tasks.map((task: any) => (
+              <article key={task.taskId}>
+                <small>{task.priority} · {task.type}</small>
+                <h3>{task.label}</h3>
+                <p>{task.entities.map((x: any) => x.displayName).join(", ")}</p>
+                <p>승인 후: {task.unlocks}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
       <section className="operational-workbench">
         <div className="section-heading">
           <div>

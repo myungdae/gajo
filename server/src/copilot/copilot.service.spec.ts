@@ -5,6 +5,7 @@ import { CopilotService } from './copilot.service';
 import { PlaceDiscoveryService } from '../concierge/place-discovery.service';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { OKCHEON_MASTER_DATA } from '../regions/okcheon/master-data';
 
 function candidateModel() {
   const rows: any[] = [];
@@ -108,6 +109,56 @@ const evidence = {
 };
 
 describe('Regional Copilot Phase 1', () => {
+  it('builds the calculated 13-item Okcheon field-demo manager view without approving search evidence', async () => {
+    const model = candidateModel(),
+      regionalData = {
+        effectiveDataset: jest.fn(async () => ({
+          regionId: 'okcheon',
+          records: OKCHEON_MASTER_DATA,
+        })),
+      },
+      exko = {
+        semanticDiagnostics: jest.fn((_regionId: string, records: any[]) => ({
+          regionId: 'okcheon',
+          alignedRdmEntities: records
+            .filter((x) =>
+              /oldTownArea|jeongJiyong|daebakRestaurant/.test(x.entityUri),
+            )
+            .map((x) => ({ rdmEntityId: x.entityUri })),
+          semanticNodesWithoutRdm: [],
+        })),
+      },
+      service = new CopilotService(
+        model as any,
+        regionalData as any,
+        undefined,
+        exko as any,
+      ),
+      okcheonManager = {
+        sub: 'manager-o',
+        username: 'okcheon-manager',
+        role: 'REGIONAL_MANAGER' as const,
+        regions: ['okcheon'],
+      };
+    await service.onModuleInit();
+    const view: any = await service.fieldDemoWorkbench(
+      okcheonManager,
+      'okcheon',
+    );
+    expect(view).toMatchObject({
+      title: '옥천 현장 데모 준비',
+      decision: 'READY_FOR_MANAGER_VERIFICATION',
+      essentialShopping: { displayName: 'CU 옥천역전점', status: 'DISCOVERED' },
+    });
+    expect(view.matrix).toHaveLength(12);
+    expect(view.summary.reduce((n: number, x: any) => n + x.total, 0)).toBe(13);
+    expect(view.tasks.every((x: any) => x.priority === 'DEMO_CRITICAL')).toBe(
+      true,
+    );
+    expect(view.approvalPack.find((x: any) => x.entity === 'CU 옥천역전점'))
+      .toMatchObject({ evidenceState: 'EVIDENCE_READY' });
+    expect(model.rows.filter((x) => x.status === 'ACTIVE')).toHaveLength(0);
+  });
   it('exposes semantic diagnostics read-only within the assigned region', async () => {
     const regionalData = regional();
     regionalData.rows.push({
