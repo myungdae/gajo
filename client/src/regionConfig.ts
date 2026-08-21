@@ -48,7 +48,13 @@ export interface RegionConfig {
   heroTitle: string;
   heroSubtitle: string;
   heroCopy: string;
-  home: { question:string;supportingCopy:string;examples:string[];brandLine?:string;heroImage?:string };
+  home: {
+    question: string;
+    supportingCopy: string;
+    examples: string[];
+    brandLine?: string;
+    heroImage?: string;
+  };
   accent: string;
   center?: { latitude: number; longitude: number };
   bounds?: { north: number; south: number; east: number; west: number };
@@ -135,7 +141,15 @@ export const GAJO_CONFIG: RegionConfig = {
   heroTitle: "가조에 오신 것을 환영합니다",
   heroSubtitle: "오늘의 가조를 편안하게 만나보세요.",
   heroCopy: "계획할 때부터 여행 중인 지금까지, 필요한 다음 일정을 이어드려요.",
-  home:{question:"가조 여행, 무엇을 도와드릴까요?",supportingCopy:"말씀하시거나 편하게 입력해 주세요.",examples:["가조에서 부모님과 편하게 갈 곳 알려줘","온천 후에 어디로 갈까요?","지금 가까운 맛집을 찾고 있어요"]},
+  home: {
+    question: "가조 여행, 무엇을 도와드릴까요?",
+    supportingCopy: "말씀하시거나 편하게 입력해 주세요.",
+    examples: [
+      "가조에서 부모님과 편하게 갈 곳 알려줘",
+      "온천 후에 어디로 갈까요?",
+      "지금 가까운 맛집을 찾고 있어요",
+    ],
+  },
   accent: "#0b675f",
   center: { latitude: 35.714, longitude: 127.918 },
   bounds: { north: 35.84, south: 35.58, east: 128.05, west: 127.78 },
@@ -208,8 +222,26 @@ export const OKCHEON_CONFIG: RegionConfig = {
   heroTitle: "옥천에 오신 것을 환영합니다",
   heroSubtitle: "오늘의 옥천을 편안하게 만나보세요.",
   heroCopy: "문학과 전통문화가 이어지는 구읍 여행을 차분하게 준비해 보세요.",
-  home:{question:"옥천 여행, 무엇을 도와드릴까요?",supportingCopy:"말씀하시거나 편하게 입력해 주세요.",examples:["정지용 생가 다음에 어디로 갈까요?","옥천에서 맛집과 카페를 찾고 있어요","대청호 주변을 편하게 둘러보고 싶어요"]},
+  home: {
+    question: "옥천 여행, 무엇을 도와드릴까요?",
+    supportingCopy: "말씀하시거나 편하게 입력해 주세요.",
+    examples: [
+      "정지용 생가 다음에 어디로 갈까요?",
+      "옥천에서 맛집과 카페를 찾고 있어요",
+      "대청호 주변을 편하게 둘러보고 싶어요",
+    ],
+  },
   accent: "#376f73",
+  administrativeLevel: "county",
+  center: { latitude: 36.3064, longitude: 127.5714 },
+  bounds: { north: 36.45, south: 36.18, east: 127.93, west: 127.47 },
+  map: {
+    enabled: true,
+    title: "옥천 운영 지도",
+    description: "검증된 옥천 장소의 위치를 확인합니다.",
+    defaultZoom: 11,
+  },
+  weather: { enabled: true },
   quickIntents,
   supportedCategories: [
     "LITERATURE_CULTURE",
@@ -279,7 +311,15 @@ export const MUAN_CONFIG: RegionConfig = {
   heroSubtitle: "오늘의 무안을 편안하게 만나보세요.",
   heroCopy:
     "연꽃과 생태, 갯벌과 해안이 이어지는 무안 여행을 편안하게 준비해 보세요.",
-  home:{question:"무안 여행, 무엇을 도와드릴까요?",supportingCopy:"말씀하시거나 편하게 입력해 주세요.",examples:["회산백련지 갔다가 어디로 갈까요?","아이와 할 수 있는 체험 알려줘","무안에서 편하게 쉴 곳을 찾고 있어요"]},
+  home: {
+    question: "무안 여행, 무엇을 도와드릴까요?",
+    supportingCopy: "말씀하시거나 편하게 입력해 주세요.",
+    examples: [
+      "회산백련지 갔다가 어디로 갈까요?",
+      "아이와 할 수 있는 체험 알려줘",
+      "무안에서 편하게 쉴 곳을 찾고 있어요",
+    ],
+  },
   accent: "#557b4b",
   quickIntents,
   supportedCategories: [
@@ -343,7 +383,15 @@ export const GYERYONG_CONFIG: RegionConfig = {
   heroSubtitle: "오늘의 계룡을 편안하게 만나보세요.",
   heroCopy:
     "군문화와 행사, 가족 방문과 생활편의를 중심으로 계룡 일정을 준비해 보세요.",
-  home:{question:"계룡 여행, 무엇을 도와드릴까요?",supportingCopy:"말씀하시거나 편하게 입력해 주세요.",examples:["계룡 군문화 행사를 보고 싶어요","아이와 지금 어디 갈까요?","행사 후에 갈 맛집 알려줘"]},
+  home: {
+    question: "계룡 여행, 무엇을 도와드릴까요?",
+    supportingCopy: "말씀하시거나 편하게 입력해 주세요.",
+    examples: [
+      "계룡 군문화 행사를 보고 싶어요",
+      "아이와 지금 어디 갈까요?",
+      "행사 후에 갈 맛집 알려줘",
+    ],
+  },
   accent: "#455a64",
   quickIntents,
   supportedCategories: [
@@ -409,7 +457,17 @@ export const HAPCHEON_CONFIG: RegionConfig = {
   heroSubtitle: "합천호의 풍경과 함께 편안한 여행을 시작해보세요.",
   heroCopy:
     "호수와 자연, 드라이브와 가족 체류를 중심으로 합천 여행을 준비해 보세요.",
-  home:{question:"합천 여행, 무엇을 도와드릴까요?",supportingCopy:"말씀하시거나 편하게 입력해 주세요.",brandLine:"합천에 오신 것을 환영합니다",examples:["합천호 주변 맛집 알려줘","아이들과 지금 어디 갈까요?","오늘 묵을 숙소를 찾고 있어요","해인사 갔다가 어디로 갈까요?"]},
+  home: {
+    question: "합천 여행, 무엇을 도와드릴까요?",
+    supportingCopy: "말씀하시거나 편하게 입력해 주세요.",
+    brandLine: "합천에 오신 것을 환영합니다",
+    examples: [
+      "합천호 주변 맛집 알려줘",
+      "아이들과 지금 어디 갈까요?",
+      "오늘 묵을 숙소를 찾고 있어요",
+      "해인사 갔다가 어디로 갈까요?",
+    ],
+  },
   accent: "#496d75",
   center: { latitude: 35.55, longitude: 128.05 },
   bounds: { north: 35.84, south: 35.45, east: 128.18, west: 127.95 },
@@ -547,7 +605,15 @@ export const DAEJEON_JUNGGU_CONFIG: RegionConfig = {
   heroSubtitle: "도심의 문화와 맛, 시장과 일상을 편하게 만나보세요.",
   heroCopy:
     "은행동·대흥동·중앙로의 도심문화와 시장, 먹거리와 공연을 편안하게 이어보세요.",
-  home:{question:"대전 중구 여행, 무엇을 도와드릴까요?",supportingCopy:"말씀하시거나 편하게 입력해 주세요.",examples:["중앙시장 주변 맛집 알려줘","은행동에서 지금 어디 갈까요?","대흥동 전시와 카페를 찾고 있어요"]},
+  home: {
+    question: "대전 중구 여행, 무엇을 도와드릴까요?",
+    supportingCopy: "말씀하시거나 편하게 입력해 주세요.",
+    examples: [
+      "중앙시장 주변 맛집 알려줘",
+      "은행동에서 지금 어디 갈까요?",
+      "대흥동 전시와 카페를 찾고 있어요",
+    ],
+  },
   accent: "#765b46",
   quickIntents,
   supportedCategories: [
@@ -668,11 +734,14 @@ export function resolveEntry(
 ) {
   const p = new URLSearchParams(search);
   const id = campaigns[p.get("intent") || ""];
-  const modeValue=p.get('mode')?.toUpperCase();
+  const modeValue = p.get("mode")?.toUpperCase();
   return {
     entrySource: p.get("entry") || "direct",
-    entryEntity:p.get('entity')||undefined,
-    mode:modeValue==='PLAN'||modeValue==='NOW'?modeValue as 'PLAN'|'NOW':undefined,
+    entryEntity: p.get("entity") || undefined,
+    mode:
+      modeValue === "PLAN" || modeValue === "NOW"
+        ? (modeValue as "PLAN" | "NOW")
+        : undefined,
     intent: id ? config.quickIntents.find((i) => i.id === id) : undefined,
   };
 }

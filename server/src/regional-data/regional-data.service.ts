@@ -9,14 +9,18 @@ import { Model } from 'mongoose';
 import { randomUUID } from 'crypto';
 import {
   REGIONAL_CANDIDATE_DATASETS,
+  REGIONAL_BOOTSTRAP_REGION_IDS,
   RegionalCandidateRecord,
-  GAJO_MASTER_DATA,
 } from '../regions/regional-candidate.registry';
-import { HAPCHEON_MASTER_DATA } from '../regions/hapcheon/master-data';
 import {
   RegionalDataRecord,
   RegionalDataRecordDocument,
 } from './regional-data.schema';
+import {
+  operationalReadinessSummary,
+  operationalVerificationMatrix,
+  operationalVerificationTasks,
+} from './operational-readiness';
 const SOURCE_TYPES = new Set([
   'OFFICIAL_LOCAL_GOV',
   'OFFICIAL_BUSINESS',
@@ -67,40 +71,44 @@ export class RegionalDataService implements OnModuleInit {
     private model: Model<RegionalDataRecordDocument>,
   ) {}
   async onModuleInit() {
-    for (const [regionId, items] of [['gajo',GAJO_MASTER_DATA],['hapcheon',HAPCHEON_MASTER_DATA]] as const) for (const item of items) {
-      await this.model.updateOne(
-        { canonicalEntityId: item.entityUri, regionId },
-        {
-          $setOnInsert: {
-            id: `seed-${regionId}-${'canonicalId' in item?item.canonicalId:item.entityUri.split('#').pop()}`,
-            canonicalEntityId: item.entityUri,
-            regionId,
-            displayName: item.canonicalLabelKo,
-            entityType: item.entityType,
-            category: item.category,
-            address: item.address,
-            latitude: item.latitude,
-            longitude: item.longitude,
-            phone: item.telephone,
-            websiteUrl: item.website,
-            reservationUrl: item.reservationUrl,
-            shortDescription: item.description,
-            source: item.source,
-            lastVerifiedAt: item.lastVerifiedAt,
-            verificationStatus: item.runtimeDataStatus==='VERIFIED'?'VERIFIED':'UNVERIFIED',
-            lifecycleStatus: 'ACTIVE',
-            auditTrail: [
-              {
-                action: 'BASELINE_SEEDED',
-                at: new Date().toISOString(),
-                source: item.source,
-              },
-            ],
+    for (const regionId of REGIONAL_BOOTSTRAP_REGION_IDS)
+      for (const item of REGIONAL_CANDIDATE_DATASETS[regionId].records) {
+        await this.model.updateOne(
+          { canonicalEntityId: item.entityUri, regionId },
+          {
+            $setOnInsert: {
+              id: `seed-${regionId}-${'canonicalId' in item ? item.canonicalId : item.entityUri.split('#').pop()}`,
+              canonicalEntityId: item.entityUri,
+              regionId,
+              displayName: item.canonicalLabelKo,
+              entityType: item.entityType,
+              category: item.category,
+              address: item.address,
+              latitude: item.latitude,
+              longitude: item.longitude,
+              phone: item.telephone,
+              websiteUrl: item.website,
+              reservationUrl: item.reservationUrl,
+              shortDescription: item.description,
+              source: item.source,
+              lastVerifiedAt: item.lastVerifiedAt,
+              verificationStatus:
+                item.runtimeDataStatus === 'VERIFIED'
+                  ? 'VERIFIED'
+                  : 'UNVERIFIED',
+              lifecycleStatus: 'ACTIVE',
+              auditTrail: [
+                {
+                  action: 'BASELINE_SEEDED',
+                  at: new Date().toISOString(),
+                  source: item.source,
+                },
+              ],
+            },
           },
-        },
-        { upsert: true },
-      );
-    }
+          { upsert: true },
+        );
+      }
   }
   async list(filters: any = {}) {
     const query = Object.fromEntries(
@@ -346,6 +354,18 @@ export class RegionalDataService implements OnModuleInit {
           !x.phone &&
           !Number.isFinite(x.latitude),
       ).length,
+    };
+  }
+  async operationalReadiness(regionId: string) {
+    const dataset = await this.effectiveDataset(regionId);
+    if (!dataset) throw new BadRequestException('Unsupported regionId');
+    const rows: any[] = await this.model.find({ regionId }).lean(),
+      matrix = operationalVerificationMatrix(dataset.records, rows);
+    return {
+      regionId,
+      summary: operationalReadinessSummary(matrix),
+      matrix,
+      tasks: operationalVerificationTasks(regionId, matrix),
     };
   }
   async exportPackage(

@@ -92,13 +92,16 @@ describe('regional recommendation ownership', () => {
     );
   });
 
-  it('maps Okcheon interests to regional metadata without introducing unsupported candidates', () => {
+  it('maps Okcheon lake and food interests to the onboarded regional metadata only', () => {
     const { instance } = service();
     const candidates = (instance as any).buildRegionalCandidates(
       { activityPreferences: ['DAECHEONG_LAKE', 'FOOD'], mustVisitPlaces: [] },
       regionalCandidateDataset('okcheon'),
     );
-    expect(candidates).toEqual([]);
+    expect(candidates.length).toBeGreaterThan(0);
+    expect(candidates.every((candidate:any)=>candidate.regionId==='okcheon'&&['TOURISM_NATURE','FOOD'].includes(candidate.category))).toBe(true);
+    expect(candidates.some((candidate:any)=>candidate.programLabel==='부소담악')).toBe(true);
+    expect(candidates.some((candidate:any)=>candidate.programLabel==='한알천')).toBe(true);
     const nature = (instance as any).buildRegionalCandidates(
       { activityPreferences: ['NATURE'], mustVisitPlaces: [] },
       regionalCandidateDataset('okcheon'),

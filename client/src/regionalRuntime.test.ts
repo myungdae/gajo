@@ -1,7 +1,73 @@
-import test from'node:test';import assert from'node:assert/strict';import{DAEJEON_JUNGGU_CONFIG,GAJO_CONFIG,GYERYONG_CONFIG,HAPCHEON_CONFIG,MUAN_CONFIG,OKCHEON_CONFIG}from'./regionConfig.ts';import{regionalRuntimeView}from'./regionalRuntime.ts';
-test('Muan map and nearby use an honest regional limited state without Gajo data',()=>{const view=regionalRuntimeView(MUAN_CONFIG);assert.deepEqual(view,{mapEnabled:false,mapTitle:'무안 주변 지도',mapDescription:'현재 등록된 무안 장소의 정확한 위치 정보를 확인하고 있습니다.',mapCenter:undefined,mapZoom:14,weatherEnabled:false,nearbyEnabled:false});assert.doesNotMatch(JSON.stringify(view),/가조 온천단지 시설 지도|백두산천지온천|거창 항노화힐링랜드|가조|거창/)});
-test('Okcheon has no implicit Gajo map weather or nearby fallback',()=>{const view=regionalRuntimeView(OKCHEON_CONFIG);assert.equal(view.mapEnabled,false);assert.equal(view.weatherEnabled,false);assert.equal(view.nearbyEnabled,false);assert.equal(view.mapCenter,undefined)});
-test('Gajo keeps its verified map weather and nearby runtime capabilities',()=>{const view=regionalRuntimeView(GAJO_CONFIG);assert.equal(view.mapEnabled,true);assert.equal(view.weatherEnabled,true);assert.equal(view.nearbyEnabled,true);assert.deepEqual(view.mapCenter,[GAJO_CONFIG.center!.latitude,GAJO_CONFIG.center!.longitude])});
-test('Gyeryong map weather and nearby remain unavailable without cross-region fallback',()=>{const view=regionalRuntimeView(GYERYONG_CONFIG);assert.equal(view.mapEnabled,false);assert.equal(view.weatherEnabled,false);assert.equal(view.nearbyEnabled,false);assert.equal(view.mapCenter,undefined);assert.match(view.mapTitle,/계룡/)});
-test('Hapcheon map weather and anchor nearby use only configured operational bounds',()=>{const view=regionalRuntimeView(HAPCHEON_CONFIG);assert.equal(view.mapEnabled,true);assert.equal(view.weatherEnabled,true);assert.equal(view.nearbyEnabled,true);assert.deepEqual(view.mapCenter,[35.55,128.05]);assert.equal(view.mapTitle,'합천 운영 지도');assert.doesNotMatch(JSON.stringify(view),/가조|옥천|무안|계룡/)});
-test('Daejeon Jung-gu map weather and nearby remain district-scoped and unavailable',()=>{const view=regionalRuntimeView(DAEJEON_JUNGGU_CONFIG);assert.equal(view.mapEnabled,false);assert.equal(view.weatherEnabled,false);assert.equal(view.nearbyEnabled,false);assert.equal(view.mapCenter,undefined);assert.equal(view.mapTitle,'대전 중구 주변 지도');assert.doesNotMatch(JSON.stringify(view),/가조|옥천|무안|계룡|합천/)});
+import test from "node:test";
+import assert from "node:assert/strict";
+import {
+  DAEJEON_JUNGGU_CONFIG,
+  GAJO_CONFIG,
+  GYERYONG_CONFIG,
+  HAPCHEON_CONFIG,
+  MUAN_CONFIG,
+  OKCHEON_CONFIG,
+} from "./regionConfig.ts";
+import { regionalRuntimeView } from "./regionalRuntime.ts";
+test("Muan map and nearby use an honest regional limited state without Gajo data", () => {
+  const view = regionalRuntimeView(MUAN_CONFIG);
+  assert.deepEqual(view, {
+    mapEnabled: false,
+    mapTitle: "무안 주변 지도",
+    mapDescription:
+      "현재 등록된 무안 장소의 정확한 위치 정보를 확인하고 있습니다.",
+    mapCenter: undefined,
+    mapZoom: 14,
+    weatherEnabled: false,
+    nearbyEnabled: false,
+  });
+  assert.doesNotMatch(
+    JSON.stringify(view),
+    /가조 온천단지 시설 지도|백두산천지온천|거창 항노화힐링랜드|가조|거창/,
+  );
+});
+test("Okcheon uses only its configured county map weather and bounded nearby runtime", () => {
+  const view = regionalRuntimeView(OKCHEON_CONFIG);
+  assert.equal(view.mapEnabled, true);
+  assert.equal(view.weatherEnabled, true);
+  assert.equal(view.nearbyEnabled, true);
+  assert.deepEqual(view.mapCenter, [36.3064, 127.5714]);
+  assert.equal(view.mapTitle, "옥천 운영 지도");
+  assert.doesNotMatch(JSON.stringify(view), /가조|합천|거창/);
+});
+test("Gajo keeps its verified map weather and nearby runtime capabilities", () => {
+  const view = regionalRuntimeView(GAJO_CONFIG);
+  assert.equal(view.mapEnabled, true);
+  assert.equal(view.weatherEnabled, true);
+  assert.equal(view.nearbyEnabled, true);
+  assert.deepEqual(view.mapCenter, [
+    GAJO_CONFIG.center!.latitude,
+    GAJO_CONFIG.center!.longitude,
+  ]);
+});
+test("Gyeryong map weather and nearby remain unavailable without cross-region fallback", () => {
+  const view = regionalRuntimeView(GYERYONG_CONFIG);
+  assert.equal(view.mapEnabled, false);
+  assert.equal(view.weatherEnabled, false);
+  assert.equal(view.nearbyEnabled, false);
+  assert.equal(view.mapCenter, undefined);
+  assert.match(view.mapTitle, /계룡/);
+});
+test("Hapcheon map weather and anchor nearby use only configured operational bounds", () => {
+  const view = regionalRuntimeView(HAPCHEON_CONFIG);
+  assert.equal(view.mapEnabled, true);
+  assert.equal(view.weatherEnabled, true);
+  assert.equal(view.nearbyEnabled, true);
+  assert.deepEqual(view.mapCenter, [35.55, 128.05]);
+  assert.equal(view.mapTitle, "합천 운영 지도");
+  assert.doesNotMatch(JSON.stringify(view), /가조|옥천|무안|계룡/);
+});
+test("Daejeon Jung-gu map weather and nearby remain district-scoped and unavailable", () => {
+  const view = regionalRuntimeView(DAEJEON_JUNGGU_CONFIG);
+  assert.equal(view.mapEnabled, false);
+  assert.equal(view.weatherEnabled, false);
+  assert.equal(view.nearbyEnabled, false);
+  assert.equal(view.mapCenter, undefined);
+  assert.equal(view.mapTitle, "대전 중구 주변 지도");
+  assert.doesNotMatch(JSON.stringify(view), /가조|옥천|무안|계룡|합천/);
+});

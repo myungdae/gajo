@@ -129,8 +129,13 @@ export class CopilotService implements OnModuleInit {
         .find({ regionId, status: { $nin: ['ACTIVE', 'REJECTED'] } })
         .lean(),
       rdm: any[] = await this.regional.list({ regionId }),
-      health = await this.coreHealth(user, regionId);
+      health = await this.coreHealth(user, regionId),
+      operational =
+        typeof (this.regional as any).operationalReadiness === 'function'
+          ? await this.regional.operationalReadiness(regionId)
+          : { tasks: [] };
     const tasks = [
+      ...operational.tasks,
       ...health.items
         .filter((x: any) => x.health !== 'HEALTHY')
         .map((x: any) => ({
@@ -148,7 +153,11 @@ export class CopilotService implements OnModuleInit {
       ...candidates.map((x) => ({
         taskId: `candidate:${x.id}`,
         regionId,
-        type: 'SEARCH_DISCOVERED_ENTITY',
+        type: /CONVENIENCE|MART|SUPERMARKET|GROCERY/.test(
+          `${x.category} ${x.entityType}`,
+        )
+          ? 'ESSENTIAL_SHOPPING_CANDIDATE'
+          : 'SEARCH_DISCOVERED_ENTITY',
         priority: x.status === 'REVIEW' ? 1 : 2,
         candidate: x,
         reason: '관광객 검색에서 발견됐지만 VERIFIED RDM 일치 항목이 없습니다.',

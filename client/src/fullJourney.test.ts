@@ -167,3 +167,71 @@ test("whole journeys are region isolated and structural equality includes days a
     "error",
   );
 });
+test("Okcheon My Trip survives save reload and update while other regional journeys stay unchanged", () => {
+  const storage = memory(),
+    gajo = saveTripSession(
+      {
+        ...createTripSession("gajo"),
+        savedPlaces: [{ entityId: "gajo:saved" }],
+      },
+      storage as any,
+    ),
+    hapcheon = saveTripSession(
+      {
+        ...createTripSession("hapcheon"),
+        savedPlaces: [{ entityId: "hapcheon:saved" }],
+      },
+      storage as any,
+    ),
+    okcheon = saveTripSession(createTripSession("okcheon"), storage as any),
+    okcheonSteps = [
+      {
+        entityId: "https://okcheon.example/ontology#dunjubongKoreanPeninsula",
+        programUri: "https://okcheon.example/ontology#dunjubongKoreanPeninsula",
+        programLabel: "둔주봉 한반도지형",
+        regionId: "okcheon",
+        dayIndex: 1,
+        order: 1,
+        status: "PLANNED",
+        actions: {
+          navigate: { latitude: 36.35619308, longitude: 127.6727267 },
+        },
+      },
+      {
+        entityId: "https://okcheon.example/ontology#busodamak",
+        programUri: "https://okcheon.example/ontology#busodamak",
+        programLabel: "부소담악",
+        regionId: "okcheon",
+        dayIndex: 1,
+        order: 2,
+        status: "PLANNED",
+      },
+    ];
+  assert.equal(
+    saveFullJourney(
+      "okcheon",
+      { itineraryNo: "IT-OKCHEON", steps: okcheonSteps },
+      storage as any,
+    ).status,
+    "saved",
+  );
+  const reopened = loadTripSession(storage as any, "okcheon")!;
+  assert.equal(reopened.anonymousTripId, okcheon.anonymousTripId);
+  assert.equal(
+    itinerarySteps(reopened.itinerary)[0].programLabel,
+    "둔주봉 한반도지형",
+  );
+  assert.equal(
+    verifiedNavigation(itinerarySteps(reopened.itinerary)[0])?.name,
+    "둔주봉 한반도지형",
+  );
+  assert.equal(verifiedNavigation(itinerarySteps(reopened.itinerary)[1]), null);
+  assert.equal(
+    loadTripSession(storage as any, "gajo")?.anonymousTripId,
+    gajo.anonymousTripId,
+  );
+  assert.equal(
+    loadTripSession(storage as any, "hapcheon")?.anonymousTripId,
+    hapcheon.anonymousTripId,
+  );
+});

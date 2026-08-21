@@ -3,19 +3,366 @@ import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { CopilotAuthService, assertCopilotAccess } from './copilot-auth';
 import { CopilotService } from './copilot.service';
 import { PlaceDiscoveryService } from '../concierge/place-discovery.service';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
-function candidateModel(){const rows:any[]=[];const doc=(value:any)=>Object.assign(value,{toObject(){const{save,toObject,...plain}=this;return structuredClone(plain)},async save(){return this}});return{rows,findOne:(query:any)=>Promise.resolve(rows.find(row=>Object.entries(query).every(([k,v])=>row[k]===v))),find:(query:any)=>({lean:async()=>rows.filter(row=>Object.entries(query).every(([key,value]:any)=>value?.$nin?!value.$nin.includes(row[key]):row[key]===value)).map(row=>row.toObject())}),create:async(value:any)=>{const row=doc(structuredClone(value));rows.push(row);return row}}}
-function regional(){const rows:any[]=[];return{rows,list:jest.fn(async({regionId}:any)=>rows.filter(x=>x.regionId===regionId)),create:jest.fn(async(input:any)=>{const row={id:`rd-${rows.length+1}`,canonicalEntityId:`urn:regional:${input.regionId}:sauna`,regionId:input.regionId,displayName:input.proposedFacts.displayName,...input.proposedFacts,source:input.source,verificationStatus:'UNVERIFIED',lifecycleStatus:'NEW_CANDIDATE',auditTrail:[]};rows.push(row);return row}),action:jest.fn(async(id:string,_action:string,_facts:any,audit:any)=>{const row=rows.find(x=>x.id===id);Object.assign(row,{verificationStatus:'VERIFIED',lifecycleStatus:'ACTIVE',runtimeDataStatus:'VERIFIED',entityUri:row.canonicalEntityId,canonicalLabelKo:row.displayName,actions:{navigate:{latitude:row.latitude,longitude:row.longitude}}});row.auditTrail.push({action:audit.action,actorId:audit.actorId,regionId:audit.regionId});return row}),effectiveDataset:jest.fn(async(regionId:string)=>({regionId,records:rows.filter(x=>x.regionId===regionId&&x.lifecycleStatus==='ACTIVE')}))}}
-const manager={sub:'manager-h',username:'hapcheon-manager',role:'REGIONAL_MANAGER' as const,regions:['hapcheon']};
-const evidence={sourceType:'KAKAO_LOCAL',sourceUrl:'https://place.map.kakao.com/sauna',providerCategory:'사우나',discoveredAt:'2026-08-21T00:00:00.000Z'};
+function candidateModel() {
+  const rows: any[] = [];
+  const doc = (value: any) =>
+    Object.assign(value, {
+      toObject() {
+        const { save, toObject, ...plain } = this;
+        return structuredClone(plain);
+      },
+      async save() {
+        return this;
+      },
+    });
+  return {
+    rows,
+    findOne: (query: any) =>
+      Promise.resolve(
+        rows.find((row) =>
+          Object.entries(query).every(([k, v]) => row[k] === v),
+        ),
+      ),
+    find: (query: any) => ({
+      lean: async () =>
+        rows
+          .filter((row) =>
+            Object.entries(query).every(([key, value]: any) =>
+              value?.$nin ? !value.$nin.includes(row[key]) : row[key] === value,
+            ),
+          )
+          .map((row) => row.toObject()),
+    }),
+    create: async (value: any) => {
+      const row = doc(structuredClone(value));
+      rows.push(row);
+      return row;
+    },
+  };
+}
+function regional() {
+  const rows: any[] = [];
+  return {
+    rows,
+    list: jest.fn(async ({ regionId }: any) =>
+      rows.filter((x) => x.regionId === regionId),
+    ),
+    create: jest.fn(async (input: any) => {
+      const row = {
+        id: `rd-${rows.length + 1}`,
+        canonicalEntityId: `urn:regional:${input.regionId}:sauna`,
+        regionId: input.regionId,
+        displayName: input.proposedFacts.displayName,
+        ...input.proposedFacts,
+        source: input.source,
+        verificationStatus: 'UNVERIFIED',
+        lifecycleStatus: 'NEW_CANDIDATE',
+        auditTrail: [],
+      };
+      rows.push(row);
+      return row;
+    }),
+    action: jest.fn(
+      async (id: string, _action: string, _facts: any, audit: any) => {
+        const row = rows.find((x) => x.id === id);
+        Object.assign(row, {
+          verificationStatus: 'VERIFIED',
+          lifecycleStatus: 'ACTIVE',
+          runtimeDataStatus: 'VERIFIED',
+          entityUri: row.canonicalEntityId,
+          canonicalLabelKo: row.displayName,
+          actions: {
+            navigate: { latitude: row.latitude, longitude: row.longitude },
+          },
+        });
+        row.auditTrail.push({
+          action: audit.action,
+          actorId: audit.actorId,
+          regionId: audit.regionId,
+        });
+        return row;
+      },
+    ),
+    effectiveDataset: jest.fn(async (regionId: string) => ({
+      regionId,
+      records: rows.filter(
+        (x) => x.regionId === regionId && x.lifecycleStatus === 'ACTIVE',
+      ),
+    })),
+  };
+}
+const manager = {
+  sub: 'manager-h',
+  username: 'hapcheon-manager',
+  role: 'REGIONAL_MANAGER' as const,
+  regions: ['hapcheon'],
+};
+const evidence = {
+  sourceType: 'KAKAO_LOCAL',
+  sourceUrl: 'https://place.map.kakao.com/sauna',
+  providerCategory: '사우나',
+  discoveredAt: '2026-08-21T00:00:00.000Z',
+};
 
-describe('Regional Copilot Phase 1',()=>{
-  it('requires configured credential authentication and issues a scoped principal',async()=>{process.env.COPILOT_JWT_SECRET='test-secret-at-least-local';process.env.COPILOT_USERS_JSON=JSON.stringify([{...manager,passwordHash:bcrypt.hashSync('correct-password',4)}]);const auth=new CopilotAuthService();await expect(auth.login('hapcheon-manager','wrong')).rejects.toBeInstanceOf(UnauthorizedException);const logged=await auth.login('hapcheon-manager','correct-password');expect(auth.verify(logged.accessToken)).toMatchObject({sub:manager.sub,role:'REGIONAL_MANAGER',regions:['hapcheon']})});
-  it('enforces viewer writes and assigned-region boundaries on the server',()=>{expect(()=>assertCopilotAccess({sub:'v',username:'v',role:'VIEWER',regions:['hapcheon']},'hapcheon',true)).toThrow(ForbiddenException);expect(()=>assertCopilotAccess(manager,'okcheon',true)).toThrow(ForbiddenException);expect(()=>assertCopilotAccess(manager,'hapcheon',true)).not.toThrow()});
-  it('allows only a platform admin to persist manager region assignments',async()=>{const saved:any[]=[];const assignments={findOneAndUpdate:jest.fn((_q:any,update:any)=>({lean:async()=>{const value={sub:'manager-h',...update.$set};saved.push(value);return value}}))};const auth=new CopilotAuthService(assignments as any);await expect(auth.assign(manager,'manager-h','REGIONAL_MANAGER',['hapcheon','okcheon'])).rejects.toBeInstanceOf(ForbiddenException);const admin={sub:'admin',username:'admin',role:'PLATFORM_ADMIN' as const,regions:[]};await expect(auth.assign(admin,'manager-h','REGIONAL_MANAGER',['hapcheon','hapcheon'])).resolves.toMatchObject({regions:['hapcheon'],updatedBy:'admin'})});
-  it('runs the golden search candidate through review, explicit approval, RDM activation, provenance, and audit',async()=>{const model=candidateModel(),rdm=regional(),service=new CopilotService(model as any,rdm as any);const candidate:any=await service.ingestSearchCandidate({regionId:'hapcheon',displayName:'합천호청정사우나',category:'HOT_SPRING_WELLNESS',entityType:'SAUNA',address:'경남 합천군',phone:'055-933-8877',latitude:35.53,longitude:128.03,evidence,rawMessage:'원문은 저장하면 안 됨'});expect(JSON.stringify(candidate)).not.toContain('원문은 저장하면 안 됨');const queue=await service.queue(manager,'hapcheon');expect(queue).toHaveLength(1);expect(queue[0]).toMatchObject({type:'SEARCH_DISCOVERED_ENTITY',reason:expect.stringContaining('VERIFIED RDM')});const detail=await service.detail(manager,candidate.id);expect(detail.why).toContain('관광객 검색에서 발견됨');await expect(service.activate(manager,candidate.id,true)).rejects.toThrow('reviewed');await service.review(manager,candidate.id,{address:'경상남도 합천군 대병면'});await expect(service.activate(manager,candidate.id,false)).rejects.toThrow('confirmation');const activated:any=await service.activate(manager,candidate.id,true);expect(activated.candidate).toMatchObject({status:'ACTIVE',activatedEntityId:'urn:regional:hapcheon:sauna'});expect(activated.regionalEntity).toMatchObject({verificationStatus:'VERIFIED',lifecycleStatus:'ACTIVE'});expect(activated.candidate.provenance.name).toMatchObject(evidence);expect(activated.candidate.auditTrail.map((x:any)=>x.action)).toEqual(expect.arrayContaining(['SEARCH_CANDIDATE_INGESTED','CANDIDATE_EDITED','ENTITY_ACTIVATED']));expect(activated.regionalEntity.auditTrail.at(-1)).toMatchObject({action:'CANDIDATE_VERIFIED',actorId:'manager-h',regionId:'hapcheon'});const discovery:any=await new PlaceDiscoveryService(rdm as any).discover('hapcheon','HOT_SPRING_WELLNESS','사우나 있어?',{});expect(discovery.entities[0]).toMatchObject({programLabel:'합천호청정사우나',operationalEvidence:{source:'RDM',verificationStatus:'VERIFIED'}})});
-  it('rejects a candidate without changing RDM and records the actor',async()=>{const model=candidateModel(),rdm=regional(),service=new CopilotService(model as any,rdm as any),candidate:any=await service.ingestSearchCandidate({regionId:'hapcheon',displayName:'잘못된 업체',category:'CAFE',evidence});await service.review(manager,candidate.id);const rejected:any=await service.reject(manager,candidate.id);expect(rejected.status).toBe('REJECTED');expect(rdm.create).not.toHaveBeenCalled();expect(rejected.auditTrail.at(-1)).toMatchObject({action:'ENTITY_REJECTED',actorId:'manager-h'})});
-  it('blocks a Hapcheon manager from reviewing an Okcheon candidate',async()=>{const model=candidateModel(),rdm=regional(),service=new CopilotService(model as any,rdm as any),candidate:any=await service.ingestSearchCandidate({regionId:'okcheon',displayName:'옥천 후보',category:'CAFE',evidence});await expect(service.review(manager,candidate.id)).rejects.toBeInstanceOf(ForbiddenException);expect(rdm.create).not.toHaveBeenCalled()});
-  it('keeps a Gajo search candidate out of the Hapcheon queue while platform admin can inspect it',async()=>{const model=candidateModel(),rdm=regional(),service=new CopilotService(model as any,rdm as any),candidate:any=await service.ingestSearchCandidate({regionId:'gajo',displayName:'가조 검색 후보',category:'CAFE',evidence});expect(await service.queue(manager,'hapcheon')).toEqual([]);await expect(service.detail(manager,candidate.id)).rejects.toBeInstanceOf(ForbiddenException);const admin={sub:'admin',username:'admin',role:'PLATFORM_ADMIN' as const,regions:[]};expect(await service.queue(admin,'gajo')).toEqual([expect.objectContaining({regionId:'gajo',type:'SEARCH_DISCOVERED_ENTITY'})]);expect(await service.detail(admin,candidate.id)).toMatchObject({candidate:{regionId:'gajo'}})});
-  it('warns about likely duplicates and refuses silent activation',async()=>{const model=candidateModel(),rdm=regional();rdm.rows.push({id:'existing',regionId:'hapcheon',displayName:'카페 Lowful',phone:'055-1',canonicalEntityId:'lowful',verificationStatus:'VERIFIED',lifecycleStatus:'ACTIVE'});const service=new CopilotService(model as any,rdm as any),candidate:any=await service.ingestSearchCandidate({regionId:'hapcheon',displayName:'카페_Lowful',category:'CAFE',phone:'055-1',evidence});expect((await service.detail(manager,candidate.id)).duplicateWarning).toContain('동일할 가능성');await service.review(manager,candidate.id);await expect(service.activate(manager,candidate.id,true)).rejects.toThrow('duplicate');expect(rdm.create).not.toHaveBeenCalled()});
+describe('Regional Copilot Phase 1', () => {
+  it('requires configured credential authentication and issues a scoped principal', async () => {
+    process.env.COPILOT_JWT_SECRET = 'test-secret-at-least-local';
+    process.env.COPILOT_USERS_JSON = JSON.stringify([
+      { ...manager, passwordHash: bcrypt.hashSync('correct-password', 4) },
+    ]);
+    const auth = new CopilotAuthService();
+    await expect(
+      auth.login('hapcheon-manager', 'wrong'),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    const logged = await auth.login('hapcheon-manager', 'correct-password');
+    expect(auth.verify(logged.accessToken)).toMatchObject({
+      sub: manager.sub,
+      role: 'REGIONAL_MANAGER',
+      regions: ['hapcheon'],
+    });
+  });
+  it('enforces viewer writes and assigned-region boundaries on the server', () => {
+    expect(() =>
+      assertCopilotAccess(
+        { sub: 'v', username: 'v', role: 'VIEWER', regions: ['hapcheon'] },
+        'hapcheon',
+        true,
+      ),
+    ).toThrow(ForbiddenException);
+    expect(() => assertCopilotAccess(manager, 'okcheon', true)).toThrow(
+      ForbiddenException,
+    );
+    expect(() => assertCopilotAccess(manager, 'hapcheon', true)).not.toThrow();
+  });
+  it('allows only a platform admin to persist manager region assignments', async () => {
+    const saved: any[] = [];
+    const assignments = {
+      findOneAndUpdate: jest.fn((_q: any, update: any) => ({
+        lean: async () => {
+          const value = { sub: 'manager-h', ...update.$set };
+          saved.push(value);
+          return value;
+        },
+      })),
+    };
+    const auth = new CopilotAuthService(assignments as any);
+    await expect(
+      auth.assign(manager, 'manager-h', 'REGIONAL_MANAGER', [
+        'hapcheon',
+        'okcheon',
+      ]),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    const admin = {
+      sub: 'admin',
+      username: 'admin',
+      role: 'PLATFORM_ADMIN' as const,
+      regions: [],
+    };
+    await expect(
+      auth.assign(admin, 'manager-h', 'REGIONAL_MANAGER', [
+        'hapcheon',
+        'hapcheon',
+      ]),
+    ).resolves.toMatchObject({ regions: ['hapcheon'], updatedBy: 'admin' });
+  });
+  it('runs the golden search candidate through review, explicit approval, RDM activation, provenance, and audit', async () => {
+    const model = candidateModel(),
+      rdm = regional(),
+      service = new CopilotService(model as any, rdm as any);
+    const candidate: any = await service.ingestSearchCandidate({
+      regionId: 'hapcheon',
+      displayName: '합천호청정사우나',
+      category: 'HOT_SPRING_WELLNESS',
+      entityType: 'SAUNA',
+      address: '경남 합천군',
+      phone: '055-933-8877',
+      latitude: 35.53,
+      longitude: 128.03,
+      evidence,
+      rawMessage: '원문은 저장하면 안 됨',
+    });
+    expect(JSON.stringify(candidate)).not.toContain('원문은 저장하면 안 됨');
+    const queue = await service.queue(manager, 'hapcheon');
+    expect(queue).toHaveLength(1);
+    expect(queue[0]).toMatchObject({
+      type: 'SEARCH_DISCOVERED_ENTITY',
+      reason: expect.stringContaining('VERIFIED RDM'),
+    });
+    const detail = await service.detail(manager, candidate.id);
+    expect(detail.why).toContain('관광객 검색에서 발견됨');
+    await expect(service.activate(manager, candidate.id, true)).rejects.toThrow(
+      'reviewed',
+    );
+    await service.review(manager, candidate.id, {
+      address: '경상남도 합천군 대병면',
+    });
+    await expect(
+      service.activate(manager, candidate.id, false),
+    ).rejects.toThrow('confirmation');
+    const activated: any = await service.activate(manager, candidate.id, true);
+    expect(activated.candidate).toMatchObject({
+      status: 'ACTIVE',
+      activatedEntityId: 'urn:regional:hapcheon:sauna',
+    });
+    expect(activated.regionalEntity).toMatchObject({
+      verificationStatus: 'VERIFIED',
+      lifecycleStatus: 'ACTIVE',
+    });
+    expect(activated.candidate.provenance.name).toMatchObject(evidence);
+    expect(activated.candidate.auditTrail.map((x: any) => x.action)).toEqual(
+      expect.arrayContaining([
+        'SEARCH_CANDIDATE_INGESTED',
+        'CANDIDATE_EDITED',
+        'ENTITY_ACTIVATED',
+      ]),
+    );
+    expect(activated.regionalEntity.auditTrail.at(-1)).toMatchObject({
+      action: 'CANDIDATE_VERIFIED',
+      actorId: 'manager-h',
+      regionId: 'hapcheon',
+    });
+    const discovery: any = await new PlaceDiscoveryService(rdm as any).discover(
+      'hapcheon',
+      'HOT_SPRING_WELLNESS',
+      '사우나 있어?',
+      {},
+    );
+    expect(discovery.entities[0]).toMatchObject({
+      programLabel: '합천호청정사우나',
+      operationalEvidence: { source: 'RDM', verificationStatus: 'VERIFIED' },
+    });
+  });
+  it('rejects a candidate without changing RDM and records the actor', async () => {
+    const model = candidateModel(),
+      rdm = regional(),
+      service = new CopilotService(model as any, rdm as any),
+      candidate: any = await service.ingestSearchCandidate({
+        regionId: 'hapcheon',
+        displayName: '잘못된 업체',
+        category: 'CAFE',
+        evidence,
+      });
+    await service.review(manager, candidate.id);
+    const rejected: any = await service.reject(manager, candidate.id);
+    expect(rejected.status).toBe('REJECTED');
+    expect(rdm.create).not.toHaveBeenCalled();
+    expect(rejected.auditTrail.at(-1)).toMatchObject({
+      action: 'ENTITY_REJECTED',
+      actorId: 'manager-h',
+    });
+  });
+  it('blocks a Hapcheon manager from reviewing an Okcheon candidate', async () => {
+    const model = candidateModel(),
+      rdm = regional(),
+      service = new CopilotService(model as any, rdm as any),
+      candidate: any = await service.ingestSearchCandidate({
+        regionId: 'okcheon',
+        displayName: '옥천 후보',
+        category: 'CAFE',
+        evidence,
+      });
+    await expect(service.review(manager, candidate.id)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    expect(rdm.create).not.toHaveBeenCalled();
+  });
+  it('keeps a Gajo search candidate out of the Hapcheon queue while platform admin can inspect it', async () => {
+    const model = candidateModel(),
+      rdm = regional(),
+      service = new CopilotService(model as any, rdm as any),
+      candidate: any = await service.ingestSearchCandidate({
+        regionId: 'gajo',
+        displayName: '가조 검색 후보',
+        category: 'CAFE',
+        evidence,
+      });
+    expect(await service.queue(manager, 'hapcheon')).toEqual([]);
+    await expect(service.detail(manager, candidate.id)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    const admin = {
+      sub: 'admin',
+      username: 'admin',
+      role: 'PLATFORM_ADMIN' as const,
+      regions: [],
+    };
+    expect(await service.queue(admin, 'gajo')).toEqual([
+      expect.objectContaining({
+        regionId: 'gajo',
+        type: 'SEARCH_DISCOVERED_ENTITY',
+      }),
+    ]);
+    expect(await service.detail(admin, candidate.id)).toMatchObject({
+      candidate: { regionId: 'gajo' },
+    });
+  });
+  it('warns about likely duplicates and refuses silent activation', async () => {
+    const model = candidateModel(),
+      rdm = regional();
+    rdm.rows.push({
+      id: 'existing',
+      regionId: 'hapcheon',
+      displayName: '카페 Lowful',
+      phone: '055-1',
+      canonicalEntityId: 'lowful',
+      verificationStatus: 'VERIFIED',
+      lifecycleStatus: 'ACTIVE',
+    });
+    const service = new CopilotService(model as any, rdm as any),
+      candidate: any = await service.ingestSearchCandidate({
+        regionId: 'hapcheon',
+        displayName: '카페_Lowful',
+        category: 'CAFE',
+        phone: '055-1',
+        evidence,
+      });
+    expect(
+      (await service.detail(manager, candidate.id)).duplicateWarning,
+    ).toContain('동일할 가능성');
+    await service.review(manager, candidate.id);
+    await expect(service.activate(manager, candidate.id, true)).rejects.toThrow(
+      'duplicate',
+    );
+    expect(rdm.create).not.toHaveBeenCalled();
+  });
+  it('queues actual Okcheon essential-shopping search evidence without activating RDM', async () => {
+    const model = candidateModel(),
+      rdm = regional(),
+      service = new CopilotService(model as any, rdm as any),
+      items = JSON.parse(
+        readFileSync(
+          join(
+            __dirname,
+            '../../operations/okcheon-essential-shopping.search-candidates.json',
+          ),
+          'utf8',
+        ),
+      );
+    for (const item of items) await service.ingestSearchCandidate(item);
+    const admin = {
+        sub: 'admin',
+        username: 'admin',
+        role: 'PLATFORM_ADMIN' as const,
+        regions: [],
+      },
+      queue: any[] = await service.queue(admin, 'okcheon');
+    expect(
+      queue.filter((x) => x.type === 'ESSENTIAL_SHOPPING_CANDIDATE'),
+    ).toHaveLength(3);
+    expect(
+      queue
+        .filter((x) => x.type === 'ESSENTIAL_SHOPPING_CANDIDATE')
+        .every(
+          (x) =>
+            x.candidate.regionId === 'okcheon' &&
+            x.candidate.status === 'DISCOVERED' &&
+            !x.candidate.latitude &&
+            !x.candidate.longitude,
+        ),
+    ).toBe(true);
+    expect(rdm.create).not.toHaveBeenCalled();
+  });
 });

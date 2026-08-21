@@ -1,0 +1,46 @@
+[
+  {
+    "regionId": "okcheon",
+    "displayName": "CU 옥천역전점",
+    "category": "CONVENIENCE_STORE",
+    "entityType": "CONVENIENCE_STORE",
+    "address": "충청북도 옥천군 옥천읍 중앙로 4",
+    "phone": "043-732-4540",
+    "evidence": {
+      "sourceType": "SEARCH_EVIDENCE",
+      "sourceUrl": "https://placeview.co.kr/id/MTQ4MzYzMzMg",
+      "providerCategory": "편의점 > CU",
+      "demandSignal": "PHASE_3_ESSENTIAL_SHOPPING_GAP",
+      "discoveredAt": "2026-08-22T00:00:00.000Z"
+    }
+  },
+  {
+    "regionId": "okcheon",
+    "displayName": "CU 옥천청산점",
+    "category": "CONVENIENCE_STORE",
+    "entityType": "CONVENIENCE_STORE",
+    "address": "충청북도 옥천군 청산면 지전1길 3",
+    "evidence": {
+      "sourceType": "SEARCH_EVIDENCE",
+      "sourceUrl": "https://placeview.co.kr/id/MTQ4MzYzMzMg",
+      "providerCategory": "편의점 > CU",
+      "demandSignal": "PHASE_3_ESSENTIAL_SHOPPING_GAP",
+      "discoveredAt": "2026-08-22T00:00:00.000Z"
+    }
+  },
+  {
+    "regionId": "okcheon",
+    "displayName": "CU 옥천이원점",
+    "category": "CONVENIENCE_STORE",
+    "entityType": "CONVENIENCE_STORE",
+    "address": "충청북도 옥천군 이원면 묘목로 101",
+    "phone": "043-731-7799",
+    "evidence": {
+      "sourceType": "SEARCH_EVIDENCE",
+      "sourceUrl": "https://placeview.co.kr/id/MTQ4MzYzMzMg",
+      "providerCategory": "편의점 > CU",
+      "demandSignal": "PHASE_3_ESSENTIAL_SHOPPING_GAP",
+      "discoveredAt": "2026-08-22T00:00:00.000Z"
+    }
+  }
+]
