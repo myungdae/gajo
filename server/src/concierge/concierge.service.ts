@@ -74,7 +74,8 @@ export class ConciergeService {
     const newlyRequestedDestinations=routeDetails.multiDestination&&this.placeDiscovery
       ?await this.placeDiscovery.resolveRequestedDestinations(input.regionId||'gajo',routeDetails.explicitDestinations,{latitude:input.latitude,longitude:input.longitude})
       :undefined;
-    const carriedRequestedDestinations=route.intentRoute==='REPLAN'?input.mustVisitPlaces?.filter((item:any)=>item.requested):undefined;
+    const structuredJourneyDestinations=input.explicitJourney?.multiDestination?input.explicitJourney.requestedDestinations:undefined;
+    const carriedRequestedDestinations=route.intentRoute==='REPLAN'?(structuredJourneyDestinations||input.mustVisitPlaces?.filter((item:any)=>item.requested)):undefined;
     const requestedDestinations=newlyRequestedDestinations||(carriedRequestedDestinations?.length?carriedRequestedDestinations:undefined);
     const effectiveInput=requestedDestinations?{...input,mustVisitPlaces:requestedDestinations}:input;
     const { context, evidence, firedRules } = await this.contextService.createContext(effectiveInput);

@@ -35,6 +35,7 @@ import FullJourneySave from "../components/FullJourneySave";
 import SavedTripEntry from "../components/SavedTripEntry";
 import AiResponseActions from "../components/AiResponseActions";
 import { beginCurrentTurn, isCurrentTurn, resolveCurrentTurn, type CurrentTurnResult } from "../currentTurnResult";
+import { captureExplicitJourney, explicitJourneyPayload, type ExplicitJourneyContext } from "../explicitJourneyContext";
 import { isExplanationOnly } from "../aiResponseActions";
 import { understoodSummary } from "../understoodSummary";
 
@@ -107,6 +108,7 @@ export default function ConciergePage() {
   const [currentTurn, setCurrentTurn] = useState<CurrentTurnResult<ConciergeChatResponse> | null>(null);
   const [conversationAnchor, setConversationAnchor] = useState<NonNullable<CreateContextInput["conversationalAnchor"]> | null>(null);
   const [discoveryContext, setDiscoveryContext] = useState<CreateContextInput["discoveryContext"]>();
+  const [explicitJourney, setExplicitJourney] = useState<ExplicitJourneyContext>();
   const currentResultRef = useRef<HTMLDivElement>(null);
   const currentTurnConversationRef = useRef<HTMLDivElement>(null);
   const followCurrentTurnRef = useRef(true);
@@ -143,7 +145,7 @@ export default function ConciergePage() {
   useEffect(() => {
     sessionStorage.setItem(contextSessionKey, contextSessionIdRef.current);
   }, [contextSessionKey]);
-  useEffect(() => { setConversationAnchor(null); setDiscoveryContext(undefined); }, [region.id]);
+  useEffect(() => { setConversationAnchor(null); setDiscoveryContext(undefined); setExplicitJourney(undefined); }, [region.id]);
   useEffect(() => {
     if (tripMode === "PLAN")
       track(
@@ -222,6 +224,7 @@ export default function ConciergePage() {
         ...(conversationAnchor?.regionId === region.id ? { conversationalAnchor: conversationAnchor } : {}),
         ...(discoveryContext?.regionId === region.id ? { discoveryContext } : {}),
         ...(hasCompletedTurn ? carriedContext : structuredDraft),
+        ...(hasCompletedTurn ? explicitJourneyPayload(explicitJourney) : {}),
         ...structured,
         ...(text ? { rawMessage: text, inputMode: "FREE_TEXT" as const } : {}),
         contextSessionId: contextSessionIdRef.current,
@@ -261,6 +264,7 @@ export default function ConciergePage() {
             result.recommendation.candidateRegionIds || []
           ).join(","),
         });
+      setExplicitJourney((current) => captureExplicitJourney(result, turnId, current));
       if (result.intentRoute)
         track("INTENT_ROUTED", tripSession.id, {
           intentRoute: result.intentRoute,
