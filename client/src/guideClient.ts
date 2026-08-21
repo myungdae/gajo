@@ -1,0 +1,3 @@
+export type GuideAudience='GENERAL'|'VISITOR'|'BUSINESS'|'PUBLIC_SECTOR';
+export type GuideResponse={status:'ANSWERED'|'REVIEW_CANDIDATE'|'INVALID';intent?:string;audience?:GuideAudience;answer:string;supportingConcepts?:string[];relatedQuestions?:string[];readOnly?:boolean};
+export async function askGuide(question:string,previousIntent?:string,audience?:GuideAudience){const response=await fetch('/api/guide/questions',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({question,previousIntent,audience})});if(!response.ok)throw new Error(response.status===429?'질문이 잠시 많습니다. 잠시 후 다시 시도해 주세요.':'안내를 불러오지 못했습니다.');return response.json() as Promise<GuideResponse>}

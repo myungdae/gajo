@@ -24,6 +24,7 @@ import { RegionalDataModule } from './regional-data/regional-data.module';
 import { AnonymousTripModule } from './anonymous-trip/anonymous-trip.module';
 import { ExkoSemanticModule } from './exko-semantic/exko-semantic.module';
 import { CopilotModule } from './copilot/copilot.module';
+import { GuideModule } from './guide/guide.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { CopilotModule } from './copilot/copilot.module';
     AnonymousTripModule,
     ExkoSemanticModule,
     CopilotModule,
+    GuideModule,
   ],
   controllers: [AppController],
   providers: [AppService],

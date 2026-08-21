@@ -23,7 +23,7 @@ export default defineConfig({
       injectManifest: {
         // Copilot's HTML is never part of the visitor offline application shell.
         // Shared JS chunks remain precached because the visitor bundle needs them.
-        globIgnores: ['**/copilot.html'],
+        globIgnores: ['**/copilot.html','**/guide.html'],
       },
     }),
   ],
@@ -36,5 +36,5 @@ export default defineConfig({
       },
     },
   },
-  build:{rollupOptions:{input:{visitor:resolve(__dirname,'index.html'),copilot:resolve(__dirname,'copilot.html')}}},
+  build:{rollupOptions:{input:{visitor:resolve(__dirname,'index.html'),copilot:resolve(__dirname,'copilot.html'),guide:resolve(__dirname,'guide.html')}}},
 });
