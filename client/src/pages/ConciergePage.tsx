@@ -36,6 +36,7 @@ import SavedTripEntry from "../components/SavedTripEntry";
 import AiResponseActions from "../components/AiResponseActions";
 import { beginCurrentTurn, isCurrentTurn, resolveCurrentTurn, type CurrentTurnResult } from "../currentTurnResult";
 import { isExplanationOnly } from "../aiResponseActions";
+import { understoodSummary } from "../understoodSummary";
 
 interface Message {
   role: "user" | "ai";
@@ -700,7 +701,7 @@ function PlanSummary({ planned }: { planned: PlannedContext }) {
 function UnderstoodContext({ result }: { result: ConciergeChatResponse }) {
   const rows = buildContextSummary(result.context || {});
   if (result.discovery)
-    return <section className="understood-context-card"><h2>요청하신 장소를 찾았습니다</h2><p className="muted-line">{result.discovery.anchorLabel ? `${result.discovery.anchorLabel}을 기준으로 주변 ${result.discovery.category === "CAFE" ? "카페" : result.discovery.category === "FOOD" ? "식당" : "장소"}를 찾았습니다.` : "요청하신 조건에 맞는 장소를 찾았습니다."}</p></section>;
+    return <section className="understood-context-card"><h2>{SHARED_VISITOR_COPY.understoodHeading}</h2><p className="muted-line">{understoodSummary(result)}</p></section>;
   return (
     <section className="understood-context-card">
       <h2>{SHARED_VISITOR_COPY.understoodHeading}</h2>
@@ -715,7 +716,7 @@ function UnderstoodContext({ result }: { result: ConciergeChatResponse }) {
         </dl>
       ) : (
         <p className="muted-line">
-          말씀하신 방문 상황을 바탕으로 일정을 구성했습니다.
+          {understoodSummary(result)}
         </p>
       )}
     </section>
