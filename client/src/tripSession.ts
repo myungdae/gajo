@@ -47,7 +47,7 @@ const privacySafe = (value: unknown) =>
     ),
   );
 export function createTripSession(
-  regionId = "gajo",
+  regionId: string,
   now = new Date(),
 ): TripSession {
   const iso = now.toISOString(),
@@ -62,8 +62,8 @@ export function createTripSession(
   };
 }
 export function loadTripSession(
-  storage: Pick<Storage, "getItem" | "setItem"> = localStorage,
-  regionId = "gajo",
+  storage: Pick<Storage, "getItem" | "setItem">,
+  regionId: string,
 ): TripSession | undefined {
   try {
     const storageKey = key(regionId),
@@ -113,7 +113,7 @@ export function saveTripSession(
   return next;
 }
 export function ensureTripSession(
-  regionId = "gajo",
+  regionId: string,
   storage: Pick<Storage, "getItem" | "setItem"> = localStorage,
 ) {
   return (

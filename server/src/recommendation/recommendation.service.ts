@@ -16,6 +16,7 @@ import { EntityLocationService } from '../context/entity-location.service';
 import { MasterDataService } from '../master-data/master-data.service';
 import { isOperationalLocation } from '../context/location-confidence';
 import { regionalCandidateDataset } from '../regions/regional-candidate.registry';
+import { requireRegionId } from '../region/regional-isolation';
 import type { DecisionCandidate } from './decision-pipeline.service';
 import { composeItinerary } from './itinerary-composition';
 import { RegionalDataService } from '../regional-data/regional-data.service';
@@ -36,7 +37,7 @@ export class RecommendationService {
   ) {}
 
   async buildRecommendation(contextDoc: any) {
-    const regionId = contextDoc.regionId || 'gajo';
+    const regionId = requireRegionId(contextDoc.regionId, 'recommendation');
     const conditionSeeds: string[] = [
       ...(contextDoc.healthConditions || []),
       ...(contextDoc.wellnessGoals || []),
@@ -141,7 +142,7 @@ export class RecommendationService {
         });
 
     const foreignCandidates = candidates.filter(
-      (candidate) => (candidate.regionId || 'gajo') !== regionId,
+      (candidate) => candidate.regionId !== regionId,
     );
     if (foreignCandidates.length)
       throw new Error(
@@ -298,7 +299,7 @@ export class RecommendationService {
       runtimeContextId: contextDoc.contextNo,
       regionId,
       candidateRegionIds: Array.from(
-        new Set(top.map((item) => item.regionId || 'gajo')),
+        new Set(top.map((item) => item.regionId!)),
       ),
       itineraryNo,
       recommendedPrograms: top.map((item) => item.programUri),

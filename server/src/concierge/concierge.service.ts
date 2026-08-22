@@ -6,9 +6,10 @@ import {
 import { AgentOrchestratorService } from '../agents/agent-orchestrator.service';
 import { GraphTraversalService } from '../context/graph-traversal.service';
 import {
-  GAJO_REGION_CONFIG,
+  REGION_CONFIGS,
   RegionConfigService,
 } from '../region/region-config.service';
+import { requireRegionId } from '../region/regional-isolation';
 import { routeNaturalLanguageIntent } from './intent-routing';
 import { PlaceDiscoveryService } from './place-discovery.service';
 import { ExkoSemanticAdapter } from '../exko-semantic/exko-semantic.service';
@@ -104,12 +105,13 @@ export class ConciergeService {
   ) {}
 
   async chat(input: CreateContextInput) {
-    const route = routeNaturalLanguageIntent(input),
+    const regionId = requireRegionId(input.regionId, 'Concierge chat'),
+      route = routeNaturalLanguageIntent(input),
       routeDetails: any = route;
     const newlyRequestedDestinations =
       routeDetails.multiDestination && this.placeDiscovery
         ? await this.placeDiscovery.resolveRequestedDestinations(
-            input.regionId || 'gajo',
+            regionId,
             routeDetails.explicitDestinations,
             { latitude: input.latitude, longitude: input.longitude },
           )
@@ -136,14 +138,15 @@ export class ConciergeService {
     const nearbyDiscovery = detectNearbyDiscovery(input.rawMessage);
     const nearbyRestaurantIntent =
       nearbyDiscovery.intent && nearbyDiscovery.category === 'FOOD';
-    const config = this.regionConfig?.get(input.regionId) || GAJO_REGION_CONFIG;
+    const config = this.regionConfig?.get(regionId) || REGION_CONFIGS[regionId];
+    if (!config) throw new Error(`Unknown region: ${regionId}`);
     const referenceCategory =
       route.intentRoute === 'PLACE_DISCOVERY' ||
       route.intentRoute === 'IMMEDIATE_NOW'
         ? route.category
         : undefined;
     const explicitReference = await this.placeDiscovery?.resolveReference?.(
-      input.regionId || 'gajo',
+      regionId,
       input.rawMessage || '',
       referenceCategory,
     );
@@ -155,8 +158,8 @@ export class ConciergeService {
         }
       : undefined;
     const outsideServiceArea =
-      this.regionConfig?.detectOutOfRegion(input.rawMessage, input.regionId) ||
-      (!input.regionId || input.regionId === 'gajo'
+      this.regionConfig?.detectOutOfRegion(input.rawMessage, regionId) ||
+      (regionId === 'gajo'
         ? detectOutOfServiceDestination(input.rawMessage)
         : undefined);
 
@@ -235,7 +238,7 @@ export class ConciergeService {
 
     if (route.intentRoute === 'DISTANCE_INFO' && this.placeDiscovery) {
       const distanceInfo = await this.placeDiscovery.distanceInfo(
-        input.regionId || 'gajo',
+        regionId,
         {
           ...context,
           ...(semanticFollowup ? { semanticContext: semanticFollowup } : {}),
@@ -262,7 +265,7 @@ export class ConciergeService {
     ) {
       const followup: any = route;
       const discovery = await this.placeDiscovery.discover(
-        input.regionId || 'gajo',
+        regionId,
         route.category,
         input.rawMessage || '',
         {

@@ -66,10 +66,10 @@ export class ExkoSemanticAdapter {
           size: { entities: 0, edges: 0 },
         };
   }
-  getAlignment(value: string, regionId?: string) {
+  getAlignment(value: string, regionId: string) {
     return ENTITY_ALIGNMENTS.filter(
       (row) =>
-        (!regionId || row.regionId === regionId) &&
+        row.regionId === regionId &&
         (row.exkoUri === value || row.regionalEntityId === value),
     );
   }

@@ -125,7 +125,7 @@ export async function runDemoScenario() {
   return data;
 }
 
-export async function fetchFacilities(regionId='gajo') {
+export async function fetchFacilities(regionId:string) {
   const { data } = await api.get('/facilities',{params:{regionId}});
   return data;
 }
@@ -135,7 +135,7 @@ export interface OperationalPlace {
   category?: string; operatingHours?: any[]; walkingBurden?: string; coordinateVerification: 'VERIFIED';
 }
 
-export async function fetchOperationalPlaces(regionId='gajo') {
+export async function fetchOperationalPlaces(regionId:string) {
   const { data } = await api.get<OperationalPlace[]>('/operational-places',{params:{regionId}});
   return data;
 }

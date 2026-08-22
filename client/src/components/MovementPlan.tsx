@@ -67,11 +67,17 @@ export default function MovementPlan({
   const future = (result.recommendation?.itinerary?.steps || []).filter(
     (step: any) => step.status !== "COMPLETED" && step.status !== "SKIPPED",
   );
-  const regionId = context.regionId || "gajo";
+  const regionId = context.regionId;
   const futureFacilityUris = new Set(
     future.map((step: any) => step.facilityUri),
   );
   useEffect(() => {
+    if (!regionId) {
+      setPlaces([]);
+      setLoading(false);
+      setLoadFailed(true);
+      return;
+    }
     setLoading(true);
     setLoadFailed(false);
     fetchOperationalPlaces(regionId)

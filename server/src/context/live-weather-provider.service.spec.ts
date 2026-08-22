@@ -13,13 +13,14 @@ describe('LiveWeatherProviderService', () => {
   it('returns the last usable observation as STALE after provider failure', async () => {
     const service = new LiveWeatherProviderService(config);
     jest.spyOn(global, 'fetch').mockResolvedValueOnce({ ok: true, json: async () => ({ current: { time: '2026-08-09T10:00', weather_code: 0, precipitation: 0 } }) } as any).mockRejectedValueOnce(new Error('offline'));
-    await service.getCurrent();
-    expect(await service.getCurrent()).toMatchObject({ weather: 'CLEAR', status: 'STALE', stale: true });
+    await service.getCurrent({regionId:'gajo'});
+    expect(await service.getCurrent({regionId:'gajo'})).toMatchObject({ weather: 'CLEAR', status: 'STALE', stale: true });
   });
   it('returns UNKNOWN safely when no observation has ever succeeded', async () => {
     const service = new LiveWeatherProviderService(config);
     jest.spyOn(global, 'fetch').mockRejectedValue(new Error('offline'));
-    expect(await service.getCurrent()).toMatchObject({ weather: 'UNKNOWN', status: 'UNAVAILABLE', source: 'UNAVAILABLE' });
+    expect(await service.getCurrent({regionId:'gajo'})).toMatchObject({ weather: 'UNKNOWN', status: 'UNAVAILABLE', source: 'UNAVAILABLE' });
+    expect(await service.getCurrent()).toMatchObject({ weather: 'UNKNOWN', status: 'UNAVAILABLE' });
   });
   it.each(['okcheon','muan','gyeryong','hapcheon','daejeon-junggu'])('never falls back to Gajo weather for %s',async regionId=>{const service=new LiveWeatherProviderService(config);const fetchSpy=jest.spyOn(global,'fetch');expect(await service.getCurrent({regionId})).toMatchObject({weather:'UNKNOWN',status:'UNAVAILABLE',source:'UNAVAILABLE'});expect(service.locationFor({regionId})).toBeUndefined();expect(fetchSpy).not.toHaveBeenCalled()});
   it('uses only allowed sufficiently accurate GPS and scopes stale cache by region and location',async()=>{const service=new LiveWeatherProviderService(config);const fetchSpy=jest.spyOn(global,'fetch').mockResolvedValueOnce({ok:true,json:async()=>({current:{weather_code:0,precipitation:0}})}as any).mockRejectedValue(new Error('offline'));const gps={regionId:'muan',gpsAllowed:true,latitude:34.9,longitude:126.4,accuracy:20};expect(await service.getCurrent(gps)).toMatchObject({weather:'CLEAR',status:'LIVE'});expect(await service.getCurrent({...gps,regionId:'okcheon'})).toMatchObject({status:'UNAVAILABLE'});expect(await service.getCurrent({...gps,latitude:35.0})).toMatchObject({status:'UNAVAILABLE'});expect(service.locationFor({...gps,gpsAllowed:false})).toBeUndefined();expect(fetchSpy).toHaveBeenCalledTimes(3)});

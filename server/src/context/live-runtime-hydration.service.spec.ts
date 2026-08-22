@@ -9,15 +9,15 @@ describe('LiveRuntimeHydrationService', () => {
     expect(service.seoulTime(new Date('2026-08-09T00:42:30Z'))).toEqual({ currentDate: '2026-08-09', currentTime: '09:42:30', dayOfWeek: 'Sunday' });
   });
   it('enriches weather while preserving visitor and companion constraints', () => {
-    const base = { contextNo: 'RC-1', healthConditions: ['kneePain'], companionConstraints: ['elderlyCompanion'], transportMode: 'CAR', walkingLevel: 'LOW', stayUntil: '17:00', latitude: 35.7, longitude: 127.9 };
+    const base = { regionId:'gajo', contextNo: 'RC-1', healthConditions: ['kneePain'], companionConstraints: ['elderlyCompanion'], transportMode: 'CAR', walkingLevel: 'LOW', stayUntil: '17:00', latitude: 35.7, longitude: 127.9 };
     const result = service.hydrate(base, observation, new Date('2026-08-09T00:42:30Z'));
     expect(result.context).toMatchObject({ weather: 'RAIN', temperature: 24, precipitation: 3, healthConditions: ['kneePain'], companionConstraints: ['elderlyCompanion'], transportMode: 'CAR', walkingLevel: 'LOW', stayUntil: '17:00', latitude: 35.7, longitude: 127.9 });
     expect(result.context.environmentConditions.some((uri: string) => uri.endsWith('#rainyWeather'))).toBe(true);
   });
   it('keeps live hydration separate from and non-mutating to demo context input', () => {
-    const demo = { contextNo: 'DEMO', weather: 'clearWeather', precipitation: 0 };
+    const demo = { regionId:'gajo', contextNo: 'DEMO', weather: 'clearWeather', precipitation: 0 };
     service.hydrate(demo, observation, new Date('2026-08-09T00:42:30Z'));
-    expect(demo).toEqual({ contextNo: 'DEMO', weather: 'clearWeather', precipitation: 0 });
+    expect(demo).toEqual({ regionId:'gajo', contextNo: 'DEMO', weather: 'clearWeather', precipitation: 0 });
   });
   it('marks unavailable non-Gajo hydration with the requested region and no live weather values',()=>{const unavailable={...observation,weather:'UNKNOWN',temperature:undefined,precipitation:undefined,source:'UNAVAILABLE',status:'UNAVAILABLE'}as any;const result=service.hydrate({regionId:'hapcheon',temperature:23,weatherState:'CLOUDY'},unavailable,new Date('2026-08-09T00:42:30Z'),{regionId:'hapcheon'});expect(result.metadata).toMatchObject({regionId:'hapcheon',status:'UNAVAILABLE'});expect(result.context).toMatchObject({regionId:'hapcheon',weather:'UNKNOWN',weatherState:'UNKNOWN'});expect(result.context.temperature).toBeUndefined()});
 });

@@ -20,6 +20,7 @@ export class DemoSeedService {
 
   async runDemoScenario() {
     const { context, evidence, firedRules } = await this.contextService.createContext({
+      regionId: 'gajo',
       rawMessage: '58세 방문객이 무릎이 불편한 78세 어머님과 자동차로 방문합니다. 현재 날씨는 맑고 오후 5시까지 머물 예정입니다.',
       visitorAge: 58,
       wellnessGoals: ['familyHealingTrip'],

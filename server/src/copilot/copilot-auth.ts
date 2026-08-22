@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import { CopilotAssignment } from './copilot-assignment.schema';
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
+import { requireRegionId } from '../region/regional-isolation';
 
 export type CopilotRole='VIEWER'|'REGIONAL_MANAGER'|'PLATFORM_ADMIN';
 export interface CopilotPrincipal { sub:string; username:string; role:CopilotRole; regions:string[] }
@@ -24,4 +25,4 @@ export class CopilotAuthGuard implements CanActivate {
   constructor(private auth:CopilotAuthService){}
   canActivate(context:ExecutionContext){const request=context.switchToHttp().getRequest(),header=String(request.headers.authorization||''),token=header.startsWith('Bearer ')?header.slice(7):'';if(!token)throw new UnauthorizedException('Copilot authentication required');request.copilotUser=this.auth.verify(token);return true}
 }
-export function assertCopilotAccess(user:CopilotPrincipal,regionId:string,write=false){if(user.role==='PLATFORM_ADMIN')return;if(write&&user.role!=='REGIONAL_MANAGER')throw new ForbiddenException('Manager role required');if(!user.regions.includes(regionId))throw new ForbiddenException('Region assignment required')}
+export function assertCopilotAccess(user:CopilotPrincipal,regionId:string,write=false){const region=requireRegionId(regionId,'Copilot access');if(user.role==='PLATFORM_ADMIN')return;if(write&&user.role!=='REGIONAL_MANAGER')throw new ForbiddenException('Manager role required');if(!user.regions.includes(region))throw new ForbiddenException('Region assignment required')}

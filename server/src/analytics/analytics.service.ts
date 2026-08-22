@@ -66,7 +66,7 @@ export class AnalyticsService {
     regionId?: string;
     metadata?: Record<string, unknown>;
   }) {
-    if (!input.sessionId || !input.eventType || !ALLOWED.has(input.eventType))
+    if (!input.sessionId || !input.regionId || !input.eventType || !ALLOWED.has(input.eventType))
       return { accepted: false };
     const metadata = Object.fromEntries(
       Object.entries(input.metadata || {}).filter(
@@ -75,7 +75,7 @@ export class AnalyticsService {
           ['string', 'number', 'boolean'].includes(typeof value),
       ),
     ) as Record<string, string | number | boolean>;
-    const regionId = input.regionId || String(metadata.regionId || 'gajo');
+    const regionId = input.regionId;
     metadata.regionId = regionId;
     await this.model.create({
       eventType: input.eventType,

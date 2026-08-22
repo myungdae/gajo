@@ -13,7 +13,7 @@ describe('ConciergeService service-area handling', () => {
     const orchestrator = { run: jest.fn() };
     const service = new ConciergeService(contextService as any, orchestrator as any, { label: jest.fn() } as any);
 
-    const result = await service.chat({ inputMode: 'FREE_TEXT', rawMessage: '합천 해인사에 놀러 가고 싶어요.' });
+    const result = await service.chat({ regionId:'gajo', inputMode: 'FREE_TEXT', rawMessage: '합천 해인사에 놀러 가고 싶어요.' });
 
     expect(result).toMatchObject({
       recommendation: null,

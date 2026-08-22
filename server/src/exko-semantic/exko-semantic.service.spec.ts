@@ -65,7 +65,7 @@ describe('ExkoSemanticAdapter Hapcheon pilot', () => {
       alignmentStatus: 'HIGH_CONFIDENCE',
     });
     expect(result.regionalEntityIds).toContain('urn:regional:hapcheon:lowful');
-    expect(enabled.getAlignment(exko + '카페Lowful')[0].status).toBe(
+    expect(enabled.getAlignment(exko + '카페Lowful','hapcheon')[0].status).toBe(
       'POSSIBLE',
     );
   });

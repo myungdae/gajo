@@ -26,11 +26,11 @@ test("creates and resumes a no-login trip session", () => {
     createTripSession("gajo", new Date("2026-01-01")),
     storage as any,
   );
-  assert.equal(loadTripSession(storage as any)?.id, created.id);
+  assert.equal(loadTripSession(storage as any,"gajo")?.id, created.id);
   assert.equal((created as any).email, undefined);
 });
 test("PLAN context carries into NOW and explicit updates win", () => {
-  const plan = createTripSession();
+  const plan = createTripSession("gajo");
   plan.mode = "PLAN";
   plan.plannedContext = { transportMode: "CAR", interests: ["INDOOR"] };
   const now = mergeTravelContext(sessionContext(plan), {
@@ -40,7 +40,7 @@ test("PLAN context carries into NOW and explicit updates win", () => {
   assert.deepEqual(now.activityPreferences, ["INDOOR"]);
 });
 test("unknown date and duration remain valid planned context", () => {
-  const plan = createTripSession();
+  const plan = createTripSession("gajo");
   plan.mode = "PLAN";
   plan.plannedContext = { duration: "1N2D" };
   assert.equal(plan.plannedContext.startDate, undefined);
@@ -71,7 +71,7 @@ test("verified runtime beats stale plan while explicit input wins last", () => {
   assert.equal(value.transportMode, "WALK");
 });
 test("PLAN persists multiple canonical interests together", () => {
-  const plan = createTripSession();
+  const plan = createTripSession("gajo");
   plan.plannedContext = { interests: ["HOT_SPRING", "FOOD", "CAFE", "NATURE"] };
   assert.deepEqual(sessionContext(plan).activityPreferences, [
     "HOT_SPRING",

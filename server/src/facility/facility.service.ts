@@ -5,6 +5,7 @@ import { OntologyIndividualDoc } from '../schemas/ontology-individual.schema';
 import { MasterDataService } from '../master-data/master-data.service';
 import { HAPCHEON_MAP_PLACES, HAPCHEON_MASTER_DATA } from '../regions/hapcheon/master-data';
 import { RegionalDataService } from '../regional-data/regional-data.service';
+import { requireRegionId } from '../region/regional-isolation';
 
 /**
  * FacilityService: CRUD over the Mongo-materialized `facilities` and
@@ -22,13 +23,15 @@ export class FacilityService {
     private readonly masterData: MasterDataService,@Optional() private readonly regionalData?:RegionalDataService,
   ) {}
 
-  async listFacilities(regionId='gajo') {
+  async listFacilities(regionId:string) {
+    requireRegionId(regionId,'facility list');
     if(regionId!=='gajo'){const dataset=this.regionalData?await this.regionalData.effectiveDataset(regionId):undefined;const records:any[]=dataset?.records||(regionId==='hapcheon'?[...HAPCHEON_MASTER_DATA]:[]);return records.map(place=>({uri:place.entityUri,label:place.canonicalLabelKo,comment:place.description,literalProps:{address:place.address,telephone:place.telephone,website:place.website,reservationUrl:place.reservationUrl,latitude:place.latitude,longitude:place.longitude,category:place.category,actions:place.actions},masterData:{verificationStatus:place.runtimeDataStatus,provenance:place.source,lastVerifiedAt:place.lastVerifiedAt}}))}
     const rows=await this.facilityModel.find().sort({ label: 1 }).lean();
     return rows.map(row=>this.enrich(row));
   }
 
-  async operationalPlaces(regionId='gajo') {
+  async operationalPlaces(regionId:string) {
+    requireRegionId(regionId,'operational place list');
     if(regionId!=='gajo'){const dataset=this.regionalData?await this.regionalData.effectiveDataset(regionId):undefined;const records:any[]=(dataset?.records||(regionId==='hapcheon'?[...HAPCHEON_MAP_PLACES]:[])).filter((place:any)=>place.actions?.navigate);return records.map(place=>({uri:place.entityUri,label:place.canonicalLabelKo,description:place.description,latitude:place.latitude,longitude:place.longitude,category:place.category,address:place.address,telephone:place.telephone,actions:place.actions,source:place.source,lastVerifiedAt:place.lastVerifiedAt,coordinateVerification:'VERIFIED'}))}
     return this.masterData.mapEligiblePlaces().map((place) => ({
       uri: place.entityUri, label: place.canonicalLabelKo, description: place.description,

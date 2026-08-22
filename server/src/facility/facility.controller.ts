@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
 import { FacilityService } from './facility.service';
 
 @Controller('api')
@@ -6,12 +6,14 @@ export class FacilityController {
   constructor(private readonly service: FacilityService) {}
 
   @Get('facilities')
-  listFacilities(@Query('regionId') regionId='gajo') {
+  listFacilities(@Query('regionId') regionId?:string) {
+    if(!regionId)throw new BadRequestException('regionId is required');
     return this.service.listFacilities(regionId);
   }
 
   @Get('operational-places')
-  operationalPlaces(@Query('regionId') regionId='gajo') {
+  operationalPlaces(@Query('regionId') regionId?:string) {
+    if(!regionId)throw new BadRequestException('regionId is required');
     return this.service.operationalPlaces(regionId);
   }
 

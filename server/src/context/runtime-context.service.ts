@@ -17,12 +17,13 @@ import type { ExtractorResult } from './context-extractor.types';
 import { REGIONAL_CANDIDATE_DATASETS } from '../regions/regional-candidate.registry';
 import { mergeContextExtractions } from './context-extraction.merger';
 import { ContextExtractionGateway } from './context-extraction.gateway';
+import { requireRegionId } from '../region/regional-isolation';
 
 export interface CreateContextInput {
   turnId?: string;
   conversationalAnchor?: { entityId: string; regionId: string; label?: string; entityType?: string; category?: string; latitude?: number; longitude?: number; source?: 'RDM'|'SEARCH'; sourceTurnId: string; role: 'RESULT'|'SUBJECT'|'SELECTED' };
   discoveryContext?: { regionId: string; anchor: { entityId: string; label?: string; latitude?: number; longitude?: number; source?: 'RDM'|'SEARCH' }; targetCategory: 'FOOD'|'CAFE'|'LODGING'|'HOT_SPRING_WELLNESS'|'ACTIVITY'|'TOURISM_NATURE'|'CONVENIENCE'|'ESSENTIAL_SHOPPING'|'CONVENIENCE_STORE'|'MART_SUPERMARKET'; relation: 'NEARBY'|'REGIONAL'; currentResult?: { entityId: string; label?: string; latitude?: number; longitude?: number; source?: 'RDM'|'SEARCH' }; shownEntityIds: string[]; sourceTurnId: string };
-  regionId?: string;
+  regionId: string;
   explicitJourney?: { requestedDestinations: NonNullable<CreateContextInput['mustVisitPlaces']>; multiDestination: true; sourceTurnId: string };
   duration?: string;
   mustVisitPlaces?: { entityId?: string; label: string; requestedLabel?:string;resolved: boolean; requested?:boolean;source?:'RDM'|'SEARCH'|'SEMANTIC';category?:string;entityType?:string;latitude?:number;longitude?:number;verificationStatus?:string;evidence?:Record<string,unknown> }[];
@@ -127,6 +128,7 @@ export class RuntimeContextService {
    *   6. persist the context and return it with full evidence.
    */
   async createContext(input: CreateContextInput) {
+    requireRegionId(input.regionId,'runtime context creation');
     let healthConditions = (input.healthConditions || []).map((c) => this.toGajoUri(c));
     let companionConditions: string[] = [];
     let weatherUri = input.weather ? this.toGajoUri(input.weather) : undefined;
@@ -143,7 +145,7 @@ export class RuntimeContextService {
     let stayUntilPeriod: string | undefined;
     let extractedIntent: string | undefined;
     const gatewayOutcome = this.extractionGateway
-      ? await this.extractionGateway.extract({ text: input.rawMessage, sessionId: input.contextSessionId, followup: input.isFollowup })
+      ? await this.extractionGateway.extract({ regionId: input.regionId, text: input.rawMessage, sessionId: input.contextSessionId, followup: input.isFollowup })
       : { decision: 'SKIP_LLM' as const, invocationReason: input.rawMessage ? (input.isFollowup ? 'FREE_TEXT_FOLLOWUP' as const : 'FREE_TEXT_INITIAL' as const) : 'NOT_REQUIRED' as const, result: { status: 'DISABLED' as const, provider: 'none', latencyMs: 0, errorCode: 'NO_GATEWAY' } };
     extractionDebug = { extractorInvocationReason: gatewayOutcome.invocationReason, gatewayDecision: gatewayOutcome.decision, duplicate: gatewayOutcome.duplicate, limitReached: gatewayOutcome.limitReached };
     const actors: string[] = [];
@@ -159,7 +161,7 @@ export class RuntimeContextService {
       const extracted = parseNaturalLanguageContext(input.rawMessage);
       const extractorResult: ExtractorResult = gatewayOutcome.result;
       const merged = mergeContextExtractions(extracted, extractorResult);
-      if(extracted.explicitAccommodation){const normalized=extracted.explicitAccommodation.replace(/\s/g,'');const match=REGIONAL_CANDIDATE_DATASETS[input.regionId||'gajo']?.records.find(record=>record.entityType==='ACCOMMODATION'&&[record.canonicalLabelKo,...record.alternateLabels].some(label=>label.replace(/\s/g,'')===normalized));if(match)accommodationIntents=[{entityId:match.entityUri,label:match.canonicalLabelKo,resolved:true}]}
+      if(extracted.explicitAccommodation){const normalized=extracted.explicitAccommodation.replace(/\s/g,'');const match=REGIONAL_CANDIDATE_DATASETS[input.regionId]?.records.find(record=>record.entityType==='ACCOMMODATION'&&[record.canonicalLabelKo,...record.alternateLabels].some(label=>label.replace(/\s/g,'')===normalized));if(match)accommodationIntents=[{entityId:match.entityUri,label:match.canonicalLabelKo,resolved:true}]}
       if (companions.length === 0) companions = merged.companions;
       if (merged.transportMode && (input.isFollowup || !transportMode)) transportMode = merged.transportMode as TransportMode;
       if (merged.stayUntil && (input.isFollowup || !stayUntil)) stayUntil = merged.stayUntil;
@@ -231,7 +233,7 @@ export class RuntimeContextService {
     const contextNo = `RC-${Date.now()}-${randomUUID().slice(0, 6)}`;
     const doc = await this.contextModel.create({
       contextNo,
-      regionId: input.regionId || 'gajo',
+      regionId: input.regionId,
       duration: input.duration,
       visitorNo: input.visitorNo,
       rawMessage: input.rawMessage,
