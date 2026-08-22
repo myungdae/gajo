@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { archiveAndStartNewTrip, createTripSession, loadTripSession, saveTripSession, tripRestorationDiagnostics, updateTripRuntimeContext } from "./tripSession.ts";
+import { regionFromLocation } from "./regionRouting.ts";
+import { itineraryItemCount } from "./tripContinuity.ts";
 
 function memory() {
   const values = new Map<string, string>();
@@ -37,6 +39,19 @@ test("Daebyeong to Hapcheon-eup changes runtime location without replacing the t
   assert.deepEqual(moved.itinerary, original.itinerary);
   assert.deepEqual(moved.savedPlaces, original.savedPlaces);
   assert.deepEqual(moved.execution, original.execution);
+});
+
+test("legacy Hapcheon PWA root update restores the existing regional key in place",()=>{
+  const storage=memory(),storageKey='regional-concierge-trip-session-v1:hapcheon',serialized=JSON.stringify({id:'pre-hardening-hapcheon',regionId:'hapcheon',mode:'NOW',plannedContext:{mustVisitPlaces:[{label:'합천호',entityId:'https://hapcheon.example/ontology#hapcheonLake',resolved:true}]},itinerary:{savedAsFullJourney:true,journeyId:'field-hapcheon',steps:[{entityId:'https://hapcheon.example/ontology#hapcheonLake',programLabel:'합천호',actions:{navigate:{latitude:35.54,longitude:128.02}},status:'READY'}]},savedPlaces:[{entityId:'https://hapcheon.example/ontology#hapcheonLakeSmilePension',programLabel:'합천호 스마일펜션'}],execution:{currentEntityId:'https://hapcheon.example/ontology#hapcheonLake',statusByEntityId:{'https://hapcheon.example/ontology#hapcheonLake':'READY'}},createdAt:'2026-07-01T00:00:00.000Z',updatedAt:'2026-07-02T00:00:00.000Z'});storage.setItem(storageKey,serialized);
+  const regionId=regionFromLocation('/','','hapcheon.odex.kr'),restored=loadTripSession(storage as any,regionId)!;
+  assert.equal(regionId,'hapcheon');
+  assert.equal(restored.anonymousTripId,'pre-hardening-hapcheon');
+  assert.equal(itineraryItemCount(restored),2);
+  assert.equal((restored.itinerary as any).steps[0].actions.navigate.latitude,35.54);
+  assert.deepEqual(restored.savedPlaces,[{entityId:'https://hapcheon.example/ontology#hapcheonLakeSmilePension',programLabel:'합천호 스마일펜션'}]);
+  assert.equal(restored.execution?.currentEntityId,'https://hapcheon.example/ontology#hapcheonLake');
+  assert.equal(storage.getItem(storageKey),serialized);
+  assert.equal(storage.getItem('regional-concierge-trip-session-v1:gajo'),null);
 });
 
 test("only explicit new-trip execution archives A and activates a fresh empty B", () => {

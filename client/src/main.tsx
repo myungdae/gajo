@@ -16,7 +16,7 @@ import { registerVisitorPwa } from './visitorPwa.ts'
 // new Copilot HTML is reachable. Only the dedicated admin origin may clean it.
 if(isCopilotProductionOrigin(location.hostname))void runCopilotServiceWorkerRecovery();
 else registerVisitorPwa();
-const bootRegion=getRegionConfig(regionFromLocation(location.pathname,location.search));
+const bootRegion=getRegionConfig(regionFromLocation(location.pathname,location.search,location.hostname));
 initializeInstallPromptCapture();
 document.querySelector<HTMLLinkElement>('link[rel="manifest"]')?.setAttribute('href',manifestHref(bootRegion.id));
 document.title=bootRegion.serviceName;
