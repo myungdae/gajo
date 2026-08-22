@@ -41,7 +41,7 @@ export const GUIDE_KNOWLEDGE: GuideKnowledge[] = [
     allowedClaims: ['현재 제품 역할을 간결하게 설명'],
     relatedQuestions: [
       '여행 중에는 실제로 무엇을 해주나요?',
-      '여행 계획이 갑자기 바뀌어도 되나요?',
+      '이거 홈페이지인가요?',
     ],
   }),
   item({

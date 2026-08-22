@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { askGuide, type GuideAudience, type GuideResponse } from './guideClient';
 import './guide.css';
 
-const popular = ['이거 홈페이지인가요?', '여행 중에는 실제로 무엇을 해주나요?', '여행 계획이 갑자기 바뀌어도 되나요?', 'ChatGPT·Gemini와 무엇이 다른가요?', '지도·내비게이션과 무엇이 다른가요?'];
+const popular = ['지역 AI 컨시어지를 한마디로 설명하면 무엇인가요?', '여행 중에는 실제로 무엇을 해주나요?', '여행 계획이 갑자기 바뀌어도 되나요?', 'ChatGPT·Gemini와 무엇이 다른가요?', '지도·내비게이션과 무엇이 다른가요?'];
 type Message = { id: number; role: 'user' | 'guide'; text: string; response?: GuideResponse };
 
 function GuideApp() {
