@@ -510,7 +510,7 @@ describe('Regional Copilot Phase 1', () => {
         readFileSync(
           join(
             __dirname,
-            '../../operations/okcheon-essential-shopping.search-candidates.json',
+            '../operations/okcheon-essential-shopping.search-candidates.json',
           ),
           'utf8',
         ),

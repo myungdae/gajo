@@ -143,7 +143,7 @@ Phase 3 additions/edits include:
 - `server/src/copilot/copilot.service.spec.ts`
 - `server/src/concierge/okcheon-phase3-golden.spec.ts`
 - `server/src/regions/okcheon/master-data.ts`
-- `server/operations/okcheon-essential-shopping.search-candidates.json`
+- `server/src/operations/okcheon-essential-shopping.search-candidates.json`
 - `server/src/guide/guide-knowledge.ts`
 - `server/src/guide/guide.service.spec.ts`
 - `client/src/fullJourney.test.ts`

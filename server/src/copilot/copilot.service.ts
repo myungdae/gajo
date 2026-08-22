@@ -22,7 +22,7 @@ import {
 } from './core-destination.schema';
 import { INITIAL_CORE_DESTINATIONS } from './core-destination.config';
 import { isDiscoveryEligible } from '../concierge/discovery-eligibility';
-import okcheonEssentialShopping from '../../operations/okcheon-essential-shopping.search-candidates.json';
+import okcheonEssentialShopping from '../operations/okcheon-essential-shopping.search-candidates.json';
 import { ExkoSemanticAdapter } from '../exko-semantic/exko-semantic.service';
 import {
   OKCHEON_FIELD_DEMO_EVIDENCE_PROPOSALS,
