@@ -109,7 +109,7 @@ export class ConciergeService {
       route = routeNaturalLanguageIntent(input),
       routeDetails: any = route;
     const newlyRequestedDestinations =
-      routeDetails.multiDestination && this.placeDiscovery
+      routeDetails.explicitDestinations?.length && this.placeDiscovery
         ? await this.placeDiscovery.resolveRequestedDestinations(
             regionId,
             routeDetails.explicitDestinations,

@@ -283,6 +283,28 @@ describe('public Concierge Guide Copilot', () => {
     ])
       expect(answers).not.toContain(claim);
   });
+  it.each([
+    ['한마디로 뭐예요?', 'CONCIERGE_ONE_LINE'],
+    ['여행 중에는 실제로 무엇을 해주나요?', 'DURING_TRIP_ASSISTANCE'],
+    ['여행 계획이 갑자기 바뀌어도 되나요?', 'RUNTIME_REPLANNING'],
+    ['앞에서 한 이야기도 기억하나요?', 'TRIP_CONTINUITY'],
+    ['추천만 해주나요?', 'RECOMMENDATION_TO_ACTION'],
+    ['앞으로 어디까지 발전할 수 있나요?', 'FUTURE_VISION'],
+  ])('routes visitor question %s to %s', (question, intent) =>
+    expect(new GuideService().answer({ question }, question)).toMatchObject({ intent, readOnly: true }),
+  );
+  it('keeps current, future, memory, and action boundaries explicit', () => {
+    const service = new GuideService();
+    expect(service.answer({ question: '여행할 때 뭘 해줘요?' }, 'during')).toMatchObject({ answer: expect.stringMatching(/센서가 자동으로 안다는 뜻은 아닙니다/) });
+    expect(service.answer({ question: '앞에서 한 이야기도 기억하나요?' }, 'memory')).toMatchObject({ answer: expect.stringMatching(/모든 대화를 무기한 기억하는 것은 아니며/) });
+    expect(service.answer({ question: '길찾기도 되나요?' }, 'action')).toMatchObject({ answer: expect.stringMatching(/모든 장소에 모든 버튼이 있는 것은 아니며/) });
+    expect(service.answer({ question: '앞으로 어디까지 발전할 수 있나요?' }, 'future')).toMatchObject({ answer: expect.stringMatching(/현재는.*앞으로의 가능성.*현재 로봇이 운영 중이라는 뜻은 아닙니다/s) });
+  });
+  it('explains a shared engine with region-isolated data and journeys', () => {
+    const result: any = new GuideService().answer({ question: '합천 가조 옥천 정보가 서로 섞이지 않나요?' }, 'regions');
+    expect(result).toMatchObject({ intent: 'REGIONAL_SCALE' });
+    expect(result.answer).toMatch(/같은 Regional Engine.*지역별로 분리.*서로 섞이지 않도록/s);
+  });
   it('returns a non-persisted human-review candidate for unknown field questions', () =>
     expect(
       new GuideService().answer(

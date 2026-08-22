@@ -9,6 +9,21 @@ export const INITIAL_CORE_DESTINATIONS: Record<
     aliases?: string[];
   }>
 > = {
+  gajo: [
+    {
+      displayName: '거창창포원',
+      canonicalEntityId:
+        'https://gajo-wellness.kr/ontology#geochangChangpowon',
+      expectedCategory: 'TOURISM_NATURE',
+      aliases: ['창포원', '거창 창포원'],
+    },
+    {
+      displayName: '수승대',
+      canonicalEntityId: 'https://gajo-wellness.kr/ontology#suseungdae',
+      expectedCategory: 'TOURISM_NATURE',
+      aliases: ['수승대관광지', '거창 수승대'],
+    },
+  ],
   hapcheon: [
     {
       displayName: '황매산',

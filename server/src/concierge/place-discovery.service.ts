@@ -114,6 +114,7 @@ export class PlaceDiscoveryService {
       : CATEGORY_MATCH[category];
     const ranked = dataset.records
       .filter(eligibility)
+      .filter((record) => record.runtimeDataStatus !== 'UNKNOWN')
       .filter((record) => !anchor || record.entityUri !== anchor.entityUri)
       .filter(
         (record) =>

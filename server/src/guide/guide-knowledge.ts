@@ -30,6 +30,85 @@ const item = (
 
 export const GUIDE_KNOWLEDGE: GuideKnowledge[] = [
   item({
+    intent: 'CONCIERGE_ONE_LINE',
+    audiences: ['GENERAL', 'VISITOR', 'BUSINESS', 'PUBLIC_SECTOR'],
+    patterns: [
+      /(?:지역\s*)?AI\s*컨시어지.*(?:뭐|무엇|한마디|한\s*줄|쉽게\s*설명)|한마디로\s*뭐|한\s*줄로\s*설명|쉽게\s*설명하면/i,
+    ],
+    shortAnswer:
+      '지역 AI 컨시어지는 여행객의 지금 상황을 이해해, 필요한 지역의 장소와 서비스를 찾아 다음 행동까지 이어주는 여행 AI입니다. 쉽게 말하면 여행객에게는 필요한 순간의 길잡이이고, 지역 업체에는 필요한 고객과 만나는 연결통로입니다. 묻는다 → 상황을 이해한다 → 판단한다 → 지역과 연결한다 → 행동으로 이어진다.',
+    supportingConcepts: ['runtime context', 'regional connection', 'actions'],
+    allowedClaims: ['현재 제품 역할을 간결하게 설명'],
+    relatedQuestions: [
+      '여행 중에는 실제로 무엇을 해주나요?',
+      '여행 계획이 갑자기 바뀌어도 되나요?',
+    ],
+  }),
+  item({
+    intent: 'DURING_TRIP_ASSISTANCE',
+    audiences: ['GENERAL', 'VISITOR'],
+    patterns: [
+      /여행\s*중.*(?:실제로|무엇|뭘|어떻게\s*(?:쓰|이어))|여행할\s*때.*뭘|실제\s*여행.*어떻게\s*이어/i,
+    ],
+    shortAnswer:
+      '목적지 목록만 주고 끝내지 않습니다. 현재 확인할 수 있는 위치·시간·날씨, 진행 중인 여행 상태와 방문자가 알려준 요청·동행·이동 여건을 함께 보고 지금 맞는 다음 선택을 다시 판단합니다. 비가 오거나, 식사가 필요하다고 말했거나, 동행자가 지쳤거나, 한 장소를 마쳤거나, 남은 시간이 줄었을 때처럼 흐름이 달라지면 그 상황에 맞춰 여행을 이어갑니다. 배고픔이나 피로를 센서가 자동으로 안다는 뜻은 아닙니다. 여행을 알려주는 AI가 아니라, 여행의 흐름을 계속 이어주는 AI를 지향합니다.',
+    supportingConcepts: ['runtime context', 'TripSession', 'current journey'],
+    allowedClaims: ['제공되거나 확인 가능한 현재 맥락 사용', '방문자 입력에 따른 재판단'],
+    relatedQuestions: [
+      '여행 계획이 갑자기 바뀌어도 되나요?',
+      '추천만 하나요, 바로 갈 수도 있나요?',
+    ],
+  }),
+  item({
+    intent: 'RUNTIME_REPLANNING',
+    audiences: ['GENERAL', 'VISITOR'],
+    patterns: [
+      /계획.*(?:갑자기\s*)?바뀌|일정.*바꿔|시간.*줄었|비가\s*오면.*일정/i,
+    ],
+    shortAnswer:
+      '네. 여행 도중 조건이 달라지면 현재 TripSession과 진행 중인 여정을 기준으로 남은 흐름을 다시 구성할 수 있습니다. 반드시 가고 싶은 곳과 직접 지정한 목적지는 제약으로 보존하고, 줄어든 시간이나 방문자가 알려준 변화, 확인 가능한 날씨 같은 현재 조건에 맞춰 나머지를 조정합니다. 폐업·휴무나 교통 상황을 실시간으로 모두 안다고 약속하지 않으며, 확인되지 않은 운영 사실은 추측하지 않습니다.',
+    supportingConcepts: ['TripSession', 'must-visit constraints', 'runtime replanning'],
+    allowedClaims: ['명시 목적지 보존', '현재 조건에 따른 남은 여정 재구성'],
+    relatedQuestions: [
+      '추천만 하나요, 바로 갈 수도 있나요?',
+      '앞에서 한 이야기도 기억하나요?',
+    ],
+  }),
+  item({
+    intent: 'TRIP_CONTINUITY',
+    audiences: ['GENERAL', 'VISITOR'],
+    patterns: [
+      /앞에서.*(?:이야기|말).*(?:기억|이어)|매번.*다시\s*설명|저장한\s*여행.*이어|이야기도\s*기억/i,
+    ],
+    shortAnswer:
+      '같은 여행에서는 TripSession에 저장한 장소와 일정, 구조화된 대화 맥락을 이용해 앞의 선택을 이어갑니다. 그래서 매 질문마다 여행을 처음부터 다시 설명하지 않아도 됩니다. 다만 사람처럼 모든 대화를 무기한 기억하는 것은 아니며, 저장 범위와 브라우저·세션 상태에 따라 이어지는 정보가 달라질 수 있습니다.',
+    supportingConcepts: ['TripSession', 'saved places', 'itinerary', 'structured context'],
+    allowedClaims: ['같은 여행의 구조화된 연속성', '무제한 기억 아님'],
+    relatedQuestions: ['추천만 하나요, 바로 갈 수도 있나요?'],
+  }),
+  item({
+    intent: 'RECOMMENDATION_TO_ACTION',
+    audiences: ['GENERAL', 'VISITOR'],
+    patterns: [
+      /추천만.*(?:해|하)|바로\s*갈\s*수|길찾기.*(?:되|해)|추천.*바로.*가/i,
+    ],
+    shortAnswer:
+      '지원되는 장소라면 추천에서 끝나지 않고 묻기 → 판단 → 선택 → 행동으로 이어집니다. 검증된 좌표가 있는 장소의 길찾기, 확인된 전화번호로 전화, My Trip 저장 같은 실제 구현 행동을 제공할 수 있습니다. 모든 장소에 모든 버튼이 있는 것은 아니며, 확인된 운영 정보가 없는 행동은 열지 않습니다.',
+    supportingConcepts: ['navigation', 'phone', 'My Trip', 'action safety'],
+    allowedClaims: ['구현되고 검증된 행동만 제공'],
+    relatedQuestions: ['앞에서 한 이야기도 기억하나요?'],
+  }),
+  item({
+    intent: 'FUTURE_VISION',
+    audiences: ['GENERAL', 'VISITOR', 'BUSINESS', 'PUBLIC_SECTOR'],
+    patterns: [/앞으로.*(?:어디까지|발전|가능)|미래.*(?:기능|발전)/i],
+    shortAnswer:
+      '현재는 여행 상황에 맞춘 방문자 안내, 같은 여행의 연속성, 검증된 정보가 있는 길찾기·전화·저장 같은 행동, Regional Copilot을 통한 지역 데이터 검토를 지원합니다. 앞으로의 가능성으로는 더 넓은 예약·교통·시설 시스템 연동, IoT, 물리적 서비스 로봇과의 연결을 검토할 수 있습니다. 이런 항목은 미래 가능성이며 현재 구현된 기능, 특히 현재 로봇이 운영 중이라는 뜻은 아닙니다.',
+    supportingConcepts: ['CURRENT', 'FUTURE POSSIBILITIES'],
+    allowedClaims: ['현재와 미래 가능성의 명확한 구분'],
+    relatedQuestions: ['지금 여행 중에는 실제로 무엇을 해주나요?'],
+  }),
+  item({
     intent: 'EXKO_EXPLANATION',
     audiences: ['GENERAL', 'VISITOR', 'PUBLIC_SECTOR'],
     patterns: [
@@ -80,7 +159,7 @@ export const GUIDE_KNOWLEDGE: GuideKnowledge[] = [
   item({
     intent: 'CHATGPT_DIFFERENCE',
     audiences: ['GENERAL', 'VISITOR'],
-    patterns: [/chatgpt|챗gpt|챗지피티|범용\s*ai/i],
+    patterns: [/chatgpt|챗gpt|챗지피티|gemini|제미나이|범용\s*ai/i],
     shortAnswer:
       'ChatGPT는 아주 폭넓은 질문에 답할 수 있는 범용 AI입니다. 지역 AI 컨시어지는 그런 AI를 지역의 검증된 정보와 현재 여행 상황에 연결해 실제 현장에서 일하도록 만든 서비스입니다. 단순히 답을 주는 데서 끝나지 않고 현재 여행을 이어서 다음 행동까지 연결하는 데 초점을 둡니다.',
     supportingConcepts: ['RDM', 'runtime context', 'TripSession', 'actions'],
@@ -212,7 +291,7 @@ export const GUIDE_KNOWLEDGE: GuideKnowledge[] = [
     audiences: ['GENERAL', 'BUSINESS', 'PUBLIC_SECTOR'],
     patterns: [/돈.*(?:업체|먼저|추천)|유료|광고|가입.*먼저|순위/],
     shortAnswer:
-      '아니요. 현재 제품 원칙에서 결제 여부는 추천 순위를 정하는 기준이 아닙니다. Core Destination, 유료 참여 업체, 추천 순위는 서로 다른 개념이며 추천은 방문자 상황, 장소 유형 적합성, 검증된 운영 정보와 현재 조건을 기준으로 합니다. 미래의 미확정 상업 정책까지 약속하지는 않습니다.',
+      '아니요. 유료 참여와 추천 우선순위는 같지 않습니다. 현재 제품 원칙에서 결제나 회원 여부는 추천 순위를 정하는 기준이 아니며, 추천은 방문자 필요, 상황 적합성, 장소 유형과 검증된 운영 정보를 기준으로 합니다. 향후 광고나 상업 상품이 생긴다면 맥락 기반 추천과 명확히 구분되어야 합니다. 미래의 구체적인 상업 정책까지 약속하지는 않습니다.',
     supportingConcepts: ['ranking principle', 'Core Destination', 'RDM'],
     allowedClaims: ['현재 원칙만 설명'],
     relatedQuestions: ['업체는 왜 참여해야 하나요?'],
@@ -222,7 +301,7 @@ export const GUIDE_KNOWLEDGE: GuideKnowledge[] = [
     audiences: ['BUSINESS', 'GENERAL'],
     patterns: [/업체.*(?:도움|좋|참여|왜)|상인|사업자|가게.*참여/],
     shortAnswer:
-      '업체는 상호·업종 같은 대표 정보와 운영 정보를 더 정확하게 표현하고, 방문자 상황에 실제로 맞을 때 발견될 기회를 얻을 수 있습니다. 지원되는 경우 전화·길찾기·예약 같은 행동 연결도 가능합니다. 참여나 결제가 매출 또는 노출 순위를 보장한다는 뜻은 아닙니다.',
+      '가치는 단순히 광고 노출을 늘리는 데 있지 않습니다. 방문자 필요 → 맥락상 적합한 후보 → 알맞은 지역 업체 → 지원되는 행동 → 방문 가능성으로 이어질 수 있다는 데 있습니다. 업체는 대표 정보와 운영 정보를 정확하게 표현하고 방문자 상황에 실제로 맞을 때 발견될 기회를 얻습니다. 참여나 결제가 추천·방문·매출을 보장하지는 않습니다.',
     supportingConcepts: [
       'canonical business identity',
       'verified facts',
@@ -239,7 +318,7 @@ export const GUIDE_KNOWLEDGE: GuideKnowledge[] = [
     audiences: ['PUBLIC_SECTOR', 'GENERAL'],
     patterns: [/지자체|공공|군청|시청|꼭.*해야|왜.*필요/],
     shortAnswer:
-      '지자체 참여는 기술적으로 필수는 아니며 민간 또는 지역 운영으로도 시작할 수 있습니다. 다만 공공 관광·문화 데이터, 지역 범위 확장, 데이터 관리의 지속성과 공공 인프라 연계에 도움을 줄 수 있습니다. 역할은 지역 여건과 협력 방식에 따라 달라집니다.',
+      '지자체 참여가 기술적으로 필수인 것은 아닙니다. 다만 관광·음식·숙박 같은 지역 정보를 지속적으로 관리하고, 누락 데이터를 찾고, 근거를 검증해 현장 방문자 서비스와 연결하는 정보 stewardship 역할에 도움이 됩니다. 공공·민간의 실제 역할은 지역 여건과 협력 방식에 따라 달라집니다.',
     supportingConcepts: [
       'public data',
       'regional stewardship',
@@ -251,9 +330,9 @@ export const GUIDE_KNOWLEDGE: GuideKnowledge[] = [
   item({
     intent: 'REGIONAL_SCALE',
     audiences: ['GENERAL', 'PUBLIC_SECTOR'],
-    patterns: [/합천.*(?:만|밖)|다른\s*지역|전국|확장|가조/],
+    patterns: [/합천.*(?:만|밖)|다른\s*지역|전국|확장|여러\s*지역|지역.*(?:섞|분리)|가조.*옥천|합천.*가조/i],
     shortAnswer:
-      '합천은 현장 검증 지역이고 가조는 같은 구조를 다른 지역에 재사용할 수 있는지 확인하는 지역입니다. 플랫폼은 공통 Regional Engine에 지역별 데이터, 의미 맥락과 관리 책임을 결합합니다. 아직 전국에서 운영 중이라고 말할 단계는 아니지만 별도 앱을 복제하지 않고 지역을 추가하는 구조를 검증하고 있습니다.',
+      '합천·가조·옥천은 같은 Regional Engine을 함께 사용합니다. 대신 각 지역의 운영 데이터, 의미 관계의 근거, 관리자 권한과 방문자의 여행 상태는 지역별로 분리됩니다. 쉽게 말해 AI 기술은 함께 쓰되, 지역의 정보와 여행은 서로 섞이지 않도록 분리합니다. 지자체 참여가 기술적으로 반드시 필요하거나 전국 운영이 완료됐다는 뜻은 아닙니다.',
     supportingConcepts: ['Shared Regional Engine', 'isolated regions'],
     allowedClaims: ['검증 단계', '전국 운영 미주장'],
     relatedQuestions: ['지역별 정보가 섞이지 않나요?'],

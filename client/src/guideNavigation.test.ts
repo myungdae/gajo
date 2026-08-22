@@ -53,7 +53,7 @@ test('bottom navigation is keyboard accessible with visible labels and focus tre
 });
 
 test('FAQ, composer, audience, and follow-up controls retain their actual click handlers with bottom nav mounted', () => {
-  for (const question of ['이거 홈페이지인가요?', 'ChatGPT하고 뭐가 다른가요?', '구글·네이버 지도가 있는데 왜 필요한가요?', '업체에는 어떤 도움이 되나요?', '틀린 정보는 누가 고치나요?']) {
+  for (const question of ['이거 홈페이지인가요?', '여행 중에는 실제로 무엇을 해주나요?', '여행 계획이 갑자기 바뀌어도 되나요?', 'ChatGPT·Gemini와 무엇이 다른가요?', '지도·내비게이션과 무엇이 다른가요?']) {
     assert.match(main, new RegExp(`key=\\{question\\} onClick=\\{\\(\\) => void send\\(question\\)\\}`));
     assert.ok(main.includes(question));
   }
