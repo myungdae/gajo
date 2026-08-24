@@ -44,6 +44,11 @@ function detectNearbyDiscovery(message?: string): {
     ['TOURISM_NATURE', /산책|관광|공원|명소/],
     ['CONVENIENCE_STORE', /편의점/],
     ['MART_SUPERMARKET', /마트|슈퍼마켓|슈퍼(?!맨)|식료품점/],
+    ['PUBLIC_TOILET', /공중\s*화장실|화장실/],
+    ['PARKING', /주차장|주차|차\s*(?:어디|를?)\s*(?:세워|대)/],
+    ['GAS_STATION', /주유소|기름\s*(?:넣|부족)/],
+    ['EV_CHARGER', /전기차\s*충전|EV\s*충전|충전소/i],
+    ['TOURIST_INFORMATION', /관광\s*안내소|관광\s*안내\s*(?:받|할)\s*(?:곳|데)/],
     [
       'ESSENTIAL_SHOPPING',
       /장\s*볼|생필품|물(?:하고|이랑|과)?\s*과자|음료수?\s*살|먹을\s*것\s*(?:좀\s*)?살/,
@@ -54,7 +59,7 @@ function detectNearbyDiscovery(message?: string): {
   const category = entries.find(([, pattern]) => pattern.test(message))?.[0];
   return {
     intent:
-      !!category && /주변|근처|가까운|인근|갈\s*만한|찾아|추천/.test(message),
+      !!category && /주변|근처|가까운|인근|갈\s*만한|찾아|추천|어디|있어|가능|먼저|부터/.test(message),
     category,
   };
 }

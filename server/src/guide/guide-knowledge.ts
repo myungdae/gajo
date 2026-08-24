@@ -36,7 +36,7 @@ export const GUIDE_KNOWLEDGE: GuideKnowledge[] = [
       /(?:지역\s*)?AI\s*컨시어지.*(?:뭐|무엇|한마디|한\s*줄|쉽게\s*설명)|한마디로\s*뭐|한\s*줄로\s*설명|쉽게\s*설명하면/i,
     ],
     shortAnswer:
-      '지역 AI 컨시어지는 여행객의 지금 상황을 이해해, 필요한 지역의 장소와 서비스를 찾아 다음 행동까지 이어주는 여행 AI입니다. 쉽게 말하면 여행객에게는 필요한 순간의 길잡이이고, 지역 업체에는 필요한 고객과 만나는 연결통로입니다. 묻는다 → 상황을 이해한다 → 판단한다 → 지역과 연결한다 → 행동으로 이어진다.',
+      '범용 AI가 세상을 폭넓게 아는 AI라면, 지역 AI 컨시어지는 그 지능을 지역의 현실과 여행객의 ‘지금’에 연결해 다음 행동으로 이어주는 AI입니다. 쉽게 말하면 여행객에게는 필요한 순간의 길잡이이고, 지역 업체에는 필요한 고객과 만나는 연결통로입니다. 묻는다 → 상황을 이해한다 → 판단한다 → 지역과 연결한다 → 행동으로 이어진다.',
     supportingConcepts: ['runtime context', 'regional connection', 'actions'],
     allowedClaims: ['현재 제품 역할을 간결하게 설명'],
     relatedQuestions: [
@@ -66,7 +66,7 @@ export const GUIDE_KNOWLEDGE: GuideKnowledge[] = [
       /계획.*(?:갑자기\s*)?바뀌|일정.*바꿔|시간.*줄었|비가\s*오면.*일정/i,
     ],
     shortAnswer:
-      '네. 여행 도중 조건이 달라지면 현재 TripSession과 진행 중인 여정을 기준으로 남은 흐름을 다시 구성할 수 있습니다. 반드시 가고 싶은 곳과 직접 지정한 목적지는 제약으로 보존하고, 줄어든 시간이나 방문자가 알려준 변화, 확인 가능한 날씨 같은 현재 조건에 맞춰 나머지를 조정합니다. 폐업·휴무나 교통 상황을 실시간으로 모두 안다고 약속하지 않으며, 확인되지 않은 운영 사실은 추측하지 않습니다.',
+      '계획 → 상황 변화 → 재평가 → 재계획의 흐름입니다. 비, 줄어든 남은 시간, 늦어진 식사, 방문자가 알려준 피로, 근거로 확인된 목적지 이용 불가처럼 조건이 달라지면 현재 TripSession을 기준으로 남은 흐름을 다시 구성할 수 있습니다. 반드시 가고 싶은 곳과 직접 지정한 목적지는 제약으로 보존합니다. 모든 폐업·휴무나 현실 변화를 자동 감지한다고 약속하지 않으며, 지원되는 사건과 맥락이 있을 때 다음 선택을 먼저 제안하도록 설계했습니다.',
     supportingConcepts: ['TripSession', 'must-visit constraints', 'runtime replanning'],
     allowedClaims: ['명시 목적지 보존', '현재 조건에 따른 남은 여정 재구성'],
     relatedQuestions: [
@@ -161,13 +161,22 @@ export const GUIDE_KNOWLEDGE: GuideKnowledge[] = [
     audiences: ['GENERAL', 'VISITOR'],
     patterns: [/chatgpt|챗gpt|챗지피티|gemini|제미나이|범용\s*ai/i],
     shortAnswer:
-      'ChatGPT는 아주 폭넓은 질문에 답할 수 있는 범용 AI입니다. 지역 AI 컨시어지는 그런 AI를 지역의 검증된 정보와 현재 여행 상황에 연결해 실제 현장에서 일하도록 만든 서비스입니다. 단순히 답을 주는 데서 끝나지 않고 현재 여행을 이어서 다음 행동까지 연결하는 데 초점을 둡니다.',
+      'ChatGPT·Gemini 같은 범용 AI는 폭넓게 이해하고 추천·위치·맥락·계획을 다룰 수 있습니다. 지역 AI 컨시어지는 그 일반 지능에 검증된 지역 운영 정보, 골목의 작은 식당·카페부터 주차·화장실·주유·충전·마트·관광안내 같은 초지역적 지식, 현재 여행 맥락, 여정 연속성과 안전한 행동을 한 구조로 연결하는 더 좁은 플랫폼 역할에 집중합니다. 모든 지역에서 모든 생활 인프라 데이터가 이미 완성됐다는 뜻은 아닙니다.',
     supportingConcepts: ['RDM', 'runtime context', 'TripSession', 'actions'],
     allowedClaims: ['범용 AI와 지역 운영 시스템의 역할 차이'],
     relatedQuestions: [
       'ChatGPT한테 위치를 알려주면 똑같지 않나요?',
-      '실제 여행에서는 어떻게 이어지나요?',
+      '실제 여행에서는 어떻게 다른가요?',
     ],
+  }),
+  item({
+    intent: 'ACTUAL_TRIP_DIFFERENCE',
+    audiences: ['GENERAL', 'VISITOR'],
+    patterns: [/실제\s*여행에서는\s*어떻게\s*다른|70대.*어머니.*비.*옥천|비\s*오는\s*날.*어머니.*옥천/],
+    shortAnswer: '예를 들어 70대 어머니와 비 오는 날 오후 4시에 옥천을 여행한다면, Local Concierge는 실제로 확인 가능한 현재 위치·남은 시간·날씨와 방문자가 알려준 보행 여건을 바탕으로 주차·공중화장실·쉴 곳·관광·식사를 함께 살펴 다음 선택을 돕습니다. “어르신 친화적”이거나 걷기 편하다고 근거 없이 단정하지 않고, 검증된 좌표·주차·접근성 정보만 행동에 사용합니다. Guide는 이 원리를 설명하며, 정확한 현장 일정은 실제 옥천 데이터와 현재 맥락을 쓰는 Local Concierge에서 결정해야 합니다.',
+    supportingConcepts: ['current context','mobility constraint supplied by visitor','verified essential services','Local Concierge CTA'],
+    allowedClaims: ['개념 시나리오','실제 데이터에서 결정','근거 없는 접근성 주장 금지'],
+    relatedQuestions: ['옥천에서 실제 Local Concierge를 시작하려면 어떻게 하나요?','주차와 화장실 정보는 어떻게 확인하나요?'],
   }),
   item({
     intent: 'MAP_DIFFERENCE',
@@ -219,6 +228,39 @@ export const GUIDE_KNOWLEDGE: GuideKnowledge[] = [
     relatedQuestions: ['닫았다 다시 열어도 이어지나요?'],
   }),
   item({
+    intent: 'HYPERLOCAL_DATA_GOVERNANCE',
+    audiences: ['GENERAL', 'VISITOR', 'BUSINESS', 'PUBLIC_SECTOR'],
+    patterns: [
+      /(?:이\s*)?(?:지역\s*정보|지역\s*데이터|하이퍼로컬\s*정보).*(?:누가|책임|관리|확인|업데이트)/i,
+      /정보가\s*맞는지는\s*누가\s*확인/i,
+      /구글에서\s*(?:그냥\s*)?가져오는\s*정보/i,
+    ],
+    shortAnswer:
+      '검색엔진이 지역정보를 ‘찾아오는’ 것이라면, 지역 AI 컨시어지는 지역이 자기 정보를 지속적으로 확인하고 관리할 수 있는 구조를 지향합니다. 단순히 인터넷 정보를 더 많이 모으는 것이 아니라, 공식 공공정보와 지역 현장 지식, 지속적인 사람의 검증을 결합한 살아 있는 Hyper-local Knowledge 기반을 만드는 것이 목표입니다. 가능한 협력 모델에서 지자체·공공 부문은 공식 관광정보, 축제, 공영주차장, 공공시설, 대중교통·기반시설 같은 권위 있는 근거를 제공할 수 있고, 권한을 받은 민간 Regional Manager는 지역 업체 정보, 현장 변화와 초지역적 운영 지식을 검토·관리할 수 있습니다. 지자체 참여가 필수라는 뜻은 아니며, 권한을 받은 민간·지역 조직이 운영할 수도 있습니다. 정보 발견 → 근거 확인 → Regional Copilot 검토 → 권한 있는 지역 운영자의 승인 → 서비스 반영 순서를 따릅니다. 검색 결과, AI가 찾은 내용, 방문자 제보와 업체 주장은 모두 검토할 근거이지 자동으로 검증된 운영 사실이 아닙니다. 모든 정보가 언제나 정확하다고 약속하지 않으며, RDM에는 확인·승인된 사실만 운영 데이터로 반영하는 것을 원칙으로 합니다.',
+    audienceAnswers: {
+      PUBLIC_SECTOR:
+        '검색엔진이 지역정보를 ‘찾아오는’ 것이라면, 지역 AI 컨시어지는 지역이 자기 정보를 지속적으로 확인하고 관리할 수 있는 구조를 지향합니다. 지자체·공공 부문은 공식 관광정보, 축제, 공영주차장, 공공시설, 대중교통·기반시설 같은 권위 있는 근거를 제공할 수 있고, 권한을 받은 민간 Regional Manager는 업체 정보, 현장 변화와 초지역적 운영 지식을 검토·관리할 수 있습니다. 다만 지자체 참여는 필수가 아니며 권한 있는 민간·지역 조직도 운영 주체가 될 수 있습니다. 정보 발견 → 근거 확인 → Regional Copilot 검토 → 권한 있는 지역 운영자의 승인 → 서비스 반영을 거쳐 RDM에 반영하며, 검색·AI·방문자·업체가 제공한 내용은 자동으로 운영 사실이 되지 않습니다. 현재 특정 지자체 협력이 모두 갖춰졌거나 모든 정보가 항상 정확하다고 주장하지 않습니다.',
+    },
+    supportingConcepts: [
+      'governed Hyper-local Knowledge',
+      'public and local evidence',
+      'Regional Copilot review',
+      'authorized Regional Manager approval',
+      'RDM',
+    ],
+    allowedClaims: [
+      '가능한 공공·민간 협력 모델',
+      '지자체 참여 비필수',
+      '근거와 운영 사실의 구분',
+      '지속적인 사람의 검증',
+    ],
+    relatedQuestions: [
+      '정보가 틀리면 어떻게 고치나요?',
+      '검색에서 찾은 정보는 바로 반영되나요?',
+      '지자체가 꼭 참여해야 하나요?',
+    ],
+  }),
+  item({
     intent: 'INFORMATION_CORRECTION',
     audiences: ['GENERAL', 'VISITOR', 'BUSINESS', 'PUBLIC_SECTOR'],
     patterns: [
@@ -267,6 +309,7 @@ export const GUIDE_KNOWLEDGE: GuideKnowledge[] = [
     relatedQuestions: [
       '누가 정보를 검토하나요?',
       '잘못된 정보를 발견하면 어떻게 하나요?',
+      '지역정보는 누가 책임지고 관리하나요?',
     ],
   }),
   item({
@@ -284,6 +327,7 @@ export const GUIDE_KNOWLEDGE: GuideKnowledge[] = [
     relatedQuestions: [
       'Regional Copilot은 무슨 일을 하나요?',
       '누가 최종 승인하나요?',
+      '지역정보는 누가 책임지고 관리하나요?',
     ],
   }),
   item({

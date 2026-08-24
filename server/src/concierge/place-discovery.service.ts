@@ -10,6 +10,7 @@ import { NearbyService, NearbyServiceError } from '../nearby/nearby.service';
 import { CopilotService } from '../copilot/copilot.service';
 import { DISCOVERY_CATEGORY_MATCH } from './discovery-eligibility';
 import { RegionConfigService } from '../region/region-config.service';
+import { safeEssentialActions, ESSENTIAL_SERVICE_TYPES } from './essential-services';
 
 const CATEGORY_MATCH = DISCOVERY_CATEGORY_MATCH;
 
@@ -282,7 +283,9 @@ export class PlaceDiscoveryService {
             reservationUrl: record.reservationUrl,
             latitude: record.latitude,
             longitude: record.longitude,
-            actions: record.actions,
+            actions: (ESSENTIAL_SERVICE_TYPES as readonly string[]).includes(category)
+              ? safeEssentialActions(record)
+              : record.actions,
             source: record.source,
             lastVerifiedAt: record.lastVerifiedAt,
             distanceMeters,

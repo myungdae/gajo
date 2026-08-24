@@ -14,7 +14,12 @@ export type DiscoveryCategory =
   | 'CONVENIENCE'
   | 'ESSENTIAL_SHOPPING'
   | 'CONVENIENCE_STORE'
-  | 'MART_SUPERMARKET';
+  | 'MART_SUPERMARKET'
+  | 'PARKING'
+  | 'PUBLIC_TOILET'
+  | 'GAS_STATION'
+  | 'EV_CHARGER'
+  | 'TOURIST_INFORMATION';
 export function explicitDestinationPhrases(message = ''): string[] {
   const desire=/(?:가고|갈래|둘러보고|보고)\s*싶|갈래|둘\s*다\s*(?:가|보)/;
   if(!desire.test(message))return[];
@@ -38,10 +43,15 @@ const CATEGORY_PATTERNS: [DiscoveryCategory, RegExp][] = [
   ['ACTIVITY', /놀거리|체험|레저|실내\s*체험/],
   [
     'TOURISM_NATURE',
-    /산책|관광|공원|명소|볼\s*만한|갈\s*곳|다\s*봤|이제\s*어디/,
+    /산책|관광(?!\s*안내)|공원|명소|볼\s*만한|갈\s*곳|다\s*봤|이제\s*어디/,
   ],
   ['CONVENIENCE_STORE', /(?:24\s*시간\s*)?편의점/],
   ['MART_SUPERMARKET', /마트|슈퍼마켓|슈퍼(?!맨)|식료품점|동네\s*가게/],
+  ['PUBLIC_TOILET', /공중\s*화장실|화장실/],
+  ['PARKING', /주차장|주차(?:할|해|하고|가|는|를|\s*가능)|차\s*(?:어디|를?)\s*(?:세워|대)/],
+  ['GAS_STATION', /주유소|기름\s*(?:넣|이\s*없|부족)/],
+  ['EV_CHARGER', /전기차\s*충전|EV\s*충전|충전소/iu],
+  ['TOURIST_INFORMATION', /관광\s*안내소|관광\s*안내\s*(?:받|할)\s*(?:곳|데)/],
   ['ESSENTIAL_SHOPPING', /장\s*볼\s*(?:곳|데)|생필품|물(?:하고|이랑|과)?\s*과자|과자(?:하고|이랑|과)?\s*물|음료수?\s*살|먹을\s*것\s*(?:좀\s*)?살|간단(?:히|하게)?\s*(?:뭐|무엇을)?\s*살\s*(?:곳|데)/],
   ['CONVENIENCE', /약국|병원/],
   [
@@ -80,12 +90,17 @@ export function routeNaturalLanguageIntent(input: {
       explicitCategory &&
       (/아니|만\s*(?:보여|찾아)/.test(message) || /(?:은|는)\??$/.test(message)),
     ),
+    immediateEssentialNeed = Boolean(explicitCategory &&
+      ['PARKING','PUBLIC_TOILET','GAS_STATION','EV_CHARGER','TOURIST_INFORMATION'].includes(explicitCategory) &&
+      /급(?:해|하게)|먼저|부터|가셔야|해야\s*해|어디|있어|가능/.test(message)),
     relationalReference =
       /거기|그곳|그중|그\s*(?:근처|주변|카페|식당|숙소)/.test(message) &&
       /주변|근처|가까|거기서|그중/.test(message);
   const explicitDestinations=explicitDestinationPhrases(message);
   if(!input.isFollowup&&explicitDestinations.length>=1)
     return{intentRoute:'JOURNEY_PLAN' as const,category:undefined,multiDestination:explicitDestinations.length>=2,explicitDestinations};
+  if (immediateEssentialNeed)
+    return { intentRoute: 'IMMEDIATE_NOW' as const, category, priority: 'ESSENTIAL_IMMEDIATE' as const };
   if (
     input.isFollowup &&
     /거긴?\s*멀|얼마나\s*멀|거리(?:는|가|를)?/.test(message)

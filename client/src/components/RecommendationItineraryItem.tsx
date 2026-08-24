@@ -39,6 +39,11 @@ export default function RecommendationItineraryItem({
       MART: "마트",
       SUPERMARKET: "슈퍼마켓",
       MART_SUPERMARKET: "마트·슈퍼마켓",
+      PARKING: "주차장",
+      PUBLIC_TOILET: "공중화장실",
+      GAS_STATION: "주유소",
+      EV_CHARGER: "전기차 충전소",
+      TOURIST_INFORMATION: "관광안내소",
       GROCERY: "식료품점",
       GROCERY_STORE: "식료품점",
     } as Record<string, string>)[step.category] || ({

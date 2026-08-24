@@ -862,6 +862,11 @@ function PlaceDiscoveryPanel({ result }: { result: ConciergeChatResponse }) {
         ESSENTIAL_SHOPPING: "생필품을 살 수 있는 곳",
         CONVENIENCE_STORE: "편의점",
         MART_SUPERMARKET: "마트·슈퍼마켓",
+        PARKING: "주차장",
+        PUBLIC_TOILET: "공중화장실",
+        GAS_STATION: "주유소",
+        EV_CHARGER: "전기차 충전소",
+        TOURIST_INFORMATION: "관광안내소",
       }[discovery.category] || "장소";
   return (
     <section className="recommendation-section place-discovery-results">

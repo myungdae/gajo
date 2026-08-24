@@ -153,6 +153,15 @@ export function updateTripRuntimeContext(
   if (!current) return undefined;
   return saveTripSession({ ...current, runtimeContext }, storage);
 }
+export function preserveTripForEssentialDetour(
+  session: TripSession,
+  detour: { category: string; entityId?: string },
+): TripSession {
+  return {
+    ...session,
+    runtimeContext: { ...session.runtimeContext, essentialServiceDetour: detour },
+  };
+}
 export interface TripRestorationDiagnostics {
   regionId: string;
   activeStorageKey: string;

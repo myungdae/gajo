@@ -56,7 +56,7 @@ describe('public Concierge Guide Copilot', () => {
     ['네이버 지도면 되지 않나요?', 'MAP_DIFFERENCE'],
     ['그냥 검색하면 되잖아요.', 'SEARCH_CONTINUITY'],
     ['AI 정보가 틀리면요?', 'DATA_ACCURACY'],
-    ['누가 지역정보를 관리하나요?', 'DATA_STEWARDSHIP'],
+    ['누가 지역정보를 관리하나요?', 'HYPERLOCAL_DATA_GOVERNANCE'],
     ['돈 내는 업체를 먼저 추천하나요?', 'PAID_RANKING'],
     ['업체가 참여하면 뭐가 좋아요?', 'BUSINESS_VALUE'],
     ['지자체가 꼭 해야 하나요?', 'MUNICIPALITY_VALUE'],
@@ -82,7 +82,7 @@ describe('public Concierge Guide Copilot', () => {
     ['누가 최종 승인하나요?', 'INFORMATION_CORRECTION'],
     ['왜 바로 수정하면 안 되나요?', 'INFORMATION_CORRECTION'],
     ['관광객이 틀린 정보를 발견하면 어떻게 하나요?', 'INFORMATION_CORRECTION'],
-    ['지자체 입장에서 누가 지역정보를 관리하나요?', 'INFORMATION_CORRECTION'],
+    ['지자체 입장에서 누가 지역정보를 관리하나요?', 'HYPERLOCAL_DATA_GOVERNANCE'],
   ];
   it.each(golden)('%s resolves to approved %s knowledge', (question, intent) =>
     expect(new GuideService().answer({ question }, question)).toMatchObject({
@@ -91,6 +91,36 @@ describe('public Concierge Guide Copilot', () => {
       readOnly: true,
     }),
   );
+  it.each([
+    '지역정보는 누가 책임지고 관리하나요?',
+    '이 지역정보는 누가 관리해요?',
+    '정보가 맞는지는 누가 확인하나요?',
+    '지역 데이터는 누가 책임지나요?',
+    '구글에서 그냥 가져오는 정보 아닌가요?',
+    '하이퍼로컬 정보는 누가 업데이트하나요?',
+  ])('routes governance variant %s to the approved intent', (question) => {
+    const answer: any = new GuideService().answer({ question }, `governance-${question}`);
+    expect(answer).toMatchObject({ status: 'ANSWERED', intent: 'HYPERLOCAL_DATA_GOVERNANCE', readOnly: true });
+    expect(answer.answer).toMatch(/검색엔진.*지속적으로 확인하고 관리/s);
+  });
+  it('explains cooperative governance and the full verification flow without overclaiming', () => {
+    const answer: any = new GuideService().answer(
+      { question: '지역정보는 누가 책임지고 관리하나요?' },
+      'governance-boundary',
+    );
+    expect(answer.answer).toMatch(/공식 공공정보.*지역 현장 지식.*사람의 검증/s);
+    expect(answer.answer).toMatch(/지자체.*공영주차장.*민간 Regional Manager/s);
+    expect(answer.answer).toMatch(/지자체 참여가 필수라는 뜻은 아니며/);
+    expect(answer.answer).toMatch(/정보 발견.*근거 확인.*Regional Copilot 검토.*권한 있는 지역 운영자의 승인.*서비스 반영/s);
+    expect(answer.answer).toMatch(/검색 결과.*AI.*방문자 제보.*업체 주장.*자동으로 검증된 운영 사실이 아닙니다/s);
+    expect(answer.answer).not.toMatch(/모든 정보는 (?:항상|언제나) 정확합니다|지자체와 협약했습니다|지자체 참여가 필수입니다/);
+  });
+  it('links trust and stewardship knowledge to the governance question', () => {
+    for (const intent of ['DATA_ACCURACY', 'DATA_STEWARDSHIP']) {
+      const knowledge = GUIDE_KNOWLEDGE.find((entry) => entry.intent === intent)!;
+      expect(knowledge.relatedQuestions).toContain('지역정보는 누가 책임지고 관리하나요?');
+    }
+  });
   it('adapts perspective without requiring role selection', () => {
     expect(
       new GuideService().answer(
@@ -239,8 +269,9 @@ describe('public Concierge Guide Copilot', () => {
     });
     expect(publicSector).toMatchObject({
       audience: 'PUBLIC_SECTOR',
+      intent: 'HYPERLOCAL_DATA_GOVERNANCE',
       answer: expect.stringMatching(
-        /Regional Copilot.*Regional Manager.*Copilot이 제안하고 사람이 결정/s,
+        /Regional Manager.*Regional Copilot 검토.*권한 있는 지역 운영자의 승인/s,
       ),
     });
   });

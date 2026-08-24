@@ -6,11 +6,28 @@ import {
   currentTravelContext,
   loadTripSession,
   mergeTravelContext,
+  preserveTripForEssentialDetour,
   resolveMustVisit,
   saveTripSession,
   sessionContext,
   updateTripRuntimeContext,
 } from "./tripSession.ts";
+
+test("an essential-service detour preserves journey identity and content", () => {
+  const session = {
+    ...createTripSession("okcheon", new Date("2026-08-24T07:00:00Z")),
+    itinerary: { steps: [{ entityId: "destination" }] },
+    savedPlaces: [{ entityId: "saved" }],
+    execution: { currentEntityId: "destination", statusByEntityId: { destination: "EN_ROUTE" as const } },
+  };
+  const detour = preserveTripForEssentialDetour(session, { category: "PUBLIC_TOILET", entityId: "toilet" });
+  assert.equal(detour.anonymousTripId, session.anonymousTripId);
+  assert.equal(detour.regionId, "okcheon");
+  assert.deepEqual(detour.itinerary, session.itinerary);
+  assert.deepEqual(detour.savedPlaces, session.savedPlaces);
+  assert.deepEqual(detour.execution, session.execution);
+  assert.deepEqual(detour.runtimeContext.essentialServiceDetour, { category: "PUBLIC_TOILET", entityId: "toilet" });
+});
 function memory() {
   const values = new Map<string, string>();
   return {

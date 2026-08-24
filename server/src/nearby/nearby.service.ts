@@ -7,7 +7,10 @@ import { REGIONAL_CANDIDATE_DATASETS } from '../regions/regional-candidate.regis
 export type NearbyCategory =
   | 'FOOD' | 'CAFE' | 'LODGING' | 'HOT_SPRING_WELLNESS'
   | 'GOLF_SCREEN_GOLF' | 'ACTIVITY' | 'TOURISM_NATURE' | 'CONVENIENCE'
-  | 'ESSENTIAL_SHOPPING' | 'CONVENIENCE_STORE' | 'MART_SUPERMARKET' | 'OTHER';
+  | 'ESSENTIAL_SHOPPING' | 'CONVENIENCE_STORE' | 'MART_SUPERMARKET'
+  | 'PARKING' | 'PUBLIC_TOILET' | 'GAS_STATION' | 'EV_CHARGER'
+  | 'TOURIST_INFORMATION' | 'OTHER';
+
 
 export type NearbyFailureCode = 'NOT_CONFIGURED' | 'UPSTREAM_ERROR' | 'UPSTREAM_TIMEOUT' | 'INVALID_RESPONSE';
 export class NearbyServiceError extends Error {
@@ -54,6 +57,8 @@ const LABELS: Record<NearbyCategory, string> = {
   GOLF_SCREEN_GOLF: '골프·스크린골프', ACTIVITY: '놀거리·체험', TOURISM_NATURE: '산책·관광',
   CONVENIENCE: '편의시설', ESSENTIAL_SHOPPING: '생필품 쇼핑',
   CONVENIENCE_STORE: '편의점', MART_SUPERMARKET: '마트·슈퍼마켓', OTHER: '기타',
+  PARKING: '주차장', PUBLIC_TOILET: '공중화장실', GAS_STATION: '주유소',
+  EV_CHARGER: '전기차 충전소', TOURIST_INFORMATION: '관광안내소',
 };
 const INDOOR = new Set<NearbyCategory>(['CAFE', 'LODGING', 'HOT_SPRING_WELLNESS', 'GOLF_SCREEN_GOLF', 'CONVENIENCE', 'ESSENTIAL_SHOPPING', 'CONVENIENCE_STORE', 'MART_SUPERMARKET']);
 const PLANS: Record<NearbyCategory, { codes: string[]; keywords: string[] }> = {
@@ -68,6 +73,11 @@ const PLANS: Record<NearbyCategory, { codes: string[]; keywords: string[] }> = {
   CONVENIENCE_STORE: { codes: ['CS2'], keywords: ['편의점'] },
   MART_SUPERMARKET: { codes: ['MT1'], keywords: ['마트', '슈퍼마켓', '식료품점'] },
   ESSENTIAL_SHOPPING: { codes: ['CS2', 'MT1'], keywords: ['마트', '슈퍼마켓', '식료품점'] },
+  PARKING: { codes: ['PK6'], keywords: ['주차장'] },
+  PUBLIC_TOILET: { codes: [], keywords: ['공중화장실'] },
+  GAS_STATION: { codes: ['OL7'], keywords: ['주유소'] },
+  EV_CHARGER: { codes: [], keywords: ['전기차 충전소'] },
+  TOURIST_INFORMATION: { codes: [], keywords: ['관광안내소'] },
   OTHER: { codes: [], keywords: [] },
 };
 
@@ -80,6 +90,11 @@ export function normalizeNearbyCategory(name: string, providerCategory = '', cod
   if (code === 'AT4' || /관광|공원|산책|자연|명소/.test(text)) return 'TOURISM_NATURE';
   if (code === 'CS2' || /편의점|(?:^|\s)(?:CU|GS25)(?:\s|$)|세븐일레븐|이마트24|미니스톱/i.test(text)) return 'CONVENIENCE_STORE';
   if (code === 'MT1' || /마트|슈퍼마켓|슈퍼(?!맨)|식료품점|식료품/.test(text)) return 'MART_SUPERMARKET';
+  if (code === 'PK6' || /주차장/.test(text)) return 'PARKING';
+  if (/공중\s*화장실/.test(text)) return 'PUBLIC_TOILET';
+  if (code === 'OL7' || /주유소/.test(text)) return 'GAS_STATION';
+  if (/전기차.*충전|EV.*충전/i.test(text)) return 'EV_CHARGER';
+  if (/관광\s*안내소/.test(text)) return 'TOURIST_INFORMATION';
   if (['PM9', 'HP8'].includes(code) || /약국|병원/.test(text)) return 'CONVENIENCE';
   if (/체험|레저|놀거리/.test(text)) return 'ACTIVITY';
   if (code === 'FD6' || /음식점|식당|한식|중식|일식|분식/.test(text)) return 'FOOD';

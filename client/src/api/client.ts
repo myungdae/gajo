@@ -16,7 +16,7 @@ export interface CompanionInput {
 export interface CreateContextInput {
   turnId?: string;
   conversationalAnchor?: { entityId: string; regionId: string; label?: string; entityType?: string; category?: string; latitude?: number; longitude?: number; source?: 'RDM'|'SEARCH'; sourceTurnId: string; role: 'RESULT'|'SUBJECT'|'SELECTED' };
-  discoveryContext?: { regionId: string; anchor: { entityId: string; label?: string; latitude?: number; longitude?: number; source?: 'RDM'|'SEARCH' }; targetCategory: 'FOOD'|'CAFE'|'LODGING'|'HOT_SPRING_WELLNESS'|'ACTIVITY'|'TOURISM_NATURE'|'CONVENIENCE'|'ESSENTIAL_SHOPPING'|'CONVENIENCE_STORE'|'MART_SUPERMARKET'; relation: 'NEARBY'|'REGIONAL'; currentResult?: { entityId: string; label?: string; latitude?: number; longitude?: number; source?: 'RDM'|'SEARCH' }; shownEntityIds: string[]; sourceTurnId: string };
+  discoveryContext?: { regionId: string; anchor: { entityId: string; label?: string; latitude?: number; longitude?: number; source?: 'RDM'|'SEARCH' }; targetCategory: 'FOOD'|'CAFE'|'LODGING'|'HOT_SPRING_WELLNESS'|'ACTIVITY'|'TOURISM_NATURE'|'CONVENIENCE'|'ESSENTIAL_SHOPPING'|'CONVENIENCE_STORE'|'MART_SUPERMARKET'|'PARKING'|'PUBLIC_TOILET'|'GAS_STATION'|'EV_CHARGER'|'TOURIST_INFORMATION'; relation: 'NEARBY'|'REGIONAL'; currentResult?: { entityId: string; label?: string; latitude?: number; longitude?: number; source?: 'RDM'|'SEARCH' }; shownEntityIds: string[]; sourceTurnId: string };
   regionId?: string;
   explicitJourney?: { requestedDestinations: NonNullable<ConciergeChatResponse['requestedDestinations']>; multiDestination: true; sourceTurnId: string };
   mustVisitPlaces?: Array<{ entityId?: string; label: string; requestedLabel?: string; resolved: boolean; requested?: boolean; source?: 'RDM'|'SEARCH'|'SEMANTIC'; category?: string; entityType?: string; latitude?: number; longitude?: number; verificationStatus?: string }>;
@@ -49,7 +49,7 @@ export interface CreateContextInput {
   contextSessionId?: string;
   inputMode?: 'STRUCTURED' | 'FREE_TEXT';
   isFollowup?: boolean;
-  discoveryCategoryHint?: 'FOOD'|'CAFE'|'LODGING'|'HOT_SPRING_WELLNESS'|'ACTIVITY'|'TOURISM_NATURE'|'CONVENIENCE'|'ESSENTIAL_SHOPPING'|'CONVENIENCE_STORE'|'MART_SUPERMARKET';
+  discoveryCategoryHint?: 'FOOD'|'CAFE'|'LODGING'|'HOT_SPRING_WELLNESS'|'ACTIVITY'|'TOURISM_NATURE'|'CONVENIENCE'|'ESSENTIAL_SHOPPING'|'CONVENIENCE_STORE'|'MART_SUPERMARKET'|'PARKING'|'PUBLIC_TOILET'|'GAS_STATION'|'EV_CHARGER'|'TOURIST_INFORMATION';
 }
 
 export interface EntityRuntimeState {
@@ -228,7 +228,7 @@ export async function previewRegionalDataImport(packageValue:any,token:string,tr
 export async function importRegionalData(packageValue:any,token:string,trustedVerified=false){const{data}=await api.post('/admin/regional-data/import',{package:packageValue,trustedVerified},{headers:{'x-admin-token':token}});return data}
 export async function fetchPilotAnalytics(){const {data}=await api.get('/analytics/summary');return data}
 
-export type NearbyCategory = 'FOOD' | 'CAFE' | 'LODGING' | 'HOT_SPRING_WELLNESS' | 'GOLF_SCREEN_GOLF' | 'ACTIVITY' | 'TOURISM_NATURE' | 'CONVENIENCE' | 'ESSENTIAL_SHOPPING' | 'CONVENIENCE_STORE' | 'MART_SUPERMARKET' | 'OTHER';
+export type NearbyCategory = 'FOOD' | 'CAFE' | 'LODGING' | 'HOT_SPRING_WELLNESS' | 'GOLF_SCREEN_GOLF' | 'ACTIVITY' | 'TOURISM_NATURE' | 'CONVENIENCE' | 'ESSENTIAL_SHOPPING' | 'CONVENIENCE_STORE' | 'MART_SUPERMARKET' | 'PARKING' | 'PUBLIC_TOILET' | 'GAS_STATION' | 'EV_CHARGER' | 'TOURIST_INFORMATION' | 'OTHER';
 export interface NearbyPlace {
   id: string; name: string; category: NearbyCategory; categoryLabel: string; providerCategoryName: string;
   address: string; roadAddress?: string; phone?: string; lat: number; lng: number; distanceMeters?: number;
