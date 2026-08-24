@@ -21,6 +21,7 @@ export type DiscoveryCategory =
   | 'MART_SUPERMARKET'
   | 'PARKING'
   | 'PUBLIC_TOILET'
+  | 'HEAT_SHELTER'
   | 'GAS_STATION'
   | 'EV_CHARGER'
   | 'TOURIST_INFORMATION';
@@ -52,6 +53,7 @@ const CATEGORY_PATTERNS: [DiscoveryCategory, RegExp][] = [
   ['CONVENIENCE_STORE', /(?:24\s*시간\s*)?편의점/],
   ['MART_SUPERMARKET', /마트|슈퍼마켓|슈퍼(?!맨)|식료품점|동네\s*가게/],
   ['PUBLIC_TOILET', /공중\s*화장실|화장실/],
+  ['HEAT_SHELTER', /무더위\s*쉼터|폭염.{0,8}(?:쉼터|쉬|쉴)|너무\s*더워|더워(?:요|서|하|해)|더위.{0,8}(?:쉬|쉴)|가까운\s*쉼터/],
   ['PARKING', /주차장|주차(?:할|해|하고|가|는|를|\s*가능)|차\s*(?:어디|를?)\s*(?:세워|대)/],
   ['GAS_STATION', /주유소|기름\s*(?:넣|이\s*없|부족)/],
   ['EV_CHARGER', /전기차\s*충전|EV\s*충전|충전소/iu],
@@ -95,8 +97,8 @@ export function routeNaturalLanguageIntent(input: {
       (/아니|만\s*(?:보여|찾아)/.test(message) || /(?:은|는)\??$/.test(message)),
     ),
     immediateEssentialNeed = Boolean(explicitCategory &&
-      ['PARKING','PUBLIC_TOILET','GAS_STATION','EV_CHARGER','TOURIST_INFORMATION'].includes(explicitCategory) &&
-      /급(?:해|하게)|먼저|부터|가셔야|해야\s*해|어디|있어|가능/.test(message)),
+      ['PARKING','PUBLIC_TOILET','HEAT_SHELTER','GAS_STATION','EV_CHARGER','TOURIST_INFORMATION'].includes(explicitCategory) &&
+      (explicitCategory === 'HEAT_SHELTER' || /급(?:해|하게)|먼저|부터|가셔야|해야\s*해|어디|있어|가능/.test(message))),
     relationalReference =
       /거기|그곳|그중|그\s*(?:근처|주변|카페|식당|숙소)/.test(message) &&
       /주변|근처|가까|거기서|그중/.test(message);

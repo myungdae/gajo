@@ -114,6 +114,8 @@ export class CopilotController {
     @Query('regionId') regionId: string,
     @Query('q') q = '',
   ) {
+    if (/무더위\s*쉼터|폭염\s*쉼터/.test(q) && /부족|필요한\s*곳|제대로|주변|사각지대/.test(q))
+      return [await this.service.heatShelterCoverage(req.copilotUser,regionId)];
     const tasks = await this.service.queue(req.copilotUser, regionId);
     if (/핵심|대표\s*관광지|왜\s*안\s*나와|누락/.test(q)) {
       const health = await this.service.coreHealth(req.copilotUser, regionId),

@@ -468,6 +468,7 @@ describe('public Concierge Guide Copilot', () => {
   ])('routes visitor question %s to %s', (question, intent) =>
     expect(new GuideService().answer({ question }, question)).toMatchObject({ intent, readOnly: true }),
   );
+  it('explains public-safety use as official-data decision support and links both parents',()=>{const answer:any=new GuideService().answer({question:'관광 안내 말고 지역 안전에도 활용할 수 있나요?'},'public-safety');expect(answer).toMatchObject({status:'ANSWERED',intent:'PUBLIC_SAFETY_USE',readOnly:true});expect(answer.answer).toMatch(/무더위쉼터.*공중화장실.*주차장.*Local Concierge.*Regional Copilot.*COVERAGE_GAP_CANDIDATE.*최종 시설 지정이나 설치, 정책 결정은 지자체/s);expect(answer.answer).toMatch(/모든 폭염 상황을 자동으로 안다는 뜻은 아닙니다/);for(const intent of ['FUTURE_VISION','MUNICIPALITY_VALUE'])expect(GUIDE_KNOWLEDGE.find(x=>x.intent===intent)?.relatedQuestions).toContain('관광 안내 말고 지역 안전에도 활용할 수 있나요?')});
   it('keeps current, future, memory, and action boundaries explicit', () => {
     const service = new GuideService();
     expect(service.answer({ question: '여행할 때 뭘 해줘요?' }, 'during')).toMatchObject({ answer: expect.stringMatching(/센서가 자동으로 안다는 뜻은 아닙니다/) });

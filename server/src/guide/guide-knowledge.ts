@@ -112,7 +112,16 @@ export const GUIDE_KNOWLEDGE: GuideKnowledge[] = [
       '현재는 여행 상황에 맞춘 방문자 안내, 같은 여행의 연속성, 검증된 정보가 있는 길찾기·전화·저장 같은 행동, Regional Copilot을 통한 지역 데이터 검토를 지원합니다. 앞으로의 가능성으로는 더 넓은 예약·교통·시설 시스템 연동, IoT, 물리적 서비스 로봇과의 연결을 검토할 수 있습니다. 이런 항목은 미래 가능성이며 현재 구현된 기능, 특히 현재 로봇이 운영 중이라는 뜻은 아닙니다.',
     supportingConcepts: ['CURRENT', 'FUTURE POSSIBILITIES'],
     allowedClaims: ['현재와 미래 가능성의 명확한 구분'],
-    relatedQuestions: ['지금 여행 중에는 실제로 무엇을 해주나요?'],
+    relatedQuestions: ['지금 여행 중에는 실제로 무엇을 해주나요?','관광 안내 말고 지역 안전에도 활용할 수 있나요?'],
+  }),
+  item({
+    intent:'PUBLIC_SAFETY_USE',
+    audiences:['GENERAL','VISITOR','PUBLIC_SECTOR'],
+    patterns:[/관광\s*안내\s*말고.*지역\s*안전|지역\s*안전.*활용|무더위\s*쉼터.*(?:활용|안내|지역\s*AI)|공공\s*(?:안전|시설).*(?:활용|도움)/],
+    shortAnswer:'네. 지역 AI 컨시어지는 관광지뿐 아니라 공식·승인된 무더위쉼터, 공중화장실, 주차장 같은 공공 기반시설을 여행자의 명시적 필요와 연결하는 데 활용할 수 있습니다. Local Concierge는 방문자가 더위 때문에 쉬어야 한다고 말하면 현재 여행을 보존한 채 검증된 안전·휴식 시설을 먼저 찾고, 좌표 근거가 자격을 갖춘 경우에만 길찾기를 제공합니다. 공식 쉼터 데이터가 부족하면 시설을 만들지 않고 부족하다고 알립니다.\n\nRegional Copilot은 공식 시설 위치와 실제로 설정된 Core Destination 같은 주요 방문 기준점을 비교해 COVERAGE_GAP_CANDIDATE 또는 DATA_INSUFFICIENT를 읽기 전용 검토 결과로 제시할 수 있습니다. 유동인구나 고령인구 자료가 통합되지 않았다면 이를 추정하지 않습니다. 최종 시설 지정이나 설치, 정책 결정은 지자체와 권한 있는 담당자가 합니다.\n\n현재 제품이 모든 폭염 상황을 자동으로 안다는 뜻은 아닙니다. 지원되는 공식 날씨·폭염 사건과 방문자 맥락이 확인되는 경우에는 “현재 폭염 관련 상황이 확인되는 경우, 가까운 무더위쉼터를 함께 확인해드릴 수 있습니다”와 같은 선택적 제안으로 확장할 수 있습니다.',
+    supportingConcepts:['HEAT_SHELTER','verified public infrastructure','Regional Copilot','COVERAGE_GAP_CANDIDATE'],
+    allowedClaims:['공식 데이터 기반 방문자 안내','읽기 전용 coverage 후보','사람의 정책 결정','조건부 선제 제안'],
+    relatedQuestions:['지자체에는 어떤 도움이 되나요?','정보는 믿을 수 있나요?'],
   }),
   item({
     intent: 'EXKO_EXPLANATION',
@@ -425,7 +434,7 @@ export const GUIDE_KNOWLEDGE: GuideKnowledge[] = [
       'sustainability',
     ],
     allowedClaims: ['선택적 참여'],
-    relatedQuestions: ['민간 운영으로 시작할 수 있나요?'],
+    relatedQuestions: ['민간 운영으로 시작할 수 있나요?','관광 안내 말고 지역 안전에도 활용할 수 있나요?'],
   }),
   item({
     intent: 'REGIONAL_SCALE',

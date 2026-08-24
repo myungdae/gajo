@@ -19,7 +19,7 @@ import { INITIAL_CORE_DESTINATIONS } from '../copilot/core-destination.config';
 
 export function isGuideExplanationQuestion(message = '') {
   if (/지도에서.{0,30}(?:찾아|보여|안내|길)/.test(message)) return false;
-  return /(?:Regional\s*(?:Copilot|Manager)|RDM|지역\s*(?:코파일럿|매니저)|ChatGPT|챗(?:GPT|지피티)|Gemini|T맵|티맵|TMAP|지도.{0,12}(?:차이|다른)|정보.{0,12}(?:믿|정확|책임|관리|고치)|틀린\s*정보|민간.{0,12}(?:운영|시작)|지자체.{0,12}(?:없이|꼭|해야)|군청.{0,8}(?:해야|운영)|홈페이지|웹사이트)/i.test(message);
+  return /(?:Regional\s*(?:Copilot|Manager)|RDM|지역\s*(?:코파일럿|매니저)|ChatGPT|챗(?:GPT|지피티)|Gemini|T맵|티맵|TMAP|지도.{0,12}(?:차이|다른)|지역\s*안전.{0,12}(?:활용|도움)|관광\s*안내\s*말고|정보.{0,12}(?:믿|정확|책임|관리|고치)|틀린\s*정보|민간.{0,12}(?:운영|시작)|지자체.{0,12}(?:없이|꼭|해야)|군청.{0,8}(?:해야|운영)|홈페이지|웹사이트)/i.test(message);
 }
 
 /**
@@ -52,6 +52,7 @@ function detectNearbyDiscovery(message?: string): {
     ['CONVENIENCE_STORE', /편의점/],
     ['MART_SUPERMARKET', /마트|슈퍼마켓|슈퍼(?!맨)|식료품점/],
     ['PUBLIC_TOILET', /공중\s*화장실|화장실/],
+    ['HEAT_SHELTER', /무더위\s*쉼터|폭염.{0,8}(?:쉼터|쉬|쉴)|너무\s*더워|더워(?:요|서|하|해)|더위.{0,8}(?:쉬|쉴)|가까운\s*쉼터/],
     ['PARKING', /주차장|주차|차\s*(?:어디|를?)\s*(?:세워|대)/],
     ['GAS_STATION', /주유소|기름\s*(?:넣|부족)/],
     ['EV_CHARGER', /전기차\s*충전|EV\s*충전|충전소/i],

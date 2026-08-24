@@ -32,6 +32,7 @@ import {
   fieldDemoReadiness,
   minimalFieldDemoTasks,
 } from '../regional-data/field-demo-readiness';
+import { diagnoseHeatShelterCoverage } from './public-safety-coverage';
 
 @Injectable()
 export class CopilotService implements OnModuleInit {
@@ -494,6 +495,12 @@ export class CopilotService implements OnModuleInit {
       critical: items.filter((x) => x.health === 'CRITICAL').length,
       items,
     };
+  }
+  async heatShelterCoverage(user:CopilotPrincipal,regionId:string,thresholdMeters=2000){
+    assertCopilotAccess(user,regionId);
+    const dataset=await this.regional.effectiveDataset(regionId),records:any[]=dataset?.records||[];
+    const cores:any[]=this.cores?await this.cores.find({regionId,active:true}).lean():(INITIAL_CORE_DESTINATIONS[regionId]||[]);
+    return diagnoseHeatShelterCoverage(regionId,records,cores,thresholdMeters);
   }
   async coreDetail(user: CopilotPrincipal, id: string) {
     const core: any = await this.cores?.findOne({ id });

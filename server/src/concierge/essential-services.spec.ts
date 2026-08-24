@@ -7,6 +7,7 @@ describe('shared hyperlocal essential services', () => {
     ['차 어디 세워?', 'PARKING'], ['기름 넣어야 해.', 'GAS_STATION'],
     ['전기차 충전할 곳?', 'EV_CHARGER'], ['관광안내소 어디예요?', 'TOURIST_INFORMATION'],
   ])('routes %s to %s', (message, category) => expect(discoveryCategory(message)).toBe(category));
+  it.each(['너무 더워요. 잠깐 쉴 데 없어요?','무더위쉼터 어디 있어요?','가까운 쉼터 찾아줘.','어머니가 너무 더워하세요.','더워서 좀 쉬어야겠어요.','폭염인데 어디서 쉬지?'])('routes heat/rest need %s without medical inference',message=>expect(routeNaturalLanguageIntent({rawMessage:message,inputMode:'FREE_TEXT'})).toMatchObject({intentRoute:'IMMEDIATE_NOW',category:'HEAT_SHELTER',priority:'ESSENTIAL_IMMEDIATE'}));
 
   it('prioritizes an explicit urgent need without medical inference', () => {
     expect(routeNaturalLanguageIntent({ rawMessage: '어머니가 화장실을 급하게 찾으세요.', inputMode: 'FREE_TEXT' }))
@@ -22,6 +23,7 @@ describe('shared hyperlocal essential services', () => {
     expect(safeEssentialActions({ runtimeDataStatus: 'UNVERIFIED', latitude: 36, longitude: 127, actions: { navigate: 'unsafe' } })).toEqual({ navigate: undefined, call: undefined });
     expect(safeEssentialActions({ runtimeDataStatus: 'VERIFIED', actions: { navigate: 'unsafe' } }).navigate).toBeUndefined();
   });
+  it('requires authoritative public evidence for heat-shelter actions and preserves preview compatibility',()=>{const bounds={north:36.45,south:36.18,east:127.93,west:127.47},base={entityType:'HEAT_SHELTER',category:'HEAT_SHELTER',latitude:36.3,longitude:127.57};expect(safeEssentialActions({...base,runtimeDataStatus:'VERIFIED',source:{sourceType:'SEARCH_EVIDENCE'},actions:{navigate:{latitude:36.3,longitude:127.57}}},bounds).navigate).toBeUndefined();expect(safeEssentialActions({...base,runtimeDataStatus:'PARTIAL',source:{sourceType:'MUNICIPAL_OFFICIAL'},coordinateSource:{sourceType:'MUNICIPAL_OFFICIAL'}},bounds).navigate).toMatchObject({evidenceMode:'OFFICIAL_PREVIEW'})});
 
   it('distinguishes verified navigation from contained high-authority preview evidence', () => {
     const bounds={north:36.45,south:36.18,east:127.93,west:127.47};
@@ -40,5 +42,6 @@ describe('shared hyperlocal essential services', () => {
     const gajo = essentialServiceReadiness([]);
     expect(hapcheon.PUBLIC_TOILET).toMatchObject({ status:'READY', canonicalCount:1 });
     expect(gajo.PUBLIC_TOILET).toMatchObject({ status:'DATA_REQUIRED', canonicalCount:0 });
+    expect(gajo.HEAT_SHELTER).toMatchObject({ status:'DATA_REQUIRED', canonicalCount:0 });
   });
 });

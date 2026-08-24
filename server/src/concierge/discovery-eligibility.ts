@@ -25,6 +25,7 @@ export const DISCOVERY_CATEGORY_MATCH: Record<
     DISCOVERY_CATEGORY_MATCH.MART_SUPERMARKET(r),
   PARKING: (r) => /PARKING|PARKING_LOT/.test(`${r.entityType} ${r.category}`) || /주차장/.test(r.canonicalLabelKo || ''),
   PUBLIC_TOILET: (r) => /PUBLIC_TOILET|RESTROOM/.test(`${r.entityType} ${r.category}`) || /공중화장실/.test(r.canonicalLabelKo || ''),
+  HEAT_SHELTER: (r) => /HEAT_SHELTER/.test(`${r.entityType} ${r.category}`) || /무더위\s*쉼터/.test(r.canonicalLabelKo || ''),
   GAS_STATION: (r) => /GAS_STATION|FUEL_STATION/.test(`${r.entityType} ${r.category}`) || /주유소/.test(r.canonicalLabelKo || ''),
   EV_CHARGER: (r) => /EV_CHARGER|EV_CHARGING/.test(`${r.entityType} ${r.category}`) || /전기차.*충전|EV.*충전/i.test(r.canonicalLabelKo || ''),
   TOURIST_INFORMATION: (r) => /TOURIST_INFORMATION|VISITOR_CENTER/.test(`${r.entityType} ${r.category}`) || /관광안내소/.test(r.canonicalLabelKo || ''),

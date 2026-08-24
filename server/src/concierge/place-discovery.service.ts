@@ -10,7 +10,7 @@ import { NearbyService, NearbyServiceError } from '../nearby/nearby.service';
 import { CopilotService } from '../copilot/copilot.service';
 import { DISCOVERY_CATEGORY_MATCH } from './discovery-eligibility';
 import { RegionConfigService } from '../region/region-config.service';
-import { safeEssentialActions, ESSENTIAL_SERVICE_TYPES } from './essential-services';
+import { authoritativeSafetyEvidence, safeEssentialActions, ESSENTIAL_SERVICE_TYPES } from './essential-services';
 
 const CATEGORY_MATCH = DISCOVERY_CATEGORY_MATCH;
 
@@ -115,6 +115,7 @@ export class PlaceDiscoveryService {
       : CATEGORY_MATCH[category];
     const ranked = dataset.records
       .filter(eligibility)
+      .filter(record=>category!=='HEAT_SHELTER'||authoritativeSafetyEvidence(record))
       .filter((record) => record.runtimeDataStatus !== 'UNKNOWN')
       .filter((record) => !anchor || record.entityUri !== anchor.entityUri)
       .filter(
@@ -155,7 +156,7 @@ export class PlaceDiscoveryService {
 
     let searchFallbackCategory: DiscoveryCategory = category;
     let searchCandidates =
-      ranked.length === 0 && origin && this.nearby
+      category !== 'HEAT_SHELTER' && ranked.length === 0 && origin && this.nearby
         ? await this.searchFallback(
             regionId,
             category,
@@ -217,6 +218,10 @@ export class PlaceDiscoveryService {
       anchorLongitude: anchor?.longitude,
       relation: anchor ? 'NEARBY' : 'REGIONAL',
       targetCategory: category,
+      safetyDataStatus: category === 'HEAT_SHELTER' && ranked.length === 0 ? 'DATA_INSUFFICIENT' : undefined,
+      visitorMessage: category === 'HEAT_SHELTER' && ranked.length === 0
+        ? '현재 이 지역에는 공식·승인된 무더위쉼터 데이터가 충분하지 않아 시설이나 길찾기를 임의로 안내하지 않습니다.'
+        : undefined,
       categoryFallbackNotice: usedShoppingAlternative
         ? '가까운 편의점 결과가 부족해 주변 마트·슈퍼마켓도 함께 보여드렸습니다.'
         : undefined,

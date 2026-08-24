@@ -12,6 +12,12 @@ const lake = {
   latitude: 35.5305,
   longitude: 128.0324,
 };
+
+describe('heat-shelter official-data boundary',()=>{
+  it('returns an honest insufficiency result and never invokes provider search',async()=>{const regional={effectiveDataset:jest.fn(async()=>({regionId:'gajo',records:[]}))},nearby={search:jest.fn()};const result:any=await new PlaceDiscoveryService(regional as any,undefined,nearby as any).discover('gajo','HEAT_SHELTER','수승대 보고 나왔는데 너무 더워요. 어머니도 힘들어하시는데 잠깐 쉴 데 없어요?',{latitude:35.7,longitude:127.9});expect(result).toMatchObject({regionId:'gajo',category:'HEAT_SHELTER',safetyDataStatus:'DATA_INSUFFICIENT',entities:[],visitorMessage:expect.stringMatching(/공식·승인된.*충분하지 않아.*임의로 안내하지 않습니다/)});expect(nearby.search).not.toHaveBeenCalled()});
+  it('returns only regional official shelter evidence with safe navigation',async()=>{const official={regionId:'gajo',entityUri:'gajo:shelter',canonicalLabelKo:'공식 무더위쉼터',entityType:'HEAT_SHELTER',category:'HEAT_SHELTER',runtimeDataStatus:'VERIFIED',latitude:35.7,longitude:128.0,source:{sourceType:'OFFICIAL_LOCAL_GOV'},actions:{navigate:{latitude:35.7,longitude:128.0}}},leak={...official,regionId:'hapcheon',entityUri:'hapcheon:shelter'};const regional={effectiveDataset:jest.fn(async()=>({regionId:'gajo',records:[official]}))};const result:any=await new PlaceDiscoveryService(regional as any).discover('gajo','HEAT_SHELTER','무더위쉼터 어디 있어요?',{});expect(result.entities).toHaveLength(1);expect(result.entities[0]).toMatchObject({regionId:'gajo',actions:{navigate:{evidenceMode:'VERIFIED'}}});expect(JSON.stringify(result)).not.toContain(leak.entityUri)});
+  it('excludes search/blog/provider shelter evidence from visitor results entirely',async()=>{const weak={regionId:'gajo',entityUri:'gajo:weak',canonicalLabelKo:'검색 무더위쉼터',entityType:'HEAT_SHELTER',category:'HEAT_SHELTER',runtimeDataStatus:'VERIFIED',latitude:35.7,longitude:128,source:{sourceType:'SEARCH_EVIDENCE'},actions:{navigate:{latitude:35.7,longitude:128}}};const result:any=await new PlaceDiscoveryService({effectiveDataset:jest.fn(async()=>({regionId:'gajo',records:[weak]}))}as any).discover('gajo','HEAT_SHELTER','무더위쉼터 어디 있어요?',{});expect(result).toMatchObject({safetyDataStatus:'DATA_INSUFFICIENT',entities:[]})});
+});
 const pension = {
   entityUri: 'pension',
   canonicalLabelKo: '합천호 스마일펜션',

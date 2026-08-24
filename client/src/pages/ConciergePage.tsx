@@ -866,6 +866,7 @@ function PlaceDiscoveryPanel({ result }: { result: ConciergeChatResponse }) {
         MART_SUPERMARKET: "마트·슈퍼마켓",
         PARKING: "주차장",
         PUBLIC_TOILET: "공중화장실",
+        HEAT_SHELTER: "무더위쉼터",
         GAS_STATION: "주유소",
         EV_CHARGER: "전기차 충전소",
         TOURIST_INFORMATION: "관광안내소",
@@ -881,6 +882,7 @@ function PlaceDiscoveryPanel({ result }: { result: ConciergeChatResponse }) {
       {discovery.categoryFallbackNotice && (
         <p className="text-muted">{discovery.categoryFallbackNotice}</p>
       )}
+      {discovery.visitorMessage && <p className="text-muted">{discovery.visitorMessage}</p>}
       {discovery.entities.length ? (
         discovery.entities.map((entity: any, index: number) => (
           <div className="place-discovery-item" key={entity.entityId}>

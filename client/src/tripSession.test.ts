@@ -28,6 +28,7 @@ test("an essential-service detour preserves journey identity and content", () =>
   assert.deepEqual(detour.execution, session.execution);
   assert.deepEqual(detour.runtimeContext.essentialServiceDetour, { category: "PUBLIC_TOILET", entityId: "toilet" });
 });
+test("a heat-shelter detour preserves itinerary execution identity and region",()=>{const session={...createTripSession("gajo"),itinerary:{steps:[{entityId:"suseungdae"},{entityId:"changpowon"}]},execution:{currentEntityId:"suseungdae",statusByEntityId:{suseungdae:"COMPLETED" as const}},plannedContext:{mustVisitPlaces:[{entityId:"changpowon"}]}};const detour=preserveTripForEssentialDetour(session,{category:"HEAT_SHELTER"});assert.equal(detour.anonymousTripId,session.anonymousTripId);assert.equal(detour.regionId,"gajo");assert.deepEqual(detour.itinerary,session.itinerary);assert.deepEqual(detour.execution,session.execution);assert.deepEqual(detour.plannedContext,session.plannedContext)});
 function memory() {
   const values = new Map<string, string>();
   return {
