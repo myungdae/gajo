@@ -11,7 +11,7 @@ const worker = readFileSync(new URL('./sw.ts', import.meta.url), 'utf8');
 
 test('build config disables multi-page PWA injection while visitor owns registration', () => {
   assert.match(vite, /injectRegister:\s*false/);
-  assert.match(worker, /copilot\(\?:\\\.html\)\?/);
+  assert.match(worker, /\(\?:copilot\|guide\|portal\)\(\?:\\\.html\)\?/);
   assert.doesNotMatch(copilot, /registerSW|manifest-|vite-plugin-pwa/);
   assert.match(visitor, /registerVisitorPwa\(\)/);
   assert.match(worker, /isCopilotWorkerOrigin\(self\.location\.hostname\)/);

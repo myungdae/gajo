@@ -29,7 +29,13 @@ if (isCopilotWorkerOrigin(self.location.hostname)) {
   cleanupOutdatedCaches();
   registerRoute(
     new NavigationRoute(createHandlerBoundToURL('index.html'), {
-      denylist: [/^\/api\//, /^\/copilot(?:\.html)?$/],
+      // Dedicated HTML entries own their own React bootstrap. Returning the
+      // visitor shell here would mount App/BrowserRouter at paths it does not
+      // own (for example /portal.html) and render a blank routed page.
+      denylist: [
+        /^\/api\//,
+        /^\/(?:copilot|guide|portal)(?:\.html)?$/,
+      ],
     }),
   );
   registerRoute(/^\/api\//, new NetworkOnly());
