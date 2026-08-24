@@ -19,7 +19,7 @@ import { INITIAL_CORE_DESTINATIONS } from '../copilot/core-destination.config';
 
 export function isGuideExplanationQuestion(message = '') {
   if (/지도에서.{0,30}(?:찾아|보여|안내|길)/.test(message)) return false;
-  return /(?:Regional\s*(?:Copilot|Manager)|RDM|지역\s*(?:코파일럿|매니저)|ChatGPT|Gemini|지도.{0,12}(?:차이|다른)|정보.{0,12}(?:믿|정확|책임|관리|고치)|틀린\s*정보|민간.{0,12}(?:운영|시작)|지자체.{0,12}(?:없이|꼭|해야)|군청.{0,8}(?:해야|운영)|홈페이지|웹사이트)/i.test(message);
+  return /(?:Regional\s*(?:Copilot|Manager)|RDM|지역\s*(?:코파일럿|매니저)|ChatGPT|챗(?:GPT|지피티)|Gemini|T맵|티맵|TMAP|지도.{0,12}(?:차이|다른)|정보.{0,12}(?:믿|정확|책임|관리|고치)|틀린\s*정보|민간.{0,12}(?:운영|시작)|지자체.{0,12}(?:없이|꼭|해야)|군청.{0,8}(?:해야|운영)|홈페이지|웹사이트)/i.test(message);
 }
 
 /**

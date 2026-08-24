@@ -15,6 +15,12 @@ export type GuideKnowledge = {
 
 const prohibited = [
   'ChatGPT는 여행 추천을 못한다',
+  'ChatGPT는 재계획을 못한다',
+  'ChatGPT는 위치나 도구를 사용할 수 없다',
+  'T맵은 장소를 추천하지 못한다',
+  'T맵은 맥락을 사용할 수 없다',
+  'Regional Concierge는 항상 실시간 정보를 가진다',
+  '모든 지역 데이터가 완전하다',
   'Google은 추천을 못한다',
   '네이버는 부정확하다',
   '세계 최초',
@@ -165,9 +171,22 @@ export const GUIDE_KNOWLEDGE: GuideKnowledge[] = [
     supportingConcepts: ['RDM', 'runtime context', 'TripSession', 'actions'],
     allowedClaims: ['범용 AI와 지역 운영 시스템의 역할 차이'],
     relatedQuestions: [
-      'ChatGPT한테 위치를 알려주면 똑같지 않나요?',
+      '그런데 ChatGPT에 여행 일정 짜달라고 하면 되지 않나요?',
       '실제 여행에서는 어떻게 다른가요?',
     ],
+  }),
+  item({
+    intent: 'CHATGPT_TRIP_PLANNING_OBJECTION',
+    audiences: ['GENERAL', 'VISITOR'],
+    patterns: [
+      /(?:chatgpt|챗gpt|챗지피티|gemini|제미나이|(?:범용\s*)?ai).*(?:여행|옥천).*(?:일정|계획|추천).*(?:짜|세우|되|똑같|왜\s*필요)/i,
+      /(?:그냥\s*)?(?:chatgpt|챗gpt|챗지피티|ai)(?:로|한테)?.*(?:일정|여행\s*계획).*(?:짜|세우)/i,
+    ],
+    shortAnswer:
+      '맞습니다. ChatGPT나 Gemini에 여행 일정을 요청하면 상당히 좋은 여행계획을 만들 수 있습니다. Regional Concierge도 이러한 범용 AI의 뛰어난 언어 이해와 추론 능력을 적극 활용합니다.\n\n일반적인 여행계획이 “10:00 목적지 A → 12:00 점심 → 14:00 목적지 B”처럼 좋은 출발점을 만든다면, 실제 여행에서는 출발이 늦어지거나 비가 오고, 남은 시간이 줄거나 부모님이 힘들다고 하거나, 화장실·전기차 충전이 급해지고 식사 시간이 달라질 수 있습니다. 근거로 확인된 이용 불가나 부적합 상태가 생길 수도 있습니다. Regional Concierge는 그때마다 완전히 새로운 계획 질문으로 돌아가기보다 현재 TripSession과 꼭 가고 싶은 곳을 보존한 채 PLAN → NOW → RE-PLAN → ACTION으로 남은 여행을 다시 판단하도록 설계됐습니다.\n\n역할의 차이는 범용 AI의 폭넓은 지식과 강한 추론·계획 능력 위에, 관리되는 Hyper-local Knowledge, 근거와 검토 상태가 확인된 지역 운영 데이터, 현재 여행 맥락, 여정 연속성, 검증된 좌표·전화번호 같은 안전한 행동 연결을 하나의 지역 운영 계층으로 묶는 데 있습니다. 모든 현실 변화를 자동으로 알거나 모든 지역 데이터가 완전하다는 뜻은 아닙니다.\n\nChatGPT와 경쟁하는 것이 아닙니다. 그 뛰어난 AI를 지역의 검증된 현실 속에서 여행이 끝날 때까지 계속 일하게 만드는 것이 Regional Concierge입니다.',
+    supportingConcepts: ['general AI', 'governed Hyper-local Knowledge', 'TripSession', 'Replanning', 'safe actions'],
+    allowedClaims: ['범용 AI의 여행계획 강점 인정', '관리되는 지역 운영 계층과 지속적 현장 여행 흐름의 차이'],
+    relatedQuestions: ['실제 여행에서는 어떻게 다른가요?', '앞에서 한 이야기도 기억하나요?'],
   }),
   item({
     intent: 'ACTUAL_TRIP_DIFFERENCE',
@@ -195,9 +214,22 @@ export const GUIDE_KNOWLEDGE: GuideKnowledge[] = [
     ],
     allowedClaims: ['서로 다른 초점', '지도 서비스의 강점 인정'],
     relatedQuestions: [
-      '구글도 요즘 AI 추천하는데요?',
+      '저는 T맵을 많이 쓰는데, T맵과 뭐가 다른가요?',
       '그냥 검색하면 되지 않나요?',
     ],
+  }),
+  item({
+    intent: 'TMAP_OBJECTION',
+    audiences: ['GENERAL', 'VISITOR'],
+    patterns: [
+      /(?:t맵|티맵|tmap).*(?:충분|차이|다른|달라|왜|필요|맛집|관광지|헤비\s*유저)/i,
+      /(?:t맵|티맵|tmap)(?:이|가)?\s*있는데/i,
+    ],
+    shortAnswer:
+      '맞습니다. T맵은 장소 발견과 목적지 검색, 경로 안내와 운전에 강하고, 선택한 목적지까지 효율적으로 이동하게 돕는 훌륭한 내비게이션입니다.\n\nT맵이 “어디로 갈지 정했을 때 목적지까지 어떻게 갈 것인가”를 잘 해결한다면, Regional Concierge는 “지금 이 상황에서 어디로 가는 것이 좋은가, 그 다음에는 무엇을 할 것인가”를 이어서 판단하는 역할에 집중합니다. 예를 들어 “지금 합천호에 있고 3시간 남았는데 부모님과 갈 만한 곳”, “비가 오기 시작해 일정 변경”, “점심 뒤 가까운 카페와 영상테마파크”, “현재 동선에 숙소까지 묶기”, “화장실 먼저”, “전기차 충전 뒤 다음 관광지” 같은 요청에서 현재 TripSession과 남은 여행 흐름을 보존해 재계획합니다. 실제 선택은 그 지역에서 확인된 운영 데이터 범위 안에서만 제안합니다.\n\n목적지가 정해지면 기존 길찾기 행동을 통해 T맵·네이버 지도·카카오맵 같은 내비게이션으로 연결할 수 있습니다. Regional Concierge는 T맵을 대체하지 않고 함께 작동합니다.\n\nT맵이 목적지까지 안내한다면, Regional AI는 목적지를 정하는 것부터 여행이 끝날 때까지 다음 행동을 계속 제안합니다.',
+    supportingConcepts: ['TripSession', 'Replanning', 'journey continuity', 'navigation handoff'],
+    allowedClaims: ['T맵의 탐색·경로·운전 강점 인정', '의사결정·재계획 후 내비게이션 연결'],
+    relatedQuestions: ['여행 계획이 갑자기 바뀌어도 되나요?', '추천만 하나요, 바로 갈 수도 있나요?'],
   }),
   item({
     intent: 'MAP_OBJECTION',

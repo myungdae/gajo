@@ -34,6 +34,42 @@ describe('public Concierge Guide Copilot', () => {
     expect(answer).toMatchObject({ status: 'ANSWERED', intent: 'MAP_DIFFERENCE' });
     expect(answer.answer).toMatch(/어떻게 갈 것인가.*현재 상황에서 어디로 가는 것이 좋은가.*지도·내비게이션으로 연결/s);
   });
+  it.each([
+    '저는 T맵을 많이 쓰는데, T맵과 뭐가 다른가요?',
+    'T맵이면 충분하지 않나요?',
+    'T맵하고 별 차이 없는 것 같은데요?',
+    'T맵 헤비 유저인데 왜 이걸 써야 해요?',
+    'T맵도 맛집이나 관광지 찾아주잖아요?',
+    'T맵이 있는데 왜 Regional AI가 필요해요?',
+  ])('routes TMAP objection %s to its approved child intent', (question) => {
+    const answer: any = new GuideService().answer({ question }, `tmap-${question}`);
+    expect(answer).toMatchObject({ status: 'ANSWERED', intent: 'TMAP_OBJECTION', readOnly: true });
+    expect(answer.candidate).toBeUndefined();
+    expect(answer.answer).toMatch(/맞습니다.*장소 발견.*어떻게 갈 것인가.*지금 이 상황에서 어디로 가는 것이 좋은가.*T맵을 대체하지 않고 함께 작동/s);
+    expect(answer.answer).not.toMatch(/T맵.*(?:추천하지 못|맥락을 사용하지 못)/);
+  });
+  it.each([
+    'ChatGPT에 여행 일정 짜달라고 하면 되지 않나요?',
+    'ChatGPT도 여행 일정 잘 짜주잖아요?',
+    'ChatGPT한테 옥천 여행 짜달라고 하면 되는데요?',
+    '그냥 ChatGPT로 여행 계획 세우면 안 돼요?',
+    'ChatGPT도 여행 추천해주는데 왜 필요해요?',
+    'AI한테 일정 짜달라고 하면 똑같지 않나요?',
+  ])('routes general-AI itinerary objection %s to its approved child intent', (question) => {
+    const answer: any = new GuideService().answer({ question }, `ai-plan-${question}`);
+    expect(answer).toMatchObject({ status: 'ANSWERED', intent: 'CHATGPT_TRIP_PLANNING_OBJECTION', readOnly: true });
+    expect(answer.candidate).toBeUndefined();
+    expect(answer.answer).toMatch(/맞습니다.*상당히 좋은 여행계획.*PLAN → NOW → RE-PLAN → ACTION.*ChatGPT와 경쟁하는 것이 아닙니다/s);
+    expect(answer.answer).not.toMatch(/ChatGPT.*(?:재계획을 못|위치.*사용할 수 없|도구.*사용할 수 없)/);
+  });
+  it('keeps objection questions immediately attached to their conceptual parents', () => {
+    const chatgptIndex = GUIDE_KNOWLEDGE.findIndex((entry) => entry.intent === 'CHATGPT_DIFFERENCE');
+    const mapIndex = GUIDE_KNOWLEDGE.findIndex((entry) => entry.intent === 'MAP_DIFFERENCE');
+    expect(GUIDE_KNOWLEDGE[chatgptIndex].relatedQuestions[0]).toBe('그런데 ChatGPT에 여행 일정 짜달라고 하면 되지 않나요?');
+    expect(GUIDE_KNOWLEDGE[chatgptIndex + 1].intent).toBe('CHATGPT_TRIP_PLANNING_OBJECTION');
+    expect(GUIDE_KNOWLEDGE[mapIndex].relatedQuestions[0]).toBe('저는 T맵을 많이 쓰는데, T맵과 뭐가 다른가요?');
+    expect(GUIDE_KNOWLEDGE[mapIndex + 1].intent).toBe('TMAP_OBJECTION');
+  });
   it('keeps governance and actual-trip landing answers detailed', () => {
     const service = new GuideService();
     expect(service.answer({ question: landingFaqs[5] }, 'landing-governance')).toMatchObject({
@@ -405,6 +441,11 @@ describe('public Concierge Guide Copilot', () => {
       '100% 정확',
       '매출 보장',
       'ChatGPT는 여행 추천을 못한다',
+      'ChatGPT는 재계획을 못한다',
+      'ChatGPT는 위치나 도구를 사용할 수 없다',
+      'T맵은 장소를 추천하지 못한다',
+      'T맵은 맥락을 사용할 수 없다',
+      'Regional Concierge는 항상 실시간 정보를 가진다',
       'Google은 추천을 못한다',
     ])
       expect(answers).not.toContain(claim);
