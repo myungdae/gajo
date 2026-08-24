@@ -41,11 +41,19 @@ describe('public Concierge Guide Copilot', () => {
     'T맵 헤비 유저인데 왜 이걸 써야 해요?',
     'T맵도 맛집이나 관광지 찾아주잖아요?',
     'T맵이 있는데 왜 Regional AI가 필요해요?',
+    'TMAP에서도 현재 위치 주변의 관광지, 식당, 카페, 주유소 등을 다 찾을 수 있는데 Regional Concierge와 뭐가 그렇게 다른가요?',
   ])('routes TMAP objection %s to its approved child intent', (question) => {
     const answer: any = new GuideService().answer({ question }, `tmap-${question}`);
     expect(answer).toMatchObject({ status: 'ANSWERED', intent: 'TMAP_OBJECTION', readOnly: true });
     expect(answer.candidate).toBeUndefined();
-    expect(answer.answer).toMatch(/맞습니다.*장소 발견.*어떻게 갈 것인가.*지금 이 상황에서 어디로 가는 것이 좋은가.*T맵을 대체하지 않고 함께 작동/s);
+    expect(answer.answer).toMatch(/맞습니다.*현재 위치를 중심으로 관광지, 식당, 카페, 주유소.*목적지 탐색과 실제 이동 안내도 매우 잘합니다/s);
+    expect(answer.answer).toMatch(/차이는 주변에서 무엇을 찾을 수 있느냐가 아닙니다.*현재 시간.*날씨.*동행자.*이동수단.*걷기 어려움.*남은 여행시간.*이미 방문한 장소.*현재 일정.*반드시 가고 싶은 장소.*화장실·주차·식사·충전.*앞서 한 선택/s);
+    expect(answer.answer).toMatch(/수승대.*70대 어머니.*두 시간 뒤.*창포원.*Decision\/Replanning/s);
+    expect(answer.answer).toMatch(/주변에 무엇이 있는지는 찾을 수 있습니다.*지금 무엇부터 찾아야 하는지는 누가 판단할까요/s);
+    expect(answer.answer).toMatch(/DECISION \/ JOURNEY ORCHESTRATION LAYER.*MAP \/ NAVIGATION LAYER.*기존 길찾기 기능.*도착 뒤.*다음 결정과 이동/s);
+    expect(answer.answer).toMatch(/새 내비게이션 엔진을 만드는 구조가 아닙니다/);
+    expect(answer.answer).toMatch(/차이는 ‘주변에서 무엇을 찾을 수 있느냐’가 아니라, ‘지금 나에게 무엇이 필요한지를 누가 판단하느냐’입니다.*Regional Concierge는 T맵을 대신하려는 서비스가 아닙니다.*T맵·네이버지도·카카오맵 같은 전문 서비스와 연결합니다/s);
+    expect(answer.answer).not.toMatch(/목적지가 정해졌을 때|어디로 갈지 정했을 때|선택한 목적지까지/);
     expect(answer.answer).not.toMatch(/T맵.*(?:추천하지 못|맥락을 사용하지 못)/);
   });
   it.each([
