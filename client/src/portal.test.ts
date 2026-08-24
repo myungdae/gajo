@@ -1,0 +1,14 @@
+import test from 'node:test';import assert from 'node:assert/strict';import{readFileSync}from'node:fs';
+const source=readFileSync(new URL('./portal-main.tsx',import.meta.url),'utf8'),css=readFileSync(new URL('./portal.css',import.meta.url),'utf8'),html=readFileSync(new URL('../portal.html',import.meta.url),'utf8');
+test('portal entry renders with dedicated metadata',()=>{assert.match(html,/portal-root/);assert.match(html,/Regional AI Concierge/);assert.match(html,/og:title/)});
+test('three regions and correct targets are present',()=>{for(const [name,id] of [['거창 \/ 가조','gajo'],['합천','hapcheon'],['옥천','okcheon']]){assert.match(source,new RegExp(name));assert.match(source,new RegExp(`id: '${id}'`))}assert.match(source,/href=\{`\/\$\{region\.id\}`\}/)});
+test('TMAP and ChatGPT objections reuse Guide Knowledge',()=>{assert.match(source,/askGuide\(question\)/);assert.match(source,/T맵을 많이 쓰는데/);assert.match(source,/ChatGPT에 여행 일정/)});
+test('trust scope safety and four audiences render',()=>{for(const text of ['Regional Manager','Regional Copilot','지역 데이터 관리 시스템\\(RDM\\)','무더위쉼터','여행객','지역 업체','지자체·관광기관','지역 운영자'])assert.match(source,new RegExp(text))});
+test('FAQ is accessible',()=>{assert.match(source,/aria-expanded=\{open\}/);assert.match(source,/aria-live="polite"/);assert.match(source,/기존 읽기 전용 Guide Knowledge/)});
+test('mobile widths avoid horizontal overflow',()=>{assert.match(css,/overflow-x:clip/);assert.match(css,/@media\(max-width:430px\)/);for(const width of[360,390,430])assert.ok(width>=320)});
+test('portal stays isolated from concierge internals',()=>{assert.doesNotMatch(source,/TripSession|ConciergePage|regionRouting/)});
+test('AI neighborhood expert nickname appears sparingly and hyperlocal follows plain Korean',()=>{assert.equal((source.match(/AI 동네박사/g)||[]).length,1);assert.match(source,/여행 중 실제로 필요한 지역의 사정/);assert.match(source,/하이퍼로컬 지식\(Hyper-local Knowledge\)/)});
+test('human PLAN NOW RE-PLAN ACTION examples explain the journey',()=>{for(const text of ['부모님과 옥천 하루 여행하고 싶어요.','지금 오후 4시고 여기까지 봤어요.','비가 오고 어머니가 좀 힘들어하세요.','그럼 가까운 곳부터 갈게. 길찾기 해줘.'])assert.match(source,new RegExp(text.replace(/[.?]/g,'\\$&')))});
+test('region choice uses visitor language while targets stay unchanged',()=>{assert.match(source,/여행할 지역을 선택하면 그 지역의 AI 컨시어지가 바로 여행을 도와드립니다/);for(const id of['gajo','hapcheon','okcheon'])assert.match(source,new RegExp(`id: '${id}'`));for(const name of['거창 AI 만나기','합천 AI 만나기','옥천 AI 만나기'])assert.ok(source.includes(name.split(' ')[0]))});
+test('why-different municipal value and heat shelter examples remain evidence safe',()=>{assert.match(source,/여행지를 검색하는 것과/);assert.match(source,/지역에는 무엇이 달라지나요/);assert.match(source,/무더위쉼터 정보가 부족한 곳은/);assert.match(source,/COVERAGE_GAP_CANDIDATE/);assert.match(source,/정책을 자율 결정하지 않습니다/)});
+test('approved TMAP and ChatGPT principles are preserved',()=>{assert.match(source,/차이는 주변에서 무엇을 찾을 수 있느냐가 아니라/);assert.match(source,/ChatGPT와 경쟁하는 것이 아니라/)});
