@@ -24,15 +24,12 @@ describe('Okcheon Phase 2 minimum official dataset', () => {
     );
   });
   it('keeps every fact tied to an official county source and does not claim whole-record verification', () => {
-    expect(OKCHEON_MASTER_DATA).toHaveLength(33);
+    expect(OKCHEON_MASTER_DATA).toHaveLength(49);
     for (const item of OKCHEON_MASTER_DATA) {
       expect(item.runtimeDataStatus).toBe('PARTIAL');
-      expect(item.source).toMatchObject({
-        sourceType: 'OFFICIAL_LOCAL_GOV',
-        sourceName: '옥천군 문화관광',
-        sourceUrl: expect.stringMatching(/^https:\/\//),
-      });
-      expect(item.lastVerifiedAt).toBe('2026-08-22');
+      expect((item.source as any)?.sourceType).toMatch(/OFFICIAL_LOCAL_GOV|MUNICIPAL_OFFICIAL/);
+      expect((item.source as any)?.sourceUrl).toMatch(/^https:\/\//);
+      expect(item.lastVerifiedAt).toMatch(/^2026-08-(22|24)$/);
     }
   });
   it('provides balanced identity coverage while retaining honest operational gaps', () => {
@@ -47,7 +44,7 @@ describe('Okcheon Phase 2 minimum official dataset', () => {
       OKCHEON_MASTER_DATA.filter(
         (x) => Number.isFinite(x.latitude) && Number.isFinite(x.longitude),
       ),
-    ).toHaveLength(1);
+    ).toHaveLength(17);
   });
   it('keeps the old-town concept non-operational and preserves separate cultural identities', () => {
     const area = OKCHEON_MASTER_DATA.find((x) =>

@@ -1,4 +1,5 @@
 import type { RegionalCandidateRecord } from '../regional-candidate.registry';
+import { OKCHEON_PHASE2_ESSENTIAL_SERVICES } from '../essential-services-phase2';
 
 const NS = 'https://okcheon.example/ontology#',
   verifiedAt = '2026-08-22';
@@ -320,4 +321,5 @@ export const OKCHEON_MASTER_DATA: readonly RegionalCandidateRecord[] = [
       sourceUrl: residentSource,
     }),
   ),
+  ...OKCHEON_PHASE2_ESSENTIAL_SERVICES,
 ];

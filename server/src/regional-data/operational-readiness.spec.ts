@@ -8,7 +8,7 @@ import {
 describe('shared operational verification matrix', () => {
   const matrix = operationalVerificationMatrix(OKCHEON_MASTER_DATA);
   it('reports every Okcheon entity and preserves the manager boundary', () => {
-    expect(matrix).toHaveLength(33);
+    expect(matrix).toHaveLength(49);
     expect(
       matrix.every(
         (x) =>
@@ -25,13 +25,13 @@ describe('shared operational verification matrix', () => {
   });
   it('derives action readiness only from evidenced actions', () =>
     expect(operationalReadinessSummary(matrix)).toEqual({
-      total: 33,
+      total: 49,
       actionReady: 1,
-      discoveryReady: 30,
+      discoveryReady: 46,
       navigationReady: 1,
       callReady: 14,
-      tripEligible: 32,
-      coordinateCoverage: 1,
+      tripEligible: 48,
+      coordinateCoverage: 17,
       sourceReportedHours: 1,
       notApplicableHours: 6,
       parkingCoverage: 0,

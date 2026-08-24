@@ -1,6 +1,50 @@
 import { GuideService } from './guide.service';
 import { GUIDE_KNOWLEDGE } from './guide-knowledge';
 describe('public Concierge Guide Copilot', () => {
+  const landingFaqs = [
+    '지역 AI 컨시어지를 한마디로 설명하면 무엇인가요?',
+    '여행 중에는 실제로 무엇을 해주나요?',
+    '여행 계획이 갑자기 바뀌어도 되나요?',
+    'ChatGPT·Gemini와 무엇이 다른가요?',
+    '지도·내비게이션과 무엇이 다른가요?',
+    '지역정보는 누가 책임지고 관리하나요?',
+    '실제 여행에서는 어떻게 다른가요?',
+    '앞에서 한 이야기도 기억하나요?',
+    '추천만 해주나요? 바로 갈 수도 있나요?',
+    '업체가 돈을 내면 먼저 추천되나요?',
+    '지역 업체에는 어떤 도움이 되나요?',
+    '지자체에는 어떤 도움이 되나요?',
+  ];
+  it.each(landingFaqs)('keeps visible landing FAQ %s on approved knowledge', (question) => {
+    const answer: any = new GuideService().answer({ question }, `landing-${question}`);
+    expect(answer.status).toBe('ANSWERED');
+    expect(answer.intent).toBeDefined();
+    expect(answer.candidate).toBeUndefined();
+    expect(answer.answer).not.toMatch(/아직 승인된 안내 지식|검토가 필요한 질문/);
+  });
+  it.each([
+    '지도·내비게이션과 무엇이 다른가요?',
+    '지도와 무엇이 다른가요?',
+    '내비게이션과 무엇이 다른가요?',
+    '네이버 지도랑 뭐가 달라요?',
+    '카카오맵이 있는데 왜 필요해요?',
+    '구글 지도가 있는데 왜 필요해요?',
+  ])('routes map/navigation regression %s to MAP_DIFFERENCE', (question) => {
+    const answer: any = new GuideService().answer({ question }, `map-${question}`);
+    expect(answer).toMatchObject({ status: 'ANSWERED', intent: 'MAP_DIFFERENCE' });
+    expect(answer.answer).toMatch(/어떻게 갈 것인가.*현재 상황에서 어디로 가는 것이 좋은가.*지도·내비게이션으로 연결/s);
+  });
+  it('keeps governance and actual-trip landing answers detailed', () => {
+    const service = new GuideService();
+    expect(service.answer({ question: landingFaqs[5] }, 'landing-governance')).toMatchObject({
+      intent: 'HYPERLOCAL_DATA_GOVERNANCE',
+      answer: expect.stringMatching(/지자체·공공기관.*민간 Regional Manager.*Regional Copilot 검토.*사람 승인.*RDM 반영.*Local Concierge 사용/s),
+    });
+    expect(service.answer({ question: landingFaqs[6] }, 'landing-trip')).toMatchObject({
+      intent: 'ACTUAL_TRIP_DIFFERENCE',
+      answer: expect.stringMatching(/70대 어머니.*비 오는 날 오후 4시.*옥천.*고정된 실시간 일정 예시가 아니라/s),
+    });
+  });
   it.each(['EXKO가 뭐예요?', '일반 검색과 관계 기반 AI가 뭐가 다른가요?'])(
     'explains the internal semantic layer safely for %s',
     (question) => {
@@ -98,21 +142,42 @@ describe('public Concierge Guide Copilot', () => {
     '지역 데이터는 누가 책임지나요?',
     '구글에서 그냥 가져오는 정보 아닌가요?',
     '하이퍼로컬 정보는 누가 업데이트하나요?',
+    '지역 데이터는 누가 관리해요?',
+    '이 정보가 맞는지는 누가 확인하나요?',
+    '지자체가 관리하나요?',
+    '민간이 관리하나요?',
+    '지역정보는 누가 책임져요?',
+    '하이퍼로컬 데이터는 누가 업데이트하나요?',
+    '지자체와 민간이 같이 관리하나요?',
   ])('routes governance variant %s to the approved intent', (question) => {
     const answer: any = new GuideService().answer({ question }, `governance-${question}`);
     expect(answer).toMatchObject({ status: 'ANSWERED', intent: 'HYPERLOCAL_DATA_GOVERNANCE', readOnly: true });
     expect(answer.answer).toMatch(/검색엔진.*지속적으로 확인하고 관리/s);
+  });
+  it.each([
+    '지역정보는 누가 책임지고 관리하나요?',
+    '지자체와 민간이 같이 관리하나요?',
+    '구글에서 그냥 가져오는 정보 아닌가요?',
+  ])('keeps the full trust model for %s', (question) => {
+    const answer: any = new GuideService().answer({ question }, `trust-depth-${question}`);
+    expect(answer).toMatchObject({ intent: 'HYPERLOCAL_DATA_GOVERNANCE' });
+    expect(answer.answer).toMatch(/지자체·공공기관.*권위 있는 근거/s);
+    expect(answer.answer).toMatch(/민간 Regional Manager.*지역 관광조직·협회·상인조직·지역 운영자/s);
+    expect(answer.answer).toMatch(/Regional Copilot 검토.*사람 승인/s);
+    expect(answer.answer).toMatch(/EVIDENCE.*자동으로 검증된 운영 사실이 아닙니다/s);
+    expect(answer.answer).toMatch(/지자체 참여는 필수가 아니며/);
+    expect(answer.answer).not.toMatch(/모든 지자체가 (?:참여|운영)|모든 정보가 항상 정확합니다|구글.*(?:신뢰할 수 없|부정확)|업체 주장은 자동으로 검증됩니다|방문자 제보는 자동으로 검증됩니다/s);
   });
   it('explains cooperative governance and the full verification flow without overclaiming', () => {
     const answer: any = new GuideService().answer(
       { question: '지역정보는 누가 책임지고 관리하나요?' },
       'governance-boundary',
     );
-    expect(answer.answer).toMatch(/공식 공공정보.*지역 현장 지식.*사람의 검증/s);
+    expect(answer.answer).toMatch(/공식 공공정보.*지역 현장정보.*사람의 검증/s);
     expect(answer.answer).toMatch(/지자체.*공영주차장.*민간 Regional Manager/s);
-    expect(answer.answer).toMatch(/지자체 참여가 필수라는 뜻은 아니며/);
-    expect(answer.answer).toMatch(/정보 발견.*근거 확인.*Regional Copilot 검토.*권한 있는 지역 운영자의 승인.*서비스 반영/s);
-    expect(answer.answer).toMatch(/검색 결과.*AI.*방문자 제보.*업체 주장.*자동으로 검증된 운영 사실이 아닙니다/s);
+    expect(answer.answer).toMatch(/지자체 참여는 필수가 아니며/);
+    expect(answer.answer).toMatch(/정보 발견.*근거 확인.*Regional Copilot 검토.*사람 승인.*RDM 반영.*Local Concierge 사용/s);
+    expect(answer.answer).toMatch(/검색 결과.*AI.*업체 주장.*방문자 제보.*EVIDENCE.*자동으로 검증된 운영 사실이 아닙니다/s);
     expect(answer.answer).not.toMatch(/모든 정보는 (?:항상|언제나) 정확합니다|지자체와 협약했습니다|지자체 참여가 필수입니다/);
   });
   it('links trust and stewardship knowledge to the governance question', () => {
@@ -271,7 +336,7 @@ describe('public Concierge Guide Copilot', () => {
       audience: 'PUBLIC_SECTOR',
       intent: 'HYPERLOCAL_DATA_GOVERNANCE',
       answer: expect.stringMatching(
-        /Regional Manager.*Regional Copilot 검토.*권한 있는 지역 운영자의 승인/s,
+        /Regional Manager.*Regional Copilot 검토.*권한 있는 지역 운영자의 사람 승인/s,
       ),
     });
   });

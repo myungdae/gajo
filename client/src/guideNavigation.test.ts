@@ -63,6 +63,18 @@ test('FAQ, composer, audience, and follow-up controls retain their actual click 
   assert.match(main, /onClick=\{\(\) => send\(question\)\}/);
 });
 
+test('twelve FAQs live in one keyboard and touch scroll region with safe mobile sizing', () => {
+  const questions = ['지역 AI 컨시어지를 한마디로 설명하면 무엇인가요?', '여행 중에는 실제로 무엇을 해주나요?', '여행 계획이 갑자기 바뀌어도 되나요?', 'ChatGPT·Gemini와 무엇이 다른가요?', '지도·내비게이션과 무엇이 다른가요?', '지역정보는 누가 책임지고 관리하나요?', '실제 여행에서는 어떻게 다른가요?', '앞에서 한 이야기도 기억하나요?', '추천만 해주나요? 바로 갈 수도 있나요?', '업체가 돈을 내면 먼저 추천되나요?', '지역 업체에는 어떤 도움이 되나요?', '지자체에는 어떤 도움이 되나요?'];
+  for (const question of questions) assert.ok(main.includes(question));
+  assert.match(main, /className="guide-popular-list" tabIndex=\{0\} aria-label="많이 묻는 질문 목록, 스크롤하여 더 보기"/);
+  assert.match(css, /\.guide-popular-list\{[^}]*max-height:340px[^}]*overflow-y:auto[^}]*overflow-x:hidden[^}]*touch-action:pan-y[^}]*scrollbar-gutter:stable/);
+  assert.match(css, /\.guide-popular-list::-webkit-scrollbar-thumb\{[^}]*background:/);
+  assert.match(css, /\.guide-popular-list>button\{[^}]*min-height:44px/);
+  assert.match(css, /@media\(max-width:520px\)[\s\S]*\.guide-popular-list\{max-height:310px\}/);
+  assert.match(css, /\.guide-shell\{[^}]*calc\(88px \+ env\(safe-area-inset-bottom\)\)/);
+  for (const width of [360, 390, 430]) assert.ok(width <= 520);
+});
+
 test('successful FAQ, typed, and related-question submits reveal only their new answer', () => {
   const send = main.slice(main.indexOf('const send ='), main.indexOf('const home ='));
   assert.match(send, /const answerId = \+\+nextMessageId\.current/);

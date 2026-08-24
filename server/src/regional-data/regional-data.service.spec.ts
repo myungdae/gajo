@@ -394,16 +394,16 @@ describe('RegionalDataService', () => {
     expect(readiness).toMatchObject({
       regionId: 'okcheon',
       summary: {
-        total: 33,
+        total: 49,
         actionReady: 1,
         navigationReady: 1,
         callReady: 14,
-        coordinateCoverage: 1,
+        coordinateCoverage: 17,
       },
       matrix: expect.any(Array),
       tasks: expect.any(Array),
     });
-    expect(readiness.matrix).toHaveLength(33);
+    expect(readiness.matrix).toHaveLength(49);
     expect(
       readiness.matrix.every(
         (x: any) =>

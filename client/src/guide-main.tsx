@@ -3,7 +3,20 @@ import { createRoot } from 'react-dom/client';
 import { askGuide, type GuideAudience, type GuideResponse } from './guideClient';
 import './guide.css';
 
-const popular = ['지역 AI 컨시어지를 한마디로 설명하면 무엇인가요?', '여행 중에는 실제로 무엇을 해주나요?', '여행 계획이 갑자기 바뀌어도 되나요?', 'ChatGPT·Gemini와 무엇이 다른가요?', '지도·내비게이션과 무엇이 다른가요?'];
+const popular = [
+  '지역 AI 컨시어지를 한마디로 설명하면 무엇인가요?',
+  '여행 중에는 실제로 무엇을 해주나요?',
+  '여행 계획이 갑자기 바뀌어도 되나요?',
+  'ChatGPT·Gemini와 무엇이 다른가요?',
+  '지도·내비게이션과 무엇이 다른가요?',
+  '지역정보는 누가 책임지고 관리하나요?',
+  '실제 여행에서는 어떻게 다른가요?',
+  '앞에서 한 이야기도 기억하나요?',
+  '추천만 해주나요? 바로 갈 수도 있나요?',
+  '업체가 돈을 내면 먼저 추천되나요?',
+  '지역 업체에는 어떤 도움이 되나요?',
+  '지자체에는 어떤 도움이 되나요?',
+];
 type Message = { id: number; role: 'user' | 'guide'; text: string; response?: GuideResponse };
 
 function GuideApp() {
@@ -37,7 +50,7 @@ function GuideApp() {
     <section className="guide-landing" ref={landingRef} tabIndex={-1} aria-label="Guide 홈">
       <header><span className="guide-kicker">CONCIERGE GUIDE COPILOT</span><h1>지역 AI 컨시어지</h1><p>무엇이 궁금하세요?</p></header>
       <form onSubmit={(event) => { event.preventDefault(); void send(); }} className="guide-composer"><label htmlFor="guide-question">질문을 입력하세요</label><div><textarea id="guide-question" value={input} onChange={(event) => setInput(event.target.value)} rows={2} maxLength={500} placeholder="예: 구글 지도가 있는데 왜 필요한가요?"/><button disabled={busy || !input.trim()}>{busy ? '답변 중…' : '질문하기'}</button></div></form>
-      <section className="guide-popular"><h2>많이 묻는 질문</h2>{popular.map((question) => <button key={question} onClick={() => void send(question)}>{question}<span aria-hidden="true">→</span></button>)}</section>
+      <section className="guide-popular"><h2>많이 묻는 질문</h2><div className="guide-popular-list" tabIndex={0} aria-label="많이 묻는 질문 목록, 스크롤하여 더 보기">{popular.map((question) => <button key={question} onClick={() => void send(question)}>{question}<span aria-hidden="true">→</span></button>)}</div></section>
       <section className="guide-perspective"><span>다른 관점으로 보기</span><div>{([['VISITOR', '관광객'], ['BUSINESS', '업체'], ['PUBLIC_SECTOR', '지자체']] as const).map(([value, label]) => <button key={value} className={audience === value ? 'selected' : ''} onClick={() => setAudience(value)}>{label} 입장</button>)}</div></section>
     </section>
     {messages.length > 0 && <section className="guide-conversation" aria-live="polite" aria-busy={busy} aria-label="이전 질문과 답변">{messages.map((message) => <article key={message.id} ref={message.id === answerToReveal ? answerRef : undefined} tabIndex={message.id === answerToReveal ? -1 : undefined} className={`guide-message ${message.role}`}><small>{message.role === 'user' ? '질문' : '가이드'}</small><p>{message.text}</p>{message.response?.relatedQuestions?.length ? <div className="guide-related">{message.response.relatedQuestions.slice(0, 2).map((question) => <button key={question} onClick={() => send(question)}>{question}</button>)}</div> : null}</article>)}</section>}
