@@ -3,7 +3,11 @@ export type IntentRoute =
   | 'PLACE_DISCOVERY'
   | 'DISTANCE_INFO'
   | 'IMMEDIATE_NOW'
+  | 'FIRST_TIME_VISITOR'
   | 'REPLAN';
+export function isFirstTimeVisitorQuestion(message=''){
+  return /(?:처음\s*(?:왔|온|가|방문)|처음인데|어디부터|꼭\s*가(?:볼|봐야)|대표\s*(?:관광지|명소)|제일\s*유명|필수\s*코스)/.test(message);
+}
 export type DiscoveryCategory =
   | 'FOOD'
   | 'CAFE'
@@ -97,6 +101,8 @@ export function routeNaturalLanguageIntent(input: {
       /거기|그곳|그중|그\s*(?:근처|주변|카페|식당|숙소)/.test(message) &&
       /주변|근처|가까|거기서|그중/.test(message);
   const explicitDestinations=explicitDestinationPhrases(message);
+  if(!input.isFollowup&&isFirstTimeVisitorQuestion(message))
+    return{intentRoute:'FIRST_TIME_VISITOR' as const,category:'TOURISM_NATURE' as const};
   if(!input.isFollowup&&explicitDestinations.length>=1)
     return{intentRoute:'JOURNEY_PLAN' as const,category:undefined,multiDestination:explicitDestinations.length>=2,explicitDestinations};
   if (immediateEssentialNeed)

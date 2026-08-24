@@ -4,7 +4,7 @@ Audit date: 2026-08-24. This batch follows `SOURCE → EVIDENCE → REGIONAL COP
 
 ## Result
 
-Okcheon has a small municipal evidence batch (16 records) available for discovery and manager review. It is deliberately not navigation-ready. Gajo/Geochang and Hapcheon remain data-required for coordinate-complete essential services; weak name-only evidence was not ingested to meet quotas.
+Okcheon has a small municipal evidence batch (16 records) available for discovery and manager review. A later demo-safety refinement permits preview navigation to their contained municipal coordinates without making the records VERIFIED. Gajo/Geochang and Hapcheon remain data-required for coordinate-complete essential services; weak name-only evidence was not ingested to meet quotas.
 
 ## Source audit
 
@@ -22,7 +22,7 @@ No blog, directory clone, social post, SEO aggregator, or untraceable map copy w
 
 ## Actual onboarded entities
 
-All records use provenance `MUNICIPAL_OFFICIAL`, evidence status `EVIDENCE_READY`, runtime status `PARTIAL`, and the official Smart Map coordinates. They have detail-only actions; navigation/calling is withheld pending review.
+All records use provenance `MUNICIPAL_OFFICIAL`, evidence status `EVIDENCE_READY`, runtime status `PARTIAL`, and the official Smart Map coordinates. They receive preview navigation only after shared provenance and regional-containment checks; calling remains withheld pending review.
 
 | Category | Count | Entities |
 |---|---:|---|
@@ -32,7 +32,7 @@ All records use provenance `MUNICIPAL_OFFICIAL`, evidence status `EVIDENCE_READY
 | EV charger | 3 | 안남면, 옥천읍, 옥천군청 전기차충전소 |
 | Tourist information | 0 | DATA_REQUIRED |
 
-Coordinates: 16/16 evidence coordinates; 0/16 navigation-approved. No accessibility, fee/free, capacity, hours, fuel type, charger type/capacity/operator, live availability, walking convenience, or accessible-parking fact was inferred.
+Coordinates: 16/16 evidence coordinates; 16/16 preview-navigation eligible and 0/16 manager-verified navigation. No accessibility, fee/free, capacity, hours, fuel type, charger type/capacity/operator, live availability, walking convenience, or accessible-parking fact was inferred.
 
 ## Field-readiness matrix
 
@@ -44,7 +44,7 @@ Coordinates: 16/16 evidence coordinates; 0/16 navigation-approved. No accessibil
 | EV Charger | EVIDENCE_READY (document only) | DATA_REQUIRED | EVIDENCE_READY |
 | Tourist Info | EVIDENCE_READY (name/location document only) | DATA_REQUIRED | DATA_REQUIRED |
 
-`ACTION_READY` is intentionally zero until Regional Manager review approves coordinate evidence under the existing policy.
+`ACTION_READY` remains zero in the manager-verification sense. Preview navigation communicates only that an approved official/public source supplied a contained coordinate.
 
 ## Review tasks and conflicts
 
@@ -60,7 +60,7 @@ Municipal/national disagreements must create field-level `CONFLICT` evidence for
 
 ## Golden-flow expectations
 
-Okcheon utterances “화장실 급해요.”, “엄마가 화장실 가셔야 해.”, “차 어디 세워?”, “주차할 데부터 찾아줘.”, “기름 넣어야 하는데.”, and “전기차 충전할 곳 있어?” route to the correct distinct category and return PARTIAL RDM evidence with navigation withheld. “관광안내소 어디예요?” returns insufficient-data truthfully. Hapcheon/Gajo return insufficient-data for categories without eligible records and do not borrow Okcheon records.
+Okcheon utterances “화장실 급해요.”, “엄마가 화장실 가셔야 해.”, “차 어디 세워?”, “주차할 데부터 찾아줘.”, “기름 넣어야 하는데.”, and “전기차 충전할 곳 있어?” route to the correct distinct category and return PARTIAL RDM evidence with `길찾기(공식 위치)`. “관광안내소 어디예요?” returns insufficient-data truthfully. Hapcheon/Gajo return insufficient-data for categories without eligible records and do not borrow Okcheon records.
 
 Follow-ups preserve category/context: “가장 가까운 데는?” only computes distance with trusted coordinates; “거긴 멀어?” reports distance only when eligible; “다른 데는?” excludes the current result. “다시 원래 일정으로 가자.” continues to rely on the unchanged TripSession detour/return path.
 
@@ -74,7 +74,7 @@ The region-neutral adapter registry records source identity, access method, fiel
 
 - Onboarded: Okcheon 16; Gajo/Geochang 0; Hapcheon 0.
 - VERIFIED/PARTIAL/UNVERIFIED in this batch: 0/16/0.
-- Navigation-ready: 0.
+- Preview-navigation eligible: 16; manager-verified navigation in this batch: 0.
 - Provenance coverage: 16/16; coordinate-source coverage: 16/16.
 - Remaining DATA_REQUIRED: all coordinate-complete Gajo/Hapcheon categories; tourist information in Okcheon; current structured national gas/EV integrations.
 - Remaining ENGINE gaps: automated scheduled refresh execution and explicit multi-source conflict task generation are adapter/model-ready but not connected to live credentials.

@@ -151,7 +151,7 @@ export default function RecommendationItineraryItem({
             <EntityActions
               entity={step}
               hideDetail
-              navigationLabel={execution ? "출발하기" : "내비로 가기"}
+              navigationLabel={execution ? "출발하기" : undefined}
               onNavigate={execution ? started : undefined}
               showItineraryAdd={!execution && step.operationalEvidence?.tripEligible !== false}
             />

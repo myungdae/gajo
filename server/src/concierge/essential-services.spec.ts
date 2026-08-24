@@ -1,5 +1,5 @@
 import { discoveryCategory, routeNaturalLanguageIntent } from './intent-routing';
-import { essentialServiceReadiness, safeEssentialActions } from './essential-services';
+import { essentialServiceReadiness, officialCoordinateNavigation, safeEssentialActions } from './essential-services';
 
 describe('shared hyperlocal essential services', () => {
   it.each([
@@ -22,6 +22,18 @@ describe('shared hyperlocal essential services', () => {
     expect(safeEssentialActions({ runtimeDataStatus: 'UNVERIFIED', latitude: 36, longitude: 127, actions: { navigate: 'unsafe' } })).toEqual({ navigate: undefined, call: undefined });
     expect(safeEssentialActions({ runtimeDataStatus: 'VERIFIED', actions: { navigate: 'unsafe' } }).navigate).toBeUndefined();
   });
+
+  it('distinguishes verified navigation from contained high-authority preview evidence', () => {
+    const bounds={north:36.45,south:36.18,east:127.93,west:127.47};
+    expect(officialCoordinateNavigation({runtimeDataStatus:'VERIFIED',latitude:36.3,longitude:127.57},bounds)?.mode).toBe('VERIFIED');
+    for(const sourceType of ['MUNICIPAL_OFFICIAL','PUBLIC_DATA']) expect(officialCoordinateNavigation({runtimeDataStatus:'PARTIAL',latitude:36.3,longitude:127.57,coordinateSource:{sourceType}},bounds)?.mode).toBe('OFFICIAL_PREVIEW');
+  });
+
+  it.each(['SEARCH_EVIDENCE','SEMANTIC_EVIDENCE',undefined])('rejects partial coordinate provenance %s',sourceType=>expect(officialCoordinateNavigation({runtimeDataStatus:'PARTIAL',latitude:36.3,longitude:127.57,coordinateSource:sourceType?{sourceType}:undefined})).toBeUndefined());
+
+  it('rejects wrong-region official coordinates',()=>expect(officialCoordinateNavigation({runtimeDataStatus:'PARTIAL',latitude:35.7,longitude:127.9,coordinateSource:{sourceType:'MUNICIPAL_OFFICIAL'}},{north:36.45,south:36.18,east:127.93,west:127.47})).toBeUndefined());
+
+  it('fails closed when a partial record has no configured regional bounds',()=>expect(officialCoordinateNavigation({runtimeDataStatus:'PARTIAL',latitude:36.3,longitude:127.57,coordinateSource:{sourceType:'MUNICIPAL_OFFICIAL'}})).toBeUndefined());
 
   it('audits every region independently without cross-region counts', () => {
     const hapcheon = essentialServiceReadiness([{ regionId:'hapcheon', entityType:'PUBLIC_TOILET', runtimeDataStatus:'VERIFIED', latitude:35, longitude:128 }]);

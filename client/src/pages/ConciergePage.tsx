@@ -36,6 +36,7 @@ import SavedTripEntry from "../components/SavedTripEntry";
 import AiResponseActions from "../components/AiResponseActions";
 import { beginCurrentTurn, isCurrentTurn, resolveCurrentTurn, type CurrentTurnResult } from "../currentTurnResult";
 import { captureExplicitJourney, explicitJourneyPayload, type ExplicitJourneyContext } from "../explicitJourneyContext";
+import { GlossaryText } from "../components/GlossaryText";
 import { isExplanationOnly } from "../aiResponseActions";
 import { understoodSummary } from "../understoodSummary";
 
@@ -244,9 +245,10 @@ export default function ConciergePage() {
             ? {}
             : { locationStatus: gps?.status }),
       });
+      const isGuideExplanation=result.intentRoute === "GUIDE_EXPLANATION";
       const latestSession =
         loadTripSession(localStorage, region.id) || tripSession;
-      saveTripSession({
+      if(!isGuideExplanation) saveTripSession({
         ...latestSession,
         mode: tripMode === "GENERIC" ? latestSession.mode : tripMode,
         runtimeContext:
@@ -264,7 +266,7 @@ export default function ConciergePage() {
             result.recommendation.candidateRegionIds || []
           ).join(","),
         });
-      setExplicitJourney((current) => captureExplicitJourney(result, turnId, current));
+      if(!isGuideExplanation)setExplicitJourney((current) => captureExplicitJourney(result, turnId, current));
       if (result.intentRoute)
         track("INTENT_ROUTED", tripSession.id, {
           intentRoute: result.intentRoute,
@@ -287,13 +289,13 @@ export default function ConciergePage() {
         : result.conversationalReference
           ? { ...result.conversationalReference, sourceTurnId: turnId, role: "SUBJECT" as const }
           : null;
-      if (!result.distanceInfo) setConversationAnchor(reference?.regionId === region.id ? reference : null);
+      if (!isGuideExplanation&&!result.distanceInfo) setConversationAnchor(reference?.regionId === region.id ? reference : null);
       if (result.discovery && result.discovery.anchorEntityId && referenceEntity) {
         setDiscoveryContext((previous) => {
           const same = previous?.regionId === region.id && previous.anchor.entityId === result.discovery!.anchorEntityId && previous.targetCategory === result.discovery!.category;
           return { regionId: region.id, anchor: { entityId: result.discovery!.anchorEntityId!, label: result.discovery!.anchorLabel, latitude: result.discovery!.anchorLatitude, longitude: result.discovery!.anchorLongitude, source: result.discovery!.anchorEntityId!.startsWith("search:") ? "SEARCH" : "RDM" }, targetCategory: result.discovery!.category as NonNullable<CreateContextInput["discoveryCategoryHint"]>, relation: result.discovery!.relation || "REGIONAL", currentResult: { entityId: referenceEntity.entityId, label: referenceEntity.programLabel || referenceEntity.facilityLabel, latitude: referenceEntity.latitude, longitude: referenceEntity.longitude, source: referenceEntity.operationalEvidence?.source === "SEARCH" ? "SEARCH" : "RDM" }, shownEntityIds: [...new Set([...(same ? previous!.shownEntityIds : []), referenceEntity.entityId])], sourceTurnId: turnId };
         });
-      } else if (!result.distanceInfo) setDiscoveryContext(undefined);
+      } else if (!isGuideExplanation&&!result.distanceInfo) setDiscoveryContext(undefined);
     } catch (e: any) {
       console.error("[concierge] request failed", e);
       setRequestError(true);
@@ -417,7 +419,7 @@ export default function ConciergePage() {
               <div
                 className={`chat-bubble ${m.role === "user" ? "user" : "ai"}`}
               >
-                {m.text}
+                {m.role === "ai" ? <GlossaryText text={m.text} /> : m.text}
               </div>
               {m.role === "ai" && m.result && isCurrentTurn(m.turnId, currentTurn) && <AiResponseActions rawMessage={m.requestText || ""} result={m.result} turnId={m.turnId!} />}
             </div>

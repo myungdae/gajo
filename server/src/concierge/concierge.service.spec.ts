@@ -1,7 +1,8 @@
-import { ConciergeService, detectOutOfServiceDestination } from './concierge.service';
+import { ConciergeService, detectOutOfServiceDestination, isGuideExplanationQuestion } from './concierge.service';
 import{GAJO_REGION_CONFIG}from'../region/region-config.service';
 
 describe('ConciergeService service-area handling', () => {
+  it('answers approved Guide explanations without constructing or mutating travel context',async()=>{const context={createContext:jest.fn()},guide={approvedExplanation:jest.fn(()=>({status:'ANSWERED',intent:'REGIONAL_MANAGER',answer:'승인된 설명'}))},service=new ConciergeService(context as any,{}as any,{}as any,undefined,undefined,undefined,undefined,guide as any),answer:any=await service.chat({regionId:'okcheon',inputMode:'FREE_TEXT',rawMessage:'Regional Manager는 무슨 일을 하나요?'});expect(answer).toMatchObject({intentRoute:'GUIDE_EXPLANATION',recommendation:null,journeyContinuation:{preserveJourney:true}});expect(context.createContext).not.toHaveBeenCalled();expect(isGuideExplanationQuestion('지도에서 수승대 찾아줘')).toBe(false)});
   it('recognizes the explicit Haeinsa destination without treating generic requests as external', () => {
     expect(detectOutOfServiceDestination('합천 해인사에 놀러 가고 싶어요.')).toEqual({ destination: '해인사', region: '합천' });
     expect(detectOutOfServiceDestination('엄마와 온천에 가고 싶어요.')).toBeUndefined();

@@ -6,9 +6,10 @@ import { AgentsModule } from '../agents/agents.module';
 import{PlaceDiscoveryService}from'./place-discovery.service';
 import{ExkoSemanticModule}from'../exko-semantic/exko-semantic.module';
 import{NearbyModule}from'../nearby/nearby.module';
+import{GuideModule}from'../guide/guide.module';
 
 @Module({
-  imports: [ContextModule, AgentsModule,ExkoSemanticModule,NearbyModule],
+  imports: [ContextModule, AgentsModule,ExkoSemanticModule,NearbyModule,GuideModule],
   providers: [ConciergeService,PlaceDiscoveryService],
   controllers: [ConciergeController],
 })

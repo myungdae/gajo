@@ -100,6 +100,8 @@ describe('public Concierge Guide Copilot', () => {
     ['네이버 지도면 되지 않나요?', 'MAP_DIFFERENCE'],
     ['그냥 검색하면 되잖아요.', 'SEARCH_CONTINUITY'],
     ['AI 정보가 틀리면요?', 'DATA_ACCURACY'],
+    ['정보는 믿을 수 있나요?', 'DATA_ACCURACY'],
+    ['민간 운영으로 시작할 수 있나요?', 'PRIVATE_REGIONAL_OPERATION'],
     ['누가 지역정보를 관리하나요?', 'HYPERLOCAL_DATA_GOVERNANCE'],
     ['돈 내는 업체를 먼저 추천하나요?', 'PAID_RANKING'],
     ['업체가 참여하면 뭐가 좋아요?', 'BUSINESS_VALUE'],
@@ -128,6 +130,34 @@ describe('public Concierge Guide Copilot', () => {
     ['관광객이 틀린 정보를 발견하면 어떻게 하나요?', 'INFORMATION_CORRECTION'],
     ['지자체 입장에서 누가 지역정보를 관리하나요?', 'HYPERLOCAL_DATA_GOVERNANCE'],
   ];
+
+  it.each([
+    '정보는 믿을 수 있나요?',
+    '이 정보 믿어도 돼요?',
+    '정확한 정보인가요?',
+    'AI가 틀리면 어떻게 해요?',
+  ])('answers information-trust question %s without perfect-accuracy claims',(question)=>{
+    const answer:any=new GuideService().answer({question},`trust-${question}`);
+    expect(answer).toMatchObject({status:'ANSWERED',intent:'DATA_ACCURACY',readOnly:true});
+    expect(answer.answer).toMatch(/인터넷 검색.*AI.*자동으로 운영 사실.*공식 데이터.*지역 현장정보.*Regional Copilot.*사람 운영자.*Evidence.*Review.*Human approval.*Operational Data.*Concierge Action/s);
+    expect(answer.answer).toMatch(/영업시간.*휴무.*가격.*행사.*영구히 정확하다고 보장할 수 없습니다/s);
+    expect(answer.answer).not.toMatch(/100% 정확|완벽하게 정확|오류가 없습니다/);
+    expect(answer.relatedQuestions).toEqual(expect.arrayContaining(['지역정보는 누가 책임지고 관리하나요?','틀린 정보는 누가 고치나요?']));
+  });
+
+  it.each([
+    '민간 운영으로 시작할 수 있나요?',
+    '지자체 없이도 할 수 있나요?',
+    '민간이 운영해도 되나요?',
+    '꼭 군청이 해야 하나요?',
+  ])('answers private-operation question %s without claiming a current contract',(question)=>{
+    const answer:any=new GuideService().answer({question},`private-${question}`);
+    expect(answer).toMatchObject({status:'ANSWERED',intent:'PRIVATE_REGIONAL_OPERATION',readOnly:true});
+    expect(answer.answer).toMatch(/지자체 참여가 필수는 아닙니다.*지역 관광조직.*협회.*상인조직.*지역 크리에이터.*전문 민간 운영자/s);
+    expect(answer.answer).toMatch(/공식 공공 근거.*민간 지역 현장지식.*Regional Copilot.*사람의 검증/s);
+    expect(answer.answer).not.toMatch(/이미 계약|계약해 운영 중입니다|운영 계약을 체결/);
+    expect(answer.relatedQuestions).toEqual(expect.arrayContaining(['지자체가 꼭 해야 하나요?','Regional Manager는 무슨 일을 하나요?']));
+  });
   it.each(golden)('%s resolves to approved %s knowledge', (question, intent) =>
     expect(new GuideService().answer({ question }, question)).toMatchObject({
       status: 'ANSWERED',

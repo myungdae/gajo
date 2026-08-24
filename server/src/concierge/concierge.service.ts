@@ -14,6 +14,13 @@ import { routeNaturalLanguageIntent } from './intent-routing';
 import { PlaceDiscoveryService } from './place-discovery.service';
 import { ExkoSemanticAdapter } from '../exko-semantic/exko-semantic.service';
 import { RegionalDataService } from '../regional-data/regional-data.service';
+import { GuideService } from '../guide/guide.service';
+import { INITIAL_CORE_DESTINATIONS } from '../copilot/core-destination.config';
+
+export function isGuideExplanationQuestion(message = '') {
+  if (/지도에서.{0,30}(?:찾아|보여|안내|길)/.test(message)) return false;
+  return /(?:Regional\s*(?:Copilot|Manager)|RDM|지역\s*(?:코파일럿|매니저)|ChatGPT|Gemini|지도.{0,12}(?:차이|다른)|정보.{0,12}(?:믿|정확|책임|관리|고치)|틀린\s*정보|민간.{0,12}(?:운영|시작)|지자체.{0,12}(?:없이|꼭|해야)|군청.{0,8}(?:해야|운영)|홈페이지|웹사이트)/i.test(message);
+}
 
 /**
  * Very small keyword check: does the visitor's free-text message look like
@@ -107,12 +114,23 @@ export class ConciergeService {
     @Optional() private readonly placeDiscovery?: PlaceDiscoveryService,
     @Optional() private readonly exko?: ExkoSemanticAdapter,
     @Optional() private readonly regionalData?: RegionalDataService,
+    @Optional() private readonly guide?: GuideService,
   ) {}
 
   async chat(input: CreateContextInput) {
-    const regionId = requireRegionId(input.regionId, 'Concierge chat'),
+    const regionId = requireRegionId(input.regionId, 'Concierge chat');
+    if (isGuideExplanationQuestion(input.rawMessage) && this.guide) {
+      const explanation=this.guide.approvedExplanation({question:input.rawMessage});
+      if(explanation)return{intentRoute:'GUIDE_EXPLANATION',guideExplanation:explanation,recommendation:null,visitorMessage:`${explanation.answer}\n\n여행을 계속할까요?`,journeyContinuation:{prompt:'여행을 계속할까요?',preserveJourney:true}};
+    }
+    const
       route = routeNaturalLanguageIntent(input),
       routeDetails: any = route;
+    if(route.intentRoute==='FIRST_TIME_VISITOR'){
+      const candidates=(INITIAL_CORE_DESTINATIONS[regionId]||[]).map(item=>({entityId:item.canonicalEntityId,label:item.displayName,category:item.expectedCategory,reason:`${regionId==='hapcheon'?'합천':regionId==='gajo'?'가조·거창':'옥천'}의 기존 Core Destination 후보로 관리되는 대표 방문지입니다.`}));
+      const labels=candidates.map(x=>x.label).join(', ');
+      return{intentRoute:'FIRST_TIME_VISITOR',firstTimeVisitor:{regionId,candidates,status:candidates.length?'READY':'CORE_DATA_INSUFFICIENT'},requestedDestinations:candidates.map(x=>({...x,resolved:Boolean(x.entityId),requested:true,source:'RDM'})),recommendation:candidates.length?{itinerary:{steps:candidates.map(x=>({programUri:x.entityId,programLabel:x.label,reason:x.reason,category:x.category}))}}:null,visitorMessage:candidates.length?`처음 오셨다면 기존 대표 방문지 후보인 ${labels}부터 살펴보세요. 순위를 강제로 정하지 않고, 남은 시간과 날씨에 맞춰 코스를 조정할 수 있어요.`:'현재 이 지역은 승인된 Core Destination 후보 데이터가 충분하지 않습니다. 임의로 대표 명소를 만들지 않고 지역 정보 검토가 끝난 뒤 안내할게요.'};
+    }
     const newlyRequestedDestinations =
       routeDetails.explicitDestinations?.length && this.placeDiscovery
         ? await this.placeDiscovery.resolveRequestedDestinations(

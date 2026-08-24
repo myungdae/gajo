@@ -302,9 +302,13 @@ export const GUIDE_KNOWLEDGE: GuideKnowledge[] = [
   item({
     intent: 'DATA_ACCURACY',
     audiences: ['GENERAL', 'VISITOR', 'BUSINESS', 'PUBLIC_SECTOR'],
-    patterns: [/틀린\s*정보|정보.*틀리|오류|정확|책임/],
+    patterns: [
+      /틀린\s*정보|정보.*틀리|오류|정확|책임/,
+      /정보.*(?:믿을|믿어도|신뢰)|(?:믿을|신뢰할)\s*수\s*있/i,
+      /AI(?:가|의)?\s*(?:정보가\s*)?틀리면.*(?:어떻게|어쩌)/i,
+    ],
     shortAnswer:
-      '오류가 전혀 없다고 약속하지는 않습니다. 외부 검색에서 발견한 정보는 곧바로 운영 사실로 쓰지 않고 미검증 후보로 구분합니다. Regional Copilot이 검토 과제를 만들고 지역 관리자가 중요한 사실을 확인한 뒤 VERIFIED/ACTIVE 지역 운영 데이터로 반영하는 구조입니다.',
+      '완벽한 정확성을 약속하지는 않습니다. 인터넷 검색이나 AI가 발견한 내용은 자동으로 운영 사실이 되지 않습니다. 지자체·공공기관의 공식 데이터는 강한 근거가 될 수 있고 지역 현장정보가 이를 보완할 수 있지만, 출처와 검증 상태를 확인해야 합니다. Regional Copilot이 근거와 변경 후보를 검토하도록 돕고, 필요한 경우 권한을 가진 사람 운영자가 승인한 뒤 지역 운영 데이터가 되어 컨시어지 행동에 사용됩니다. 핵심 원칙은 “Evidence → Review → Human approval → Operational Data → Concierge Action”입니다. 영업시간·휴무·가격·행사처럼 빠르게 변하는 사실은 한 번 확인했더라도 영구히 정확하다고 보장할 수 없습니다.',
     supportingConcepts: [
       'search evidence',
       'UNVERIFIED',
@@ -313,9 +317,8 @@ export const GUIDE_KNOWLEDGE: GuideKnowledge[] = [
     ],
     allowedClaims: ['검토 절차', '제로 오류 비보장'],
     relatedQuestions: [
-      '누가 정보를 검토하나요?',
-      '잘못된 정보를 발견하면 어떻게 하나요?',
       '지역정보는 누가 책임지고 관리하나요?',
+      '틀린 정보는 누가 고치나요?',
     ],
   }),
   item({
@@ -362,6 +365,21 @@ export const GUIDE_KNOWLEDGE: GuideKnowledge[] = [
       '정보 수정은 어떻게 하나요?',
       '돈을 내면 먼저 나오나요?',
     ],
+  }),
+  item({
+    intent: 'PRIVATE_REGIONAL_OPERATION',
+    audiences: ['GENERAL', 'BUSINESS', 'PUBLIC_SECTOR'],
+    patterns: [
+      /민간\s*(?:이\s*)?(?:운영|시작).*(?:가능|할\s*수|해도|되나요|돼요)/i,
+      /지자체\s*(?:없이|없어도).*(?:할\s*수|시작|운영|가능)/i,
+      /민간이\s*운영해도\s*되/i,
+      /꼭\s*(?:군청|시청|지자체)(?:이|가)?\s*해야/i,
+    ],
+    shortAnswer:
+      '네. 개념적으로는 권한을 받은 민간·지역 운영자 아래에서 시작할 수 있으며 지자체 참여가 필수는 아닙니다. Regional Manager 조직은 지역 관광조직, 협회, 상인조직, 지역 크리에이터·운영자, 전문 민간 운영자 등이 될 수 있습니다. 공공 부문은 공식 관광·공공 기반시설 데이터와 운영의 연속성에 강점이 있고, 민간 Regional Manager는 빠르게 변하는 지역 업체와 현장 하이퍼로컬 지식을 지속적으로 확인하는 데 강점이 있습니다. 그래서 “공식 공공 근거 + 민간 지역 현장지식 + Regional Copilot + 사람의 검증”을 결합한 협력 모델이 적합할 수 있습니다. 다만 현재 특정 지자체나 민간 조직의 계약 운영이 확정됐다는 뜻은 아닙니다.',
+    supportingConcepts: ['authorized private operator','Regional Manager','public-private cooperation','human verification'],
+    allowedClaims: ['지자체 참여 비필수','권한 있는 민간 운영 가능','협력 모델 가능성'],
+    relatedQuestions: ['지자체가 꼭 해야 하나요?','Regional Manager는 무슨 일을 하나요?'],
   }),
   item({
     intent: 'MUNICIPALITY_VALUE',

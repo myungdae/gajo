@@ -13,12 +13,12 @@ export default function HomePage(){
   const{listening,voiceSupported,voiceError,toggleListening}=useSpeechInput(message,setMessage);
   const link=(path:string)=>regionalPath(path,region.id,location.pathname.startsWith('/gajo'));
   useEffect(()=>{track('ENTRY_SOURCE',session.id,{source:resolved.entrySource});if(resolved.intent)track('QUICK_INTENT_SELECTED',session.id,{intent:resolved.intent.id,campaign:true})},[]);
-  const open=(intent:typeof region.quickIntents[number])=>{track('QUICK_INTENT_SELECTED',session.id,{intent:intent.id});navigate(link(intent.destination),{state:{quickStartPreset:intent.preset,quickIntent:intent.id,quickContext:intent.context,freeTextOpen:intent.id==='free-talk'}})};
+  const open=(intent:typeof region.quickIntents[number])=>{const initialMessage=intent.context?.rawMessage;track('QUICK_INTENT_SELECTED',session.id,{intent:intent.id});navigate(link(intent.destination),{state:{quickStartPreset:intent.preset,quickIntent:intent.id,quickContext:intent.context,freeTextOpen:intent.id==='free-talk'||Boolean(initialMessage),initialMessage,autoSubmit:Boolean(initialMessage)}})};
   const conciergePath=resolved.mode?`/concierge?mode=${resolved.mode.toLowerCase()}`:'/concierge';
   const beginConversation=()=>navigate(link(conciergePath),{state:{freeTextOpen:true,initialMessage:message.trim()||undefined,autoSubmit:Boolean(message.trim()),tripMode:resolved.mode}});
   const submit=(event:React.FormEvent)=>{event.preventDefault();if(message.trim())beginConversation()};
   const contextualTitle=resolved.intent?.title||entryCopy[resolved.entrySource],examples=region.home.examples.slice(0,3);
-  const secondaryIntents=region.quickIntents.filter(intent=>['food-now','place-now','senior-comfort','nearby','events-today'].includes(intent.id));
+  const secondaryIntents=region.quickIntents.filter(intent=>['first-time','food-now','place-now','senior-comfort','nearby','events-today'].includes(intent.id));
   return <div className="home-page home-conversation-first" style={{'--region-accent':region.accent}as React.CSSProperties}>
     <section className="hero home-identity" style={region.home.heroImage?{backgroundImage:`linear-gradient(#1238,#1238),url(${region.home.heroImage})`}:undefined}><small>{region.regionName} 여행 안내</small><h2>{region.home.brandLine||region.heroTitle}</h2><p>{contextualTitle||region.heroSubtitle}</p><span>{region.serviceName}</span></section>
     <section className="home-conversation" aria-labelledby="home-question"><h1 id="home-question">{region.home.question}</h1><p>{region.home.supportingCopy}</p>

@@ -2,6 +2,7 @@ import { StrictMode, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { askGuide, type GuideAudience, type GuideResponse } from './guideClient';
 import './guide.css';
+import { GlossaryText } from './components/GlossaryText';
 
 const popular = [
   '지역 AI 컨시어지를 한마디로 설명하면 무엇인가요?',
@@ -53,7 +54,7 @@ function GuideApp() {
       <section className="guide-popular"><h2>많이 묻는 질문</h2><div className="guide-popular-list" tabIndex={0} aria-label="많이 묻는 질문 목록, 스크롤하여 더 보기">{popular.map((question) => <button key={question} onClick={() => void send(question)}>{question}<span aria-hidden="true">→</span></button>)}</div></section>
       <section className="guide-perspective"><span>다른 관점으로 보기</span><div>{([['VISITOR', '관광객'], ['BUSINESS', '업체'], ['PUBLIC_SECTOR', '지자체']] as const).map(([value, label]) => <button key={value} className={audience === value ? 'selected' : ''} onClick={() => setAudience(value)}>{label} 입장</button>)}</div></section>
     </section>
-    {messages.length > 0 && <section className="guide-conversation" aria-live="polite" aria-busy={busy} aria-label="이전 질문과 답변">{messages.map((message) => <article key={message.id} ref={message.id === answerToReveal ? answerRef : undefined} tabIndex={message.id === answerToReveal ? -1 : undefined} className={`guide-message ${message.role}`}><small>{message.role === 'user' ? '질문' : '가이드'}</small><p>{message.text}</p>{message.response?.relatedQuestions?.length ? <div className="guide-related">{message.response.relatedQuestions.slice(0, 2).map((question) => <button key={question} onClick={() => send(question)}>{question}</button>)}</div> : null}</article>)}</section>}
+    {messages.length > 0 && <section className="guide-conversation" aria-live="polite" aria-busy={busy} aria-label="이전 질문과 답변">{messages.map((message) => <article key={message.id} ref={message.id === answerToReveal ? answerRef : undefined} tabIndex={message.id === answerToReveal ? -1 : undefined} className={`guide-message ${message.role}`}><small>{message.role === 'user' ? '질문' : '가이드'}</small><p><GlossaryText text={message.text}/></p>{message.response?.relatedQuestions?.length ? <div className="guide-related">{message.response.relatedQuestions.slice(0, 2).map((question) => <button key={question} onClick={() => send(question)}>{question}</button>)}</div> : null}</article>)}</section>}
     <footer><p>이 가이드는 서비스를 설명하는 읽기 전용 안내입니다.</p><small>관광 일정 실행이나 지역 운영 데이터 관리는 각 전용 서비스에서 이루어집니다.</small></footer>
     <nav className="guide-navigation" aria-label="Guide 탐색"><button type="button" onClick={home} aria-label="Guide 홈으로 이동">홈</button><button type="button" className="guide-new-conversation" onClick={restart} aria-label="새 대화 시작" disabled={messages.length === 0}>새 대화</button></nav>
   </main>;

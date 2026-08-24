@@ -264,7 +264,9 @@ export class PlaceDiscoveryService {
       entities: [
         ...ranked
           .slice(context.selectionIndex ?? 0)
-          .map(({ record, matched, distanceMeters, score }, index) => ({
+          .map(({ record, matched, distanceMeters, score }, index) => {
+            const actions = (ESSENTIAL_SERVICE_TYPES as readonly string[]).includes(category) ? safeEssentialActions(record,config?.bounds) : record.actions;
+            return ({
             entityId: record.entityUri,
             regionId,
             order: index + 1,
@@ -283,9 +285,7 @@ export class PlaceDiscoveryService {
             reservationUrl: record.reservationUrl,
             latitude: record.latitude,
             longitude: record.longitude,
-            actions: (ESSENTIAL_SERVICE_TYPES as readonly string[]).includes(category)
-              ? safeEssentialActions(record)
-              : record.actions,
+            actions,
             source: record.source,
             lastVerifiedAt: record.lastVerifiedAt,
             distanceMeters,
@@ -310,10 +310,11 @@ export class PlaceDiscoveryService {
               source: 'RDM',
               verificationStatus: record.runtimeDataStatus,
               runtimeDistanceCalculated: distanceMeters !== undefined,
-              navigationAvailable: Boolean(record.actions?.navigate),
+              navigationAvailable: Boolean(actions?.navigate),
+              navigationMode: (actions as any)?.navigate?.evidenceMode,
               tripEligible: true,
             },
-          })),
+          });}),
         ...searchCandidates,
       ],
     };

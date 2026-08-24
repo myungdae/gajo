@@ -2,6 +2,7 @@ import type { CreateContextInput } from "./api/client";
 export type RegionId =
   "gajo" | "okcheon" | "muan" | "gyeryong" | "hapcheon" | "daejeon-junggu";
 export type QuickIntentId =
+  | "first-time"
   | "place-now"
   | "food-now"
   | "two-hour-course"
@@ -74,6 +75,13 @@ export interface RegionConfig {
   dataSources: Record<string, string>;
 }
 const quickIntents: QuickIntent[] = [
+  {
+    id: "first-time",
+    title: "처음 왔어요. 꼭 가볼 곳",
+    description: "지역의 대표 방문지부터 살펴보기",
+    destination: "/concierge",
+    context: { inputMode: "FREE_TEXT", rawMessage: "처음 왔어요. 꼭 가볼 곳 알려주세요." },
+  },
   {
     id: "place-now",
     title: "지금 어디 갈까요?",

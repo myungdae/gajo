@@ -4,6 +4,11 @@ import { readFileSync } from 'node:fs';
 
 const main = readFileSync(new URL('./guide-main.tsx', import.meta.url), 'utf8');
 const css = readFileSync(new URL('./guide.css', import.meta.url), 'utf8');
+const glossary = readFileSync(new URL('./guideGlossary.ts', import.meta.url), 'utf8');
+const glossaryView = readFileSync(new URL('./components/GlossaryText.tsx', import.meta.url), 'utf8');
+const glossaryCss = readFileSync(new URL('./components/GlossaryText.css', import.meta.url), 'utf8');
+
+test('shared tap glossary covers six approved terms with keyboard and mobile dismissal',()=>{for(const term of ['Regional Copilot','Regional Manager','Hyper-local Knowledge','Replanning','Core Destination','RDM'])assert.ok(glossary.includes(term));assert.match(glossaryView,/aria-expanded=\{open\}/);assert.match(glossaryView,/event\.key==='Escape'/);assert.match(glossaryView,/pointerdown/);assert.match(glossaryView,/설명 닫기/);assert.match(glossaryCss,/@media\(max-width:430px\)/);assert.match(main,/GlossaryText/)});
 
 test('stable bottom navigation exposes Home and New conversation without a floating pill', () => {
   assert.match(main, /<nav className="guide-navigation" aria-label="Guide 탐색">/);
