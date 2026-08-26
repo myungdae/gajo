@@ -9,7 +9,7 @@ import { regionalPath } from "../regionRouting";
 import { ensureTripSession } from "../tripSession";
 import EntityActions from "./EntityActions";
 import ItineraryAddContinuation from "./ItineraryAddContinuation";
-import {saveFullJourney} from "../fullJourney";
+import {applyReplannedJourney, saveFullJourney} from "../fullJourney";
 
 export default function AiResponseActions({ rawMessage, result, turnId }: { rawMessage: string; result: ConciergeChatResponse; turnId: string }) {
   const region = useRegion(), navigate = useNavigate(), session = ensureTripSession(region.id);
@@ -21,7 +21,7 @@ export default function AiResponseActions({ rawMessage, result, turnId }: { rawM
   const selected = (actionType: string) => track("AI_NEXT_ACTION_SELECTED", session.id, { turnId, actionType, entityId: model.decision.entityId });
   return <section className="ai-response-actions" aria-label="이 답변에서 바로 하기">
     {excluded.length > 0 && model.decision.label && <p className="ai-alternative-decision" aria-live="polite">다음 대안은 <strong>{model.decision.label}</strong>입니다.</p>}
-    {model.actions.some((a) => a.type === "APPLY_REPLAN") && <button type="button" className="btn btn-primary" onClick={() => { selected("APPLY_REPLAN"); navigate(regionalPath("/itinerary", region.id), { state: { result } }); }}>일정 변경하기</button>}
+    {model.actions.some((a) => a.type === "APPLY_REPLAN") && <button type="button" className="btn btn-primary" onClick={() => { selected("APPLY_REPLAN"); const updated=applyReplannedJourney(region.id,result.recommendation?.itinerary,result.context); navigate(regionalPath("/itinerary", region.id), { state: updated ? undefined : { result } }); }}>일정 변경하기</button>}
     {model.actions.some((a)=>a.type==='VIEW_ITINERARY')&&<button type="button" className="btn btn-primary" onClick={()=>{selected('VIEW_ITINERARY');navigate(regionalPath('/itinerary',region.id),{state:{result}})}}>일정 보기</button>}
     {entity && model.actions.some((a) => a.type === "NAVIGATE") && <EntityActions entity={entity} hideDetail navigationLabel={model.actions.some(a=>a.type==='VIEW_ITINERARY')?'첫 장소로 출발':`${model.decision.label}으로 출발하기`} showItineraryAdd={false} onNavigate={() => selected("NAVIGATE")} />}
     {model.actions.some((a) => a.type === "FIND_ALTERNATIVES") && <button type="button" className="btn btn-outline" onClick={() => { selected("FIND_ALTERNATIVES"); if (model.decision.entityId) setExcluded((items) => [...items, model.decision.entityId!]); }}>{result.discovery?.category === "FOOD" ? "다른 식당 보기" : "다른 곳 추천받기"}</button>}

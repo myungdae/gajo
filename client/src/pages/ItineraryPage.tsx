@@ -36,6 +36,7 @@ import {
 } from "../recommendationItem";
 import TripManagement from "../components/TripManagement";
 import ItineraryItemEditor from "../components/ItineraryItemEditor";
+import ArchivedTrips from "../components/ArchivedTrips";
 
 export default function ItineraryPage() {
   const region = useRegion();
@@ -105,6 +106,7 @@ export default function ItineraryPage() {
         </header>
         <TripManagement onSavedPlacesCleared={setSavedPlaces} />
         <SavedPlacesSection places={savedPlaces} onRemove={removePlace} />
+        <ArchivedTrips />
       </div>
     );
 
@@ -121,7 +123,7 @@ export default function ItineraryPage() {
         >
           AI 컨시어지로 이동
         </button>
-      </div></div>
+      </div><ArchivedTrips /></div>
     );
   }
 
@@ -275,6 +277,7 @@ export default function ItineraryPage() {
   return (
     <div>
       <TripManagement onSavedPlacesCleared={setSavedPlaces} />
+      <ArchivedTrips />
       <div className="card">
         <h2>추천 근거 요약</h2>
         <p style={{ fontSize: 13 }}>{rec.reasonSummary}</p>

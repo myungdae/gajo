@@ -29,8 +29,13 @@ export interface TripSession {
   savedPlaces?: any[];
   execution?: {
     currentEntityId?: string;
-    statusByEntityId?: Record<string, "PLANNED" | "READY" | "EN_ROUTE">;
+    statusByEntityId?: Record<string, "PLANNED" | "READY" | "EN_ROUTE" | "COMPLETED" | "SKIPPED">;
   };
+  replanHistory?: Array<{
+    replannedAt: string;
+    replacedSteps: any[];
+    newlyAddedEntityIds: string[];
+  }>;
   createdAt: string;
   updatedAt: string;
   restorationPending?: boolean;
@@ -143,6 +148,25 @@ export function archiveAndStartNewTrip(
       JSON.stringify(privacySafe(current)),
     );
   return saveTripSession(createTripSession(regionId), storage);
+}
+export function listArchivedTripSessions(
+  regionId: string,
+  storage: Pick<Storage, "getItem" | "length" | "key"> = localStorage,
+) {
+  const archived: TripSession[] = [];
+  for (let index = 0; index < storage.length; index += 1) {
+    const key = storage.key(index);
+    if (!key?.startsWith(archivePrefix(regionId))) continue;
+    try {
+      const session = JSON.parse(storage.getItem(key) || "") as TripSession;
+      if (session.regionId === regionId) archived.push(session);
+    } catch {
+      // Preserve unreadable evidence in storage; do not mutate it from the UI.
+    }
+  }
+  return archived.sort(
+    (a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt),
+  );
 }
 export function updateTripRuntimeContext(
   regionId: string,

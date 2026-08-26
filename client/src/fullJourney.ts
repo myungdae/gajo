@@ -90,3 +90,68 @@ export function saveFullJourney(
     dayCounts,
   };
 }
+
+export function applyReplannedJourney(
+  regionId: string,
+  itinerary: any,
+  runtimeContext: any,
+  storage: Pick<Storage, "getItem" | "setItem"> = localStorage,
+) {
+  const current = loadTripSession(storage, regionId), revised = itinerarySteps(itinerary);
+  if (!current || !revised.length) return undefined;
+  const oldSteps = itinerarySteps(current.itinerary), status = current.execution?.statusByEntityId || {};
+  const historical = oldSteps.filter((step) => {
+    const entityId = canonicalEntityId(step), value = step.status || (entityId ? status[entityId] : undefined);
+    return value === "COMPLETED" || value === "SKIPPED";
+  });
+  const historicalIds = new Set(historical.map(canonicalEntityId));
+  const oldFuture = oldSteps.filter((step) => !historicalIds.has(canonicalEntityId(step)));
+  const oldFutureById = new Map(oldFuture.map((step) => [canonicalEntityId(step), step]));
+  const future = revised
+    .filter((step) => !historicalIds.has(canonicalEntityId(step)))
+    .map((step) => {
+      const entityId = canonicalEntityId(step), existing = oldFutureById.get(entityId);
+      return {
+        ...existing,
+        ...step,
+        entityId,
+        regionId: step.regionId || regionId,
+        status: existing?.status || "NEWLY_ADDED",
+      };
+    });
+  if (future.some((step) => !step.entityId || step.regionId !== regionId)) return undefined;
+  const futureIds = new Set(future.map(canonicalEntityId));
+  const replacedSteps = oldFuture
+    .filter((step) => !futureIds.has(canonicalEntityId(step)))
+    .map((step) => ({ ...step, status: "REPLACED_BY_REPLAN" }));
+  const steps = [...historical, ...future].map((step, index) => ({ ...step, order: index + 1 }));
+  const currentEntityId = current.execution?.currentEntityId;
+  const nextCurrentEntityId = currentEntityId && steps.some((step) => canonicalEntityId(step) === currentEntityId)
+    ? currentEntityId
+    : canonicalEntityId(future[0]);
+  return saveTripSession({
+    ...current,
+    runtimeContext: runtimeContext || current.runtimeContext,
+    itinerary: {
+      ...((current.itinerary as object) || {}),
+      ...itinerary,
+      regionId,
+      journeyId: (current.itinerary as any)?.journeyId || itinerary.itineraryNo || itinerary.journeyId,
+      savedAsFullJourney: Boolean((current.itinerary as any)?.savedAsFullJourney),
+      steps,
+    },
+    execution: {
+      ...current.execution,
+      currentEntityId: nextCurrentEntityId,
+      statusByEntityId: current.execution?.statusByEntityId,
+    },
+    replanHistory: [...(current.replanHistory || []), {
+      replannedAt: new Date().toISOString(),
+      replacedSteps,
+      newlyAddedEntityIds: future
+        .filter((step) => !oldFutureById.has(canonicalEntityId(step)))
+        .map(canonicalEntityId)
+        .filter((entityId): entityId is string => Boolean(entityId)),
+    }],
+  }, storage);
+}
