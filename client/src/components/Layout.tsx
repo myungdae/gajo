@@ -11,7 +11,7 @@ const navItems = [
   { to: "/", label: "홈", icon: "home", end: true },
   { to: "/nearby-discovery", label: "주변 찾기", icon: "map" },
   { to: "/itinerary", label: "내 여행", icon: "trip", end: false },
-  { to: "/concierge", label: "AI에게 묻기", icon: "chat" },
+  { to: "/concierge?mode=now", label: "AI 컨시어지", icon: "chat" },
 ];
 
 function NavIcon({ name }: { name: string }) {

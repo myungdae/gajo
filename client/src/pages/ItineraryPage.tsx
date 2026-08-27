@@ -84,6 +84,13 @@ export default function ItineraryPage() {
       savedPlaceCount: savedPlaces.length,
     });
   }, []);
+  useEffect(() => {
+    const refresh = (event: Event) => {
+      if ((event as CustomEvent).detail?.regionId === region.id) setRevision((value) => value + 1);
+    };
+    window.addEventListener("regional-trip-saved", refresh);
+    return () => window.removeEventListener("regional-trip-saved", refresh);
+  }, [region.id]);
 
   const removePlace = (entityId: string) => {
     const updated = removeSavedPlace(region.id, entityId);
@@ -134,6 +141,7 @@ export default function ItineraryPage() {
   const journey = currentAndNext(
     itinerarySteps,
     tripSession.execution?.currentEntityId,
+    tripSession.execution?.statusByEntityId,
   );
   const visitorLabel = (uri: string, fallback: string) => {
     const step = itinerarySteps.find(

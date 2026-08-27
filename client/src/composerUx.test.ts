@@ -7,7 +7,8 @@ const page = source("./pages/ConciergePage.tsx"), css = source("./index.css");
 test("AI conversation renders one shared text and voice composer", () => {
   assert.equal((page.match(/<textarea/g) || []).length, 1);
   assert.equal((page.match(/ref=\{voiceButtonRef\}/g) || []).length, 1);
-  assert.match(page, /hasCompletedTurn\s*\?\s*"concierge-followup-composer"/);
+  assert.match(page, /concierge-input-panel concierge-unified-composer/);
+  assert.doesNotMatch(page, /"concierge-followup-composer"/);
 });
 test("typed Enter click and speech preserve the existing send and voice flows", () => {
   assert.match(page, /e\.key === "Enter"[\s\S]*send\(\)/);
@@ -16,23 +17,22 @@ test("typed Enter click and speech preserve the existing send and voice flows", 
   assert.match(page, /aria-label=\{hasCompletedTurn \? "이어서 물어보기"/);
   assert.match(page, /aria-label=\{hasCompletedTurn \? "질문 전송"/);
 });
-test("persistent composer clears content without replacing conversation state", () => {
-  assert.match(page, /setInput\(""\)/);
+test("composer clears only after success and retains text on failure", () => {
+  assert.match(page, /await postConciergeChat[\s\S]*setInput\(""\)[\s\S]*catch/);
+  assert.doesNotMatch(page, /if \(!retry\)[\s\S]{0,300}setInput\(""\)/);
   assert.match(page, /conversationAnchor\?\.regionId === region\.id/);
   assert.match(page, /turnId,[\s\S]*conversationalAnchor/);
 });
-test("composer sits above navigation with safe clearance and one scroll surface", () => {
-  assert.match(css, /\.concierge-followup-composer\s*\{[\s\S]*?position:\s*absolute/);
-  assert.match(css, /bottom:\s*calc\(58px \+ env\(safe-area-inset-bottom\)\)/);
-  assert.match(css, /\.has-persistent-composer\s*\{[^}]*padding-bottom:\s*88px/);
-  assert.doesNotMatch(css, /\.concierge-followup-composer\{[^}]*overflow-y:scroll/);
+test("unified composer is large, inline, and does not overlap bottom navigation", () => {
+  assert.match(css, /\.concierge-input-panel\s*\{[\s\S]*?position:\s*static/);
+  assert.match(css, /\.concierge-input-panel textarea\s*\{[\s\S]*?min-height:\s*132px/);
+  assert.match(page, /내 여행으로 돌아가기/);
 });
 test("360 390 430 and desktop widths retain compact 44px controls without overflow", () => {
   assert.match(css, /@media\s*\(max-width:\s*430px\)/);
   assert.match(css, /@media\s*\(max-width:\s*380px\)/);
   assert.match(css, /@media\s*\(min-width:\s*700px\)/);
-  assert.match(css, /grid-template-columns:\s*minmax\(0,\s*1fr\) 44px 44px/);
-  assert.match(css, /max-width:\s*680px/);
+  assert.match(css, /@media\s*\(max-width:\s*430px\)[\s\S]*concierge-unified-composer/);
 });
 test("resolved-turn focus is conservative and targets the current result", () => {
   assert.match(page, /followCurrentTurnRef/);

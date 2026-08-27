@@ -12,7 +12,7 @@ New archives receive `archivedAt` and sort newest first by that value, with lega
 
 An itinerary item is a plan, not proof of a visit. Only an explicit `COMPLETED` value from `execution.statusByEntityId` or the step status counts as visited. `SKIPPED`, `PLANNED`, `READY`, `EN_ROUTE`, and `NEWLY_ADDED` do not. `EN_ROUTE` currently records a visitor choosing navigation; it does not establish arrival.
 
-The current model supports completed and skipped states, but the visitor UI has no clear completion button. Phase 2 should add one restrained action—“방문 완료”—to an execution item and persist `COMPLETED` through the existing execution state mechanism. A separate “건너뛰기” action can persist `SKIPPED`. Neither action should be triggered from GPS alone. Optional event timestamps should accompany every state transition.
+The visitor UI now provides restrained “방문 완료” and “건너뛰기” actions on active itinerary items. They persist `COMPLETED`/`SKIPPED` through the existing execution state mechanism together with `completedAt`/`skippedAt` evidence keyed by entity. Neither action is triggered from GPS. A future append-only event model can retain richer transition provenance.
 
 ## Replan history
 
@@ -48,7 +48,7 @@ Browser storage is adequate for the current privacy-reduced TripSession foundati
 ## Recommended roadmap
 
 1. Phase 1 — Human-readable archive UX (implemented): newest-first archive cards, four collapsed records, progressive reveal, empty-trip copy, and execution-aware counts.
-2. Phase 2 — Explicit `VISITED`/`SKIPPED` actions, timestamped execution events, immutable original-plan evidence, and user-authored per-place memo.
+2. Phase 2 — Explicit `VISITED`/`SKIPPED` actions and timestamps (implemented); next add immutable original-plan evidence, append-only execution events, and user-authored per-place memo.
 3. Phase 3 — One to three representative photos per visited place with consent, object storage, EXIF controls, retention, and deletion.
 4. Phase 4 — Evidence-grounded AI diary generation with fact/narrative provenance and preserved originals.
 5. Phase 5 — Optional personal travel-history experience; consider cross-region aggregation only as an explicit user-controlled product.

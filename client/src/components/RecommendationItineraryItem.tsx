@@ -11,7 +11,7 @@ import {
 } from "../recommendationItem";
 import { ensureTripSession, saveTripSession } from "../tripSession";
 import { track } from "../analytics";
-import { executionState, verifiedNavigation } from "../journeyExecution";
+import { executionState, verifiedNavigation, visitorExecutionLabel } from "../journeyExecution";
 import type { NearbyCategory } from "../api/client";
 export default function RecommendationItineraryItem({
   step,
@@ -53,7 +53,8 @@ export default function RecommendationItineraryItem({
       SUPERMARKET: "슈퍼마켓",
       GROCERY_STORE: "식료품점",
     } as Record<string, string>)[step.entityType],
-    destination = verifiedNavigation(step);
+    destination = verifiedNavigation(step),
+    [executionStatus, setExecutionStatus] = useState(() => entityId ? session.execution?.statusByEntityId?.[entityId] || step.status || "PLANNED" : step.status || "PLANNED");
   const toggle = () => {
     if (!interactive) return;
     setOpen((value) => {
@@ -98,6 +99,11 @@ export default function RecommendationItineraryItem({
       state: { freeTextOpen: true, tripMode: "NOW" },
     });
   };
+  const recordExecution = (status: "COMPLETED" | "SKIPPED") => {
+    if (!entityId || collection) return;
+    const updated = saveTripSession(executionState(ensureTripSession(region.id), entityId, status));
+    setExecutionStatus(updated.execution?.statusByEntityId?.[entityId] || status);
+  };
   return (
     <div className={`itinerary-step${interactive ? " interactive" : ""}`}>
       {!collection && (
@@ -118,6 +124,7 @@ export default function RecommendationItineraryItem({
           <h3>{name}</h3>
         )}
         {shoppingCategory && <small>{shoppingCategory}</small>}
+        {execution && !collection && <span className={`execution-status status-${String(executionStatus).toLowerCase()}`}>{visitorExecutionLabel(executionStatus)}</span>}
         {step.durationMinutes && <p>소요 시간: 약 {step.durationMinutes}분</p>}
         {open && (
           <section
@@ -169,6 +176,12 @@ export default function RecommendationItineraryItem({
             )}
             {execution && (
               <div className="itinerary-context-actions">
+                {!collection && !["COMPLETED", "SKIPPED"].includes(executionStatus) && (
+                  <div className="visit-state-actions">
+                    <button className="btn btn-primary" onClick={() => recordExecution("COMPLETED")}>방문 완료</button>
+                    <button className="btn btn-outline" onClick={() => recordExecution("SKIPPED")}>건너뛰기</button>
+                  </div>
+                )}
                 {destination && (
                   <details>
                     <summary>주변 찾기</summary>

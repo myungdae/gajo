@@ -3153,6 +3153,30 @@ table.simple td {
   width: 100%;
   min-height: 44px;
 }
+.execution-status {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #eef3f1;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+.execution-status.status-completed { background: #e8f7ef; color: #17603b; }
+.execution-status.status-skipped { background: #f2f2f2; color: #666; }
+.execution-status.status-newly_added { background: #eef4ff; color: #315b9a; }
+.visit-state-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; margin-bottom: 8px; }
+.visit-state-actions .btn { min-height: 46px; }
+.concierge-unified-composer { margin-bottom: 12px; }
+.concierge-return-trip { margin-top: 8px; }
+@media (max-width: 430px) {
+  .concierge-unified-composer { padding: 16px; margin-inline: 0; }
+  .concierge-unified-composer textarea { min-height: 132px; }
+  .concierge-unified-composer .speech-session-button,
+  .concierge-unified-composer .concierge-submit { min-height: 50px; }
+}
 .trip-management-toggle {
   min-height: 44px;
 }

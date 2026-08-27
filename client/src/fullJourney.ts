@@ -101,7 +101,7 @@ export function applyReplannedJourney(
   if (!current || !revised.length) return undefined;
   const oldSteps = itinerarySteps(current.itinerary), status = current.execution?.statusByEntityId || {};
   const historical = oldSteps.filter((step) => {
-    const entityId = canonicalEntityId(step), value = step.status || (entityId ? status[entityId] : undefined);
+    const entityId = canonicalEntityId(step), value = (entityId ? status[entityId] : undefined) || step.status;
     return value === "COMPLETED" || value === "SKIPPED";
   });
   const historicalIds = new Set(historical.map(canonicalEntityId));

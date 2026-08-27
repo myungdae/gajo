@@ -30,6 +30,8 @@ export interface TripSession {
   execution?: {
     currentEntityId?: string;
     statusByEntityId?: Record<string, "PLANNED" | "READY" | "EN_ROUTE" | "COMPLETED" | "SKIPPED">;
+    completedAtByEntityId?: Record<string, string>;
+    skippedAtByEntityId?: Record<string, string>;
   };
   replanHistory?: Array<{
     replannedAt: string;

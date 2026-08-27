@@ -140,7 +140,7 @@ export default function ConciergePage() {
     text: string;
     structured?: CreateContextInput;
   } | null>(null);
-  const { listening, voiceSupported, voiceError, toggleListening } =
+  const { listening, voiceSupported, voiceError, toggleListening, stopListening } =
     useSpeechInput(input, setInput);
 
   useEffect(() => {
@@ -171,6 +171,7 @@ export default function ConciergePage() {
     const scrollSurface = textInputRef.current?.closest(".app-main");
     followCurrentTurnRef.current = document.activeElement === textInputRef.current || !scrollSurface || scrollSurface.scrollHeight - scrollSurface.scrollTop - scrollSurface.clientHeight < 280;
     requestInFlightRef.current = true;
+    stopListening();
     setCurrentTurn(beginCurrentTurn(turnId, text));
     setRequestError(false);
     if (!retry) {
@@ -179,7 +180,6 @@ export default function ConciergePage() {
         ...prev,
         { role: "user", text: text || "선택한 조건으로 일정을 추천해 주세요.", turnId },
       ]);
-      setInput("");
     }
     if (followCurrentTurnRef.current)
       requestAnimationFrame(() => currentTurnConversationRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }));
@@ -296,6 +296,7 @@ export default function ConciergePage() {
           return { regionId: region.id, anchor: { entityId: result.discovery!.anchorEntityId!, label: result.discovery!.anchorLabel, latitude: result.discovery!.anchorLatitude, longitude: result.discovery!.anchorLongitude, source: result.discovery!.anchorEntityId!.startsWith("search:") ? "SEARCH" : "RDM" }, targetCategory: result.discovery!.category as NonNullable<CreateContextInput["discoveryCategoryHint"]>, relation: result.discovery!.relation || "REGIONAL", currentResult: { entityId: referenceEntity.entityId, label: referenceEntity.programLabel || referenceEntity.facilityLabel, latitude: referenceEntity.latitude, longitude: referenceEntity.longitude, source: referenceEntity.operationalEvidence?.source === "SEARCH" ? "SEARCH" : "RDM" }, shownEntityIds: [...new Set([...(same ? previous!.shownEntityIds : []), referenceEntity.entityId])], sourceTurnId: turnId };
         });
       } else if (!isGuideExplanation&&!result.distanceInfo) setDiscoveryContext(undefined);
+      setInput("");
     } catch (e: any) {
       console.error("[concierge] request failed", e);
       setRequestError(true);
@@ -382,7 +383,7 @@ export default function ConciergePage() {
   };
 
   return (
-    <div className={hasCompletedTurn ? "concierge-conversation has-persistent-composer" : "concierge-conversation"}>
+    <div className="concierge-conversation">
       {tripMode === "PLAN" && <SavedTripEntry />}
       {tripMode !== "PLAN" && (
         <div ref={liveStoryRef} className="journey-live-context">
@@ -557,9 +558,7 @@ export default function ConciergePage() {
       {(hasCompletedTurn || freeTextOpen) && (
         <div
           className={
-            hasCompletedTurn
-              ? "concierge-followup-composer"
-              : "concierge-input-panel"
+            "concierge-input-panel concierge-unified-composer"
           }
         >
           <div className="input-panel-heading">
@@ -573,7 +572,7 @@ export default function ConciergePage() {
           <textarea
             ref={textInputRef}
             className={listening ? "is-voice-listening" : undefined}
-            rows={hasCompletedTurn ? 1 : 5}
+            rows={5}
             aria-label={hasCompletedTurn ? "이어서 물어보기" : "여행 조건 입력"}
             placeholder={
               hasCompletedTurn
@@ -641,6 +640,11 @@ export default function ConciergePage() {
           >
             {hasCompletedTurn ? <><span aria-hidden="true">➤</span><span className="sr-only">전송</span></> : "대화로 찾기"}
           </button>
+          {hasCompletedTurn && (
+            <button type="button" className="btn btn-outline btn-block concierge-return-trip" onClick={() => navigate(regionLink("/itinerary"))}>
+              내 여행으로 돌아가기
+            </button>
+          )}
         </div>
       )}
     </div>

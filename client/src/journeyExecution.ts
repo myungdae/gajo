@@ -13,7 +13,13 @@ import {
   navigationDestination,
   type NavigationDestination,
 } from "./utils/placeNavigation.ts";
-export type ExecutionStatus = "PLANNED" | "READY" | "EN_ROUTE";
+export type ExecutionStatus = "PLANNED" | "READY" | "EN_ROUTE" | "COMPLETED" | "SKIPPED";
+export const visitorExecutionLabel = (status?: string) => ({
+  PLANNED: "예정", READY: "현재", EN_ROUTE: "현재",
+  COMPLETED: "방문 완료 ✓", SKIPPED: "건너뜀",
+  REPLACED_BY_REPLAN: "일정 변경으로 교체됨",
+  NEWLY_ADDED: "새 일정에 추가됨",
+} as Record<string, string>)[status || "PLANNED"] || "예정";
 export function itinerarySteps(itinerary: unknown): any[] {
   return Array.isArray((itinerary as any)?.steps)
     ? (itinerary as any).steps
@@ -99,7 +105,9 @@ export function executionState(
   session: TripSession,
   entityId: string,
   status: ExecutionStatus,
+  now = new Date(),
 ) {
+  const occurredAt = now.toISOString();
   return {
     ...session,
     execution: {
@@ -109,12 +117,14 @@ export function executionState(
         ...session.execution?.statusByEntityId,
         [entityId]: status,
       },
+      completedAtByEntityId: status === "COMPLETED" ? { ...session.execution?.completedAtByEntityId, [entityId]: occurredAt } : session.execution?.completedAtByEntityId,
+      skippedAtByEntityId: status === "SKIPPED" ? { ...session.execution?.skippedAtByEntityId, [entityId]: occurredAt } : session.execution?.skippedAtByEntityId,
     },
   };
 }
-export function currentAndNext(steps: any[], currentEntityId?: string) {
+export function currentAndNext(steps: any[], currentEntityId?: string, statusByEntityId: Record<string, string> = {}) {
   const active = steps.filter(
-    (step) => !["COMPLETED", "SKIPPED"].includes(step.status),
+    (step) => !["COMPLETED", "SKIPPED"].includes(statusByEntityId[canonicalEntityId(step) || ""] || step.status),
   );
   const found = currentEntityId
       ? active.findIndex((step) => canonicalEntityId(step) === currentEntityId)
