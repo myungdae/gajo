@@ -574,11 +574,7 @@ export default function ConciergePage() {
             className={listening ? "is-voice-listening" : undefined}
             rows={5}
             aria-label={hasCompletedTurn ? "이어서 물어보기" : "여행 조건 입력"}
-            placeholder={
-              hasCompletedTurn
-                ? "다른 장소나 조건을 말씀해주세요."
-                : "예: 가족과 함께 편안하게 힐링할 수 있는 온천 코스를 추천해주세요."
-            }
+            placeholder="예: 비가 와 / 배고파 / 카페 가고 싶어"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -616,16 +612,11 @@ export default function ConciergePage() {
                 <i />
               </span>
             </button>
-            {!hasCompletedTurn && (
-              <p>
-                말씀하신 내용이 위 입력창에 들어갑니다. 음성은 저장하지 않아요.
-              </p>
-            )}
           </div>
           <p className="voice-helper" role="status">
             {listening
               ? "듣고 있어요. 계속 말씀하시거나 ‘말하기 끝’을 눌러 주세요."
-              : "말씀하신 내용이 위 입력창에 들어갑니다. 음성은 저장하지 않아요."}
+              : "‘비가 와’, ‘배고파’, ‘카페 가고 싶어’처럼 편하게 말씀해 주세요. 음성은 저장하지 않습니다."}
           </p>
           {(!voiceSupported || voiceError) && (
             <p className="voice-error" role="alert">

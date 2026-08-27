@@ -124,13 +124,13 @@ export default function ItineraryPage() {
         <h2>현재 여행</h2>
         <p>현재 진행 중인 여행 일정이 없습니다.</p>
         <p style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
-          AI 컨시어지와 대화하여 맞춤 일정을 먼저 생성해주세요.
+          AI 여행도우미에게 원하는 여행을 말씀해 주세요.
         </p>
         <button
           className="btn btn-primary btn-block"
           onClick={() => navigate(regionLink("/concierge"))}
         >
-          AI 컨시어지로 이동
+          AI 여행도우미에게 물어보기
         </button>
       </div><ArchivedTrips /></div>
     );
@@ -546,7 +546,7 @@ export default function ItineraryPage() {
         className="btn btn-outline btn-block"
         onClick={() => navigate(regionLink("/concierge"))}
       >
-        ← AI 컨시어지로 돌아가기
+        ← AI 여행도우미로 돌아가기
       </button>
     </div>
   );

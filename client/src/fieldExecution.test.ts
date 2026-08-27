@@ -55,7 +55,7 @@ test("completion remains isolated across Hapcheon, Gajo, and Okcheon", () => {
 
 test("unified conversation uses one API/session and has no app audio or auto-restart loop", () => {
   const page = readFileSync(new URL("./pages/ConciergePage.tsx", import.meta.url), "utf8"), layout = readFileSync(new URL("./components/Layout.tsx", import.meta.url), "utf8"), speech = readFileSync(new URL("./hooks/useSpeechInput.ts", import.meta.url), "utf8"), css = readFileSync(new URL("./index.css", import.meta.url), "utf8");
-  assert.match(layout, /\/concierge\?mode=now[\s\S]*AI 컨시어지/);
+  assert.match(layout, /\/concierge\?mode=now[\s\S]*AI 여행도우미/);
   assert.match(page, /postConciergeChat/);
   assert.match(page, /contextSessionId:\s*contextSessionIdRef\.current/);
   assert.match(page, /loadTripSession\(localStorage, region\.id\)/);
