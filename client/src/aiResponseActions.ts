@@ -6,6 +6,18 @@ export interface AiResponseActionModel { decision: { kind: "PLACE" | "REPLAN"; e
 
 export const isExplanationOnly = (message: string) => /(?:왜|무엇|뭐가).{0,12}(?:유명|중요|특별)|(?:유래|역사|의미).{0,8}(?:알려|설명)/.test(message);
 
+export function discoveryAlternatives(entities: any[] = [], excludedEntityIds: string[] = []) {
+  const excluded = new Set(excludedEntityIds), seen = new Set<string>();
+  const primaryId = entities.map(canonicalEntityId).find((id) => id && !excluded.has(id));
+  return entities.filter((entity) => {
+    const id = canonicalEntityId(entity);
+    if (!id) return true;
+    if (id === primaryId || excluded.has(id) || seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+}
+
 export function buildAiResponseActionModel(input: { rawMessage?: string; result?: any; hasCurrentItinerary?: boolean; excludedEntityIds?: string[] }): AiResponseActionModel | null {
   const { result } = input;
   if (!result || result.error || isExplanationOnly(input.rawMessage || "")) return null;

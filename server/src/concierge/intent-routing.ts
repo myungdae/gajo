@@ -66,6 +66,7 @@ const CATEGORY_PATTERNS: [DiscoveryCategory, RegExp][] = [
   ],
 ];
 export function discoveryCategory(message = '') {
+  if (/(?:배가|배는)?\s*(?:너무|많이|진짜|정말)?\s*(?:고프|고파|고픈|곱|고푸)|허기(?:져|지)|출출/.test(message)) return 'FOOD';
   if (/숙박|자고\s*싶|묵고\s*싶|체크인/.test(message)) return 'LODGING';
   return CATEGORY_PATTERNS.map(([category, pattern]) => ({
     category,
@@ -139,6 +140,8 @@ export function routeNaturalLanguageIntent(input: {
   if (
     /지금|현재\s*위치|내\s*주변|오늘\s*(?:저녁|점심|아침|갈|먹)/.test(message)
   )
+    return { intentRoute: 'IMMEDIATE_NOW' as const, category };
+  if (category === 'FOOD' && /(?:배가|배는)?\s*(?:너무|많이|진짜|정말)?\s*(?:고프|고파|고픈|곱|고푸)|배고|허기(?:져|지)|출출/.test(message))
     return { intentRoute: 'IMMEDIATE_NOW' as const, category };
   const journey =
     /\d+박\s*\d+일|당일\s*여행|(?:하루|내일).{0,8}(?:일정|코스)|일정\s*(?:짜|만들|추천)|여행\s*(?:짜|계획)|코스\s*(?:짜|만들)|(?:보고|갔다가|들렀다가|먹고).{0,30}(?:보고|갔다가|들렀다가|먹고|펜션|숙소)/.test(

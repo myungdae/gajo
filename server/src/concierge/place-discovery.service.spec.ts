@@ -148,6 +148,19 @@ describe('PlaceDiscoveryService', () => {
   };
   const service = new PlaceDiscoveryService(regional as any);
 
+  it('excludes completed or rejected canonical trip entities by stable ID', async () => {
+    const result: any = await service.discover('hapcheon', 'FOOD', '배가 너무 고파', {
+      excludedEntityIds: ['food'],
+    });
+    expect(result.entities.map((item: any) => item.entityId)).not.toContain('food');
+  });
+
+  it('deduplicates only stable IDs and preserves unidentified candidates', () => {
+    const deduplicate = (service as any).deduplicateEntities.bind(service);
+    const unknownA = { programLabel: '후보 A' }, unknownB = { programLabel: '후보 B' };
+    expect(deduplicate([{ entityId: 'same' }, { entityId: 'same' }, unknownA, unknownB])).toEqual([{ entityId: 'same' }, unknownA, unknownB]);
+  });
+
   it('ranks DB-only ACTIVE metadata without a name boost and preserves actions', async () => {
     const result: any = await service.discover(
       'hapcheon',

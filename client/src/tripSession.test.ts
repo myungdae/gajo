@@ -57,6 +57,26 @@ test("PLAN context carries into NOW and explicit updates win", () => {
   assert.equal(now.transportMode, "WALK");
   assert.deepEqual(now.activityPreferences, ["INDOOR"]);
 });
+test("AI context shares current, next, completed, skipped, and stable trip identity", () => {
+  const trip = {
+    ...createTripSession("hapcheon"),
+    itinerary: { steps: [{ entityId: "done" }, { entityId: "current" }, { entityId: "next" }] },
+    savedPlaces: [{ entityId: "saved" }],
+    execution: { currentEntityId: "current", statusByEntityId: { done: "COMPLETED" as const, current: "EN_ROUTE" as const } },
+  };
+  assert.deepEqual(sessionContext(trip).tripContext, {
+    anonymousTripId: trip.anonymousTripId,
+    currentEntityId: "current",
+    nextEntityId: "next",
+    completedEntityIds: ["done"],
+    skippedEntityIds: [],
+    savedEntityIds: ["saved"],
+    itineraryEntityIds: ["done", "current", "next"],
+    excludedEntityIds: ["done"],
+  });
+  assert.equal(JSON.stringify(sessionContext(trip)).includes("savedPlaces"), false);
+  assert.equal(JSON.stringify(sessionContext(trip)).includes("runtimeContext"), false);
+});
 test("unknown date and duration remain valid planned context", () => {
   const plan = createTripSession("gajo");
   plan.mode = "PLAN";

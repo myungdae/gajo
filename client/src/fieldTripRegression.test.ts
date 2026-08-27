@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { applyReplannedJourney } from "./fullJourney.ts";
 import { archiveAndStartNewTrip, createTripSession, listArchivedTripSessions, loadTripSession, saveTripSession } from "./tripSession.ts";
+import { discoveryAlternatives } from "./aiResponseActions.ts";
+import { shouldOfferLocationForRequest } from "./utils/visitorLocation.ts";
 
 const memory = () => { const data = new Map<string, string>(); return { data, get length() { return data.size; }, getItem: (key: string) => data.get(key) || null, setItem: (key: string, value: string) => data.set(key, value), key: (index: number) => [...data.keys()][index] || null }; };
 const step = (entityId: string, status = "PLANNED") => ({ entityId, regionId: "hapcheon", programLabel: entityId, status });
@@ -49,4 +51,18 @@ test("TEST D: a new trip changes no other regional session", () => {
   assert.deepEqual(loadTripSession(storage as any, "gajo"), gajo);
   assert.deepEqual(loadTripSession(storage as any, "okcheon"), okcheon);
   assert.equal(listArchivedTripSessions("gajo", storage as any).length, 0);
+});
+
+test("TEST E: location is quiet for an active trip but returns for an unresolved proximity request", () => {
+  assert.equal(shouldOfferLocationForRequest({ hasTripEvidence: true }), false);
+  assert.equal(shouldOfferLocationForRequest({ hasTripEvidence: true, requestText: "가까운 식당", result: { discovery: { relation: "REGIONAL" } } }), true);
+  assert.equal(shouldOfferLocationForRequest({ hasTripEvidence: true, requestText: "배가 고파", result: { discovery: { relation: "REGIONAL" } } }), false);
+});
+
+test("TEST F: alternatives deduplicate stable IDs but preserve unidentified candidates", () => {
+  const unidentifiedA = { programLabel: "현장 후보 A" }, unidentifiedB = { programLabel: "현장 후보 B" };
+  assert.deepEqual(discoveryAlternatives([{ entityId: "selected" }, { entityId: "selected" }, { entityId: "other" }, { entityId: "other" }, unidentifiedA, unidentifiedB], ["selected"]), [
+    unidentifiedA,
+    unidentifiedB,
+  ]);
 });

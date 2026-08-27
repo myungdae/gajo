@@ -9,7 +9,7 @@ import {
 import GajoLiveStatus from "../components/GajoLiveStatus";
 import VisitorLocationControl from "../components/VisitorLocationControl";
 import RecommendationItineraryItem from "../components/RecommendationItineraryItem";
-import { getSessionLocation } from "../utils/visitorLocation";
+import { getSessionLocation, shouldOfferLocationForRequest } from "../utils/visitorLocation";
 import { useSpeechInput } from "../hooks/useSpeechInput";
 import { buildContextSummary,withRequestedDestinations } from "../utils/contextSummary";
 import StructuredVisitorIntake from "../components/StructuredVisitorIntake";
@@ -17,6 +17,7 @@ import PlanVisitorIntake from "../components/PlanVisitorIntake";
 import { getQuickStartPreset } from "../quickStartPresets";
 import {
   ensureTripSession,
+  hasTripEvidence,
   loadTripSession,
   mergeTravelContext,
   saveTripSession,
@@ -37,7 +38,7 @@ import AiResponseActions from "../components/AiResponseActions";
 import { beginCurrentTurn, isCurrentTurn, resolveCurrentTurn, type CurrentTurnResult } from "../currentTurnResult";
 import { captureExplicitJourney, explicitJourneyPayload, type ExplicitJourneyContext } from "../explicitJourneyContext";
 import { GlossaryText } from "../components/GlossaryText";
-import { isExplanationOnly } from "../aiResponseActions";
+import { discoveryAlternatives, isExplanationOnly } from "../aiResponseActions";
 import { understoodSummary } from "../understoodSummary";
 
 interface Message {
@@ -110,6 +111,7 @@ export default function ConciergePage() {
   const [conversationAnchor, setConversationAnchor] = useState<NonNullable<CreateContextInput["conversationalAnchor"]> | null>(null);
   const [discoveryContext, setDiscoveryContext] = useState<CreateContextInput["discoveryContext"]>();
   const [explicitJourney, setExplicitJourney] = useState<ExplicitJourneyContext>();
+  const [excludedDiscoveryIds, setExcludedDiscoveryIds] = useState<string[]>([]);
   const currentResultRef = useRef<HTMLDivElement>(null);
   const currentTurnConversationRef = useRef<HTMLDivElement>(null);
   const followCurrentTurnRef = useRef(true);
@@ -227,6 +229,7 @@ export default function ConciergePage() {
         ...(hasCompletedTurn ? carriedContext : structuredDraft),
         ...(hasCompletedTurn ? explicitJourneyPayload(explicitJourney) : {}),
         ...structured,
+        tripContext: sessionContext(loadTripSession(localStorage, region.id) || tripSession).tripContext,
         ...(text ? { rawMessage: text, inputMode: "FREE_TEXT" as const } : {}),
         contextSessionId: contextSessionIdRef.current,
         discoveryCategoryHint: (discoveryContext?.targetCategory || currentResult?.discovery?.category) as CreateContextInput["discoveryCategoryHint"],
@@ -283,6 +286,7 @@ export default function ConciergePage() {
         { role: "ai", text: summarizeResult(result), result, requestText: text, turnId },
       ]);
       setCurrentTurn((current) => resolveCurrentTurn(current, turnId, result));
+      setExcludedDiscoveryIds([]);
       const referenceEntity = result.discovery?.entities?.[0];
       const reference = referenceEntity
         ? { entityId: referenceEntity.entityId, regionId: referenceEntity.regionId || region.id, label: referenceEntity.programLabel || referenceEntity.facilityLabel || referenceEntity.label, entityType: referenceEntity.entityType, category: referenceEntity.category, latitude: referenceEntity.latitude, longitude: referenceEntity.longitude, source: referenceEntity.operationalEvidence?.source === "SEARCH" ? "SEARCH" as const : "RDM" as const, sourceTurnId: turnId, role: "RESULT" as const }
@@ -325,6 +329,12 @@ export default function ConciergePage() {
   const hasPrimaryResult = !currentIsKnowledge && Boolean(currentResult?.recommendation || currentResult?.discovery || currentResult?.distanceInfo);
   const latestRecommendation = hasRecommendation ? currentResult : undefined;
   const latestPrimaryResult = hasPrimaryResult ? currentResult : undefined;
+  const offerLocation = tripMode !== "PLAN" && shouldOfferLocationForRequest({
+    hasTripEvidence: hasTripEvidence(tripSession),
+    requestText: currentTurn?.requestText,
+    location: getSessionLocation(),
+    result: currentResult,
+  });
   useEffect(() => {
     const textarea=textInputRef.current;if(!textarea)return;
     if(!hasCompletedTurn||!input){textarea.style.height="44px";return}
@@ -409,7 +419,7 @@ export default function ConciergePage() {
       {tripMode === "NOW" && !hasCompletedTurn && (
         <NowImmediateActions onSelect={(label) => send(label)} />
       )}
-      {!hasCompletedTurn && tripMode !== "PLAN" && (
+      {offerLocation && (
         <div className="visitor-location-section">
           <VisitorLocationControl />
         </div>
@@ -422,7 +432,7 @@ export default function ConciergePage() {
               >
                 {m.role === "ai" ? <GlossaryText text={m.text} /> : m.text}
               </div>
-              {m.role === "ai" && m.result && isCurrentTurn(m.turnId, currentTurn) && <AiResponseActions rawMessage={m.requestText || ""} result={m.result} turnId={m.turnId!} />}
+              {m.role === "ai" && m.result && isCurrentTurn(m.turnId, currentTurn) && <AiResponseActions rawMessage={m.requestText || ""} result={m.result} turnId={m.turnId!} excludedEntityIds={excludedDiscoveryIds} onExcludedEntityIdsChange={setExcludedDiscoveryIds} />}
             </div>
           ))}
           {loading && (
@@ -544,7 +554,7 @@ export default function ConciergePage() {
       {latestPrimaryResult?.discovery && (
         <div ref={currentResultRef} className="recommendation-journey-start">
           <UnderstoodContext result={latestPrimaryResult} />
-          <PlaceDiscoveryPanel result={latestPrimaryResult} />
+          <PlaceDiscoveryPanel result={latestPrimaryResult} excludedEntityIds={excludedDiscoveryIds} />
           {loading && (
             <div className="loading">이어서 살펴보고 있습니다...</div>
           )}
@@ -846,8 +856,9 @@ function ResultPanel({
   );
 }
 
-function PlaceDiscoveryPanel({ result }: { result: ConciergeChatResponse }) {
+function PlaceDiscoveryPanel({ result, excludedEntityIds = [] }: { result: ConciergeChatResponse; excludedEntityIds?: string[] }) {
   const discovery = result.discovery!,
+    alternatives = discoveryAlternatives(discovery.entities, excludedEntityIds),
     label =
       {
         CAFE: "카페",
@@ -878,9 +889,9 @@ function PlaceDiscoveryPanel({ result }: { result: ConciergeChatResponse }) {
         <p className="text-muted">{discovery.categoryFallbackNotice}</p>
       )}
       {discovery.visitorMessage && <p className="text-muted">{discovery.visitorMessage}</p>}
-      {discovery.entities.length ? (
-        discovery.entities.map((entity: any, index: number) => (
-          <div className="place-discovery-item" key={entity.entityId}>
+      {alternatives.length ? (
+        alternatives.map((entity: any, index: number) => (
+          <div className="place-discovery-item" key={entity.entityId || entity.programUri || entity.facilityUri || `unidentified-${index}`}>
             <RecommendationItineraryItem step={entity} index={index} />
             {entity.reasons?.length > 0 && (
               <p className="place-discovery-reasons">
@@ -890,7 +901,7 @@ function PlaceDiscoveryPanel({ result }: { result: ConciergeChatResponse }) {
           </div>
         ))
       ) : (
-        <p className="text-muted">현재 조건에 맞는 검증된 장소가 없습니다.</p>
+        <p className="text-muted">위 추천 외에 현재 조건에 맞는 추가 후보가 없습니다.</p>
       )}
     </section>
   );

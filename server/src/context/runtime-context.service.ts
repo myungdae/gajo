@@ -57,6 +57,16 @@ export interface CreateContextInput {
   inputMode?: 'STRUCTURED' | 'FREE_TEXT';
   isFollowup?: boolean;
   discoveryCategoryHint?: 'FOOD'|'CAFE'|'LODGING'|'HOT_SPRING_WELLNESS'|'ACTIVITY'|'TOURISM_NATURE'|'CONVENIENCE'|'ESSENTIAL_SHOPPING'|'CONVENIENCE_STORE'|'MART_SUPERMARKET'|'PARKING'|'PUBLIC_TOILET'|'HEAT_SHELTER'|'GAS_STATION'|'EV_CHARGER'|'TOURIST_INFORMATION';
+  tripContext?: {
+    anonymousTripId: string;
+    currentEntityId?: string;
+    nextEntityId?: string;
+    completedEntityIds: string[];
+    skippedEntityIds: string[];
+    savedEntityIds: string[];
+    itineraryEntityIds: string[];
+    excludedEntityIds: string[];
+  };
   activityPreferences?: string[];
 }
 

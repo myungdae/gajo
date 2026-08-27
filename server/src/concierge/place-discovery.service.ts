@@ -35,6 +35,7 @@ export class PlaceDiscoveryService {
     const config = this.regionConfig?.get(regionId);
 
     const requested = new Set<string>(context.activityPreferences || []);
+    const excludedEntityIds = new Set<string>(context.excludedEntityIds || []);
     for(const preference of config?.discoveryPreferences||[])
       if(preference.pattern.test(message))requested.add(preference.tag);
     if (/쉬|휴식|편안|부모님/.test(message)) requested.add('REST');
@@ -118,6 +119,7 @@ export class PlaceDiscoveryService {
       .filter(record=>category!=='HEAT_SHELTER'||authoritativeSafetyEvidence(record))
       .filter((record) => record.runtimeDataStatus !== 'UNKNOWN')
       .filter((record) => !anchor || record.entityUri !== anchor.entityUri)
+      .filter((record) => !excludedEntityIds.has(record.entityUri))
       .filter(
         (record) =>
           !context.discoveryAlternative ||
@@ -266,7 +268,7 @@ export class PlaceDiscoveryService {
             evidenceRetention: 'REGIONAL_CANDIDATE',
           }
         : undefined,
-      entities: [
+      entities: this.deduplicateEntities([
         ...ranked
           .slice(context.selectionIndex ?? 0)
           .map(({ record, matched, distanceMeters, score }, index) => {
@@ -321,8 +323,19 @@ export class PlaceDiscoveryService {
             },
           });}),
         ...searchCandidates,
-      ],
+      ]),
     };
+  }
+
+  private deduplicateEntities(entities: any[]) {
+    const seen = new Set<string>();
+    return entities.filter((entity) => {
+      const id = entity.entityId || entity.programUri || entity.facilityUri;
+      if (!id) return true;
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
   }
 
   private async searchFallback(

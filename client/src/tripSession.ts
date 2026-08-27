@@ -298,6 +298,14 @@ export function safeTripState(session: TripSession) {
 }
 export function sessionContext(s: TripSession): CreateContextInput {
   const p = s.plannedContext || {};
+  const steps = Array.isArray((s.itinerary as any)?.steps) ? (s.itinerary as any).steps : [];
+  const entityId = (item: any) => item?.entityId || item?.programUri || item?.facilityUri;
+  const itineraryEntityIds = steps.map(entityId).filter(Boolean);
+  const completedEntityIds = Object.entries(s.execution?.statusByEntityId || {}).filter(([, status]) => status === "COMPLETED").map(([id]) => id);
+  const skippedEntityIds = Object.entries(s.execution?.statusByEntityId || {}).filter(([, status]) => status === "SKIPPED").map(([id]) => id);
+  const savedEntityIds = (s.savedPlaces || []).map(entityId).filter(Boolean);
+  const currentIndex = s.execution?.currentEntityId ? itineraryEntityIds.indexOf(s.execution.currentEntityId) : -1;
+  const nextEntityId = itineraryEntityIds.slice(Math.max(0, currentIndex + 1)).find((id: string) => !completedEntityIds.includes(id) && !skippedEntityIds.includes(id));
   return {
     companions: p.companions,
     companionConstraints: p.mobilityConstraints,
@@ -314,6 +322,16 @@ export function sessionContext(s: TripSession): CreateContextInput {
       label: place.label,
       resolved: place.resolved,
     })),
+    tripContext: {
+      anonymousTripId: s.anonymousTripId,
+      currentEntityId: s.execution?.currentEntityId,
+      nextEntityId,
+      completedEntityIds,
+      skippedEntityIds,
+      savedEntityIds,
+      itineraryEntityIds,
+      excludedEntityIds: [...new Set([...completedEntityIds, ...skippedEntityIds])],
+    },
   };
 }
 export function mergeTravelContext(

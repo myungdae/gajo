@@ -265,6 +265,8 @@ export class ConciergeService {
         regionId,
         {
           ...context,
+          tripContext: input.tripContext,
+          excludedEntityIds: input.tripContext?.excludedEntityIds,
           ...(semanticFollowup ? { semanticContext: semanticFollowup } : {}),
         },
       );
