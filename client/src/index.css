@@ -3136,6 +3136,23 @@ table.simple td {
   margin: 0 0 12px;
   text-align: right;
 }
+.archived-trip-summary {
+  display: grid;
+  gap: 8px;
+  padding: 15px 0;
+  border-top: 1px solid var(--color-border);
+}
+.archived-trip-summary > span,
+.archived-trip-detail {
+  color: var(--color-text-muted);
+}
+.archived-trip-summary > .btn {
+  justify-self: start;
+}
+.archived-trips-more {
+  width: 100%;
+  min-height: 44px;
+}
 .trip-management-toggle {
   min-height: 44px;
 }

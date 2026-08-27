@@ -38,6 +38,7 @@ export interface TripSession {
   }>;
   createdAt: string;
   updatedAt: string;
+  archivedAt?: string;
   restorationPending?: boolean;
 }
 export const tripStorageKey = (regionId: string) =>
@@ -142,12 +143,21 @@ export function archiveAndStartNewTrip(
   storage: Pick<Storage, "getItem" | "setItem"> = localStorage,
 ) {
   const current = loadTripSession(storage, regionId);
-  if (current)
+  if (current && hasTripEvidence(current))
     storage.setItem(
       `regional-concierge-trip-archive-v1:${regionId}:${current.anonymousTripId}`,
-      JSON.stringify(privacySafe(current)),
+      JSON.stringify(privacySafe({ ...current, archivedAt: new Date().toISOString() })),
     );
   return saveTripSession(createTripSession(regionId), storage);
+}
+export function hasTripEvidence(session: TripSession) {
+  return Boolean(
+    (session.itinerary as any)?.steps?.length ||
+      session.savedPlaces?.length ||
+      Object.keys(session.execution?.statusByEntityId || {}).length ||
+      session.replanHistory?.length ||
+      session.plannedContext,
+  );
 }
 export function listArchivedTripSessions(
   regionId: string,
@@ -165,7 +175,9 @@ export function listArchivedTripSessions(
     }
   }
   return archived.sort(
-    (a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt),
+    (a, b) =>
+      Date.parse(b.archivedAt || b.updatedAt) -
+      Date.parse(a.archivedAt || a.updatedAt),
   );
 }
 export function updateTripRuntimeContext(

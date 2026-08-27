@@ -113,7 +113,9 @@ export default function ItineraryPage() {
   if (!result || !result.recommendation) {
     return (
       <div><TripManagement onSavedPlacesCleared={setSavedPlaces} /><div className="card">
-        <h2>표시할 일정이 없습니다</h2>
+        <h1>내 여행</h1>
+        <h2>현재 여행</h2>
+        <p>현재 진행 중인 여행 일정이 없습니다.</p>
         <p style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
           AI 컨시어지와 대화하여 맞춤 일정을 먼저 생성해주세요.
         </p>

@@ -19,7 +19,10 @@ test("TEST B: starting a new Hapcheon trip leaves the old trip recoverable and v
   const storage = memory(), old = saveTripSession({ ...createTripSession("hapcheon"), itinerary: { steps: [step("A"), step("B"), step("C")] }, savedPlaces: [step("S")], execution: { currentEntityId: "B", statusByEntityId: { A: "COMPLETED" } } }, storage as any);
   const next = archiveAndStartNewTrip("hapcheon", storage as any);
   assert.notEqual(next.anonymousTripId, old.anonymousTripId);
-  assert.deepEqual(listArchivedTripSessions("hapcheon", storage as any), [old]);
+  const archived = listArchivedTripSessions("hapcheon", storage as any);
+  assert.equal(archived.length, 1);
+  assert.deepEqual({ ...archived[0], archivedAt: undefined }, { ...old, archivedAt: undefined });
+  assert.ok(archived[0].archivedAt);
   const ui = readFileSync(new URL("./components/ArchivedTrips.tsx", import.meta.url), "utf8");
   assert.match(ui, /지난 여행/);
   assert.match(ui, /읽기 전용/);
