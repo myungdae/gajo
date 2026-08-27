@@ -26,3 +26,8 @@ export function archivedTripDate(trip: TripSession) {
     ? "날짜 미상"
     : new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "numeric", day: "numeric" }).format(date);
 }
+
+export function archivedTripStartTime(trip: TripSession) {
+  const date = new Date(trip.createdAt);
+  return Number.isNaN(date.getTime()) ? undefined : new Intl.DateTimeFormat("ko-KR", { hour: "numeric", minute: "2-digit" }).format(date);
+}

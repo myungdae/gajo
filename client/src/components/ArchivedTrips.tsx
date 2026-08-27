@@ -3,7 +3,7 @@ import { useRegion } from "../RegionContext";
 import { recommendationItemLabel } from "../recommendationItem";
 import { canonicalEntityId } from "../recommendationItem";
 import { listArchivedTripSessions, type TripSession } from "../tripSession";
-import { archivedTripDate, archivedTripSummary, DEFAULT_ARCHIVE_COUNT } from "../archivePresentation";
+import { archivedTripDate, archivedTripStartTime, archivedTripSummary, DEFAULT_ARCHIVE_COUNT } from "../archivePresentation";
 
 export default function ArchivedTrips() {
   const region = useRegion();
@@ -23,6 +23,7 @@ export default function ArchivedTrips() {
         return (
           <div className="archived-trip-summary" key={trip.anonymousTripId}>
             <strong>{archivedTripDate(trip)} {region.regionName} 여행</strong>
+            {archivedTripStartTime(trip) && <small>{archivedTripStartTime(trip)} 시작</small>}
             <span>{steps.length ? `방문 완료 ${completed.length}곳 · 계획 ${steps.length}곳${places.length ? ` · 담아둔 곳 ${places.length}곳` : ""}` : places.length ? `담아둔 곳 ${places.length}곳` : "일정 없음"}</span>
             <button className="btn btn-outline" type="button" onClick={() => setSelected(selected?.anonymousTripId === trip.anonymousTripId ? undefined : trip)}>
               {selected?.anonymousTripId === trip.anonymousTripId ? "여행 기록 접기" : "여행 기록 보기"}

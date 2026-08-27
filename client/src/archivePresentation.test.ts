@@ -39,6 +39,7 @@ test("archive UI defaults to four, offers more, and keeps current trip separate"
   assert.match(archive, /지난 여행 더보기/);
   assert.match(archive, /여행 기록 보기/);
   assert.match(archive, /일정 없음/);
+  assert.match(archive, /archivedTripStartTime/);
   assert.doesNotMatch(archive, /지난 여행 \$\{index/);
   assert.match(page, /현재 진행 중인 여행 일정이 없습니다/);
   assert.match(page, /<h2>현재 여행<\/h2>/);

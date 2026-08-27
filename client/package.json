@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "test:trip-lifecycle": "node --experimental-strip-types --test src/tripLifecycle.test.ts",
     "test:field-execution": "node --experimental-strip-types --test src/fieldExecution.test.ts src/composerUx.test.ts",
     "test:archive": "node --experimental-strip-types --test src/archivePresentation.test.ts",
     "test:pwa-isolation": "node --experimental-strip-types --test src/copilotPwaIsolation.test.ts",

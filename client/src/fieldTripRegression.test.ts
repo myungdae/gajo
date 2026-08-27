@@ -21,7 +21,7 @@ test("TEST B: starting a new Hapcheon trip leaves the old trip recoverable and v
   assert.notEqual(next.anonymousTripId, old.anonymousTripId);
   const archived = listArchivedTripSessions("hapcheon", storage as any);
   assert.equal(archived.length, 1);
-  assert.deepEqual({ ...archived[0], archivedAt: undefined }, { ...old, archivedAt: undefined });
+  assert.deepEqual({ ...archived[0], archivedAt: undefined, archiveReason: undefined }, { ...old, archivedAt: undefined, archiveReason: undefined });
   assert.ok(archived[0].archivedAt);
   const ui = readFileSync(new URL("./components/ArchivedTrips.tsx", import.meta.url), "utf8");
   assert.match(ui, /지난 여행/);

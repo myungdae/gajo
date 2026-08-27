@@ -45,7 +45,7 @@ export default function TripContinuity() {
         );
         restored = reconcileTrip(local, response.state);
         source = "server";
-        saveTripSession(restored);
+        restored = saveTripSession(restored);
       } catch {
         void syncAnonymousTrip({
           anonymousTripId: local.anonymousTripId,

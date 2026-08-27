@@ -41,6 +41,7 @@ export interface TripSession {
   createdAt: string;
   updatedAt: string;
   archivedAt?: string;
+  archiveReason?: "EXPLICIT_NEW_TRIP";
   restorationPending?: boolean;
 }
 export const tripStorageKey = (regionId: string) =>
@@ -100,10 +101,11 @@ export function loadTripSession(
 export function saveTripSession(
   session: TripSession,
   storage: Pick<Storage, "setItem"> & Partial<Pick<Storage,"getItem">> = localStorage,
+  options: { allowIdentityReplacement?: boolean } = {},
 ):TripSession {
   if (session.restorationPending) return session;
   const storageKey=tripStorageKey(session.regionId),existing=storage.getItem?.(storageKey);
-  if(existing){try{const parsed=JSON.parse(existing);if(parsed?.regionId!==session.regionId)return{...session,restorationPending:true}}catch{return{...session,restorationPending:true}}}
+  if(existing){try{const parsed=JSON.parse(existing) as TripSession;if(parsed?.regionId!==session.regionId)return{...session,restorationPending:true};const activeId=parsed.anonymousTripId||parsed.id, incomingId=session.anonymousTripId||session.id;if(activeId&&incomingId&&activeId!==incomingId&&!options.allowIdentityReplacement)return parsed}catch{return{...session,restorationPending:true}}}
   const next = {
       ...session,
       anonymousTripId: session.anonymousTripId || session.id,
@@ -148,9 +150,9 @@ export function archiveAndStartNewTrip(
   if (current && hasTripEvidence(current))
     storage.setItem(
       `regional-concierge-trip-archive-v1:${regionId}:${current.anonymousTripId}`,
-      JSON.stringify(privacySafe({ ...current, archivedAt: new Date().toISOString() })),
+      JSON.stringify(privacySafe({ ...current, archivedAt: new Date().toISOString(), archiveReason: "EXPLICIT_NEW_TRIP" })),
     );
-  return saveTripSession(createTripSession(regionId), storage);
+  return saveTripSession(createTripSession(regionId), storage, { allowIdentityReplacement: true });
 }
 export function hasTripEvidence(session: TripSession) {
   return Boolean(
@@ -181,6 +183,38 @@ export function listArchivedTripSessions(
       Date.parse(b.archivedAt || b.updatedAt) -
       Date.parse(a.archivedAt || a.updatedAt),
   );
+}
+export type ArchiveLifecycleClassification = "EXPLICIT_NEW_TRIP" | "UNINTENDED_NEW_SESSION" | "DUPLICATE_ARCHIVE" | "RESTORE_REPLACEMENT" | "REPLAN_FRAGMENTATION" | "EMPTY_SESSION_FRAGMENT" | "OTHER";
+export function auditArchivedTripLifecycle(
+  regionId: string,
+  storage: Pick<Storage, "getItem" | "length" | "key"> = localStorage,
+) {
+  const records: Array<{ key: string; session: TripSession; classification: ArchiveLifecycleClassification }> = [];
+  const ids = new Map<string, number>();
+  for (let index = 0; index < storage.length; index += 1) {
+    const key = storage.key(index);
+    if (!key?.startsWith(archivePrefix(regionId))) continue;
+    try {
+      const session = JSON.parse(storage.getItem(key) || "") as TripSession;
+      if (session.regionId !== regionId) continue;
+      const id = session.anonymousTripId || session.id;
+      ids.set(id, (ids.get(id) || 0) + 1);
+      records.push({ key, session, classification: session.archiveReason === "EXPLICIT_NEW_TRIP" ? "EXPLICIT_NEW_TRIP" : hasTripEvidence(session) ? "OTHER" : "EMPTY_SESSION_FRAGMENT" });
+    } catch { /* Preserve unreadable legacy evidence. */ }
+  }
+  for (const record of records) if ((ids.get(record.session.anonymousTripId || record.session.id) || 0) > 1) record.classification = "DUPLICATE_ARCHIVE";
+  const sameDayGroups = new Map<string, string[]>();
+  for (const record of records) {
+    const day = (record.session.plannedContext?.startDate || record.session.createdAt || "unknown").slice(0, 10), key = `${regionId}:${day}`;
+    sameDayGroups.set(key, [...(sameDayGroups.get(key) || []), record.session.anonymousTripId || record.session.id]);
+  }
+  return {
+    regionId,
+    archiveCount: records.length,
+    duplicateSessionIds: [...ids].filter(([, count]) => count > 1).map(([id]) => id),
+    sameDayGroups: [...sameDayGroups].filter(([, sessionIds]) => sessionIds.length > 1).map(([day, sessionIds]) => ({ day, sessionIds })),
+    records,
+  };
 }
 export function updateTripRuntimeContext(
   regionId: string,
