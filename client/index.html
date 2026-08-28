@@ -9,7 +9,14 @@
       (() => {
         const region = location.pathname.split('/').filter(Boolean)[0];
         const supported = ['gajo','okcheon','muan','gyeryong','hapcheon','daejeon-junggu'];
-        const active = supported.includes(region) ? region : 'gajo';
+        const host = location.hostname.toLowerCase();
+        const hostRegions = {'gajo.odex.kr':'gajo','okcheon.odex.kr':'okcheon','muan.odex.kr':'muan','gyeryong.odex.kr':'gyeryong','hapcheon.odex.kr':'hapcheon','daejeon-junggu.odex.kr':'daejeon-junggu'};
+        const platformPaths = ['/regions','/partner/apply','/partner/console','/region/apply','/partners/apply'];
+        const path = location.pathname.length > 1 ? location.pathname.replace(/\/+$/, '') : location.pathname;
+        const isPublicPartner = /^\/(?:go|visit)\/[^/]+$/.test(path);
+        const isPlatform = platformPaths.includes(path) || /^\/partners\/[^/]+\/manage$/.test(path) || (path === '/' && (host === 'exkovia.com' || host === 'www.exkovia.com' || ((host === 'localhost' || host === '127.0.0.1' || host === '127.0.0.2' || host === '::1') && new URLSearchParams(location.search).get('platform') === 'exkovia')));
+        const active = supported.includes(region) ? region : hostRegions[host] || ((host === 'localhost' || host === '127.0.0.1' || host === '127.0.0.2' || host === '::1') ? 'gajo' : undefined);
+        if (!active || isPlatform || isPublicPartner) return;
         const link = document.createElement('link');
         link.rel = 'manifest';
         link.href = `/manifest-${active}.webmanifest`;
