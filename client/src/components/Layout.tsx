@@ -5,6 +5,7 @@ import { appSurface, regionalPath } from "../regionRouting";
 import ConnectionStatus from "./ConnectionStatus";
 import { loadTripSession, tripRestorationDiagnostics } from "../tripSession";
 import { itineraryItemCount } from "../tripContinuity";
+import { resetShellScroll } from "../routeScroll";
 
 const navItems = [
   { to: "/", label: "홈", icon: "home", end: true },
@@ -54,7 +55,7 @@ function NavIcon({ name }: { name: string }) {
 
 export default function Layout() {
   const region = useRegion();
-  const location=useLocation(),diagnosticMode=new URLSearchParams(location.search).get("trip-diagnostics")==="1",surface=appSurface(location.pathname,location.search,window.location.hostname),partnerEntryRoute=surface==='PLATFORM'||surface==='PUBLIC_PARTNER';
+  const location=useLocation(),diagnosticMode=new URLSearchParams(location.search).get("trip-diagnostics")==="1",surface=appSurface(location.pathname,location.search,window.location.hostname),webShell=surface==='PLATFORM'||surface==='PUBLIC_PARTNER';
   const mainRef = useRef<HTMLElement>(null);
   const [tripCount, setTripCount] = useState(() =>
     diagnosticMode?0:itineraryItemCount(loadTripSession(localStorage, region.id)),
@@ -68,22 +69,22 @@ export default function Layout() {
     return () => window.removeEventListener("regional-trip-saved", refresh);
   }, [region.id,diagnosticMode]);
   useEffect(() => {
-    mainRef.current?.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  }, [location.pathname, location.search]);
+    resetShellScroll(webShell, mainRef.current);
+  }, [location.pathname, location.search,webShell]);
   if(diagnosticMode){const diagnostic=tripRestorationDiagnostics(region.id);return <main className="app-main"><section className="card" aria-label="여행 복원 진단"><h1>여행 복원 진단</h1><dl><dt>지역</dt><dd>{diagnostic.regionId}</dd><dt>활성 저장 키</dt><dd>{diagnostic.activeStorageKey}</dd><dt>localStorage</dt><dd>{diagnostic.localStorageKeyFound?'찾음':'없음'}</dd><dt>sessionStorage 보조</dt><dd>{diagnostic.sessionStorageFallbackFound?'찾음':'없음'}</dd><dt>저장값 상태</dt><dd>{diagnostic.storedValueStatus}</dd><dt>복원 출처</dt><dd>{diagnostic.restorationSource}</dd><dt>익명 ID</dt><dd>{diagnostic.anonymousTripIdHint||'없음'}</dd><dt>담아둔 곳</dt><dd>{diagnostic.savedPlaceCount}</dd><dt>일정 단계</dt><dd>{diagnostic.itineraryStepCount}</dd><dt>실행 상태</dt><dd>{diagnostic.executionStatePresent?'있음':'없음'}</dd><dt>보관 여행</dt><dd>{diagnostic.archiveCount??'확인 불가'}</dd><dt>새 세션 생성</dt><dd>{diagnostic.newSessionCreated?'예':'아니요'}</dd><dt>새 세션 생성 예정</dt><dd>{diagnostic.newSessionWouldBeCreated?'예':'아니요'}</dd><dt>복원 전 저장 발생</dt><dd>{diagnostic.persistenceOccurredBeforeRestoration?'예':'아니요'}</dd><dt>복원 전 저장 차단</dt><dd>{diagnostic.persistenceBlocked?'예':'아니요'}</dd></dl><p>이 화면은 저장소를 읽기만 하며 여행 데이터를 변경하지 않습니다.</p></section></main>}
   return (
-    <div className={`app-shell${partnerEntryRoute?' app-shell--web':''}`}>
+    <div className={`app-shell${webShell?' app-shell--web':''}`}>
       <ConnectionStatus />
-      {!partnerEntryRoute&&<header className="app-header">
+      {!webShell&&<header className="app-header">
         <div>
           <h1>{region.serviceName}</h1>
           <div className="subtitle">{region.heroSubtitle}</div>
         </div>
       </header>}
-      <main className={`app-main${partnerEntryRoute?' app-main--web':''}`} ref={mainRef}>
+      <main className={`app-main${webShell?' app-main--web':''}`} ref={mainRef}>
         <Outlet />
       </main>
-      {!partnerEntryRoute&&<nav className="bottom-nav">
+      {!webShell&&<nav className="bottom-nav">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
