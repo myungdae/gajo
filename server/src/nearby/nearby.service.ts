@@ -9,7 +9,7 @@ export type NearbyCategory =
   | 'GOLF_SCREEN_GOLF' | 'ACTIVITY' | 'TOURISM_NATURE' | 'CONVENIENCE'
   | 'ESSENTIAL_SHOPPING' | 'CONVENIENCE_STORE' | 'MART_SUPERMARKET'
   | 'PARKING' | 'PUBLIC_TOILET' | 'GAS_STATION' | 'EV_CHARGER'
-  | 'TOURIST_INFORMATION' | 'OTHER';
+  | 'TOURIST_INFORMATION' | 'PHARMACY' | 'HOSPITAL' | 'ATM' | 'OTHER';
 
 
 export type NearbyFailureCode = 'NOT_CONFIGURED' | 'UPSTREAM_ERROR' | 'UPSTREAM_TIMEOUT' | 'INVALID_RESPONSE';
@@ -58,9 +58,9 @@ const LABELS: Record<NearbyCategory, string> = {
   CONVENIENCE: '편의시설', ESSENTIAL_SHOPPING: '생필품 쇼핑',
   CONVENIENCE_STORE: '편의점', MART_SUPERMARKET: '마트·슈퍼마켓', OTHER: '기타',
   PARKING: '주차장', PUBLIC_TOILET: '공중화장실', GAS_STATION: '주유소',
-  EV_CHARGER: '전기차 충전소', TOURIST_INFORMATION: '관광안내소',
+  EV_CHARGER: '전기차 충전소', TOURIST_INFORMATION: '관광안내소', PHARMACY: '약국', HOSPITAL: '병원', ATM: 'ATM',
 };
-const INDOOR = new Set<NearbyCategory>(['CAFE', 'LODGING', 'HOT_SPRING_WELLNESS', 'GOLF_SCREEN_GOLF', 'CONVENIENCE', 'ESSENTIAL_SHOPPING', 'CONVENIENCE_STORE', 'MART_SUPERMARKET']);
+const INDOOR = new Set<NearbyCategory>(['CAFE', 'LODGING', 'HOT_SPRING_WELLNESS', 'GOLF_SCREEN_GOLF', 'CONVENIENCE', 'ESSENTIAL_SHOPPING', 'CONVENIENCE_STORE', 'MART_SUPERMARKET', 'PHARMACY', 'HOSPITAL', 'ATM']);
 const PLANS: Record<NearbyCategory, { codes: string[]; keywords: string[] }> = {
   FOOD: { codes: ['FD6'], keywords: ['약선요리', '건강식당', '사찰음식', '채식뷔페'] },
   CAFE: { codes: ['CE7'], keywords: ['카페'] },
@@ -78,6 +78,9 @@ const PLANS: Record<NearbyCategory, { codes: string[]; keywords: string[] }> = {
   GAS_STATION: { codes: ['OL7'], keywords: ['주유소'] },
   EV_CHARGER: { codes: [], keywords: ['전기차 충전소'] },
   TOURIST_INFORMATION: { codes: [], keywords: ['관광안내소'] },
+  PHARMACY: { codes: ['PM9'], keywords: ['약국'] },
+  HOSPITAL: { codes: ['HP8'], keywords: ['병원'] },
+  ATM: { codes: ['BK9'], keywords: ['ATM'] },
   OTHER: { codes: [], keywords: [] },
 };
 
@@ -95,7 +98,9 @@ export function normalizeNearbyCategory(name: string, providerCategory = '', cod
   if (code === 'OL7' || /주유소/.test(text)) return 'GAS_STATION';
   if (/전기차.*충전|EV.*충전/i.test(text)) return 'EV_CHARGER';
   if (/관광\s*안내소/.test(text)) return 'TOURIST_INFORMATION';
-  if (['PM9', 'HP8'].includes(code) || /약국|병원/.test(text)) return 'CONVENIENCE';
+  if (code === 'PM9' || /약국/.test(text)) return 'PHARMACY';
+  if (code === 'HP8' || /병원|의원/.test(text)) return 'HOSPITAL';
+  if (code === 'BK9' || /ATM|현금자동입출금기/i.test(text)) return 'ATM';
   if (/체험|레저|놀거리/.test(text)) return 'ACTIVITY';
   if (code === 'FD6' || /음식점|식당|한식|중식|일식|분식/.test(text)) return 'FOOD';
   return requested || 'OTHER';
@@ -124,14 +129,13 @@ export class NearbyService {
     const rainy = options.weather === 'HEAVY_RAIN';
     for (const place of byId.values()) {
       if (!useDistance) { delete place.distanceMeters; delete place.estimatedTravelMinutes; }
-      else if (place.distanceMeters != null) place.estimatedTravelMinutes = Math.max(1, Math.round(place.distanceMeters / (options.transportMode === 'foot' ? 75 : 300)));
       if (rainy && place.indoorRelevance === 'INDOOR') {
         place.relevanceScore += 10;
         place.contextualReasons.push('비 오는 날 이용하기 좋은 실내 장소입니다.');
       }
       if (useDistance && place.distanceMeters != null && place.distanceMeters <= 1500) place.contextualReasons.push('현재 위치에서 가까운 후보입니다.');
     }
-    return [...byId.values()].sort((a, b) => b.relevanceScore - a.relevanceScore || (useDistance ? (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity) : 0));
+    return [...byId.values()].sort((a, b) => (useDistance ? (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity) : 0) || b.relevanceScore - a.relevanceScore).slice(0,30);
   }
 
   async searchRestaurants(lat: number, lng: number, radius = 2000) { return this.search('FOOD', lat, lng, radius); }
@@ -145,6 +149,8 @@ export class NearbyService {
     return[...byId.values()].map(place=>({...place,regionId}));
   }
 
+  async reverseGeocode(latitude:number,longitude:number){const key=this.kakaoKey;if(!key)throw new NearbyServiceError('NOT_CONFIGURED','주소 확인은 현재 준비 중입니다.');const url=new URL('https://dapi.kakao.com/v2/local/geo/coord2address.json');url.searchParams.set('x',String(longitude));url.searchParams.set('y',String(latitude));const data=await this.kakaoGet(url,key,false),document=data.documents?.[0],address=document?.road_address||document?.address;if(!address)return{status:'EMPTY' as const,label:'주소를 확인하지 못했습니다.'};const region1=address.region_1depth_name||'',region2=address.region_2depth_name||'',region3=address.region_3depth_name||'';return{status:'RESOLVED' as const,label:[region1,region2,region3].filter(Boolean).join(' '),address:address.address_name||'',region1,region2,region3}}
+
   private async addOperationalPlaces(byId: Map<string, NearbyPlace>, requested: NearbyCategory, lat: number, lng: number, radius: number, regionId: string) {
     const dataset = await this.regionalData!.effectiveDataset(regionId);
     for (const record of dataset?.records || []) {
@@ -153,7 +159,7 @@ export class NearbyService {
       if (category !== requested) continue;
       const distanceMeters = this.distanceMeters(lat, lng, record.latitude!, record.longitude!);
       if (distanceMeters > radius) continue;
-      const existing = [...byId.values()].find((place) => place.canonicalEntityUri === record.entityUri || place.name === record.canonicalLabelKo);
+      const existing = [...byId.values()].find((place) => place.canonicalEntityUri === record.entityUri || (this.distanceMeters(place.lat,place.lng,record.latitude!,record.longitude!)<=30 && Boolean(place.phone&&record.telephone&&place.phone===record.telephone)));
       if (existing) {
         existing.canonicalEntityUri = record.entityUri;
         existing.canonicalLabel = record.canonicalLabelKo;
@@ -215,13 +221,13 @@ export class NearbyService {
     byId.set(place.id, place);
   }
 
-  private async kakaoGet(url: URL, key: string): Promise<any> {
+  private async kakaoGet(url: URL, key: string, requireMeta=true): Promise<any> {
     const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), this.timeoutMs);
     try {
       const response = await fetch(url, { headers: { Authorization: `KakaoAK ${key}` }, signal: controller.signal });
       if (!response.ok) throw new NearbyServiceError('UPSTREAM_ERROR', '주변 장소 정보를 불러오지 못했습니다.', response.status);
       const data = await response.json();
-      if (!data || !Array.isArray(data.documents) || typeof data.meta !== 'object') throw new NearbyServiceError('INVALID_RESPONSE', '주변 장소 응답을 확인할 수 없습니다.');
+      if (!data || !Array.isArray(data.documents) || (requireMeta&&typeof data.meta !== 'object')) throw new NearbyServiceError('INVALID_RESPONSE', '주변 장소 응답을 확인할 수 없습니다.');
       return data;
     } catch (error: any) {
       if (error instanceof NearbyServiceError) throw error;

@@ -16,6 +16,7 @@ import { ExkoSemanticAdapter } from '../exko-semantic/exko-semantic.service';
 import { RegionalDataService } from '../regional-data/regional-data.service';
 import { GuideService } from '../guide/guide.service';
 import { INITIAL_CORE_DESTINATIONS } from '../copilot/core-destination.config';
+import { NearbyService, NearbyServiceError, type NearbyCategory } from '../nearby/nearby.service';
 
 export function isGuideExplanationQuestion(message = '') {
   if (/지도에서.{0,30}(?:찾아|보여|안내|길)/.test(message)) return false;
@@ -37,6 +38,7 @@ export function isGuideExplanationQuestion(message = '') {
 function detectNearbyDiscovery(message?: string): {
   intent: boolean;
   category?: string;
+  currentLocationIntent?: boolean;
 } {
   if (!message) return { intent: false };
   const entries: [string, RegExp][] = [
@@ -61,14 +63,17 @@ function detectNearbyDiscovery(message?: string): {
       'ESSENTIAL_SHOPPING',
       /장\s*볼|생필품|물(?:하고|이랑|과)?\s*과자|음료수?\s*살|먹을\s*것\s*(?:좀\s*)?살/,
     ],
-    ['CONVENIENCE', /약국|병원/],
+    ['PHARMACY', /약국/],
+    ['HOSPITAL', /병원|의원/],
+    ['ATM', /ATM|현금\s*자동|현금\s*인출/i],
     ['FOOD', /식당|맛집|밥\s*(먹|을)|먹을\s*(곳|데)|건강식|약선|음식점|식사/],
   ];
-  const category = entries.find(([, pattern]) => pattern.test(message))?.[0];
+  const category = entries.find(([, pattern]) => pattern.test(message))?.[0],quickNearby=/(밥\s*먹고\s*싶|카페\s*가고\s*싶)/.test(message);
   return {
     intent:
-      !!category && /주변|근처|가까운|인근|갈\s*만한|찾아|추천|어디|있어|가능|먼저|부터/.test(message),
+      !!category && (quickNearby||/주변|근처|가까운|인근|갈\s*만한|찾아|추천|어디|있어|가능|먼저|부터/.test(message)),
     category,
+    currentLocationIntent:quickNearby||/내\s*주변|현재\s*위치|지금\s*(?:있는\s*)?(?:곳|위치)|가까운/.test(message),
   };
 }
 
@@ -116,6 +121,7 @@ export class ConciergeService {
     @Optional() private readonly exko?: ExkoSemanticAdapter,
     @Optional() private readonly regionalData?: RegionalDataService,
     @Optional() private readonly guide?: GuideService,
+    @Optional() private readonly nearby?:NearbyService,
   ) {}
 
   async chat(input: CreateContextInput) {
@@ -204,6 +210,8 @@ export class ConciergeService {
         conversationalReference,
       };
     }
+
+    if(nearbyDiscovery.intent&&nearbyDiscovery.currentLocationIntent){const usable=input.locationStatus==='AVAILABLE'&&Number.isFinite(input.latitude)&&Number.isFinite(input.longitude)&&Number(input.locationAccuracy)<=1500;if(!usable)return{context,evidence,firedRules,recommendation:null,intentRoute:'PLACE_DISCOVERY',nearbyLocationRequired:true,nearbyCategory:nearbyDiscovery.category,visitorMessage:'현재 기준 위치를 먼저 확인해 주세요. 위치를 확인한 뒤 실제 주변 장소를 가까운 순서로 찾아드릴게요.'};if(this.nearby&&nearbyDiscovery.category!=='HEAT_SHELTER')try{const category=nearbyDiscovery.category as NearbyCategory,places=await this.nearby.search(category,input.latitude!,input.longitude!,1000,{weather:input.weather,useDistance:true,transportMode:input.transportMode==='WALK'?'foot':'car'},regionId);return{context,evidence,firedRules,recommendation:null,intentRoute:'PLACE_DISCOVERY',serverTime:{timeZone:'Asia/Seoul',observedAt:new Date().toISOString(),local:new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',dateStyle:'short',timeStyle:'short'}).format(new Date())},nearbyDiscoveryIntent:true,nearbyCategory:category,discovery:{regionId,category,relation:'NEARBY',radius:1000,resultStatus:places.length?'AVAILABLE':'EMPTY',entities:places.map(place=>({entityId:`poi:${place.id}`,regionId,programLabel:place.name,entityType:place.category,category:place.category,address:place.roadAddress||place.address,telephone:place.phone,latitude:place.lat,longitude:place.lng,distanceMeters:place.distanceMeters,reasons:place.contextualReasons,operatingState:'UNKNOWN',operatingMessage:place.operatingMessage,operationalEvidence:{source:'KAKAO_LOCAL',verificationStatus:place.masterVerificationStatus||'UNVERIFIED',tripEligible:false},actions:{...(place.phone?{call:{phone:place.phone}}:{}),...(place.placeUrl?{detail:{url:place.placeUrl}}:{}),navigate:{latitude:place.lat,longitude:place.lng,evidenceMode:'PROVIDER_COORDINATES'}}}))},visitorMessage:places.length?'현재 위치를 기준으로 실제 주변 장소를 가까운 순서로 확인했습니다. 영업 여부는 방문 전에 확인해 주세요.':'1km 안에서 확인된 장소가 없습니다. 3km 또는 5km로 범위를 넓혀 찾아볼 수 있어요.'}}catch(error){if(error instanceof NearbyServiceError)return{context,evidence,firedRules,recommendation:null,intentRoute:'PLACE_DISCOVERY',nearbyDiscoveryIntent:true,nearbyCategory:nearbyDiscovery.category,nearbyProviderStatus:error.code,visitorMessage:error.message};throw error}}
 
     const semanticFollowup = (input as any).semanticContext,
       semanticQuery =
@@ -388,6 +396,7 @@ export class ConciergeService {
       intentRoute: route.intentRoute,
       conversationalReference,
       ...(semanticFollowup ? { semanticContext: semanticFollowup } : {}),
+      ...(route.intentRoute==='REPLAN'&&route.category==='LODGING'&&input.accommodationIntents?.[0]?.label?{visitorMessage:`${input.accommodationIntents[0].label}으로 돌아갈까요?`}:{}),
       ...(requestedDestinations
         ? {
             requestedDestinations,

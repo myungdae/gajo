@@ -182,7 +182,7 @@ export class DecisionPipelineService {
   }
 
   explain(candidates: DecisionCandidate[], context: DecisionContext): string {
-    if (!candidates.length) return '현재 운영 조건과 체류 시간 안에서 이용 가능한 프로그램을 찾지 못했습니다.';
+    if (!candidates.length) return '지금 갈 수 있는 곳을 다시 찾아볼게요.';
     const first = candidates[0];
     const reasons = [...first.matchedLabels];
     if (first.distanceStatus === 'AVAILABLE' && first.distanceKm !== undefined) reasons.push(`현재 위치에서 약 ${first.distanceKm < 1 ? `${first.distanceMeters}m` : `${first.distanceKm}km`}로 가까움`);

@@ -8,12 +8,9 @@ import {
   type CreateContextInput,
 } from "../api/client";
 import GajoLiveStatus from "../components/GajoLiveStatus";
-import VisitorLocationControl from "../components/VisitorLocationControl";
+import LocationContextBar from "../components/LocationContextBar";
 import RecommendationItineraryItem from "../components/RecommendationItineraryItem";
-import {
-  getSessionLocation,
-  shouldOfferLocationForRequest,
-} from "../utils/visitorLocation";
+import { getSessionLocation, locationPermissionState, mayRefreshLocationSilently, observeVisitorLocation } from "../utils/visitorLocation";
 import { useSpeechInput } from "../hooks/useSpeechInput";
 import {
   alignCompletedResponse,
@@ -28,11 +25,15 @@ import PlanVisitorIntake from "../components/PlanVisitorIntake";
 import { getQuickStartPreset } from "../quickStartPresets";
 import {
   ensureTripSession,
-  hasTripEvidence,
   loadTripSession,
   mergeTravelContext,
   saveTripSession,
   sessionContext,
+  isFreshTripLocation,
+  isLocationSensitiveRequest,
+  isMaterialLocationMove,
+  LOCATION_SENSITIVE_FRESH_MS,
+  confirmTripLocation,
   type PlannedContext,
 } from "../tripSession";
 import { REGION_INTEREST_OPTIONS } from "../regionConfig";
@@ -151,6 +152,7 @@ export default function ConciergePage() {
   const responseStabilizerCleanupRef = useRef<() => void>(() => {});
   const [loading, setLoading] = useState(false);
   const [requestError, setRequestError] = useState(false);
+  const [locationFreshnessNotice,setLocationFreshnessNotice]=useState<{label?:string;confirmedAt?:string}|null>(null);
   const [freeTextOpen, setFreeTextOpen] = useState(
     Boolean(entryState?.freeTextOpen),
   );
@@ -175,6 +177,7 @@ export default function ConciergePage() {
     text: string;
     structured?: CreateContextInput;
   } | null>(null);
+  const allowStaleLocationOnceRef=useRef(false);
   const {
     listening,
     voiceSupported,
@@ -247,6 +250,33 @@ export default function ConciergePage() {
   ) => {
     const text = (overrideText ?? input).trim();
     if ((!text && !structured) || requestInFlightRef.current) return;
+    if(!retry)lastRequestRef.current={text,structured};
+    if(tripMode==="NOW"&&isLocationSensitiveRequest(text)){
+      const active=loadTripSession(localStorage,region.id)||tripSession,saved=active.locationContext?.now;
+      if(saved?.status==="CONFIRMED"&&!isFreshTripLocation(saved,Date.now(),LOCATION_SENSITIVE_FRESH_MS)&&!allowStaleLocationOnceRef.current){
+        const permission=await locationPermissionState();
+        if(mayRefreshLocationSilently(permission)){
+          const fix=await observeVisitorLocation();
+          if(fix.status==="AVAILABLE"){
+            const refreshed={...saved,source:"GPS" as const,status:"CONFIRMED" as const,latitude:fix.latitude,longitude:fix.longitude,accuracy:fix.accuracy,observedAt:fix.observedAt};
+            if(!isMaterialLocationMove(saved,refreshed)){
+              confirmTripLocation(region.id,"NOW",refreshed);
+              setLocationFreshnessNotice(null);
+            }else{
+              setLocationFreshnessNotice({label:saved.label||saved.address,confirmedAt:saved.confirmedAt});
+              return;
+            }
+          }else{
+            setLocationFreshnessNotice({label:saved.label||saved.address,confirmedAt:saved.confirmedAt});
+            return;
+          }
+        }else{
+          setLocationFreshnessNotice({label:saved.label||saved.address,confirmedAt:saved.confirmedAt});
+          return;
+        }
+      }
+      allowStaleLocationOnceRef.current=false;
+    }
     const turnId = crypto.randomUUID();
     const scrollSurface =
       currentTurnConversationRef.current?.closest(".app-main");
@@ -262,7 +292,6 @@ export default function ConciergePage() {
     setCurrentTurn(beginCurrentTurn(turnId, text));
     setRequestError(false);
     if (!retry) {
-      lastRequestRef.current = { text, structured };
       setMessages((prev) => [
         ...prev,
         {
@@ -286,7 +315,8 @@ export default function ConciergePage() {
       { mode: tripMode },
     );
     try {
-      const gps = tripMode === "PLAN" ? null : getSessionLocation();
+      const storedTrip=loadTripSession(localStorage,region.id)||tripSession,storedLocation=tripMode==="PLAN"?storedTrip.locationContext?.planStart:storedTrip.locationContext?.now;
+      const gps=isFreshTripLocation(storedLocation)?{status:"AVAILABLE" as const,latitude:storedLocation!.latitude,longitude:storedLocation!.longitude,accuracy:storedLocation!.accuracy??100,observedAt:storedLocation!.observedAt}:tripMode==="PLAN"||storedLocation?null:getSessionLocation();
       const previousContext =
         [...messages].reverse().find((message) => message.result?.context)
           ?.result?.context || {};
@@ -540,14 +570,6 @@ export default function ConciergePage() {
     );
   const latestRecommendation = hasRecommendation ? currentResult : undefined;
   const latestPrimaryResult = hasPrimaryResult ? currentResult : undefined;
-  const offerLocation =
-    tripMode !== "PLAN" &&
-    shouldOfferLocationForRequest({
-      hasTripEvidence: hasTripEvidence(tripSession),
-      requestText: currentTurn?.requestText,
-      location: getSessionLocation(),
-      result: currentResult,
-    });
   useEffect(() => {
     const textarea = textInputRef.current;
     if (!textarea) return;
@@ -651,13 +673,10 @@ export default function ConciergePage() {
       {tripMode === "NOW" && tripSession.plannedContext && (
         <NowContinuationSummary planned={tripSession.plannedContext} />
       )}
+      {tripMode === "NOW" && <LocationContextBar mode="NOW" refreshNeeded={Boolean(locationFreshnessNotice)} onConfirmed={()=>setLocationFreshnessNotice(null)} />}
+      {tripMode==="NOW"&&locationFreshnessNotice&&<section className="card location-freshness-choice" role="status"><b>마지막으로 확인한 위치가 오래됐어요. 현재 위치를 다시 확인할까요?</b><p>{locationFreshnessNotice.label||"이전 확인 위치"}{locationFreshnessNotice.confirmedAt?` · ${new Date(locationFreshnessNotice.confirmedAt).toLocaleString("ko-KR")}`:""}</p><button type="button" className="btn btn-outline" onClick={()=>{const request=lastRequestRef.current;if(!request)return;allowStaleLocationOnceRef.current=true;setLocationFreshnessNotice(null);void send(request.text,request.structured,true)}}>이 위치 기준으로 검색</button></section>}
       {tripMode === "NOW" && !hasCompletedTurn && (
         <NowImmediateActions onSelect={(label) => send(label)} />
-      )}
-      {offerLocation && (
-        <div className="visitor-location-section">
-          <VisitorLocationControl />
-        </div>
       )}
       <div className="chat-window">
         {messages.map((m, i) => {
@@ -747,7 +766,7 @@ export default function ConciergePage() {
             <strong>조건을 선택해서 일정 만들기</strong>
           </div>
           {tripMode === "PLAN" ? (
-            <PlanVisitorIntake
+            <><LocationContextBar mode="PLAN"/><PlanVisitorIntake
               loading={loading}
               initial={tripSession.plannedContext}
               onSubmit={(structured, planned: PlannedContext) => {
@@ -758,7 +777,7 @@ export default function ConciergePage() {
                 });
                 send("", structured);
               }}
-            />
+            /></>
           ) : (
             <StructuredVisitorIntake
               loading={loading}
@@ -807,7 +826,7 @@ export default function ConciergePage() {
                 })
               }
             >
-              지금 상황 다시 확인
+              지금 상황에 맞게 다시 추천
             </button>
             <details className="demo-tools">
               <summary>시연·테스트</summary>
@@ -1185,6 +1204,9 @@ function PlaceDiscoveryPanel({
         GAS_STATION: "주유소",
         EV_CHARGER: "전기차 충전소",
         TOURIST_INFORMATION: "관광안내소",
+        PHARMACY: "약국",
+        HOSPITAL: "병원",
+        ATM: "ATM",
       }[discovery.category] || "장소";
   return (
     <section className="recommendation-section place-discovery-results">

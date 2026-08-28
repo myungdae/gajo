@@ -37,6 +37,13 @@ export interface VisitorLocation {
 }
 let current: VisitorLocation | null = null;
 export const getSessionLocation = () => current;
+export const setSessionLocation = (value:VisitorLocation|null) => { current=value; };
+export type LocationPermissionState="granted"|"prompt"|"denied"|"unsupported";
+export async function locationPermissionState():Promise<LocationPermissionState>{
+  if(!navigator.permissions?.query)return "unsupported";
+  try{return (await navigator.permissions.query({name:"geolocation"})).state as Exclude<LocationPermissionState,"unsupported">}catch{return "unsupported"}
+}
+export function mayRefreshLocationSilently(permission:LocationPermissionState){return permission==="granted"}
 export function shouldOfferLocationForRequest(input: {
   hasTripEvidence: boolean;
   requestText?: string;

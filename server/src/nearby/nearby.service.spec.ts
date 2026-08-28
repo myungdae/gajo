@@ -9,6 +9,7 @@ describe('NearbyService', () => {
     expect(normalizeNearbyCategory('행복 스크린골프')).toBe('GOLF_SCREEN_GOLF');
   });
   it('reports missing key without exposing it', () => expect(new NearbyService(config({})).status()).toEqual(expect.objectContaining({ configured: false, state: 'NOT_CONFIGURED' })));
+  it('reverse geocodes with the server key without returning it',async()=>{jest.spyOn(global,'fetch').mockResolvedValue(response({documents:[{address:{address_name:'경상남도 합천군 대병면',region_1depth_name:'경상남도',region_2depth_name:'합천군',region_3depth_name:'대병면'}}]}));const result=await new NearbyService(config({KAKAO_REST_API_KEY:'server-secret'})).reverseGeocode(35.5,128);expect(result).toMatchObject({label:'경상남도 합천군 대병면'});expect(JSON.stringify(result)).not.toContain('server-secret')});
   it('rejects search when key is missing', async () => expect(new NearbyService(config({})).search('CAFE', 35.7, 128)).rejects.toMatchObject({ code: 'NOT_CONFIGURED' }));
   it.each([
     ['CAFE', 'CE7', '카페'], ['LODGING', 'AD5', '숙박'], ['FOOD', 'FD6', '맛집'],
@@ -29,6 +30,7 @@ describe('NearbyService', () => {
     const [row] = await new NearbyService(config({ KAKAO_REST_API_KEY: 'key' })).search('CAFE', 35.7, 128, 2000, { useDistance: false });
     expect(row.distanceMeters).toBeUndefined(); expect(row.contextualReasons.join(' ')).not.toContain('현재 위치');
   });
+  it('orders by distance and never invents travel time or open state',async()=>{jest.spyOn(global,'fetch').mockResolvedValue(response({documents:[{...document('CE7'),id:'far',distance:'800'},{...document('CE7'),id:'near',distance:'100'}],meta:{is_end:true}}));const rows=await new NearbyService(config({KAKAO_REST_API_KEY:'key'})).search('CAFE',35.7,128);expect(rows.map(x=>x.id)).toEqual(['near','far']);expect(rows[0].estimatedTravelMinutes).toBeUndefined();expect(rows[0].operatingState).toBe('UNKNOWN')});
   it('gives indoor places a modest rain reason and never claims open', async () => {
     jest.spyOn(global, 'fetch').mockResolvedValue(response({ documents: [document('CE7')], meta: { is_end: true } }));
     const [row] = await new NearbyService(config({ KAKAO_REST_API_KEY: 'key' })).search('CAFE', 35.7, 128, 2000, { weather: 'HEAVY_RAIN' });

@@ -33,7 +33,7 @@ export default function GajoLiveStatus({ contextNo, onLiveRefresh,regionName,reg
       <div><span className="live-dot" data-status={status || 'UNAVAILABLE'} /><b>{regionalRuntimeStatusLabel(regionName)}</b></div>
       {context&&status!=='UNAVAILABLE' ? <p>{[time, temperature, precipitation || weather].filter(Boolean).join(' · ')}</p> : <p>{new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})} · 날씨 정보 확인 전</p>}
       <small>{status === 'LIVE' ? '실시간 날씨 확인됨' : status === 'STALE' ? '최근 확인한 날씨 정보' : `현재 ${regionName} 날씨 정보는 확인 준비 중입니다.`}</small>
-      {onLiveRefresh && <button type="button" className="btn btn-primary btn-block" onClick={() => void refresh(true)} disabled={loading}>{loading ? '확인 중…' : '지금 상황 다시 확인'}</button>}
+      {onLiveRefresh && <button type="button" className="btn btn-primary btn-block" onClick={() => void refresh(true)} disabled={loading}>{loading ? '확인 중…' : '지금 상황에 맞게 다시 추천'}</button>}
     </div>
   );
 }

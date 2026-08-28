@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   archiveAndStartNewTrip,
+  confirmTripLocation,
   createTripSession,
   currentTravelContext,
   loadTripSession,
@@ -11,7 +12,15 @@ import {
   saveTripSession,
   sessionContext,
   updateTripRuntimeContext,
+  isFreshTripLocation,
 } from "./tripSession.ts";
+
+const locationStorage=()=>{const data=new Map<string,string>();return{getItem:(key:string)=>data.get(key)||null,setItem:(key:string,value:string)=>data.set(key,value)}};
+
+test("NOW location freshness expires without requesting permission again",()=>{const now=Date.parse("2026-08-28T09:00:00.000Z"),location:any={status:"CONFIRMED",source:"GPS",observedAt:new Date(now).toISOString(),confirmedAt:new Date(now).toISOString()};assert.equal(isFreshTripLocation(location,now+29*60*1000),true);assert.equal(isFreshTripLocation(location,now+31*60*1000),false)});
+
+test("PLAN start and NOW current locations remain separate without replacing trip identity",()=>{const storage=locationStorage(),session=saveTripSession(createTripSession("hapcheon"),storage as any),plan=confirmTripLocation("hapcheon","PLAN",{status:"RESOLVED",source:"SELECTED_PLACE",latitude:35.53,longitude:128.03,label:"합천호",observedAt:"2026-08-28T00:00:00Z"},storage as any)!,now=confirmTripLocation("hapcheon","NOW",{status:"RESOLVED",source:"GPS",latitude:35.56,longitude:128.16,label:"합천군 합천읍",accuracy:20,observedAt:"2026-08-28T01:00:00Z"},storage as any)!;assert.equal(now.anonymousTripId,session.anonymousTripId);assert.equal(now.locationContext?.planStart?.label,"합천호");assert.equal(now.locationContext?.now?.label,"합천군 합천읍");assert.equal(plan.locationContext?.now,undefined)});
+test("changing a confirmed NOW location preserves itinerary and creates only a pending replan proposal",()=>{const storage=locationStorage(),session=saveTripSession({...createTripSession("hapcheon"),itinerary:{steps:[{entityId:"keep"}]},locationContext:{now:{status:"CONFIRMED",source:"GPS",latitude:35.52,longitude:128.01,label:"대병면",observedAt:"2026-08-28T00:00:00Z"}}},storage as any),moved=confirmTripLocation("hapcheon","NOW",{status:"RESOLVED",source:"MANUAL",latitude:35.56,longitude:128.16,label:"합천읍",observedAt:"2026-08-28T02:00:00Z"},storage as any)!;assert.equal(moved.anonymousTripId,session.anonymousTripId);assert.deepEqual(moved.itinerary,session.itinerary);assert.equal(moved.locationContext?.pendingReplan?.itineraryPreserved,true)});
 
 test("an essential-service detour preserves journey identity and content", () => {
   const session = {

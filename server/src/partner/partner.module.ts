@@ -44,6 +44,12 @@ import {
       useExisting: InMemoryPublicWriteRateLimitStore,
     },
   ],
-  exports: [PartnerService],
+  exports: [
+    PartnerService,
+    PublicClientIdentityService,
+    PublicWriteRateLimitGuard,
+    InMemoryPublicWriteRateLimitStore,
+    PUBLIC_WRITE_RATE_LIMIT_STORE,
+  ],
 })
 export class PartnerModule {}

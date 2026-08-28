@@ -52,7 +52,10 @@ export interface CreateContextInput {
       | "HEAT_SHELTER"
       | "GAS_STATION"
       | "EV_CHARGER"
-      | "TOURIST_INFORMATION";
+      | "TOURIST_INFORMATION"
+      | "PHARMACY"
+      | "HOSPITAL"
+      | "ATM";
     relation: "NEARBY" | "REGIONAL";
     currentResult?: {
       entityId: string;
@@ -492,6 +495,9 @@ export type NearbyCategory =
   | "GAS_STATION"
   | "EV_CHARGER"
   | "TOURIST_INFORMATION"
+  | "PHARMACY"
+  | "HOSPITAL"
+  | "ATM"
   | "OTHER";
 export interface NearbyPlace {
   id: string;
@@ -520,6 +526,7 @@ export interface NearbyPlace {
   relevanceScore: number;
 }
 export interface NearbyDiscoveryResponse {
+  searchedAt: string;
   origin: { lat: number; lng: number; distanceTrusted: boolean };
   category: NearbyCategory;
   radius: number;
@@ -541,14 +548,9 @@ export async function fetchNearbyStatus(regionId?: string) {
 export async function fetchNearbyRestaurants(
   lat: number,
   lng: number,
-  radius = 2000,
+  radius = 1000,
 ) {
-  const { data } = await api.get<NearbyRestaurantsResponse>(
-    "/nearby/restaurants",
-    {
-      params: { lat, lng, radius },
-    },
-  );
+  const { data } = await api.post<NearbyRestaurantsResponse>("/nearby/restaurants", { latitude:lat, longitude:lng, radius });
   return data;
 }
 
@@ -566,9 +568,7 @@ export async function fetchRoutePreview(
   endLng: number,
   mode: "foot" | "car" = "foot",
 ) {
-  const { data } = await api.get<RoutePreview>("/nearby/route", {
-    params: { startLat, startLng, endLat, endLng, mode },
-  });
+  const { data } = await api.post<RoutePreview>("/nearby/route", { startLatitude:startLat, startLongitude:startLng, endLatitude:endLat, endLongitude:endLng, mode });
   return data;
 }
 
@@ -584,9 +584,7 @@ export async function fetchNavigationLinks(
   lng: number,
   name: string,
 ) {
-  const { data } = await api.get<NavigationLinks>("/nearby/navigation-links", {
-    params: { lat, lng, name },
-  });
+  const { data } = await api.post<NavigationLinks>("/nearby/navigation-links", { latitude:lat, longitude:lng, name });
   return data;
 }
 
@@ -615,20 +613,22 @@ export async function fetchNearbyDiscovery(
     regionId?: string;
   } = {},
 ) {
-  const { data } = await api.get<NearbyDiscoveryResponse>("/nearby/discovery", {
-    params: {
+  const { data } = await api.post<NearbyDiscoveryResponse>("/nearby/discovery", {
       category,
-      lat,
-      lng,
+      latitude:lat,
+      longitude:lng,
       radius: options.radius || 2500,
       weather: options.weather,
       useDistance: options.useDistance !== false,
       transportMode: options.transportMode || "foot",
       regionId: options.regionId,
-    },
   });
   return data;
 }
+
+export interface ReverseGeocodeResult { status:"RESOLVED"|"EMPTY";label:string;address?:string;region1?:string;region2?:string;region3?:string }
+export async function reverseGeocodeLocation(latitude:number,longitude:number){const{data}=await api.post<ReverseGeocodeResult>("/nearby/reverse-geocode",{latitude,longitude});return data}
+export async function searchLocation(query:string,regionId:string,origin?:{latitude:number;longitude:number}){const{data}=await api.post<{results:NearbyPlace[]}>("/nearby/location-search",{query,regionId,origin});return data.results}
 
 export interface OntologyEntityDetail {
   uri: string;

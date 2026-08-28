@@ -18,7 +18,8 @@ export type PublicWritePolicy =
   | 'QR_VISIT'
   | 'BENEFIT_REDEMPTION'
   | 'RECOMMENDATION_TELEMETRY'
-  | 'OWNER_MANAGEMENT';
+  | 'OWNER_MANAGEMENT'
+  | 'NEARBY_LOOKUP';
 
 const POLICY_METADATA = 'partner-public-write-policy';
 export const PublicWriteLimit = (policy: PublicWritePolicy) =>
@@ -34,6 +35,7 @@ export const PUBLIC_WRITE_LIMITS: Record<
   BENEFIT_REDEMPTION: { limit: 10, windowMs: 10 * 60 * 1000 },
   RECOMMENDATION_TELEMETRY: { limit: 120, windowMs: 60 * 1000 },
   OWNER_MANAGEMENT: { limit: 30, windowMs: 10 * 60 * 1000 },
+  NEARBY_LOOKUP: { limit: 60, windowMs: 60 * 1000 },
 };
 export const GLOBAL_PUBLIC_WRITE_LIMIT = {
   limit: 2_000,

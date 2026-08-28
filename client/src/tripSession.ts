@@ -18,6 +18,13 @@ export interface PlannedContext {
   mustVisitPlaces?: PlannedPlace[];
   accommodationIntents?: PlannedPlace[];
 }
+export type TripLocationStatus="UNKNOWN"|"REQUESTING"|"RESOLVED"|"CONFIRMED"|"STALE"|"DENIED"|"ERROR";
+export type TripLocationSource="GPS"|"MANUAL"|"SELECTED_PLACE"|"TRIP_CONTEXT";
+export interface TripLocation {status:TripLocationStatus;source:TripLocationSource;latitude?:number;longitude?:number;accuracy?:number;label?:string;address?:string;observedAt:string;confirmedAt?:string}
+export const NOW_LOCATION_FRESH_MS=30*60*1000;
+export const LOCATION_SENSITIVE_FRESH_MS=5*60*1000;
+export function isFreshTripLocation(location?:TripLocation,now=Date.now(),maxAgeMs=NOW_LOCATION_FRESH_MS){const confirmed=Date.parse(location?.confirmedAt||'');return location?.status==='CONFIRMED'&&Number.isFinite(confirmed)&&now-confirmed<=maxAgeMs}
+export function isLocationSensitiveRequest(text=""){return /(?:주변|가까운|가까이|근처|거리|지금\s*(?:갈|어디)|다음\s*어디|식당|맛집|밥|카페|커피|마트|슈퍼|편의점|주유소|약국|병원|화장실|주차장|ATM)/i.test(text)}
 export interface TripSession {
   id: string;
   anonymousTripId: string;
@@ -26,6 +33,7 @@ export interface TripSession {
   partnerEntryContext?: { partnerId:string; partnerSlug:string; partnerName:string; enteredAt:string; source:"PARTNER_QR" };
   plannedContext?: PlannedContext;
   runtimeContext?: any;
+  locationContext?: { now?:TripLocation; planStart?:TripLocation; tripBaseline?:TripLocation; pendingReplan?:{createdAt:string;from?:TripLocation;to:TripLocation;distanceMeters?:number;impact:"REVIEW_REMAINING_ROUTE";itineraryPreserved:true} };
   itinerary?: unknown;
   savedPlaces?: any[];
   execution?: {
@@ -226,6 +234,10 @@ export function updateTripRuntimeContext(
   if (!current) return undefined;
   return saveTripSession({ ...current, runtimeContext }, storage);
 }
+export const locationDistance=(a?:TripLocation,b?:TripLocation)=>{if(!Number.isFinite(a?.latitude)||!Number.isFinite(a?.longitude)||!Number.isFinite(b?.latitude)||!Number.isFinite(b?.longitude))return undefined;const rad=(value:number)=>value*Math.PI/180,dLat=rad(b!.latitude!-a!.latitude!),dLng=rad(b!.longitude!-a!.longitude!),h=Math.sin(dLat/2)**2+Math.cos(rad(a!.latitude!))*Math.cos(rad(b!.latitude!))*Math.sin(dLng/2)**2;return Math.round(12742000*Math.asin(Math.sqrt(h)))};
+export function isMaterialLocationMove(previous?:TripLocation,next?:TripLocation){const distance=locationDistance(previous,next),threshold=Math.max(250,(previous?.accuracy||0)+(next?.accuracy||0));return distance!==undefined&&distance>threshold}
+export function confirmTripLocation(regionId:string,mode:"NOW"|"PLAN",location:TripLocation,storage:Pick<Storage,"getItem"|"setItem">=localStorage){const current=loadTripSession(storage,regionId);if(!current)return undefined;const confirmed={...location,status:"CONFIRMED" as const,confirmedAt:new Date().toISOString()},prior=mode==="NOW"?current.locationContext?.now:current.locationContext?.planStart,distanceMeters=locationDistance(prior,confirmed),movementThreshold=Math.max(250,(prior?.accuracy||0)+(confirmed.accuracy||0)),materialMove=distanceMeters!==undefined&&distanceMeters>movementThreshold,pendingDistance=locationDistance(current.locationContext?.pendingReplan?.to,confirmed),sameProposal=pendingDistance!==undefined&&pendingDistance<=movementThreshold,pendingReplan=mode==="NOW"&&prior?.status==="CONFIRMED"&&current.itinerary&&materialMove&&!sameProposal?{createdAt:new Date().toISOString(),from:prior,to:confirmed,distanceMeters,impact:"REVIEW_REMAINING_ROUTE" as const,itineraryPreserved:true as const}:current.locationContext?.pendingReplan;return saveTripSession({...current,locationContext:{...current.locationContext,...(mode==="NOW"?{now:confirmed}:{planStart:confirmed}),...(!current.locationContext?.tripBaseline?{tripBaseline:confirmed}:{}),...(pendingReplan?{pendingReplan}:{})}},storage)}
+export function clearPendingLocationReplan(regionId:string,storage:Pick<Storage,"getItem"|"setItem">=localStorage){const current=loadTripSession(storage,regionId);if(!current)return undefined;const locationContext={...current.locationContext};delete locationContext.pendingReplan;return saveTripSession({...current,locationContext},storage)}
 export function preserveTripForEssentialDetour(
   session: TripSession,
   detour: { category: string; entityId?: string },
