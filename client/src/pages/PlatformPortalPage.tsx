@@ -11,9 +11,9 @@ const journeyStages = [
 ];
 
 const regions = [
-  { name: '합천 AI', detail: '합천의 여행 계획부터 현장 길찾기까지', status: '운영 중', to: '/hapcheon' },
-  { name: '거창군', detail: '지역 AI 여행안내를 준비하고 있습니다.', status: '준비 중', exkoRegionId:'geochang' },
-  { name: '옥천군', detail: '지역 AI 여행안내를 준비하고 있습니다.', status: '준비 중', exkoRegionId:'okcheon' },
+  { name: '합천 AI', detail: '합천의 여행 계획부터 현장 길찾기까지', status: '운영 중', to: '/hapcheon', cta: '합천 AI 시작하기', exkoRegionId:'hapcheon' },
+  { name: '거창 AI', detail: '거창 가조 실증 지역에서 AI 여행안내를 이용해 보세요.', status: '현장 시험 중', to: 'https://gajo.odex.kr/', cta: '거창 AI 시작하기', external:true, exkoRegionId:'geochang' },
+  { name: '옥천 AI', detail: '옥천의 문학·문화·자연 여행을 AI와 준비해 보세요.', status: '현장 시험 중', to: '/okcheon', cta: '옥천 AI 시작하기', exkoRegionId:'okcheon' },
 ];
 
 const entrances = [
@@ -63,12 +63,15 @@ export default function PlatformPortalPage() {
         <div className="platform-section-heading">
           <p className="platform-kicker">START IN A REGION</p>
           <h2 id="active-regions-title">운영 지역에서 바로 시작하세요</h2>
-          <p>현재 실제 이용 가능한 지역과 준비 중인 지역을 구분해 안내합니다.</p>
+          <p>현재 이용 가능한 지역 AI 여행안내와 운영 상태를 함께 안내합니다.</p>
         </div>
         <div className="platform-region-grid">
-          {regions.map(region => <article className={region.to ? 'is-active' : 'is-upcoming'} key={region.name}>
+          {regions.map(region => <article className="is-active" key={region.name}>
             <div><span>{region.status}</span><h3>{region.name}</h3><p>{region.detail}</p></div>
-            {region.to ? <Link to={region.to}>합천 AI 시작하기 <span aria-hidden="true">→</span></Link> : <div className="platform-region-upcoming-actions"><span className="platform-region-status" aria-label={`${region.name} 지역 AI 여행안내 준비 중`}>지역 AI 여행안내: 준비 중</span><ExkoRegionKnowledgeLink regionId={region.exkoRegionId!} compact/></div>}
+            <div className="platform-region-actions">
+              {region.external ? <a className="platform-region-primary" href={region.to}>{region.cta} <span aria-hidden="true">→</span></a> : <Link className="platform-region-primary" to={region.to}>{region.cta} <span aria-hidden="true">→</span></Link>}
+              <ExkoRegionKnowledgeLink regionId={region.exkoRegionId} compact/>
+            </div>
           </article>)}
         </div>
       </section>
