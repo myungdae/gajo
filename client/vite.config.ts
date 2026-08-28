@@ -16,14 +16,14 @@ export default defineConfig({
       // HTML transform otherwise injects registerSW.js into every Rollup HTML
       // input, including the authenticated, non-PWA Copilot application.
       injectRegister: false,
-      includeAssets: ['favicon.svg', 'branding/regional-ai-icon-192.png', 'branding/gajo-ai-icon-512.png', 'manifest-*.webmanifest'],
+      includeAssets: ['favicon.svg', 'branding/*.svg', 'branding/*.png', 'manifest-*.webmanifest'],
       // Small region-specific manifests preserve the path used to install;
       // every region continues to share this one app and service worker.
       manifest: false,
       injectManifest: {
         // Copilot's HTML is never part of the visitor offline application shell.
         // Shared JS chunks remain precached because the visitor bundle needs them.
-        globIgnores: ['**/copilot.html','**/guide.html','**/portal.html'],
+        globIgnores: ['**/copilot.html','**/guide.html','**/portal.html','**/exkovia.html','**/unsupported.html'],
       },
     }),
   ],
@@ -36,5 +36,5 @@ export default defineConfig({
       },
     },
   },
-  build:{rollupOptions:{input:{visitor:resolve(__dirname,'index.html'),copilot:resolve(__dirname,'copilot.html'),guide:resolve(__dirname,'guide.html'),portal:resolve(__dirname,'portal.html')}}},
+  build:{rollupOptions:{input:{visitor:resolve(__dirname,'index.html'),exkovia:resolve(__dirname,'exkovia.html'),unsupported:resolve(__dirname,'unsupported.html'),copilot:resolve(__dirname,'copilot.html'),guide:resolve(__dirname,'guide.html'),portal:resolve(__dirname,'portal.html')}}},
 });
