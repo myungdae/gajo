@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -20,7 +21,9 @@ import {
   PartnerBenefit,
   PartnerBenefitDocument,
   PartnerDocument,
+  PARTNER_APPLICATION_FINGERPRINT_INDEX,
 } from './partner.schema';
+import { partnerApplicationFingerprint } from './public-write-security';
 const REGION = /^[a-z0-9-]{2,40}$/,
   SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
   UUID = /^[0-9a-f-]{36}$/i;
@@ -163,6 +166,7 @@ export class PartnerService implements OnModuleInit {
     if (
       !p ||
       !key ||
+      p.managementKeyRevokedAt ||
       supplied.length !== expected.length ||
       !timingSafeEqual(supplied, expected)
     )
@@ -170,6 +174,8 @@ export class PartnerService implements OnModuleInit {
     return p;
   }
   async apply(input: any) {
+    if (input?.website || input?.companyWebsite)
+      throw new BadRequestException('신청 내용을 확인해 주세요.');
     if (
       !REGION.test(input?.regionId || '') ||
       !input?.displayName ||
@@ -179,9 +185,26 @@ export class PartnerService implements OnModuleInit {
       input?.consent !== true
     )
       throw new BadRequestException('필수 항목과 참여 동의를 확인해 주세요.');
-    for (const field of ['displayName', 'category', 'address', 'phone'])
-      if (typeof input[field] !== 'string' || input[field].trim().length > 200)
+    const limits: Record<string, number> = {
+      displayName: 120,
+      category: 80,
+      address: 300,
+      phone: 40,
+      description: 2000,
+      proposedBenefit: 1000,
+      representativeImageUrl: 500,
+    };
+    for (const [field, limit] of Object.entries(limits))
+      if (
+        input[field] !== undefined &&
+        (typeof input[field] !== 'string' || input[field].trim().length > limit)
+      )
         throw new BadRequestException(`invalid ${field}`);
+    if (
+      input.operatingHours !== undefined &&
+      JSON.stringify(input.operatingHours).length > 1000
+    )
+      throw new BadRequestException('invalid operatingHours');
     if (input.representativeImageUrl) {
       try {
         const url = new URL(input.representativeImageUrl);
@@ -190,33 +213,52 @@ export class PartnerService implements OnModuleInit {
         throw new BadRequestException('invalid representativeImageUrl');
       }
     }
+    const fingerprint = partnerApplicationFingerprint(input);
     const slug = `${input.regionId}-${randomUUID().slice(0, 8)}`.toLowerCase();
     if (!SLUG.test(slug)) throw new BadRequestException('invalid partnerSlug');
     const key = randomBytes(24).toString('base64url'),
       partnerId = `partner-${randomUUID()}`,
       canonicalEntityId = `urn:partner-candidate:${input.regionId}:${randomUUID()}`;
-    const row: any = await this.partners.create({
-      partnerId,
-      canonicalEntityId,
-      regionId: input.regionId,
-      partnerSlug: slug,
-      displayName: input.displayName,
-      category: input.category,
-      address: input.address,
-      phone: input.phone,
-      operatingHours: input.operatingHours,
-      description: input.description,
-      representativeImageUrl: input.representativeImageUrl,
-      reviewOnly: { proposedBenefit: input.proposedBenefit },
-      status: 'APPLICATION_RECEIVED',
-      qrStatus: 'INACTIVE',
-      verificationStatus: 'UNVERIFIED',
-      source: {
-        sourceType: 'PARTNER_SELF_APPLICATION',
-        sourceName: '업주 셀프 신청',
-      },
-      managementKeyHash: this.hash(key),
-    });
+    const issuedAt = new Date();
+    let row: any;
+    try {
+      row = await this.partners.create({
+        partnerId,
+        canonicalEntityId,
+        regionId: input.regionId,
+        partnerSlug: slug,
+        displayName: input.displayName,
+        category: input.category,
+        address: input.address,
+        phone: input.phone,
+        operatingHours: input.operatingHours,
+        description: input.description,
+        representativeImageUrl: input.representativeImageUrl,
+        reviewOnly: { proposedBenefit: input.proposedBenefit },
+        status: 'APPLICATION_RECEIVED',
+        qrStatus: 'INACTIVE',
+        verificationStatus: 'UNVERIFIED',
+        source: {
+          sourceType: 'PARTNER_SELF_APPLICATION',
+          sourceName: '업주 셀프 신청',
+        },
+        managementKeyHash: this.hash(key),
+        managementKeyVersion: 1,
+        managementKeyIssuedAt: issuedAt,
+        managementKeyAudit: [
+          this.keyAudit(1, 'ISSUED', 'SELF_APPLICATION', issuedAt),
+        ],
+        applicationFingerprint: fingerprint,
+      });
+    } catch (error: any) {
+      if (
+        error?.code === 11000 &&
+        (error?.keyPattern?.applicationFingerprint === 1 ||
+          error?.index === PARTNER_APPLICATION_FINGERPRINT_INDEX)
+      )
+        throw new ConflictException('이미 접수된 신청과 동일한 정보입니다.');
+      throw error;
+    }
     return {
       partnerId: row.partnerId,
       status: row.status,
@@ -592,11 +634,38 @@ export class PartnerService implements OnModuleInit {
       .lean();
   }
   async adminIssueManagementKey(partnerId: string) {
-    const key = randomBytes(24).toString('base64url');
+    const current: any = await this.partners.findOne({ partnerId }).lean();
+    if (!current) throw new NotFoundException();
+    const key = randomBytes(24).toString('base64url'),
+      issuedAt = new Date(),
+      version = (current.managementKeyVersion || 0) + 1,
+      action = current.managementKeyHash ? 'ROTATED' : 'ISSUED',
+      versionFilter =
+        current.managementKeyVersion === undefined
+          ? { managementKeyVersion: { $exists: false } }
+          : { managementKeyVersion: current.managementKeyVersion },
+      keyFilter = current.managementKeyHash
+        ? { managementKeyHash: current.managementKeyHash }
+        : { managementKeyHash: { $exists: false } };
     const partner = await this.partners
       .findOneAndUpdate(
-        { partnerId },
-        { $set: { managementKeyHash: this.hash(key) } },
+        { partnerId, ...versionFilter, ...keyFilter },
+        {
+          $set: {
+            managementKeyHash: this.hash(key),
+            managementKeyVersion: version,
+            managementKeyIssuedAt: issuedAt,
+          },
+          $unset: { managementKeyRevokedAt: 1 },
+          $push: {
+            managementKeyAudit: this.keyAudit(
+              version,
+              action,
+              'ADMIN',
+              issuedAt,
+            ),
+          },
+        },
         { new: true },
       )
       .lean();
@@ -606,6 +675,59 @@ export class PartnerService implements OnModuleInit {
       managementKey: key,
       managementKeyNotice:
         '이 키는 다시 표시되지 않습니다. 확인된 운영 주체에게 안전한 별도 채널로 전달하세요.',
+    };
+  }
+  async adminRevokeManagementKey(partnerId: string) {
+    const current: any = await this.partners.findOne({ partnerId }).lean();
+    if (!current?.managementKeyHash) throw new NotFoundException();
+    const revokedAt = new Date(),
+      keyVersion = current.managementKeyVersion || 0,
+      versionFilter =
+        current.managementKeyVersion === undefined
+          ? { managementKeyVersion: { $exists: false } }
+          : { managementKeyVersion: current.managementKeyVersion };
+    const partner: any = await this.partners
+      .findOneAndUpdate(
+        {
+          partnerId,
+          managementKeyHash: current.managementKeyHash,
+          ...versionFilter,
+        },
+        {
+          $unset: { managementKeyHash: 1 },
+          $set: { managementKeyRevokedAt: revokedAt },
+          $push: {
+            managementKeyAudit: this.keyAudit(
+              keyVersion,
+              'REVOKED',
+              'ADMIN',
+              revokedAt,
+            ),
+          },
+        },
+        { new: true },
+      )
+      .lean();
+    if (!partner) throw new NotFoundException();
+    return {
+      partnerId: partner.partnerId,
+      managementKeyVersion: partner.managementKeyVersion || 0,
+      revokedAt,
+    };
+  }
+
+  private keyAudit(
+    keyVersion: number,
+    action: 'ISSUED' | 'ROTATED' | 'REVOKED',
+    actor: 'ADMIN' | 'SELF_APPLICATION',
+    occurredAt: Date,
+  ) {
+    return {
+      eventId: `partner-key-audit-${randomUUID()}`,
+      keyVersion,
+      action,
+      actor,
+      occurredAt,
     };
   }
   async metrics(slug: string, key: string) {

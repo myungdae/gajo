@@ -11,6 +11,12 @@ import {
 } from './partner.controller';
 import { PartnerService } from './partner.service';
 import { AdminTokenGuard } from '../regional-data/admin-token.guard';
+import {
+  InMemoryPublicWriteRateLimitStore,
+  PUBLIC_WRITE_RATE_LIMIT_STORE,
+  PublicClientIdentityService,
+  PublicWriteRateLimitGuard,
+} from './public-write-security';
 
 describe('Partner HTTP API boundaries', () => {
   let app: INestApplication;
@@ -30,6 +36,7 @@ describe('Partner HTTP API boundaries', () => {
     adminPartner: jest.fn(),
     adminBenefit: jest.fn(),
     adminIssueManagementKey: jest.fn(),
+    adminRevokeManagementKey: jest.fn(),
   };
   beforeAll(async () => {
     process.env.ADMIN_WRITE_TOKEN = 'admin-secret';
@@ -38,6 +45,13 @@ describe('Partner HTTP API boundaries', () => {
       providers: [
         { provide: PartnerService, useValue: service },
         AdminTokenGuard,
+        PublicClientIdentityService,
+        PublicWriteRateLimitGuard,
+        InMemoryPublicWriteRateLimitStore,
+        {
+          provide: PUBLIC_WRITE_RATE_LIMIT_STORE,
+          useExisting: InMemoryPublicWriteRateLimitStore,
+        },
       ],
     }).compile();
     app = module.createNestApplication();
@@ -104,6 +118,29 @@ describe('Partner HTTP API boundaries', () => {
       .send({ status: 'UNDER_REVIEW' })
       .expect(200);
     expect(service.adminPartner).toHaveBeenCalledTimes(1);
+  });
+  it('keeps management key rotation and revocation behind the admin guard', async () => {
+    service.adminIssueManagementKey.mockResolvedValue({
+      partnerId: 'p1',
+      managementKey: 'one-time-key',
+    });
+    service.adminRevokeManagementKey.mockResolvedValue({
+      partnerId: 'p1',
+      managementKeyVersion: 2,
+    });
+    await request(app.getHttpServer())
+      .post('/api/admin/partners/p1/management-key')
+      .expect(403);
+    await request(app.getHttpServer())
+      .post('/api/admin/partners/p1/management-key')
+      .set('x-admin-token', 'admin-secret')
+      .expect(201);
+    await request(app.getHttpServer())
+      .post('/api/admin/partners/p1/management-key/revoke')
+      .set('x-admin-token', 'admin-secret')
+      .expect(201);
+    expect(service.adminIssueManagementKey).toHaveBeenCalledWith('p1');
+    expect(service.adminRevokeManagementKey).toHaveBeenCalledWith('p1');
   });
   it('routes redemption idempotency and owner decision payloads unchanged', async () => {
     service.requestRedemption.mockResolvedValue({

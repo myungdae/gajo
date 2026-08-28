@@ -42,6 +42,17 @@ export class Partner {
     verifiedAt?: string;
   };
   @Prop() managementKeyHash?: string;
+  @Prop({ default: 0 }) managementKeyVersion?: number;
+  @Prop() managementKeyIssuedAt?: Date;
+  @Prop() managementKeyRevokedAt?: Date;
+  @Prop({ type: [Object], default: [] }) managementKeyAudit?: Array<{
+    eventId: string;
+    keyVersion: number;
+    action: 'ISSUED' | 'ROTATED' | 'REVOKED';
+    occurredAt: Date;
+    actor: 'ADMIN' | 'SELF_APPLICATION';
+  }>;
+  @Prop() applicationFingerprint?: string;
   @Prop() reviewedAt?: string;
   @Prop() approvedAt?: string;
   @Prop() qrIssuedAt?: string;
@@ -51,6 +62,16 @@ export class Partner {
 export type PartnerDocument = Partner & Document;
 export const PartnerSchema = SchemaFactory.createForClass(Partner);
 PartnerSchema.index({ regionId: 1, canonicalEntityId: 1 }, { unique: true });
+export const PARTNER_APPLICATION_FINGERPRINT_INDEX =
+  'uniq_partner_application_fingerprint_string';
+PartnerSchema.index(
+  { applicationFingerprint: 1 },
+  {
+    name: PARTNER_APPLICATION_FINGERPRINT_INDEX,
+    unique: true,
+    partialFilterExpression: { applicationFingerprint: { $type: 'string' } },
+  },
+);
 
 @Schema({ timestamps: true })
 export class PartnerBenefit {

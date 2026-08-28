@@ -11,6 +11,7 @@ import {
 } from './partner.service';
 import jsQR from 'jsqr';
 import { PNG } from 'pngjs';
+import { createHash } from 'crypto';
 
 const trip = '11111111-1111-4111-8111-111111111111',
   key = 'owner-secret';
@@ -143,6 +144,43 @@ describe('partner publication and lifecycle', () => {
       /^urn:partner-candidate:hapcheon:/,
     );
     expect(result.managementKey).toBeTruthy();
+    expect(created.managementKeyHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(created.applicationFingerprint).toMatch(/^[0-9a-f]{64}$/);
+    expect(created.managementKeyAudit).toEqual([
+      expect.objectContaining({ action: 'ISSUED', keyVersion: 1 }),
+    ]);
+  });
+  it('rejects honeypots, oversized fields, and duplicate applications safely', async () => {
+    const input = {
+      regionId: 'hapcheon',
+      displayName: '신청업체',
+      category: 'CAFE',
+      address: '합천군',
+      phone: '055-000-0000',
+      consent: true,
+    };
+    const m = models();
+    await expect(m.service.apply({ ...input, website: 'bot' })).rejects.toThrow(
+      '신청 내용을 확인',
+    );
+    await expect(
+      m.service.apply({ ...input, description: 'x'.repeat(2001) }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    m.partners.create.mockRejectedValue({
+      code: 11000,
+      keyPattern: { applicationFingerprint: 1 },
+      detail: 'private-db',
+    });
+    await expect(m.service.apply(input)).rejects.toThrow(
+      '이미 접수된 신청과 동일한 정보입니다.',
+    );
+    const unrelated = {
+      code: 11000,
+      keyPattern: { partnerSlug: 1 },
+      detail: 'private-db-detail',
+    };
+    m.partners.create.mockRejectedValue(unrelated);
+    await expect(m.service.apply(input)).rejects.toBe(unrelated);
   });
 });
 describe('QR visit evidence and idempotency', () => {
@@ -447,7 +485,10 @@ describe('benefit policy and redemption trust', () => {
     ).rejects.toThrow('만료');
     expect(m.redemptions.findOneAndUpdate).toHaveBeenNthCalledWith(
       2,
-      expect.objectContaining({ status: 'REQUESTED', expiresAt: { $lte: expect.any(Date) } }),
+      expect.objectContaining({
+        status: 'REQUESTED',
+        expiresAt: { $lte: expect.any(Date) },
+      }),
       { $set: { status: 'EXPIRED', decidedAt: expect.any(Date) } },
       { new: false },
     );
@@ -506,14 +547,10 @@ describe('domain-independent QR assets', () => {
         test: true,
       }),
       png = PNG.sync.read(asset.data as Buffer),
-      decoded = jsQR(
-        new Uint8ClampedArray(png.data),
-        png.width,
-        png.height,
-      );
+      decoded = jsQR(new Uint8ClampedArray(png.data), png.width, png.height);
     expect(decoded?.data).toBe('https://preview.example.test/go/one');
     delete process.env.PUBLIC_BASE_URL;
-  },15000);
+  }, 15000);
   it('blocks print QR until operating approval and an exkovia.com base URL', async () => {
     const m = models();
     m.partners.findOne.mockResolvedValue({ ...operating, status: 'DRAFT' });
@@ -526,5 +563,148 @@ describe('domain-independent QR assets', () => {
       m.service.qrAsset('one', key, { kind: 'go', format: 'png', test: false }),
     ).rejects.toThrow('exkovia.com');
     delete process.env.PUBLIC_BASE_URL;
+  });
+});
+
+describe('management key lifecycle', () => {
+  it('rotates once, invalidates the old key immediately, and records its version', async () => {
+    const m = models();
+    m.partners.findOne.mockReturnValueOnce(
+      query({ ...operating, managementKeyVersion: 1 }),
+    );
+    m.partners.findOneAndUpdate.mockReturnValue(
+      query({ ...operating, managementKeyVersion: 2 }),
+    );
+    const result: any = await m.service.adminIssueManagementKey('p1');
+    expect(result.managementKey).toBeTruthy();
+    expect(result).not.toHaveProperty('managementKeyHash');
+    expect(m.partners.findOneAndUpdate).toHaveBeenCalledWith(
+      {
+        partnerId: 'p1',
+        managementKeyVersion: 1,
+        managementKeyHash: operating.managementKeyHash,
+      },
+      expect.objectContaining({
+        $set: expect.objectContaining({ managementKeyVersion: 2 }),
+        $unset: { managementKeyRevokedAt: 1 },
+        $push: {
+          managementKeyAudit: expect.objectContaining({
+            action: 'ROTATED',
+            keyVersion: 2,
+          }),
+        },
+      }),
+      { new: true },
+    );
+    m.partners.findOne.mockResolvedValue({
+      ...operating,
+      managementKeyHash: createHash('sha256')
+        .update(result.managementKey)
+        .digest('hex'),
+      managementKeyVersion: 2,
+    });
+    await expect(m.service.metrics('one', key)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    m.activities.find.mockReturnValue(query([]));
+    await expect(
+      m.service.metrics('one', result.managementKey),
+    ).resolves.toMatchObject({ partnerId: 'p1' });
+  });
+  it('revokes a key without returning it and blocks cross-partner access', async () => {
+    const m = models();
+    m.partners.findOne.mockReturnValueOnce(
+      query({ ...operating, managementKeyVersion: 3 }),
+    );
+    m.partners.findOneAndUpdate.mockReturnValue(
+      query({ ...operating, managementKeyVersion: 3 }),
+    );
+    const result: any = await m.service.adminRevokeManagementKey('p1');
+    expect(result).toMatchObject({ partnerId: 'p1', managementKeyVersion: 3 });
+    expect(result).not.toHaveProperty('managementKey');
+    expect(m.partners.findOneAndUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        partnerId: 'p1',
+        managementKeyVersion: 3,
+      }),
+      expect.objectContaining({
+        $unset: { managementKeyHash: 1 },
+        $push: {
+          managementKeyAudit: expect.objectContaining({
+            action: 'REVOKED',
+            keyVersion: 3,
+          }),
+        },
+      }),
+      { new: true },
+    );
+    m.partners.findOne.mockResolvedValue({
+      ...operating,
+      managementKeyRevokedAt: new Date(),
+    });
+    await expect(m.service.metrics('one', key)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    m.partners.findOne.mockResolvedValue({
+      ...operating,
+      partnerId: 'p2',
+      partnerSlug: 'two',
+      managementKeyHash: createHash('sha256').update('other-key').digest('hex'),
+    });
+    await expect(m.service.metrics('two', key)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+  });
+  it('allows only one atomic winner when rotate and revoke race', async () => {
+    const m = models();
+    let state: any = { ...operating, managementKeyVersion: 4 };
+    const partners: any = {
+      findOne: jest.fn(() => query({ ...state })),
+      findOneAndUpdate: jest.fn((filter: any, update: any) => ({
+        lean: async () => {
+          if (
+            filter.partnerId !== state.partnerId ||
+            filter.managementKeyVersion !== state.managementKeyVersion ||
+            (filter.managementKeyHash !== undefined &&
+              filter.managementKeyHash !== state.managementKeyHash)
+          )
+            return null;
+          const next = { ...state, ...(update.$set || {}) };
+          for (const field of Object.keys(update.$unset || {}))
+            delete next[field];
+          if (update.$push?.managementKeyAudit)
+            next.managementKeyAudit = [
+              ...(state.managementKeyAudit || []),
+              update.$push.managementKeyAudit,
+            ];
+          state = next;
+          return { ...state };
+        },
+      })),
+      updateOne: jest.fn(),
+      find: jest.fn(),
+      create: jest.fn(),
+    };
+    const service = new PartnerService(
+        partners,
+        m.benefits,
+        m.activities,
+        m.redemptions,
+        m.daily,
+      ),
+      results = await Promise.allSettled([
+        service.adminIssueManagementKey('p1'),
+        service.adminRevokeManagementKey('p1'),
+      ]);
+    expect(
+      results.filter((result) => result.status === 'fulfilled'),
+    ).toHaveLength(1);
+    expect(
+      results.filter((result) => result.status === 'rejected'),
+    ).toHaveLength(1);
+    expect(state.managementKeyAudit).toHaveLength(1);
+    expect(['ROTATED', 'REVOKED']).toContain(
+      state.managementKeyAudit[0].action,
+    );
   });
 });

@@ -46,6 +46,16 @@ export default function PartnerApplicationPage() {
         <li>혜택 없이도 참여 가능</li>
       </ul>
       <form className="partner-form" onSubmit={submit}>
+        <label className="sr-only" aria-hidden="true">
+          웹사이트
+          <input
+            name="website"
+            tabIndex={-1}
+            autoComplete="off"
+            value={state.website || ""}
+            onChange={(e) => set("website", e.target.value)}
+          />
+        </label>
         {[
           ["displayName", "업소명"],
           ["category", "업종"],
@@ -66,6 +76,7 @@ export default function PartnerApplicationPage() {
                 "phone",
               ].includes(k)}
               value={state[k] || ""}
+              maxLength={{displayName:120,category:80,address:300,phone:40,operatingHours:1000,representativeImageUrl:500,description:2000,proposedBenefit:1000}[k]}
               onChange={(e) => set(k, e.target.value)}
             />
           </label>

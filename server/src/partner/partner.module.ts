@@ -17,6 +17,12 @@ import {
   PartnerController,
 } from './partner.controller';
 import { PartnerService } from './partner.service';
+import {
+  InMemoryPublicWriteRateLimitStore,
+  PUBLIC_WRITE_RATE_LIMIT_STORE,
+  PublicClientIdentityService,
+  PublicWriteRateLimitGuard,
+} from './public-write-security';
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -28,7 +34,16 @@ import { PartnerService } from './partner.service';
     ]),
   ],
   controllers: [PartnerController, PartnerAdminController],
-  providers: [PartnerService],
+  providers: [
+    PartnerService,
+    PublicClientIdentityService,
+    PublicWriteRateLimitGuard,
+    InMemoryPublicWriteRateLimitStore,
+    {
+      provide: PUBLIC_WRITE_RATE_LIMIT_STORE,
+      useExisting: InMemoryPublicWriteRateLimitStore,
+    },
+  ],
   exports: [PartnerService],
 })
 export class PartnerModule {}

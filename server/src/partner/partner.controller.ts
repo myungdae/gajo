@@ -13,41 +13,47 @@ import {
 import { AdminTokenGuard } from '../regional-data/admin-token.guard';
 import { PartnerService } from './partner.service';
 import type { Response } from 'express';
+import {
+  PublicWriteLimit,
+  PublicWriteRateLimitGuard,
+} from './public-write-security';
 @Controller('api/partners')
+@UseGuards(PublicWriteRateLimitGuard)
 export class PartnerController {
   constructor(private service: PartnerService) {}
-  @Post('applications') apply(@Body() body: any) {
+  @Post('applications') @PublicWriteLimit('PARTNER_APPLICATION') apply(
+    @Body() body: any,
+  ) {
     return this.service.apply(body);
   }
   @Get('public/:slug') entry(@Param('slug') slug: string) {
     return this.service.publicEntry(slug);
   }
-  @Post('public/:slug/entries') record(
+  @Post('public/:slug/entries') @PublicWriteLimit('QR_ENTRY') record(
     @Param('slug') slug: string,
     @Body() body: any,
   ) {
     return this.service.recordEntry(slug, body);
   }
-  @Post('public/:slug/visits') visit(
+  @Post('public/:slug/visits') @PublicWriteLimit('QR_VISIT') visit(
     @Param('slug') slug: string,
     @Body() body: any,
   ) {
     return this.service.visit(slug, body);
   }
-  @Post('benefits/:id/redemptions') redeem(
-    @Param('id') id: string,
-    @Body() body: any,
-  ) {
+  @Post('benefits/:id/redemptions')
+  @PublicWriteLimit('BENEFIT_REDEMPTION')
+  redeem(@Param('id') id: string, @Body() body: any) {
     return this.service.requestRedemption(id, body);
   }
-  @Post(':slug/benefits') benefit(
+  @Post(':slug/benefits') @PublicWriteLimit('OWNER_MANAGEMENT') benefit(
     @Param('slug') slug: string,
     @Headers('x-partner-key') key: string,
     @Body() body: any,
   ) {
     return this.service.createBenefit(slug, key, body);
   }
-  @Patch(':slug/redemptions/:id') confirm(
+  @Patch(':slug/redemptions/:id') @PublicWriteLimit('OWNER_MANAGEMENT') confirm(
     @Param('slug') slug: string,
     @Param('id') id: string,
     @Headers('x-partner-key') key: string,
@@ -55,13 +61,13 @@ export class PartnerController {
   ) {
     return this.service.confirm(slug, id, key, body?.decision);
   }
-  @Get(':slug/metrics') metrics(
+  @Get(':slug/metrics') @PublicWriteLimit('OWNER_MANAGEMENT') metrics(
     @Param('slug') slug: string,
     @Headers('x-partner-key') key: string,
   ) {
     return this.service.metrics(slug, key);
   }
-  @Get(':slug/qr') async qr(
+  @Get(':slug/qr') @PublicWriteLimit('OWNER_MANAGEMENT') async qr(
     @Param('slug') slug: string,
     @Headers('x-partner-key') key: string,
     @Query('kind') kind: string,
@@ -83,7 +89,9 @@ export class PartnerController {
     response.setHeader('X-QR-Target', asset.target);
     response.send(asset.data);
   }
-  @Post('recommendations') shown(@Body() b: any) {
+  @Post('recommendations') @PublicWriteLimit('RECOMMENDATION_TELEMETRY') shown(
+    @Body() b: any,
+  ) {
     if (Array.isArray(b.entityIds))
       return this.service.recommendationsShownForEntities(
         b.regionId,
@@ -115,5 +123,10 @@ export class PartnerAdminController {
   }
   @Post(':id/management-key') managementKey(@Param('id') id: string) {
     return this.service.adminIssueManagementKey(id);
+  }
+  @Post(':id/management-key/revoke') revokeManagementKey(
+    @Param('id') id: string,
+  ) {
+    return this.service.adminRevokeManagementKey(id);
   }
 }
