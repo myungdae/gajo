@@ -16,6 +16,10 @@ import {
 } from "../utils/visitorLocation";
 import { useSpeechInput } from "../hooks/useSpeechInput";
 import {
+  alignCompletedResponse,
+  stabilizeCompletedResponse,
+} from "../responseScroll";
+import {
   buildContextSummary,
   withRequestedDestinations,
 } from "../utils/contextSummary";
@@ -54,7 +58,7 @@ import {
   type ExplicitJourneyContext,
 } from "../explicitJourneyContext";
 import { GlossaryText } from "../components/GlossaryText";
-import { discoveryAlternatives, isExplanationOnly } from "../aiResponseActions";
+import { isExplanationOnly } from "../aiResponseActions";
 import { understoodSummary } from "../understoodSummary";
 import { NOW_HEADING, NOW_HEADING_LINES, NOW_QUICK_ACTIONS } from "../nowQuickActions";
 
@@ -141,9 +145,10 @@ export default function ConciergePage() {
   const [excludedDiscoveryIds, setExcludedDiscoveryIds] = useState<string[]>(
     [],
   );
-  const currentResultRef = useRef<HTMLDivElement>(null);
+  const currentAnswerRef = useRef<HTMLDivElement>(null);
   const currentTurnConversationRef = useRef<HTMLDivElement>(null);
   const followCurrentTurnRef = useRef(true);
+  const responseStabilizerCleanupRef = useRef<() => void>(() => {});
   const [loading, setLoading] = useState(false);
   const [requestError, setRequestError] = useState(false);
   const [freeTextOpen, setFreeTextOpen] = useState(
@@ -162,7 +167,6 @@ export default function ConciergePage() {
     sessionStorage.getItem(contextSessionKey) || crypto.randomUUID(),
   );
   const liveStoryRef = useRef<HTMLDivElement>(null);
-  const hadRecommendationRef = useRef(false);
   const requestInFlightRef = useRef(false);
   const homeSubmittedRef = useRef(false);
   const voiceButtonRef = useRef<HTMLButtonElement>(null);
@@ -182,6 +186,42 @@ export default function ConciergePage() {
   useEffect(() => {
     sessionStorage.setItem(contextSessionKey, contextSessionIdRef.current);
   }, [contextSessionKey]);
+  useEffect(() => {
+    const scrollSurface =
+      currentTurnConversationRef.current?.closest(".app-main");
+    if (!scrollSurface) return;
+    const cancelFollow = () => {
+      followCurrentTurnRef.current = false;
+    };
+    const cancelFollowByKey = (event: KeyboardEvent) => {
+      if (
+        [
+          "ArrowUp",
+          "ArrowDown",
+          "PageUp",
+          "PageDown",
+          "Home",
+          "End",
+          " ",
+        ].includes(event.key)
+      )
+        cancelFollow();
+    };
+    scrollSurface.addEventListener("wheel", cancelFollow, { passive: true });
+    scrollSurface.addEventListener("touchstart", cancelFollow, {
+      passive: true,
+    });
+    scrollSurface.addEventListener("pointerdown", cancelFollow, {
+      passive: true,
+    });
+    document.addEventListener("keydown", cancelFollowByKey);
+    return () => {
+      scrollSurface.removeEventListener("wheel", cancelFollow);
+      scrollSurface.removeEventListener("touchstart", cancelFollow);
+      scrollSurface.removeEventListener("pointerdown", cancelFollow);
+      document.removeEventListener("keydown", cancelFollowByKey);
+    };
+  }, []);
   useEffect(() => {
     setConversationAnchor(null);
     setDiscoveryContext(undefined);
@@ -208,7 +248,8 @@ export default function ConciergePage() {
     const text = (overrideText ?? input).trim();
     if ((!text && !structured) || requestInFlightRef.current) return;
     const turnId = crypto.randomUUID();
-    const scrollSurface = textInputRef.current?.closest(".app-main");
+    const scrollSurface =
+      currentTurnConversationRef.current?.closest(".app-main");
     followCurrentTurnRef.current =
       document.activeElement === textInputRef.current ||
       !scrollSurface ||
@@ -519,20 +560,21 @@ export default function ConciergePage() {
   }, [input, hasCompletedTurn]);
 
   useEffect(() => {
-    if (
-      hasPrimaryResult &&
-      !hadRecommendationRef.current &&
-      followCurrentTurnRef.current
-    ) {
-      requestAnimationFrame(() =>
-        currentResultRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "nearest",
-        }),
+    if (currentTurn?.status !== "RESOLVED") return;
+    responseStabilizerCleanupRef.current();
+    const frame = requestAnimationFrame(() => {
+      const answer = currentAnswerRef.current;
+      alignCompletedResponse(answer, () => followCurrentTurnRef.current);
+      responseStabilizerCleanupRef.current = stabilizeCompletedResponse(
+        answer,
+        () => followCurrentTurnRef.current,
       );
-    }
-    hadRecommendationRef.current = hasPrimaryResult;
-  }, [hasPrimaryResult]);
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      responseStabilizerCleanupRef.current();
+    };
+  }, [currentTurn?.status, currentTurn?.turnId]);
 
   const runDemo = async () => {
     const turnId = crypto.randomUUID();
@@ -618,24 +660,27 @@ export default function ConciergePage() {
         </div>
       )}
       <div className="chat-window">
-        {messages.map((m, i) => (
-          <div key={i} className="chat-message">
-            <div className={`chat-bubble ${m.role === "user" ? "user" : "ai"}`}>
-              {m.role === "ai" ? <GlossaryText text={m.text} /> : m.text}
+        {messages.map((m, i) => {
+          const isCurrentAnswer =
+            m.role === "ai" &&
+            Boolean(m.result) &&
+            isCurrentTurn(m.turnId, currentTurn);
+          return (
+            <div
+              key={i}
+              ref={isCurrentAnswer ? currentAnswerRef : undefined}
+              className={`chat-message${isCurrentAnswer ? " current-ai-answer-anchor" : ""}`}
+              tabIndex={isCurrentAnswer ? -1 : undefined}
+              aria-label={isCurrentAnswer ? "새 AI 여행 답변" : undefined}
+            >
+              <div
+                className={`chat-bubble ${m.role === "user" ? "user" : "ai"}`}
+              >
+                {m.role === "ai" ? <GlossaryText text={m.text} /> : m.text}
+              </div>
             </div>
-            {m.role === "ai" &&
-              m.result &&
-              isCurrentTurn(m.turnId, currentTurn) && (
-                <AiResponseActions
-                  rawMessage={m.requestText || ""}
-                  result={m.result}
-                  turnId={m.turnId!}
-                  excludedEntityIds={excludedDiscoveryIds}
-                  onExcludedEntityIdsChange={setExcludedDiscoveryIds}
-                />
-              )}
-          </div>
-        ))}
+          );
+        })}
         {loading && (
           <div className="loading">
             말씀하신 상황에 맞는 일정을 살펴보고 있습니다...
@@ -728,7 +773,7 @@ export default function ConciergePage() {
       )}
 
       {hasRecommendation && latestRecommendation && (
-        <div ref={currentResultRef} className="recommendation-journey-start">
+        <div className="recommendation-journey-start">
           {tripMode === "PLAN" && tripSession.plannedContext && (
             <PlanSummary planned={tripSession.plannedContext} />
           )}
@@ -783,7 +828,7 @@ export default function ConciergePage() {
       )}
 
       {latestPrimaryResult?.discovery && (
-        <div ref={currentResultRef} className="recommendation-journey-start">
+        <div className="recommendation-journey-start">
           <UnderstoodContext result={latestPrimaryResult} />
           <PlaceDiscoveryPanel
             result={latestPrimaryResult}
@@ -795,9 +840,18 @@ export default function ConciergePage() {
         </div>
       )}
       {latestPrimaryResult?.distanceInfo && (
-        <div ref={currentResultRef} className="recommendation-journey-start">
+        <div className="recommendation-journey-start">
           <DistanceInfoPanel result={latestPrimaryResult} />
         </div>
+      )}
+      {currentResult && currentTurn?.status === "RESOLVED" && (
+        <AiResponseActions
+          rawMessage={currentTurn.requestText}
+          result={currentResult}
+          turnId={currentTurn.turnId}
+          excludedEntityIds={excludedDiscoveryIds}
+          onExcludedEntityIdsChange={setExcludedDiscoveryIds}
+        />
       )}
       <InstallExperience usefulResult={hasPrimaryResult} />
 
@@ -1110,7 +1164,10 @@ function PlaceDiscoveryPanel({
   excludedEntityIds?: string[];
 }) {
   const discovery = result.discovery!,
-    alternatives = discoveryAlternatives(discovery.entities, excludedEntityIds),
+    visibleEntities = discovery.entities.filter((entity: any) => {
+      const id = entity.entityId || entity.programUri || entity.facilityUri;
+      return !id || !excludedEntityIds.includes(id);
+    }),
     label =
       {
         CAFE: "카페",
@@ -1143,8 +1200,8 @@ function PlaceDiscoveryPanel({
       {discovery.visitorMessage && (
         <p className="text-muted">{discovery.visitorMessage}</p>
       )}
-      {alternatives.length ? (
-        alternatives.map((entity: any, index: number) => (
+      {visibleEntities.length ? (
+        visibleEntities.map((entity: any, index: number) => (
           <div
             className="place-discovery-item"
             key={
