@@ -1,6 +1,8 @@
 import { INestApplication } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import request from 'supertest';
 import { PartnerController } from './partner.controller';
 import { PartnerService } from './partner.service';
@@ -13,6 +15,31 @@ import {
 } from './public-write-security';
 
 const trip = '11111111-1111-4111-8111-111111111111';
+
+describe('pilot deployment repository guardrails', () => {
+  const compose = readFileSync(
+    resolve(process.cwd(), '../docker-compose.yml'),
+    'utf8',
+  );
+
+  it('makes the production HMAC secret a required Compose interpolation', () => {
+    expect(compose).toContain(
+      'RATE_LIMIT_HASH_SECRET=${RATE_LIMIT_HASH_SECRET:?required}',
+    );
+    expect(compose).toContain(
+      'RATE_LIMIT_STORE_MODE=${RATE_LIMIT_STORE_MODE:-memory}',
+    );
+    expect(compose).toContain(
+      'TRUSTED_PROXY_ADDRESSES=${TRUSTED_PROXY_ADDRESSES:-}',
+    );
+  });
+
+  it('publishes only client Nginx on host loopback', () => {
+    expect(compose).toContain('127.0.0.1:8090:80');
+    expect(compose).not.toMatch(/- ["']?(?:0\.0\.0\.0:)?3000:/);
+    expect(compose).not.toMatch(/- ["']?(?:0\.0\.0\.0:)?27017:/);
+  });
+});
 
 describe('partner public write HTTP protection', () => {
   let app: INestApplication;
@@ -337,6 +364,64 @@ describe('client identity and secret policy', () => {
         input('10.0.0.2', '198.51.100.9, 10.0.0.3'),
       ),
     ).toBe('ipv4:198.51.100.9');
+  });
+
+  it('trusts changing proxy addresses only inside explicit IPv4 and IPv6 CIDRs', () => {
+    process.env.TRUSTED_PROXY_ADDRESSES = '172.28.0.0/16,fd12:3456:789a::/64';
+    const identity = new PublicClientIdentityService();
+    expect(
+      identity.resolveClientNetwork(
+        input('172.28.0.17', '198.51.100.9, 172.28.0.1'),
+      ),
+    ).toBe('ipv4:198.51.100.9');
+    expect(
+      identity.resolveClientNetwork(
+        input('172.28.99.231', '198.51.100.10, 172.28.0.1'),
+      ),
+    ).toBe('ipv4:198.51.100.10');
+    expect(
+      identity.resolveClientNetwork(
+        input('fd12:3456:789a::20', '2001:db8:abcd:1::7'),
+      ),
+    ).toBe('ipv6:2001:0db8:abcd:0001::/64');
+  });
+
+  it('normalizes an IPv4-mapped IPv6 CIDR to its IPv4 prefix', () => {
+    process.env.TRUSTED_PROXY_ADDRESSES = '::ffff:172.28.0.0/112';
+    const identity = new PublicClientIdentityService();
+    expect(
+      identity.resolveClientNetwork(input('172.28.7.9', '198.51.100.9')),
+    ).toBe('ipv4:198.51.100.9');
+    expect(
+      identity.resolveClientNetwork(input('172.29.7.9', '198.51.100.9')),
+    ).toBe('ipv4:172.29.7.9');
+    process.env.TRUSTED_PROXY_ADDRESSES = '::ffff:0:0/96';
+    expect(() => new PublicClientIdentityService()).toThrow(
+      'invalid or unsafe IP/CIDR',
+    );
+  });
+
+  it('rejects malformed, zone-qualified, and globally open trusted ranges', () => {
+    for (const unsafe of [
+      'not-a-cidr',
+      '172.28.0.0/99',
+      'fe80::1%eth0',
+      '0.0.0.0/0',
+      '::/0',
+    ]) {
+      process.env.TRUSTED_PROXY_ADDRESSES = unsafe;
+      expect(() => new PublicClientIdentityService()).toThrow(
+        'invalid or unsafe IP/CIDR',
+      );
+    }
+  });
+
+  it('trusts no proxy by default and ignores forged XFF from an untrusted peer', () => {
+    delete process.env.TRUSTED_PROXY_ADDRESSES;
+    const identity = new PublicClientIdentityService();
+    expect(
+      identity.resolveClientNetwork(input('172.28.0.17', '198.51.100.9')),
+    ).toBe('ipv4:172.28.0.17');
   });
 
   it('stops at the first untrusted hop and ignores spoofed XFF from peers', () => {

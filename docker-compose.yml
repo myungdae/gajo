@@ -17,7 +17,13 @@ services:
     container_name: gajo-api
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
       interval: 10s
       timeout: 5s
       retries: 6
@@ -27,6 +33,11 @@ services:
     environment:
       - PORT=3000
       - MONGODB_URI=mongodb://mongo:27017/gajo
+      - RATE_LIMIT_HASH_SECRET=${RATE_LIMIT_HASH_SECRET:?required}
+      - RATE_LIMIT_STORE_MODE=${RATE_LIMIT_STORE_MODE:-memory}
+      # Comma-separated exact proxy IPs and/or explicitly approved Docker CIDRs.
+      # Empty means no proxy is trusted. Never use 0.0.0.0/0 or ::/0.
+      - TRUSTED_PROXY_ADDRESSES=${TRUSTED_PROXY_ADDRESSES:-}
       # 카카오 디벨로퍼스(developers.kakao.com)에서 발급받은 REST API 키.
       # "내 주변 실제 식당 찾기" 기능(/api/nearby/*)이 이 키로 카카오 로컬
       # API를 호출합니다. 무료 티어(일 100,000건)로 충분히 운영 가능하며,
@@ -65,7 +76,7 @@ services:
       api:
         condition: service_healthy
     ports:
-      - "8090:80"
+      - "127.0.0.1:8090:80"
     networks:
       - gajo-net
 

@@ -14,11 +14,12 @@ injected at runtime and is mandatory in production or shared-store mode. It must
 contain at least 32 bytes. Development and test may use a random per-process salt;
 that fallback intentionally resets all quotas on restart.
 
-Forwarding headers are ignored by default. `TRUSTED_PROXY_ADDRESSES` may contain a
-comma-separated allowlist of immediate proxy addresses. Forwarded chains are
-considered only when the socket peer is on this allowlist and are evaluated from
-the trusted edge toward the client. Do not configure a broad network range or a
-public client address.
+Forwarding headers are ignored by default. `TRUSTED_PROXY_ADDRESSES` may contain
+comma-separated exact IPs and explicit CIDRs. Exact IP entries remain backward
+compatible; all entries form one union with no implicit priority. Forwarded chains
+are considered only when the socket peer matches this allowlist and are evaluated
+from the trusted edge toward the client. Empty means no trusted proxy. Invalid
+entries, zone identifiers, `0.0.0.0/0`, and `::/0` fail during startup.
 
 IPv4-mapped IPv6 is normalized to IPv4. Native IPv6 clients share a `/64` rate
 identity. Malformed forwarded chains use one fail-closed identity rather than

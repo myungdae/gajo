@@ -119,7 +119,7 @@ type RequestIdentityInput = Pick<Request, 'socket' | 'ip' | 'headers'>;
 @Injectable()
 export class PublicClientIdentityService {
   private readonly salt: string;
-  private readonly trustedProxies: Set<string>;
+  private readonly trustedProxies: TrustedProxyRule[];
 
   constructor() {
     const configured = process.env.RATE_LIMIT_HASH_SECRET,
@@ -153,7 +153,7 @@ export class PublicClientIdentityService {
       request.socket?.remoteAddress || request.ip || '',
     );
     if (!peer) return 'invalid-peer';
-    if (!this.trustedProxies.has(peer.host)) return peer.network;
+    if (!this.isTrustedProxy(peer.address)) return peer.network;
     const forwardedHeader = request.headers['x-forwarded-for'],
       raw = Array.isArray(forwardedHeader)
         ? forwardedHeader.join(',')
@@ -163,7 +163,7 @@ export class PublicClientIdentityService {
     if (forwarded.some((value) => !value)) return 'invalid-forwarded-chain';
     for (let index = forwarded.length - 1; index >= 0; index -= 1) {
       const hop = forwarded[index]!;
-      if (!this.trustedProxies.has(hop.host)) return hop.network;
+      if (!this.isTrustedProxy(hop.address)) return hop.network;
     }
     return 'trusted-proxy-only';
   }
@@ -173,33 +173,85 @@ export class PublicClientIdentityService {
   }
 
   private parseTrustedProxies(value: string) {
-    const result = new Set<string>();
+    const result: TrustedProxyRule[] = [];
     for (const entry of value.split(',').map((item) => item.trim())) {
       if (!entry) continue;
-      const parsed = parseAddress(entry);
-      if (!parsed)
-        throw new Error('TRUSTED_PROXY_ADDRESSES contains an invalid address');
-      result.add(parsed.host);
+      try {
+        if (entry.includes('%')) throw new Error('zone identifier');
+        const [parsedAddress, parsedPrefixLength] = entry.includes('/')
+          ? ipaddr.parseCIDR(entry)
+          : exactProxyRule(entry);
+        const { address, prefixLength } = normalizeProxyRule(
+          parsedAddress,
+          parsedPrefixLength,
+        );
+        if (prefixLength === 0) throw new Error('global range');
+        result.push({ address, prefixLength });
+      } catch {
+        throw new Error(
+          'TRUSTED_PROXY_ADDRESSES contains an invalid or unsafe IP/CIDR',
+        );
+      }
     }
     return result;
   }
+
+  private isTrustedProxy(address: ipaddr.Address) {
+    return this.trustedProxies.some((rule) => {
+      if (isIPv4(address) && isIPv4(rule.address))
+        return address.match(rule.address, rule.prefixLength);
+      if (isIPv6(address) && isIPv6(rule.address))
+        return address.match(rule.address, rule.prefixLength);
+      return false;
+    });
+  }
+}
+
+type TrustedProxyRule = {
+  address: ipaddr.Address;
+  prefixLength: number;
+};
+
+const isIPv4 = (address: ipaddr.Address): address is ipaddr.IPv4 =>
+  address.kind() === 'ipv4';
+const isIPv6 = (address: ipaddr.Address): address is ipaddr.IPv6 =>
+  address.kind() === 'ipv6';
+
+function exactProxyRule(value: string): [ipaddr.Address, number] {
+  if (!ipaddr.isValid(value)) throw new Error('invalid address');
+  const address = ipaddr.parse(value);
+  return [address, address.kind() === 'ipv4' ? 32 : 128];
+}
+
+function normalizeProxyRule(address: ipaddr.Address, prefixLength: number) {
+  if (
+    address.kind() === 'ipv6' &&
+    (address as ipaddr.IPv6).isIPv4MappedAddress()
+  ) {
+    if (prefixLength < 96) throw new Error('unsafe mapped IPv4 range');
+    return {
+      address: (address as ipaddr.IPv6).toIPv4Address(),
+      prefixLength: prefixLength - 96,
+    };
+  }
+  return { address, prefixLength };
+}
+
+function normalizeMappedAddress(address: ipaddr.Address): ipaddr.Address {
+  return address.kind() === 'ipv6' &&
+    (address as ipaddr.IPv6).isIPv4MappedAddress()
+    ? (address as ipaddr.IPv6).toIPv4Address()
+    : address;
 }
 
 function parseAddress(value: string) {
   const candidate = String(value || '').trim();
   if (!candidate || candidate.includes('%') || !ipaddr.isValid(candidate))
     return undefined;
-  const parsed = ipaddr.parse(candidate);
-  if (
-    parsed.kind() === 'ipv6' &&
-    (parsed as ipaddr.IPv6).isIPv4MappedAddress()
-  ) {
-    const host = (parsed as ipaddr.IPv6).toIPv4Address().toString();
-    return { host, network: `ipv4:${host}` };
-  }
+  const parsed = normalizeMappedAddress(ipaddr.parse(candidate));
   if (parsed.kind() === 'ipv4') {
     const host = parsed.toString();
-    return { host, network: `ipv4:${host}` };
+    return { address: parsed, host, network: `ipv4:${host}` };
   }
   const ipv6 = parsed as ipaddr.IPv6,
     host = ipv6.toNormalizedString(),
@@ -207,7 +259,7 @@ function parseAddress(value: string) {
       .slice(0, 4)
       .map((part) => part.toString(16).padStart(4, '0'))
       .join(':');
-  return { host, network: `ipv6:${prefix}::/64` };
+  return { address: parsed, host, network: `ipv6:${prefix}::/64` };
 }
 
 export function partnerApplicationFingerprint(input: unknown) {
