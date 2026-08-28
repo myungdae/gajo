@@ -6,6 +6,10 @@ import { REGIONAL_CANDIDATE_DATASETS } from '../regions/regional-candidate.regis
 
 export type NearbyCategory =
   | 'FOOD' | 'CAFE' | 'LODGING' | 'HOT_SPRING_WELLNESS'
+  | 'TOURIST_ATTRACTION' | 'NATURE' | 'CULTURE_ART' | 'EXPERIENCE' | 'FESTIVAL_EXHIBITION'
+  | 'FOOD_KOREAN' | 'FOOD_WESTERN' | 'FOOD_CHINESE' | 'FOOD_JAPANESE' | 'CAFE_BAKERY'
+  | 'LODGING_HOTEL_RESORT' | 'LODGING_PENSION_MINBAK' | 'LODGING_CAMPING_GLAMPING'
+  | 'LODGING_MOTEL' | 'LODGING_GUESTHOUSE' | 'MEDICAL'
   | 'GOLF_SCREEN_GOLF' | 'ACTIVITY' | 'TOURISM_NATURE' | 'CONVENIENCE'
   | 'ESSENTIAL_SHOPPING' | 'CONVENIENCE_STORE' | 'MART_SUPERMARKET'
   | 'PARKING' | 'PUBLIC_TOILET' | 'GAS_STATION' | 'EV_CHARGER'
@@ -54,17 +58,38 @@ export interface NearbySearchOptions {
 
 const LABELS: Record<NearbyCategory, string> = {
   FOOD: '맛집', CAFE: '카페', LODGING: '숙박', HOT_SPRING_WELLNESS: '온천·휴식',
+  TOURIST_ATTRACTION: '관광지', NATURE: '자연', CULTURE_ART: '문화·예술', EXPERIENCE: '체험', FESTIVAL_EXHIBITION: '축제·전시',
+  FOOD_KOREAN: '한식', FOOD_WESTERN: '양식', FOOD_CHINESE: '중식', FOOD_JAPANESE: '일식', CAFE_BAKERY: '카페·베이커리',
+  LODGING_HOTEL_RESORT: '호텔·리조트', LODGING_PENSION_MINBAK: '펜션·민박', LODGING_CAMPING_GLAMPING: '캠핑·글램핑',
+  LODGING_MOTEL: '모텔', LODGING_GUESTHOUSE: '게스트하우스', MEDICAL: '약국·병원',
   GOLF_SCREEN_GOLF: '골프·스크린골프', ACTIVITY: '놀거리·체험', TOURISM_NATURE: '산책·관광',
   CONVENIENCE: '편의시설', ESSENTIAL_SHOPPING: '생필품 쇼핑',
   CONVENIENCE_STORE: '편의점', MART_SUPERMARKET: '마트·슈퍼마켓', OTHER: '기타',
   PARKING: '주차장', PUBLIC_TOILET: '공중화장실', GAS_STATION: '주유소',
   EV_CHARGER: '전기차 충전소', TOURIST_INFORMATION: '관광안내소', PHARMACY: '약국', HOSPITAL: '병원', ATM: 'ATM',
 };
-const INDOOR = new Set<NearbyCategory>(['CAFE', 'LODGING', 'HOT_SPRING_WELLNESS', 'GOLF_SCREEN_GOLF', 'CONVENIENCE', 'ESSENTIAL_SHOPPING', 'CONVENIENCE_STORE', 'MART_SUPERMARKET', 'PHARMACY', 'HOSPITAL', 'ATM']);
-const PLANS: Record<NearbyCategory, { codes: string[]; keywords: string[] }> = {
+const INDOOR = new Set<NearbyCategory>(['CAFE', 'CAFE_BAKERY', 'FOOD', 'FOOD_KOREAN', 'FOOD_WESTERN', 'FOOD_CHINESE', 'FOOD_JAPANESE', 'LODGING', 'LODGING_HOTEL_RESORT', 'LODGING_PENSION_MINBAK', 'LODGING_CAMPING_GLAMPING', 'LODGING_MOTEL', 'LODGING_GUESTHOUSE', 'HOT_SPRING_WELLNESS', 'GOLF_SCREEN_GOLF', 'CONVENIENCE', 'ESSENTIAL_SHOPPING', 'CONVENIENCE_STORE', 'MART_SUPERMARKET', 'PHARMACY', 'HOSPITAL', 'MEDICAL', 'ATM']);
+type NearbyPlan = { codes: string[]; keywords: string[]; providerGroup?: 'FOOD' | 'LODGING' | 'TOURISM' };
+const PLANS: Record<NearbyCategory, NearbyPlan> = {
   FOOD: { codes: ['FD6'], keywords: ['약선요리', '건강식당', '사찰음식', '채식뷔페'] },
   CAFE: { codes: ['CE7'], keywords: ['카페'] },
   LODGING: { codes: ['AD5'], keywords: ['호텔', '모텔', '펜션', '숙박시설'] },
+  TOURIST_ATTRACTION: { codes: ['AT4'], keywords: [], providerGroup: 'TOURISM' },
+  NATURE: { codes: [], keywords: ['자연명소', '자연휴양림', '수목원'], providerGroup: 'TOURISM' },
+  CULTURE_ART: { codes: [], keywords: ['박물관', '미술관', '문화예술'], providerGroup: 'TOURISM' },
+  EXPERIENCE: { codes: [], keywords: ['관광체험', '농촌체험'], providerGroup: 'TOURISM' },
+  FESTIVAL_EXHIBITION: { codes: [], keywords: ['축제', '전시'], providerGroup: 'TOURISM' },
+  FOOD_KOREAN: { codes: [], keywords: ['한식'], providerGroup: 'FOOD' },
+  FOOD_WESTERN: { codes: [], keywords: ['양식'], providerGroup: 'FOOD' },
+  FOOD_CHINESE: { codes: [], keywords: ['중식'], providerGroup: 'FOOD' },
+  FOOD_JAPANESE: { codes: [], keywords: ['일식'], providerGroup: 'FOOD' },
+  CAFE_BAKERY: { codes: ['CE7'], keywords: ['베이커리'], providerGroup: 'FOOD' },
+  LODGING_HOTEL_RESORT: { codes: [], keywords: ['호텔', '리조트'], providerGroup: 'LODGING' },
+  LODGING_PENSION_MINBAK: { codes: [], keywords: ['펜션', '민박'], providerGroup: 'LODGING' },
+  LODGING_CAMPING_GLAMPING: { codes: [], keywords: ['캠핑장', '글램핑'], providerGroup: 'LODGING' },
+  LODGING_MOTEL: { codes: [], keywords: ['모텔'], providerGroup: 'LODGING' },
+  LODGING_GUESTHOUSE: { codes: [], keywords: ['게스트하우스'], providerGroup: 'LODGING' },
+  MEDICAL: { codes: ['PM9', 'HP8'], keywords: [] },
   HOT_SPRING_WELLNESS: { codes: [], keywords: ['온천', '사우나', '찜질방', '스파'] },
   GOLF_SCREEN_GOLF: { codes: [], keywords: ['스크린골프', '골프연습장'] },
   ACTIVITY: { codes: [], keywords: ['체험', '놀거리', '레저'] },
@@ -104,6 +129,19 @@ export function normalizeNearbyCategory(name: string, providerCategory = '', cod
   if (/체험|레저|놀거리/.test(text)) return 'ACTIVITY';
   if (code === 'FD6' || /음식점|식당|한식|중식|일식|분식/.test(text)) return 'FOOD';
   return requested || 'OTHER';
+}
+
+const FOOD_CATEGORIES = new Set<NearbyCategory>(['FOOD', 'FOOD_KOREAN', 'FOOD_WESTERN', 'FOOD_CHINESE', 'FOOD_JAPANESE', 'CAFE_BAKERY']);
+const LODGING_CATEGORIES = new Set<NearbyCategory>(['LODGING', 'LODGING_HOTEL_RESORT', 'LODGING_PENSION_MINBAK', 'LODGING_CAMPING_GLAMPING', 'LODGING_MOTEL', 'LODGING_GUESTHOUSE']);
+function providerSupportsRequestedCategory(requested: NearbyCategory, code = '', providerCategory = '', keyword?: string) {
+  const plan = PLANS[requested];
+  if (!plan.providerGroup) return true;
+  const food = code === 'FD6' || code === 'CE7' || /음식점|카페/.test(providerCategory);
+  const lodging = code === 'AD5' || /숙박/.test(providerCategory);
+  const tourism = code === 'AT4' || /관광명소|문화시설/.test(providerCategory);
+  if (plan.providerGroup === 'FOOD') return food && Boolean(code || keyword);
+  if (plan.providerGroup === 'LODGING') return lodging && Boolean(code || keyword);
+  return tourism && Boolean(code || keyword);
 }
 
 @Injectable()
@@ -204,7 +242,10 @@ export class NearbyService {
 
   private upsert(byId: Map<string, NearbyPlace>, d: any, requested: NearbyCategory, keyword?: string) {
     const lat = Number(d.y), lng = Number(d.x); if (!d?.id || !d?.place_name || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
-    const category = normalizeNearbyCategory(d.place_name, d.category_name || '', d.category_group_code || '', requested);
+    if (!providerSupportsRequestedCategory(requested, d.category_group_code || '', d.category_name || '', keyword)) return;
+    const category = FOOD_CATEGORIES.has(requested) || LODGING_CATEGORIES.has(requested) || PLANS[requested].providerGroup === 'TOURISM'
+      ? requested
+      : normalizeNearbyCategory(d.place_name, d.category_name || '', d.category_group_code || '', requested);
     const canonical = this.master?.resolveCanonical(d.place_name);
     const indoorRelevance = INDOOR.has(category) ? 'INDOOR' : category === 'TOURISM_NATURE' ? 'OUTDOOR' : 'UNKNOWN';
     const place: NearbyPlace = {
@@ -213,10 +254,11 @@ export class NearbyService {
       roadAddress: canonical?.address || d.road_address_name || undefined, phone: canonical?.telephone || d.phone || undefined,
       lat, lng, distanceMeters: d.distance ? Number(d.distance) : undefined, placeUrl: d.place_url || '', matchedKeyword: keyword,
       indoorRelevance, operatingState: 'UNKNOWN', operatingMessage: '현재 운영 여부 확인 필요',
-      availabilityMessage: category === 'LODGING' ? '숙박 정보 확인 필요' : undefined, contextualReasons: [],
+      availabilityMessage: LODGING_CATEGORIES.has(category) ? '예약 가능 여부는 숙소에 직접 확인해 주세요.' : undefined,
+      contextualReasons: [d.category_name ? `카카오 Local 분류: ${d.category_name}` : keyword ? `검색 분류 근거: ${keyword}` : '카카오 Local 주변 검색 결과입니다.'],
       canonicalEntityUri: canonical?.entityUri, canonicalLabel: canonical?.canonicalLabelKo,
       masterVerificationStatus: canonical?.verificationStatus, transient: true, relevanceScore: 0,
-      categoryGroup: category === 'FOOD' ? '맛집' : undefined,
+      categoryGroup: FOOD_CATEGORIES.has(category) ? '맛집' : undefined,
     };
     byId.set(place.id, place);
   }

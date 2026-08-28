@@ -39,7 +39,23 @@ describe('NearbyService', () => {
   it('marks lodging availability unknown', async () => {
     jest.spyOn(global, 'fetch').mockResolvedValue(response({ documents: [document('AD5')], meta: { is_end: true } }));
     const [row] = await new NearbyService(config({ KAKAO_REST_API_KEY: 'key' })).search('LODGING', 35.7, 128);
-    expect(row.availabilityMessage).toBe('숙박 정보 확인 필요');
+    expect(row.availabilityMessage).toBe('예약 가능 여부는 숙소에 직접 확인해 주세요.');
+  });
+  it('uses Kakao lodging evidence for camping and keeps distance order',async()=>{
+    jest.spyOn(global,'fetch').mockResolvedValue(response({documents:[
+      {...document('AD5','가까운 캠핑장'),id:'near',distance:'120'},
+      {...document('AD5','먼 글램핑'),id:'far',distance:'820'},
+    ],meta:{is_end:true}}));
+    const rows=await new NearbyService(config({KAKAO_REST_API_KEY:'key'})).search('LODGING_CAMPING_GLAMPING',35.7,128,1000);
+    expect(rows.map(row=>row.id)).toEqual(['near','far']);
+    expect(rows.every(row=>row.category==='LODGING_CAMPING_GLAMPING'&&row.providerCategoryName.includes('숙박'))).toBe(true);
+    expect(['캠핑장','글램핑']).toContain(rows[0].matchedKeyword);
+  });
+  it('does not silently replace a food subtype with generic restaurant results',async()=>{
+    jest.spyOn(global,'fetch').mockResolvedValue(response({documents:[{...document('','이름만 일식'),category_group_code:'',category_name:'관광명소 > 기타'}],meta:{is_end:true}}));
+    const rows=await new NearbyService(config({KAKAO_REST_API_KEY:'key'})).search('FOOD_JAPANESE',35.7,128,1000);
+    expect(rows).toEqual([]);
+    expect((global.fetch as jest.Mock).mock.calls.every(call=>!String(call[0]).includes('category_group_code=FD6'))).toBe(true);
   });
   it('links an exact canonical match without promoting transient data', async () => {
     jest.spyOn(global, 'fetch').mockResolvedValue(response({ documents: [document('', '백두산천지온천')], meta: { is_end: true } }));

@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import '../platform.css';
+import ExkoRegionKnowledgeLink from '../components/ExkoRegionKnowledgeLink';
 
 const journeyStages = [
   { stage: 'PLAN', copy: '부모님과 합천 하루 여행하고 싶어요.' },
@@ -10,8 +12,8 @@ const journeyStages = [
 
 const regions = [
   { name: '합천 AI', detail: '합천의 여행 계획부터 현장 길찾기까지', status: '운영 중', to: '/hapcheon' },
-  { name: '가조 AI', detail: '지역 정보와 여행 경험을 준비하고 있습니다.', status: '준비 중' },
-  { name: '옥천 AI', detail: '지역 정보와 여행 경험을 준비하고 있습니다.', status: '준비 중' },
+  { name: '거창군', detail: '지역 AI 여행안내를 준비하고 있습니다.', status: '준비 중', exkoRegionId:'geochang' },
+  { name: '옥천군', detail: '지역 AI 여행안내를 준비하고 있습니다.', status: '준비 중', exkoRegionId:'okcheon' },
 ];
 
 const entrances = [
@@ -20,13 +22,17 @@ const entrances = [
   { id: 'municipality', kind: '지자체·관광기관', title: '우리 지역 AI 도입하기', copy: '지역 관광자원과 소상공인을 AI로 연결하는 지역형 관광 플랫폼을 직접 체험하고 도입해 보세요.', to: '/region/apply' },
 ];
 
-const differences = [
-  { label: '일반 검색', title: '장소 정보를 찾습니다', copy: '어디에 무엇이 있는지 목록과 정보를 확인합니다.' },
-  { label: '범용 AI', title: '질문에 답합니다', copy: '질문한 내용에 맞춰 설명과 아이디어를 제공합니다.' },
-  { label: 'EXKOVIA', title: '다음 행동까지 연결합니다', copy: '현재 위치·시간·날씨·여행 상태를 이해하고 지금 할 일을 이어줍니다.' },
+const differenceQuestions = [
+  { question: 'T맵이나 카카오맵과 무엇이 다른가요?', answer: '지도는 장소를 찾고 경로를 비교해 내비게이션으로 이동하는 데 강합니다. EXKOVIA는 그 기능을 대신하지 않습니다. 현재 위치와 현지시간, 날씨, 여행 상태를 함께 살핀 뒤 여러 후보와 이유를 제시하고 지도·길찾기로 연결합니다.' },
+  { question: 'ChatGPT에 여행 일정을 물으면 되지 않나요?', answer: '범용 AI는 질문과 일반 지식에 답하는 데 강합니다. EXKOVIA는 지역의 확인된 정보와 TripSession, 저장 장소를 이어 보며 PLAN → NOW → RE-PLAN → ACTION 흐름이 여행 중 끊기지 않도록 돕습니다.' },
+  { question: '지자체 관광 홈페이지와 무엇이 다른가요?', answer: '관광 홈페이지의 신뢰할 수 있는 지역 정보를 다시 만드는 대신, 여행자의 지금 상황에 맞는 후보로 연결합니다. 역사·문화·자연 정보는 출처와 상태를 구분하고 실제 이동·전화·내 여행 저장 같은 다음 행동으로 이어갑니다.' },
+  { question: '여행 중 위치·날씨·시간이 바뀌면 무엇을 해주나요?', answer: '확인된 현재 위치와 현지시간, 날씨, 남은 여행 상태를 다시 반영해 다음 순서를 제안합니다. 확인되지 않은 GPS 방문이나 영업 여부를 실제 사실처럼 말하지 않고 현장 확인이 필요한 정보는 분명히 표시합니다.' },
+  { question: '지역 업소는 혜택이나 광고비 없이도 참여할 수 있나요?', answer: '혜택·할인·파트너 여부는 추천 순위를 사는 수단이 아닙니다. 관련성과 거리, 여행 맥락을 바탕으로 여러 후보와 선택 이유를 보여주며 특정 업소 한 곳을 근거 없이 정답처럼 단정하지 않습니다.' },
+  { question: '지자체는 기존 관광 데이터를 다시 만들어야 하나요?', answer: '기존 관광 데이터와 안정적인 식별자를 우선 연결하고, 출처·검토 상태를 보존하는 방식으로 확장합니다. 같은 장소를 중복 생성하지 않으며 부족한 정보만 단계적으로 보완할 수 있습니다.' },
 ];
 
 export default function PlatformPortalPage() {
+  const [openDifference,setOpenDifference]=useState(0);
   return <div className="platform-page platform-portal-page">
     <header className="platform-header">
       <Link to="/" className="platform-brand"><img src="/branding/exkovia-mark.svg" alt="EXKOVIA" /></Link>
@@ -62,7 +68,7 @@ export default function PlatformPortalPage() {
         <div className="platform-region-grid">
           {regions.map(region => <article className={region.to ? 'is-active' : 'is-upcoming'} key={region.name}>
             <div><span>{region.status}</span><h3>{region.name}</h3><p>{region.detail}</p></div>
-            {region.to ? <Link to={region.to}>합천 AI 시작하기 <span aria-hidden="true">→</span></Link> : <span className="platform-region-status" aria-label={`${region.name} 준비 중`}>서비스 준비 중</span>}
+            {region.to ? <Link to={region.to}>합천 AI 시작하기 <span aria-hidden="true">→</span></Link> : <div className="platform-region-upcoming-actions"><span className="platform-region-status" aria-label={`${region.name} 지역 AI 여행안내 준비 중`}>지역 AI 여행안내: 준비 중</span><ExkoRegionKnowledgeLink regionId={region.exkoRegionId!} compact/></div>}
           </article>)}
         </div>
       </section>
@@ -83,13 +89,14 @@ export default function PlatformPortalPage() {
       <section id="why-exkovia" className="platform-section platform-difference" aria-labelledby="difference-title">
         <div className="platform-section-heading">
           <p className="platform-kicker">WHY EXKOVIA</p>
-          <h2 id="difference-title">정보를 찾는 데서 멈추지 않습니다</h2>
-          <p>EXKOVIA는 단순 관광 홈페이지나 답변형 챗봇이 아니라, 여행의 현재를 이해하고 다음 행동을 이어주는 지역 AI입니다.</p>
+          <h2 id="difference-title">좋은 도구가 이미 있는데,<br />왜 하나 더 필요할까요?</h2>
+          <p>지도와 범용 AI, 지역 관광정보가 잘하는 일을 존중하면서 여행자의 현재를 다음 행동까지 잇습니다.</p>
         </div>
-        <div className="platform-difference-grid">
-          {differences.map((item, index) => <article className={index === 2 ? 'is-exkovia' : ''} key={item.label}>
-            <small>{item.label}</small><h3>{item.title}</h3><p>{item.copy}</p>
-          </article>)}
+        <div className="platform-accordion-grid">
+          {differenceQuestions.map((item,index)=>{const open=openDifference===index,id=`difference-answer-${index}`;return <article className={open?'is-open':''} key={item.question}>
+            <h3><button type="button" aria-expanded={open} aria-controls={id} onClick={()=>setOpenDifference(open?-1:index)}><span>{item.question}</span><i aria-hidden="true">{open?'−':'+'}</i></button></h3>
+            <div id={id} hidden={!open}><p>{item.answer}</p></div>
+          </article>})}
         </div>
         <div className="platform-lifecycle" aria-label="EXKOVIA 여행 연결 흐름">
           {['PLAN', 'NOW', '상황 변화', 'RE-PLAN', 'ACTION'].map((step, index) => <span key={step}>{step}{index < 4 && <i aria-hidden="true">→</i>}</span>)}

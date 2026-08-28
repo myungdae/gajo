@@ -38,7 +38,8 @@ test("post-save continuation keeps discovery in place and exposes immediate exec
   ])
     assert.ok(continuation.includes(copy));
   assert.match(actions, />내 여행에 담기</);
-  assert.match(nearby, />내 여행에 담기</);
+  assert.match(nearby, /'내 여행에 담기'/);
+  assert.match(nearby, /'내 여행 숙소로 저장'/);
   assert.doesNotMatch(continuation, /도착 완료/);
 });
 test("unverified search candidates cannot be added to My Trip", () => {

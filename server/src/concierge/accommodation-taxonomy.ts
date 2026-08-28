@@ -12,6 +12,8 @@ export const ACCOMMODATION_TYPES = [
   'FOREST_LODGE',
 ] as const;
 export type AccommodationType = (typeof ACCOMMODATION_TYPES)[number];
+export type CanonicalAccommodationType = AccommodationType | 'CAMPING_GLAMPING';
+export type AccommodationFacet = 'OUTDOOR' | 'NATURE_EXPERIENCE';
 const REQUEST: [AccommodationType, RegExp][] = [
   ['AUTO_CAMPING', /오토\s*캠핑/],
   ['HANOK_STAY', /한옥\s*(?:스테이|숙소|체험)?/],
@@ -41,6 +43,21 @@ export function recordAccommodationType(
     ...(record.tags || []),
   ].join(' ');
   return REQUEST.find(([, pattern]) => pattern.test(corpus))?.[0];
+}
+export function canonicalAccommodationProfile(record: any): {
+  primaryCategory: 'ACCOMMODATION';
+  accommodationType?: CanonicalAccommodationType;
+  facets: AccommodationFacet[];
+  legacyAccommodationType?: AccommodationType;
+} {
+  const legacyAccommodationType = recordAccommodationType(record);
+  const camping = legacyAccommodationType && ['GLAMPING', 'CAMPING', 'AUTO_CAMPING', 'CARAVAN'].includes(legacyAccommodationType);
+  return {
+    primaryCategory: 'ACCOMMODATION',
+    accommodationType: camping ? 'CAMPING_GLAMPING' : legacyAccommodationType,
+    facets: camping ? ['OUTDOOR', 'NATURE_EXPERIENCE'] : [],
+    legacyAccommodationType,
+  };
 }
 export const SEMANTIC_ACCOMMODATION_ALIGNMENT = Object.fromEntries(
   ACCOMMODATION_TYPES.map((type) => [

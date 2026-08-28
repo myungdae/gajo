@@ -19,6 +19,62 @@ const locationStorage=()=>{const data=new Map<string,string>();return{getItem:(k
 
 test("NOW location freshness expires without requesting permission again",()=>{const now=Date.parse("2026-08-28T09:00:00.000Z"),location:any={status:"CONFIRMED",source:"GPS",observedAt:new Date(now).toISOString(),confirmedAt:new Date(now).toISOString()};assert.equal(isFreshTripLocation(location,now+29*60*1000),true);assert.equal(isFreshTripLocation(location,now+31*60*1000),false)});
 
+const withBrowserStorage = (local:any,session:any,run:()=>void) => { const priorLocal=(globalThis as any).localStorage,priorSession=(globalThis as any).sessionStorage;try{(globalThis as any).localStorage=local;(globalThis as any).sessionStorage=session;run()}finally{(globalThis as any).localStorage=priorLocal;(globalThis as any).sessionStorage=priorSession} };
+const storageCandidate=(marker:string,updatedAt?:string)=>JSON.stringify({...createTripSession("hapcheon",new Date("2026-08-29T00:00:00Z")),updatedAt,runtimeContext:{regionId:"hapcheon",marker}});
+const readStorage=(value:string|null,throws=false)=>({getItem:()=>{if(throws)throw new Error("read failed");return value},setItem:()=>{},removeItem:()=>{}});
+
+test("storage reads and JSON parsing fail independently",()=>{
+  const goodLocal=storageCandidate("local","2026-08-29T01:00:00Z"),goodSession=storageCandidate("session","2026-08-29T02:00:00Z");
+  const cases:[any,any,string|undefined][]=[
+    [readStorage(null,true),readStorage(goodSession),"session"],
+    [readStorage(goodLocal),readStorage(null,true),"local"],
+    [readStorage("{broken"),readStorage(goodSession),"session"],
+    [readStorage(goodLocal),readStorage("{broken"),"local"],
+    [readStorage(null,true),readStorage(null,true),undefined],
+    [readStorage("{bad"),readStorage("{bad"),undefined],
+  ];
+  for(const[local,session,expected]of cases)withBrowserStorage(local,session,()=>assert.equal(loadTripSession(local,"hapcheon")?.runtimeContext?.marker,expected));
+});
+
+test("storage candidate selection follows explicit timestamp and legacy tie policy",()=>{
+  const identical=storageCandidate("same","2026-08-29T02:00:00Z");
+  const scenarios:[string|null,string|null,string][]=[
+    [storageCandidate("local","2026-08-29T03:00:00Z"),storageCandidate("session","2026-08-29T02:00:00Z"),"local"],
+    [storageCandidate("local","2026-08-29T01:00:00Z"),storageCandidate("session","2026-08-29T02:00:00Z"),"session"],
+    [storageCandidate("local","2026-08-29T01:00:00Z"),storageCandidate("session"),"local"],
+    [storageCandidate("local","invalid"),storageCandidate("session","2026-08-29T02:00:00Z"),"session"],
+    [identical,identical,"same"],
+    [storageCandidate("local","2026-08-29T02:00:00Z"),storageCandidate("session","2026-08-29T02:00:00Z"),"session"],
+    [storageCandidate("local"),storageCandidate("session"),"local"],
+    [storageCandidate("local","bad"),storageCandidate("session","also-bad"),"local"],
+    [null,storageCandidate("session"),"session"],
+  ];
+  for(const[localValue,sessionValue,expected]of scenarios){const local=readStorage(localValue),session=readStorage(sessionValue);withBrowserStorage(local,session,()=>assert.equal(loadTripSession(local,"hapcheon")?.runtimeContext?.marker,expected))}
+});
+
+test("successful local save supersedes and best-effort removes only its own fallback",()=>{
+  const key="regional-concierge-trip-session-v1:hapcheon",base=createTripSession("hapcheon",new Date("2026-08-29T00:00:00Z")),localData=new Map([[key,JSON.stringify(base)]]),sessionData=new Map<string,string>();let localFails=true,removals=0;
+  const local={getItem:(name:string)=>localData.get(name)||null,setItem:(name:string,value:string)=>{if(localFails)throw new Error("local write failed");localData.set(name,value)},removeItem:()=>{}};
+  const session={getItem:(name:string)=>sessionData.get(name)||null,setItem:(name:string,value:string)=>void sessionData.set(name,value),removeItem:(name:string)=>{removals++;sessionData.delete(name)}};
+  withBrowserStorage(local,session,()=>{
+    const fallbackSaved=saveTripSession({...base,runtimeContext:{regionId:"hapcheon",marker:"fallback"}},local as any);
+    assert.equal(loadTripSession(local as any,"hapcheon")?.runtimeContext?.marker,"fallback");
+    localFails=false;
+    const localSaved=saveTripSession({...fallbackSaved,runtimeContext:{regionId:"hapcheon",marker:"local"}},local as any);
+    assert.ok(Date.parse(localSaved.updatedAt)>Date.parse(fallbackSaved.updatedAt));
+    assert.equal(loadTripSession(local as any,"hapcheon")?.runtimeContext?.marker,"local");
+    assert.equal(sessionData.has(key),false);assert.equal(removals,1);
+    sessionData.set(key,storageCandidate("other-trip","2026-08-29T09:00:00Z"));
+    const other=JSON.parse(sessionData.get(key)!);other.id="other";other.anonymousTripId="other";sessionData.set(key,JSON.stringify(other));
+    saveTripSession(localSaved,local as any);
+    assert.equal(sessionData.has(key),true);
+    sessionData.set(key,JSON.stringify({...localSaved,updatedAt:"2026-08-29T00:00:00Z"}));
+    session.removeItem=()=>{throw new Error("cleanup failed")};
+    assert.doesNotThrow(()=>saveTripSession(localSaved,local as any));
+    assert.equal(sessionData.has(key),true);
+  });
+});
+
 test("PLAN start and NOW current locations remain separate without replacing trip identity",()=>{const storage=locationStorage(),session=saveTripSession(createTripSession("hapcheon"),storage as any),plan=confirmTripLocation("hapcheon","PLAN",{status:"RESOLVED",source:"SELECTED_PLACE",latitude:35.53,longitude:128.03,label:"합천호",observedAt:"2026-08-28T00:00:00Z"},storage as any)!,now=confirmTripLocation("hapcheon","NOW",{status:"RESOLVED",source:"GPS",latitude:35.56,longitude:128.16,label:"합천군 합천읍",accuracy:20,observedAt:"2026-08-28T01:00:00Z"},storage as any)!;assert.equal(now.anonymousTripId,session.anonymousTripId);assert.equal(now.locationContext?.planStart?.label,"합천호");assert.equal(now.locationContext?.now?.label,"합천군 합천읍");assert.equal(plan.locationContext?.now,undefined)});
 test("changing a confirmed NOW location preserves itinerary and creates only a pending replan proposal",()=>{const storage=locationStorage(),session=saveTripSession({...createTripSession("hapcheon"),itinerary:{steps:[{entityId:"keep"}]},locationContext:{now:{status:"CONFIRMED",source:"GPS",latitude:35.52,longitude:128.01,label:"대병면",observedAt:"2026-08-28T00:00:00Z"}}},storage as any),moved=confirmTripLocation("hapcheon","NOW",{status:"RESOLVED",source:"MANUAL",latitude:35.56,longitude:128.16,label:"합천읍",observedAt:"2026-08-28T02:00:00Z"},storage as any)!;assert.equal(moved.anonymousTripId,session.anonymousTripId);assert.deepEqual(moved.itinerary,session.itinerary);assert.equal(moved.locationContext?.pendingReplan?.itineraryPreserved,true)});
 

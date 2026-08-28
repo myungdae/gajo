@@ -2,6 +2,7 @@ import {
   ensureTripSession,
   loadTripSession,
   saveTripSession,
+  updateLatestTripSession,
   type TripSession,
 } from "./tripSession.ts";
 import {
@@ -40,18 +41,21 @@ export function removeSavedPlace(
   const session = loadTripSession(storage, regionId);
   if (!session) return undefined;
   const places = savedPlaceItems(session),
+    removed = places.find((item) => canonicalEntityId(item) === entityId),
     nextPlaces = places.filter((item) => canonicalEntityId(item) !== entityId);
   if (nextPlaces.length === places.length) return session;
-  return saveTripSession(
-    {
-      ...session,
-      savedPlaces: nextPlaces,
-      ...(!(session.itinerary as any)?.savedAsFullJourney
-        ? { itinerary: undefined }
-        : {}),
-    },
-    storage,
-  );
+  const isAccommodation = removed?.entityType === "ACCOMMODATION" || `${removed?.category || ""}`.startsWith("LODGING");
+  return updateLatestTripSession(regionId, session.anonymousTripId, (latest) => ({
+    ...latest,
+    savedPlaces: savedPlaceItems(latest).filter((item) => canonicalEntityId(item) !== entityId),
+    ...(isAccommodation ? { plannedContext: {
+      ...(latest.plannedContext || {}),
+      accommodationIntents: latest.plannedContext?.accommodationIntents?.filter(
+        (intent) => (intent.savedPlaceId || intent.entityId) !== entityId,
+      ),
+    } } : {}),
+    ...(!isAccommodation && !(latest.itinerary as any)?.savedAsFullJourney ? { itinerary: undefined } : {}),
+  }), storage);
 }
 export function clearRegionalSavedPlaces(
   regionId: string,
@@ -133,11 +137,57 @@ export function currentAndNext(steps: any[], currentEntityId?: string, statusByE
   return { current: active[index], next: active[index + 1] };
 }
 export type ItineraryAddResult = {
-  status: "added" | "duplicate" | "error";
+  status: "added" | "duplicate" | "saved" | "unchanged" | "error";
   entityId?: string;
   session?: TripSession;
   item?: any;
+  errorReason?: "INVALID_ACCOMMODATION_ID" | "SESSION_OR_STORAGE_FAILURE";
 };
+export function addAccommodationToRegionalItinerary(
+  regionId: string,
+  item: any,
+  expectedAnonymousTripId: string,
+  storage: Pick<Storage, "getItem" | "setItem"> = localStorage,
+  emit?: (type: "ITINERARY_ITEM_ADDED", sessionId: string, metadata: Record<string, string>) => void,
+): ItineraryAddResult {
+  const canonicalUri = typeof item.canonicalEntityUri === "string" ? item.canonicalEntityUri.trim() : "";
+  const providerPlaceId = typeof item.providerPlaceId === "string" ? item.providerPlaceId.trim() : "";
+  const entityId = canonicalUri || (providerPlaceId ? `urn:nearby:${regionId}:${providerPlaceId}` : undefined);
+  const owned = item.regionId ? item.regionId === regionId : itemBelongsToRegion(item, regionId);
+  if (!entityId || !owned) return { status: "error", entityId, errorReason: "INVALID_ACCOMMODATION_ID" };
+  const normalized = {
+    ...item,
+    entityId,
+    entityUri: entityId,
+    entityType: "ACCOMMODATION",
+    regionId,
+    label: recommendationItemLabel(item),
+  };
+  let added = false;
+  let changed = false;
+  const persisted = updateLatestTripSession(regionId, expectedAnonymousTripId, (latest) => {
+    const places = savedPlaceItems(latest);
+    const hasSavedPlace = places.some((place) => canonicalEntityId(place) === entityId);
+    const existingIntents = latest.plannedContext?.accommodationIntents || [];
+    const hasIntent = existingIntents.some((entry) => entry.savedPlaceId === entityId);
+    if (hasSavedPlace && hasIntent) return null;
+    added = !hasSavedPlace;
+    changed = true;
+    const intent = { entityId, savedPlaceId: entityId, label: normalized.label, resolved: Boolean(canonicalUri), regionId };
+    return {
+      ...latest,
+      savedPlaces: added ? [...places, normalized] : places,
+      plannedContext: {
+        ...(latest.plannedContext || {}),
+        accommodationIntents: hasIntent ? existingIntents : [intent, ...existingIntents.filter((entry) => (entry.savedPlaceId || entry.entityId) !== entityId)],
+      },
+    };
+  }, storage);
+  if (!persisted) return { status: "error", entityId, errorReason: "SESSION_OR_STORAGE_FAILURE" };
+  if (!changed) return { status: "unchanged", entityId, session: persisted, item: normalized };
+  if (added) emit?.("ITINERARY_ITEM_ADDED", persisted.id, { entityId, source: "entity-action" });
+  return { status: "saved", entityId, session: persisted, item: normalized };
+}
 export function addEntityToRegionalItinerary(
   regionId: string,
   item: any,

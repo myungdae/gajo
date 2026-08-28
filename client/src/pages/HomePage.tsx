@@ -7,6 +7,7 @@ import { useRegion } from '../RegionContext';
 import { regionalPath } from '../regionRouting';
 import { useSpeechInput } from '../hooks/useSpeechInput';
 import TripContinuity from '../components/TripContinuity';
+import ExkoRegionKnowledgeLink from '../components/ExkoRegionKnowledgeLink';
 
 export default function HomePage(){
   const navigate=useNavigate(),location=useLocation(),region=useRegion();
@@ -24,6 +25,7 @@ export default function HomePage(){
   const hero=region.home.hero;
   return <div className="home-page home-conversation-first" style={{'--region-accent':region.accent}as React.CSSProperties}>
     <section className="hero home-identity" style={hero?.image?{backgroundImage:`linear-gradient(#1238,#1238),url(${hero.image})`}:region.id==='hapcheon'?undefined:region.home.heroImage?{backgroundImage:`linear-gradient(#1238,#1238),url(${region.home.heroImage})`}:undefined}>{region.id!=='hapcheon'&&<small>{region.regionName} 여행 안내</small>}<h2 aria-label={hero?.title}>{hero?.titleLines?.map(line=><span className="home-hero-title-line" key={line}>{line}</span>)||hero?.title||region.home.brandLine||region.heroTitle}</h2><p>{hero?.description||contextualTitle||region.heroSubtitle}</p>{region.id!=='hapcheon'&&<span>{region.serviceName}</span>}</section>
+    <ExkoRegionKnowledgeLink regionId={region.id}/>
     <TripContinuity />
     <section className="home-conversation" aria-labelledby="home-question"><h1 id="home-question">{region.id==='hapcheon'?'어떻게 여행할까요?':region.home.question}</h1>{region.id!=='hapcheon'&&<><p>{region.home.supportingCopy}</p>
       <form onSubmit={submit} className="home-conversation-form"><label className="sr-only" htmlFor="home-message">여행 요청</label><textarea id="home-message" className={listening?'is-voice-listening':undefined} rows={3} value={message} onChange={event=>setMessage(event.target.value)} placeholder="편하게 말씀해 주세요." onKeyDown={event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();if(message.trim())beginConversation()}}}/><div className="home-input-actions"><button type="button" className={`home-voice-button${listening?' is-listening':''}`} onClick={toggleListening} aria-pressed={listening} aria-label={listening?'말하기 중지':'음성으로 말하기'}><span aria-hidden="true">●</span>{listening?' 듣고 있어요… · 중지':' 말하기'}</button><button type="submit" className="btn btn-primary" disabled={!message.trim()}>보내기</button></div></form>

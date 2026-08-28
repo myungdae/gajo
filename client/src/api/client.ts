@@ -478,9 +478,24 @@ export async function fetchPilotAnalytics() {
 }
 
 export type NearbyCategory =
+  | "TOURIST_ATTRACTION"
+  | "NATURE"
+  | "CULTURE_ART"
+  | "EXPERIENCE"
+  | "FESTIVAL_EXHIBITION"
   | "FOOD"
+  | "FOOD_KOREAN"
+  | "FOOD_WESTERN"
+  | "FOOD_CHINESE"
+  | "FOOD_JAPANESE"
   | "CAFE"
+  | "CAFE_BAKERY"
   | "LODGING"
+  | "LODGING_HOTEL_RESORT"
+  | "LODGING_PENSION_MINBAK"
+  | "LODGING_CAMPING_GLAMPING"
+  | "LODGING_MOTEL"
+  | "LODGING_GUESTHOUSE"
   | "HOT_SPRING_WELLNESS"
   | "GOLF_SCREEN_GOLF"
   | "ACTIVITY"
@@ -497,6 +512,7 @@ export type NearbyCategory =
   | "TOURIST_INFORMATION"
   | "PHARMACY"
   | "HOSPITAL"
+  | "MEDICAL"
   | "ATM"
   | "OTHER";
 export interface NearbyPlace {

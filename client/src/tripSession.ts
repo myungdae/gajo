@@ -2,6 +2,7 @@ import type { CreateContextInput } from "./api/client";
 export interface PlannedPlace {
   label: string;
   entityId?: string;
+  savedPlaceId?: string;
   regionId?: string;
   resolved: boolean;
 }
@@ -53,8 +54,50 @@ export interface TripSession {
   archiveReason?: "EXPLICIT_NEW_TRIP";
   restorationPending?: boolean;
 }
+export function rememberTripAccommodation(session: TripSession, place: PlannedPlace): TripSession {
+  return {
+    ...session,
+    plannedContext: { ...(session.plannedContext || {}), accommodationIntents: [place] },
+    updatedAt: new Date().toISOString(),
+  };
+}
 export const tripStorageKey = (regionId: string) =>
   `regional-concierge-trip-session-v1:${regionId}`;
+type TripStorageCandidate = { source: "local" | "session"; session: TripSession; timestamp?: number };
+const safeTripCandidate = (
+  storage: Pick<Storage, "getItem"> | undefined,
+  storageKey: string,
+  regionId: string,
+  source: TripStorageCandidate["source"],
+): TripStorageCandidate | undefined => {
+  if (!storage) return undefined;
+  try {
+    const value = storage.getItem(storageKey);
+    if (!value) return undefined;
+    const session = JSON.parse(value) as TripSession;
+    if (!session || typeof session !== "object" || typeof session.id !== "string" || session.regionId !== regionId) return undefined;
+    const parsed = Date.parse(session.updatedAt || "");
+    return { source, session, ...(Number.isFinite(parsed) ? { timestamp: parsed } : {}) };
+  } catch {
+    return undefined;
+  }
+};
+export function selectTripStorageCandidate(candidates: TripStorageCandidate[]): TripStorageCandidate | undefined {
+  const local = candidates.find((candidate) => candidate.source === "local"),
+    session = candidates.find((candidate) => candidate.source === "session");
+  if (!local || !session) return local || session;
+  const localValid = local.timestamp !== undefined, sessionValid = session.timestamp !== undefined;
+  if (localValid !== sessionValid) return localValid ? local : session;
+  if (!localValid) return local;
+  if (local.timestamp !== session.timestamp) return local.timestamp! > session.timestamp! ? local : session;
+  return JSON.stringify(local.session) === JSON.stringify(session.session) ? local : session;
+}
+const browserSessionStorage = (): Storage | undefined => {
+  try { return typeof sessionStorage !== "undefined" ? sessionStorage : undefined; } catch { return undefined; }
+};
+const isBrowserLocalStorage = (storage: unknown) => {
+  try { return typeof localStorage !== "undefined" && storage === localStorage; } catch { return false; }
+};
 const archivePrefix = (regionId: string) =>
   `regional-concierge-trip-archive-v1:${regionId}:`;
 const privacySafe = (value: unknown) =>
@@ -85,17 +128,10 @@ export function loadTripSession(
   regionId: string,
 ): TripSession | undefined {
   try {
-    const storageKey = tripStorageKey(regionId),
-      value =
-        storage.getItem(storageKey) ||
-        (typeof sessionStorage !== "undefined" &&
-        typeof localStorage !== "undefined" &&
-        storage === localStorage
-          ? sessionStorage.getItem(storageKey)
-          : null);
-    if (!value) return undefined;
-    const session = JSON.parse(value) as TripSession;
-    if (session.regionId !== regionId) return undefined;
+    const storageKey = tripStorageKey(regionId), candidates = [safeTripCandidate(storage, storageKey, regionId, "local")];
+    if (isBrowserLocalStorage(storage)) candidates.push(safeTripCandidate(browserSessionStorage(), storageKey, regionId, "session"));
+    const session = selectTripStorageCandidate(candidates.filter((candidate): candidate is TripStorageCandidate => Boolean(candidate)))?.session;
+    if (!session) return undefined;
     session.anonymousTripId ||= session.id;
     if (
       session.runtimeContext?.regionId !== undefined &&
@@ -115,17 +151,28 @@ export function saveTripSession(
   if (session.restorationPending) return session;
   const storageKey=tripStorageKey(session.regionId),existing=storage.getItem?.(storageKey);
   if(existing){try{const parsed=JSON.parse(existing) as TripSession;if(parsed?.regionId!==session.regionId)return{...session,restorationPending:true};const activeId=parsed.anonymousTripId||parsed.id, incomingId=session.anonymousTripId||session.id;if(activeId&&incomingId&&activeId!==incomingId&&!options.allowIdentityReplacement)return parsed}catch{return{...session,restorationPending:true}}}
-  const next = {
+  const incomingTimestamp = Date.parse(session.updatedAt || ""), existingTimestamp = (() => { try { return Date.parse((existing && JSON.parse(existing)?.updatedAt) || ""); } catch { return NaN; } })(),
+    nextTimestamp = Math.max(Date.now(), Number.isFinite(incomingTimestamp) ? incomingTimestamp + 1 : 0, Number.isFinite(existingTimestamp) ? existingTimestamp + 1 : 0),
+    next = {
       ...session,
       anonymousTripId: session.anonymousTripId || session.id,
-      updatedAt: new Date().toISOString(),
+      updatedAt: new Date(nextTimestamp).toISOString(),
     },
     serialized = JSON.stringify(privacySafe(next));
+  let localSaved = false;
   try {
     storage.setItem(storageKey, serialized);
+    localSaved = isBrowserLocalStorage(storage);
   } catch {
-    if (typeof sessionStorage !== "undefined")
-      sessionStorage.setItem(tripStorageKey(session.regionId), serialized);
+    const fallback = browserSessionStorage();
+    if (!fallback) throw new Error("trip storage unavailable");
+    fallback.setItem(storageKey, serialized);
+  }
+  if (localSaved) {
+    const fallback = browserSessionStorage(), fallbackCandidate = safeTripCandidate(fallback, storageKey, session.regionId, "session");
+    if ((fallbackCandidate?.session.anonymousTripId || fallbackCandidate?.session.id) === next.anonymousTripId) {
+      try { fallback?.removeItem(storageKey); } catch { /* local save remains authoritative */ }
+    }
   }
   if (typeof window !== "undefined" && storage === localStorage)
     window.dispatchEvent(
@@ -134,6 +181,28 @@ export function saveTripSession(
       }),
     );
   return next;
+}
+export function updateLatestTripSession(
+  regionId: string,
+  expectedAnonymousTripId: string,
+  updater: (session: TripSession) => TripSession | null | undefined,
+  storage: Pick<Storage, "getItem" | "setItem"> = localStorage,
+): TripSession | undefined {
+  const latest = loadTripSession(storage, regionId);
+  if (!latest || latest.anonymousTripId !== expectedAnonymousTripId) return undefined;
+  const updated = updater(latest);
+  if (updated === null) return latest;
+  if (
+    !updated ||
+    updated.regionId !== latest.regionId ||
+    updated.id !== latest.id ||
+    updated.anonymousTripId !== latest.anonymousTripId
+  ) return undefined;
+  try {
+    return saveTripSession(updated, storage);
+  } catch {
+    return undefined;
+  }
 }
 export function ensureTripSession(
   regionId: string,
