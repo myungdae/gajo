@@ -72,7 +72,7 @@ export default function Layout() {
   }, [location.pathname, location.search]);
   if(diagnosticMode){const diagnostic=tripRestorationDiagnostics(region.id);return <main className="app-main"><section className="card" aria-label="여행 복원 진단"><h1>여행 복원 진단</h1><dl><dt>지역</dt><dd>{diagnostic.regionId}</dd><dt>활성 저장 키</dt><dd>{diagnostic.activeStorageKey}</dd><dt>localStorage</dt><dd>{diagnostic.localStorageKeyFound?'찾음':'없음'}</dd><dt>sessionStorage 보조</dt><dd>{diagnostic.sessionStorageFallbackFound?'찾음':'없음'}</dd><dt>저장값 상태</dt><dd>{diagnostic.storedValueStatus}</dd><dt>복원 출처</dt><dd>{diagnostic.restorationSource}</dd><dt>익명 ID</dt><dd>{diagnostic.anonymousTripIdHint||'없음'}</dd><dt>담아둔 곳</dt><dd>{diagnostic.savedPlaceCount}</dd><dt>일정 단계</dt><dd>{diagnostic.itineraryStepCount}</dd><dt>실행 상태</dt><dd>{diagnostic.executionStatePresent?'있음':'없음'}</dd><dt>보관 여행</dt><dd>{diagnostic.archiveCount??'확인 불가'}</dd><dt>새 세션 생성</dt><dd>{diagnostic.newSessionCreated?'예':'아니요'}</dd><dt>새 세션 생성 예정</dt><dd>{diagnostic.newSessionWouldBeCreated?'예':'아니요'}</dd><dt>복원 전 저장 발생</dt><dd>{diagnostic.persistenceOccurredBeforeRestoration?'예':'아니요'}</dd><dt>복원 전 저장 차단</dt><dd>{diagnostic.persistenceBlocked?'예':'아니요'}</dd></dl><p>이 화면은 저장소를 읽기만 하며 여행 데이터를 변경하지 않습니다.</p></section></main>}
   return (
-    <div className="app-shell">
+    <div className={`app-shell${partnerEntryRoute?' app-shell--web':''}`}>
       <ConnectionStatus />
       {!partnerEntryRoute&&<header className="app-header">
         <div>
@@ -80,7 +80,7 @@ export default function Layout() {
           <div className="subtitle">{region.heroSubtitle}</div>
         </div>
       </header>}
-      <main className="app-main" ref={mainRef}>
+      <main className={`app-main${partnerEntryRoute?' app-main--web':''}`} ref={mainRef}>
         <Outlet />
       </main>
       {!partnerEntryRoute&&<nav className="bottom-nav">
