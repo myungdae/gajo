@@ -5,8 +5,10 @@ export type IntentRoute =
   | 'IMMEDIATE_NOW'
   | 'FIRST_TIME_VISITOR'
   | 'REPLAN';
-export function isFirstTimeVisitorQuestion(message=''){
-  return /(?:처음\s*(?:왔|온|가|방문)|처음인데|어디부터|꼭\s*가(?:볼|봐야)|대표\s*(?:관광지|명소)|제일\s*유명|필수\s*코스)/.test(message);
+export function isFirstTimeVisitorQuestion(message = '') {
+  return /(?:처음\s*(?:왔|온|가|방문)|처음인데|어디부터|꼭\s*가(?:볼|봐야)|대표\s*(?:관광지|명소)|제일\s*유명|필수\s*코스)/.test(
+    message,
+  );
 }
 export type DiscoveryCategory =
   | 'FOOD'
@@ -26,17 +28,27 @@ export type DiscoveryCategory =
   | 'EV_CHARGER'
   | 'TOURIST_INFORMATION';
 export function explicitDestinationPhrases(message = ''): string[] {
-  const desire=/(?:가고|갈래|둘러보고|보고)\s*싶|갈래|둘\s*다\s*(?:가|보)/;
-  if(!desire.test(message))return[];
-  const sequence=message.match(/^\s*(.+?)\s*(?:에\s*)?갔다가\s*(.+?)\s*(?:에\s*)?갈래/);
-  if(sequence)return[sequence[1].trim(),sequence[2].trim()];
-  const prefix=message.split(/(?:가고|갈래|둘러보고|보고)\s*싶|갈래/)[0]
-    .replace(/둘\s*다\s*$/,'').trim();
-  const parts=prefix.split(/\s*(?:하고|이랑|랑|와|과|,)\s*/)
-    .map(value=>value.replace(/(?:을|를|에|도)\s*$/,'').trim()).filter(Boolean);
-  if(parts.length>=2)return parts;
-  const single=parts[0];
-  return single&&single.length<=20&&!/보고|먹고|갔다가|들렀다가|먼저|숙소|펜션|호텔|카페|식당|온천/.test(single)?[single]:[];
+  const desire = /(?:가고|갈래|둘러보고|보고)\s*싶|갈래|둘\s*다\s*(?:가|보)/;
+  if (!desire.test(message)) return [];
+  const sequence = message.match(
+    /^\s*(.+?)\s*(?:에\s*)?갔다가\s*(.+?)\s*(?:에\s*)?갈래/,
+  );
+  if (sequence) return [sequence[1].trim(), sequence[2].trim()];
+  const prefix = message
+    .split(/(?:가고|갈래|둘러보고|보고)\s*싶|갈래/)[0]
+    .replace(/둘\s*다\s*$/, '')
+    .trim();
+  const parts = prefix
+    .split(/\s*(?:하고|이랑|랑|와|과|,)\s*/)
+    .map((value) => value.replace(/(?:을|를|에|도)\s*$/, '').trim())
+    .filter(Boolean);
+  if (parts.length >= 2) return parts;
+  const single = parts[0];
+  return single &&
+    single.length <= 20 &&
+    !/보고|먹고|갔다가|들렀다가|먼저|숙소|펜션|호텔|카페|식당|온천/.test(single)
+    ? [single]
+    : [];
 }
 const CATEGORY_PATTERNS: [DiscoveryCategory, RegExp][] = [
   [
@@ -53,12 +65,21 @@ const CATEGORY_PATTERNS: [DiscoveryCategory, RegExp][] = [
   ['CONVENIENCE_STORE', /(?:24\s*시간\s*)?편의점/],
   ['MART_SUPERMARKET', /마트|슈퍼마켓|슈퍼(?!맨)|식료품점|동네\s*가게/],
   ['PUBLIC_TOILET', /공중\s*화장실|화장실/],
-  ['HEAT_SHELTER', /무더위\s*쉼터|폭염.{0,8}(?:쉼터|쉬|쉴)|너무\s*더워|더워(?:요|서|하|해)|더위.{0,8}(?:쉬|쉴)|가까운\s*쉼터/],
-  ['PARKING', /주차장|주차(?:할|해|하고|가|는|를|\s*가능)|차\s*(?:어디|를?)\s*(?:세워|대)/],
+  [
+    'HEAT_SHELTER',
+    /무더위\s*쉼터|폭염.{0,8}(?:쉼터|쉬|쉴)|너무\s*더워|더워(?:요|서|하|해)|더위.{0,8}(?:쉬|쉴)|가까운\s*쉼터/,
+  ],
+  [
+    'PARKING',
+    /주차장|주차(?:할|해|하고|가|는|를|\s*가능)|차\s*(?:어디|를?)\s*(?:세워|대)/,
+  ],
   ['GAS_STATION', /주유소|기름\s*(?:넣|이\s*없|부족)/],
   ['EV_CHARGER', /전기차\s*충전|EV\s*충전|충전소/iu],
   ['TOURIST_INFORMATION', /관광\s*안내소|관광\s*안내\s*(?:받|할)\s*(?:곳|데)/],
-  ['ESSENTIAL_SHOPPING', /장\s*볼\s*(?:곳|데)|생필품|물(?:하고|이랑|과)?\s*과자|과자(?:하고|이랑|과)?\s*물|음료수?\s*살|먹을\s*것\s*(?:좀\s*)?살|간단(?:히|하게)?\s*(?:뭐|무엇을)?\s*살\s*(?:곳|데)/],
+  [
+    'ESSENTIAL_SHOPPING',
+    /장\s*볼\s*(?:곳|데)|생필품|물(?:하고|이랑|과)?\s*과자|과자(?:하고|이랑|과)?\s*물|음료수?\s*살|먹을\s*것\s*(?:좀\s*)?살|간단(?:히|하게)?\s*(?:뭐|무엇을)?\s*살\s*(?:곳|데)/,
+  ],
   ['CONVENIENCE', /약국|병원/],
   [
     'FOOD',
@@ -66,7 +87,12 @@ const CATEGORY_PATTERNS: [DiscoveryCategory, RegExp][] = [
   ],
 ];
 export function discoveryCategory(message = '') {
-  if (/(?:배가|배는)?\s*(?:너무|많이|진짜|정말)?\s*(?:고프|고파|고픈|곱|고푸)|허기(?:져|지)|출출/.test(message)) return 'FOOD';
+  if (
+    /(?:배가|배는)?\s*(?:너무|많이|진짜|정말)?\s*(?:고프|고파|고픈|곱|고푸)|허기(?:져|지)|출출/.test(
+      message,
+    )
+  )
+    return 'FOOD';
   if (/숙박|자고\s*싶|묵고\s*싶|체크인/.test(message)) return 'LODGING';
   return CATEGORY_PATTERNS.map(([category, pattern]) => ({
     category,
@@ -95,21 +121,55 @@ export function routeNaturalLanguageIntent(input: {
     nearbyRelation = /주변|근처|가까|인근/.test(message),
     categoryOverride = Boolean(
       explicitCategory &&
-      (/아니|만\s*(?:보여|찾아)/.test(message) || /(?:은|는)\??$/.test(message)),
+      (/아니|만\s*(?:보여|찾아)/.test(message) ||
+        /(?:은|는)\??$/.test(message)),
     ),
-    immediateEssentialNeed = Boolean(explicitCategory &&
-      ['PARKING','PUBLIC_TOILET','HEAT_SHELTER','GAS_STATION','EV_CHARGER','TOURIST_INFORMATION'].includes(explicitCategory) &&
-      (explicitCategory === 'HEAT_SHELTER' || /급(?:해|하게)|먼저|부터|가셔야|해야\s*해|어디|있어|가능/.test(message))),
+    immediateEssentialNeed = Boolean(
+      explicitCategory &&
+      [
+        'PARKING',
+        'PUBLIC_TOILET',
+        'HEAT_SHELTER',
+        'GAS_STATION',
+        'EV_CHARGER',
+        'TOURIST_INFORMATION',
+      ].includes(explicitCategory) &&
+      (explicitCategory === 'HEAT_SHELTER' ||
+        /급(?:해|하게)|먼저|부터|가셔야|해야\s*해|어디|있어|가능/.test(
+          message,
+        )),
+    ),
     relationalReference =
       /거기|그곳|그중|그\s*(?:근처|주변|카페|식당|숙소)/.test(message) &&
       /주변|근처|가까|거기서|그중/.test(message);
-  const explicitDestinations=explicitDestinationPhrases(message);
-  if(!input.isFollowup&&isFirstTimeVisitorQuestion(message))
-    return{intentRoute:'FIRST_TIME_VISITOR' as const,category:'TOURISM_NATURE' as const};
-  if(!input.isFollowup&&explicitDestinations.length>=1)
-    return{intentRoute:'JOURNEY_PLAN' as const,category:undefined,multiDestination:explicitDestinations.length>=2,explicitDestinations};
+  const explicitDestinations = explicitDestinationPhrases(message);
+  if (!input.isFollowup && isFirstTimeVisitorQuestion(message))
+    return {
+      intentRoute: 'FIRST_TIME_VISITOR' as const,
+      category: 'TOURISM_NATURE' as const,
+    };
+  if (!input.isFollowup && explicitDestinations.length >= 1)
+    return {
+      intentRoute: 'JOURNEY_PLAN' as const,
+      category: undefined,
+      multiDestination: explicitDestinations.length >= 2,
+      explicitDestinations,
+    };
+  if (/비가\s*와|비\s*오는|우천/.test(message))
+    return { intentRoute: 'REPLAN' as const, category };
+  if (/다음\s*(?:어디|갈\s*곳)/.test(message))
+    return {
+      intentRoute: 'REPLAN' as const,
+      category: 'TOURISM_NATURE' as const,
+    };
+  if (/(?:숙소|펜션|호텔)(?:로|에)\s*(?:갈래|가고|돌아)/.test(message))
+    return { intentRoute: 'REPLAN' as const, category: 'LODGING' as const };
   if (immediateEssentialNeed)
-    return { intentRoute: 'IMMEDIATE_NOW' as const, category, priority: 'ESSENTIAL_IMMEDIATE' as const };
+    return {
+      intentRoute: 'IMMEDIATE_NOW' as const,
+      category,
+      priority: 'ESSENTIAL_IMMEDIATE' as const,
+    };
   if (
     input.isFollowup &&
     /거긴?\s*멀|얼마나\s*멀|거리(?:는|가|를)?/.test(message)
@@ -141,7 +201,12 @@ export function routeNaturalLanguageIntent(input: {
     /지금|현재\s*위치|내\s*주변|오늘\s*(?:저녁|점심|아침|갈|먹)/.test(message)
   )
     return { intentRoute: 'IMMEDIATE_NOW' as const, category };
-  if (category === 'FOOD' && /(?:배가|배는)?\s*(?:너무|많이|진짜|정말)?\s*(?:고프|고파|고픈|곱|고푸)|배고|허기(?:져|지)|출출/.test(message))
+  if (
+    category === 'FOOD' &&
+    /(?:배가|배는)?\s*(?:너무|많이|진짜|정말)?\s*(?:고프|고파|고픈|곱|고푸)|배고|허기(?:져|지)|출출/.test(
+      message,
+    )
+  )
     return { intentRoute: 'IMMEDIATE_NOW' as const, category };
   const journey =
     /\d+박\s*\d+일|당일\s*여행|(?:하루|내일).{0,8}(?:일정|코스)|일정\s*(?:짜|만들|추천)|여행\s*(?:짜|계획)|코스\s*(?:짜|만들)|(?:보고|갔다가|들렀다가|먹고).{0,30}(?:보고|갔다가|들렀다가|먹고|펜션|숙소)/.test(

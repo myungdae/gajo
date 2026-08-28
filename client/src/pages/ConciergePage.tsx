@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   postConciergeChat,
+  recordPartnerRecommendations,
   runDemoScenario,
   type ConciergeChatResponse,
   type CreateContextInput,
@@ -9,9 +10,15 @@ import {
 import GajoLiveStatus from "../components/GajoLiveStatus";
 import VisitorLocationControl from "../components/VisitorLocationControl";
 import RecommendationItineraryItem from "../components/RecommendationItineraryItem";
-import { getSessionLocation, shouldOfferLocationForRequest } from "../utils/visitorLocation";
+import {
+  getSessionLocation,
+  shouldOfferLocationForRequest,
+} from "../utils/visitorLocation";
 import { useSpeechInput } from "../hooks/useSpeechInput";
-import { buildContextSummary,withRequestedDestinations } from "../utils/contextSummary";
+import {
+  buildContextSummary,
+  withRequestedDestinations,
+} from "../utils/contextSummary";
 import StructuredVisitorIntake from "../components/StructuredVisitorIntake";
 import PlanVisitorIntake from "../components/PlanVisitorIntake";
 import { getQuickStartPreset } from "../quickStartPresets";
@@ -35,11 +42,21 @@ import InstallExperience from "../components/InstallExperience";
 import FullJourneySave from "../components/FullJourneySave";
 import SavedTripEntry from "../components/SavedTripEntry";
 import AiResponseActions from "../components/AiResponseActions";
-import { beginCurrentTurn, isCurrentTurn, resolveCurrentTurn, type CurrentTurnResult } from "../currentTurnResult";
-import { captureExplicitJourney, explicitJourneyPayload, type ExplicitJourneyContext } from "../explicitJourneyContext";
+import {
+  beginCurrentTurn,
+  isCurrentTurn,
+  resolveCurrentTurn,
+  type CurrentTurnResult,
+} from "../currentTurnResult";
+import {
+  captureExplicitJourney,
+  explicitJourneyPayload,
+  type ExplicitJourneyContext,
+} from "../explicitJourneyContext";
 import { GlossaryText } from "../components/GlossaryText";
 import { discoveryAlternatives, isExplanationOnly } from "../aiResponseActions";
 import { understoodSummary } from "../understoodSummary";
+import { NOW_QUICK_ACTIONS } from "../nowQuickActions";
 
 interface Message {
   role: "user" | "ai";
@@ -55,9 +72,11 @@ function summarizeResult(result: ConciergeChatResponse): string {
     return "죄송합니다. 말씀하신 내용을 일정으로 구성하지 못했습니다. 원하는 방문 상황을 조금 더 구체적으로 말씀해 주세요.";
   }
   if (result.visitorMessage) return result.visitorMessage;
-  if (result.distanceInfo) return result.distanceInfo.status === "RESOLVED"
-    ? `${result.distanceInfo.fromLabel}에서 ${result.distanceInfo.toLabel}까지 직선거리로 약 ${result.distanceInfo.distanceMeters}m입니다.`
-    : result.distanceInfo.message || "거리 확인을 위해 출발 장소를 알려주세요.";
+  if (result.distanceInfo)
+    return result.distanceInfo.status === "RESOLVED"
+      ? `${result.distanceInfo.fromLabel}에서 ${result.distanceInfo.toLabel}까지 직선거리로 약 ${result.distanceInfo.distanceMeters}m입니다.`
+      : result.distanceInfo.message ||
+          "거리 확인을 위해 출발 장소를 알려주세요.";
   if (result.discovery) {
     const first = result.discovery.entities[0];
     if (first && result.discovery.searchFallback?.used)
@@ -86,6 +105,7 @@ export default function ConciergePage() {
     tripMode?: "PLAN" | "NOW";
     initialMessage?: string;
     autoSubmit?: boolean;
+    entryMessage?: string;
   } | null;
   const queryMode = new URLSearchParams(location.search)
     .get("mode")
@@ -102,16 +122,24 @@ export default function ConciergePage() {
         tripMode === "PLAN"
           ? "여행 날짜를 아직 정하지 않았어도 괜찮아요. 알고 있는 내용만으로 준비할게요."
           : tripMode === "NOW"
-            ? "필요한 선택을 누르거나 달라진 상황을 편하게 알려주세요."
+            ? entryState?.entryMessage ||
+              "필요한 선택을 누르거나 달라진 상황을 편하게 알려주세요."
             : "함께 오신 분, 머무는 시간, 이동 방법, 걷기 편한 정도를 알려주시면 알맞은 일정을 안내해 드릴게요.",
     },
   ]);
   const [input, setInput] = useState(entryState?.initialMessage || "");
-  const [currentTurn, setCurrentTurn] = useState<CurrentTurnResult<ConciergeChatResponse> | null>(null);
-  const [conversationAnchor, setConversationAnchor] = useState<NonNullable<CreateContextInput["conversationalAnchor"]> | null>(null);
-  const [discoveryContext, setDiscoveryContext] = useState<CreateContextInput["discoveryContext"]>();
-  const [explicitJourney, setExplicitJourney] = useState<ExplicitJourneyContext>();
-  const [excludedDiscoveryIds, setExcludedDiscoveryIds] = useState<string[]>([]);
+  const [currentTurn, setCurrentTurn] =
+    useState<CurrentTurnResult<ConciergeChatResponse> | null>(null);
+  const [conversationAnchor, setConversationAnchor] = useState<NonNullable<
+    CreateContextInput["conversationalAnchor"]
+  > | null>(null);
+  const [discoveryContext, setDiscoveryContext] =
+    useState<CreateContextInput["discoveryContext"]>();
+  const [explicitJourney, setExplicitJourney] =
+    useState<ExplicitJourneyContext>();
+  const [excludedDiscoveryIds, setExcludedDiscoveryIds] = useState<string[]>(
+    [],
+  );
   const currentResultRef = useRef<HTMLDivElement>(null);
   const currentTurnConversationRef = useRef<HTMLDivElement>(null);
   const followCurrentTurnRef = useRef(true);
@@ -142,13 +170,22 @@ export default function ConciergePage() {
     text: string;
     structured?: CreateContextInput;
   } | null>(null);
-  const { listening, voiceSupported, voiceError, toggleListening, stopListening } =
-    useSpeechInput(input, setInput);
+  const {
+    listening,
+    voiceSupported,
+    voiceError,
+    toggleListening,
+    stopListening,
+  } = useSpeechInput(input, setInput);
 
   useEffect(() => {
     sessionStorage.setItem(contextSessionKey, contextSessionIdRef.current);
   }, [contextSessionKey]);
-  useEffect(() => { setConversationAnchor(null); setDiscoveryContext(undefined); setExplicitJourney(undefined); }, [region.id]);
+  useEffect(() => {
+    setConversationAnchor(null);
+    setDiscoveryContext(undefined);
+    setExplicitJourney(undefined);
+  }, [region.id]);
   useEffect(() => {
     if (tripMode === "PLAN")
       track(
@@ -171,7 +208,13 @@ export default function ConciergePage() {
     if ((!text && !structured) || requestInFlightRef.current) return;
     const turnId = crypto.randomUUID();
     const scrollSurface = textInputRef.current?.closest(".app-main");
-    followCurrentTurnRef.current = document.activeElement === textInputRef.current || !scrollSurface || scrollSurface.scrollHeight - scrollSurface.scrollTop - scrollSurface.clientHeight < 280;
+    followCurrentTurnRef.current =
+      document.activeElement === textInputRef.current ||
+      !scrollSurface ||
+      scrollSurface.scrollHeight -
+        scrollSurface.scrollTop -
+        scrollSurface.clientHeight <
+        280;
     requestInFlightRef.current = true;
     stopListening();
     setCurrentTurn(beginCurrentTurn(turnId, text));
@@ -180,11 +223,20 @@ export default function ConciergePage() {
       lastRequestRef.current = { text, structured };
       setMessages((prev) => [
         ...prev,
-        { role: "user", text: text || "선택한 조건으로 일정을 추천해 주세요.", turnId },
+        {
+          role: "user",
+          text: text || "선택한 조건으로 일정을 추천해 주세요.",
+          turnId,
+        },
       ]);
     }
     if (followCurrentTurnRef.current)
-      requestAnimationFrame(() => currentTurnConversationRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }));
+      requestAnimationFrame(() =>
+        currentTurnConversationRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        }),
+      );
     setLoading(true);
     track(
       text ? "FREE_LANGUAGE_REQUEST" : "STRUCTURED_RECOMMENDATION_REQUESTED",
@@ -224,18 +276,28 @@ export default function ConciergePage() {
       const result = await postConciergeChat({
         regionId: region.id,
         turnId,
-        ...(conversationAnchor?.regionId === region.id ? { conversationalAnchor: conversationAnchor } : {}),
-        ...(discoveryContext?.regionId === region.id ? { discoveryContext } : {}),
+        ...(conversationAnchor?.regionId === region.id
+          ? { conversationalAnchor: conversationAnchor }
+          : {}),
+        ...(discoveryContext?.regionId === region.id
+          ? { discoveryContext }
+          : {}),
         ...(hasCompletedTurn ? carriedContext : structuredDraft),
         ...(hasCompletedTurn ? explicitJourneyPayload(explicitJourney) : {}),
         ...structured,
-        tripContext: sessionContext(loadTripSession(localStorage, region.id) || tripSession).tripContext,
+        tripContext: sessionContext(
+          loadTripSession(localStorage, region.id) || tripSession,
+        ).tripContext,
         ...(text ? { rawMessage: text, inputMode: "FREE_TEXT" as const } : {}),
         contextSessionId: contextSessionIdRef.current,
-        discoveryCategoryHint: (discoveryContext?.targetCategory || currentResult?.discovery?.category) as CreateContextInput["discoveryCategoryHint"],
+        discoveryCategoryHint: (discoveryContext?.targetCategory ||
+          currentResult?.discovery
+            ?.category) as CreateContextInput["discoveryCategoryHint"],
         isFollowup:
           hasCompletedTurn &&
-          !/카페|커피|식당|맛집|배고|밥|숙소|호텔|펜션|관광|명소|왜|유래|역사|의미/.test(text),
+          !/카페|커피|식당|맛집|배고|밥|숙소|호텔|펜션|관광|명소|왜|유래|역사|의미/.test(
+            text,
+          ),
         ...(gps?.status === "AVAILABLE"
           ? {
               latitude: gps.latitude,
@@ -248,15 +310,16 @@ export default function ConciergePage() {
             ? {}
             : { locationStatus: gps?.status }),
       });
-      const isGuideExplanation=result.intentRoute === "GUIDE_EXPLANATION";
+      const isGuideExplanation = result.intentRoute === "GUIDE_EXPLANATION";
       const latestSession =
         loadTripSession(localStorage, region.id) || tripSession;
-      if(!isGuideExplanation) saveTripSession({
-        ...latestSession,
-        mode: tripMode === "GENERIC" ? latestSession.mode : tripMode,
-        runtimeContext:
-          tripMode === "PLAN" ? latestSession.runtimeContext : result.context,
-      });
+      if (!isGuideExplanation)
+        saveTripSession({
+          ...latestSession,
+          mode: tripMode === "GENERIC" ? latestSession.mode : tripMode,
+          runtimeContext:
+            tripMode === "PLAN" ? latestSession.runtimeContext : result.context,
+        });
       if (tripMode === "PLAN") track("PLAN_COMPLETED", tripSession.id);
       if (tripMode === "NOW")
         track("RUNTIME_HYDRATED", tripSession.id, {
@@ -269,37 +332,135 @@ export default function ConciergePage() {
             result.recommendation.candidateRegionIds || []
           ).join(","),
         });
-      if(!isGuideExplanation)setExplicitJourney((current) => captureExplicitJourney(result, turnId, current));
+      const partnerCandidateIds = [
+        ...(result.discovery?.entities || []),
+        ...(result.recommendation?.itinerary?.steps || []),
+      ]
+        .map(
+          (item: any) => item.entityId || item.programUri || item.facilityUri,
+        )
+        .filter(Boolean);
+      if (partnerCandidateIds.length)
+        void recordPartnerRecommendations({
+          regionId: region.id,
+          anonymousTripId: tripSession.anonymousTripId,
+          entityIds: partnerCandidateIds,
+        });
+      if (!isGuideExplanation)
+        setExplicitJourney((current) =>
+          captureExplicitJourney(result, turnId, current),
+        );
       if (result.intentRoute)
         track("INTENT_ROUTED", tripSession.id, {
           intentRoute: result.intentRoute,
         });
       if (result.discovery?.searchFallback?.used) {
         const entity = result.discovery.entities[0];
-        track("SEARCH_FALLBACK_USED", tripSession.id, { category: result.discovery.category });
-        track(entity?.operationalEvidence?.source === "RDM" ? "SEARCH_ENTITY_RESOLVED" : "SEARCH_ENTITY_UNVERIFIED", tripSession.id, { category: result.discovery.category });
+        track("SEARCH_FALLBACK_USED", tripSession.id, {
+          category: result.discovery.category,
+        });
+        track(
+          entity?.operationalEvidence?.source === "RDM"
+            ? "SEARCH_ENTITY_RESOLVED"
+            : "SEARCH_ENTITY_UNVERIFIED",
+          tripSession.id,
+          { category: result.discovery.category },
+        );
       }
       if (conversationAnchor?.source === "SEARCH" && result.discovery)
-        track("SEARCH_TO_ACTION_CONTINUED", tripSession.id, { category: result.discovery.category });
+        track("SEARCH_TO_ACTION_CONTINUED", tripSession.id, {
+          category: result.discovery.category,
+        });
       setMessages((prev) => [
         ...prev,
-        { role: "ai", text: summarizeResult(result), result, requestText: text, turnId },
+        {
+          role: "ai",
+          text: summarizeResult(result),
+          result,
+          requestText: text,
+          turnId,
+        },
       ]);
       setCurrentTurn((current) => resolveCurrentTurn(current, turnId, result));
       setExcludedDiscoveryIds([]);
       const referenceEntity = result.discovery?.entities?.[0];
       const reference = referenceEntity
-        ? { entityId: referenceEntity.entityId, regionId: referenceEntity.regionId || region.id, label: referenceEntity.programLabel || referenceEntity.facilityLabel || referenceEntity.label, entityType: referenceEntity.entityType, category: referenceEntity.category, latitude: referenceEntity.latitude, longitude: referenceEntity.longitude, source: referenceEntity.operationalEvidence?.source === "SEARCH" ? "SEARCH" as const : "RDM" as const, sourceTurnId: turnId, role: "RESULT" as const }
+        ? {
+            entityId: referenceEntity.entityId,
+            regionId: referenceEntity.regionId || region.id,
+            label:
+              referenceEntity.programLabel ||
+              referenceEntity.facilityLabel ||
+              referenceEntity.label,
+            entityType: referenceEntity.entityType,
+            category: referenceEntity.category,
+            latitude: referenceEntity.latitude,
+            longitude: referenceEntity.longitude,
+            source:
+              referenceEntity.operationalEvidence?.source === "SEARCH"
+                ? ("SEARCH" as const)
+                : ("RDM" as const),
+            sourceTurnId: turnId,
+            role: "RESULT" as const,
+          }
         : result.conversationalReference
-          ? { ...result.conversationalReference, sourceTurnId: turnId, role: "SUBJECT" as const }
+          ? {
+              ...result.conversationalReference,
+              sourceTurnId: turnId,
+              role: "SUBJECT" as const,
+            }
           : null;
-      if (!isGuideExplanation&&!result.distanceInfo) setConversationAnchor(reference?.regionId === region.id ? reference : null);
-      if (result.discovery && result.discovery.anchorEntityId && referenceEntity) {
+      if (!isGuideExplanation && !result.distanceInfo)
+        setConversationAnchor(
+          reference?.regionId === region.id ? reference : null,
+        );
+      if (
+        result.discovery &&
+        result.discovery.anchorEntityId &&
+        referenceEntity
+      ) {
         setDiscoveryContext((previous) => {
-          const same = previous?.regionId === region.id && previous.anchor.entityId === result.discovery!.anchorEntityId && previous.targetCategory === result.discovery!.category;
-          return { regionId: region.id, anchor: { entityId: result.discovery!.anchorEntityId!, label: result.discovery!.anchorLabel, latitude: result.discovery!.anchorLatitude, longitude: result.discovery!.anchorLongitude, source: result.discovery!.anchorEntityId!.startsWith("search:") ? "SEARCH" : "RDM" }, targetCategory: result.discovery!.category as NonNullable<CreateContextInput["discoveryCategoryHint"]>, relation: result.discovery!.relation || "REGIONAL", currentResult: { entityId: referenceEntity.entityId, label: referenceEntity.programLabel || referenceEntity.facilityLabel, latitude: referenceEntity.latitude, longitude: referenceEntity.longitude, source: referenceEntity.operationalEvidence?.source === "SEARCH" ? "SEARCH" : "RDM" }, shownEntityIds: [...new Set([...(same ? previous!.shownEntityIds : []), referenceEntity.entityId])], sourceTurnId: turnId };
+          const same =
+            previous?.regionId === region.id &&
+            previous.anchor.entityId === result.discovery!.anchorEntityId &&
+            previous.targetCategory === result.discovery!.category;
+          return {
+            regionId: region.id,
+            anchor: {
+              entityId: result.discovery!.anchorEntityId!,
+              label: result.discovery!.anchorLabel,
+              latitude: result.discovery!.anchorLatitude,
+              longitude: result.discovery!.anchorLongitude,
+              source: result.discovery!.anchorEntityId!.startsWith("search:")
+                ? "SEARCH"
+                : "RDM",
+            },
+            targetCategory: result.discovery!.category as NonNullable<
+              CreateContextInput["discoveryCategoryHint"]
+            >,
+            relation: result.discovery!.relation || "REGIONAL",
+            currentResult: {
+              entityId: referenceEntity.entityId,
+              label:
+                referenceEntity.programLabel || referenceEntity.facilityLabel,
+              latitude: referenceEntity.latitude,
+              longitude: referenceEntity.longitude,
+              source:
+                referenceEntity.operationalEvidence?.source === "SEARCH"
+                  ? "SEARCH"
+                  : "RDM",
+            },
+            shownEntityIds: [
+              ...new Set([
+                ...(same ? previous!.shownEntityIds : []),
+                referenceEntity.entityId,
+              ]),
+            ],
+            sourceTurnId: turnId,
+          };
         });
-      } else if (!isGuideExplanation&&!result.distanceInfo) setDiscoveryContext(undefined);
+      } else if (!isGuideExplanation && !result.distanceInfo)
+        setDiscoveryContext(undefined);
       setInput("");
     } catch (e: any) {
       console.error("[concierge] request failed", e);
@@ -323,27 +484,45 @@ export default function ConciergePage() {
   }, []);
 
   const hasCompletedTurn = messages.some((message) => Boolean(message.result));
-  const currentResult = currentTurn?.status === "RESOLVED" ? currentTurn.result : undefined;
+  const currentResult =
+    currentTurn?.status === "RESOLVED" ? currentTurn.result : undefined;
   const currentIsKnowledge = isExplanationOnly(currentTurn?.requestText || "");
-  const hasRecommendation = !currentIsKnowledge && Boolean(currentResult?.recommendation);
-  const hasPrimaryResult = !currentIsKnowledge && Boolean(currentResult?.recommendation || currentResult?.discovery || currentResult?.distanceInfo);
+  const hasRecommendation =
+    !currentIsKnowledge && Boolean(currentResult?.recommendation);
+  const hasPrimaryResult =
+    !currentIsKnowledge &&
+    Boolean(
+      currentResult?.recommendation ||
+      currentResult?.discovery ||
+      currentResult?.distanceInfo,
+    );
   const latestRecommendation = hasRecommendation ? currentResult : undefined;
   const latestPrimaryResult = hasPrimaryResult ? currentResult : undefined;
-  const offerLocation = tripMode !== "PLAN" && shouldOfferLocationForRequest({
-    hasTripEvidence: hasTripEvidence(tripSession),
-    requestText: currentTurn?.requestText,
-    location: getSessionLocation(),
-    result: currentResult,
-  });
+  const offerLocation =
+    tripMode !== "PLAN" &&
+    shouldOfferLocationForRequest({
+      hasTripEvidence: hasTripEvidence(tripSession),
+      requestText: currentTurn?.requestText,
+      location: getSessionLocation(),
+      result: currentResult,
+    });
   useEffect(() => {
-    const textarea=textInputRef.current;if(!textarea)return;
-    if(!hasCompletedTurn||!input){textarea.style.height="44px";return}
-    textarea.style.height="44px";
-    textarea.style.height=`${Math.min(Math.max(textarea.scrollHeight,44),88)}px`;
-  }, [input,hasCompletedTurn]);
+    const textarea = textInputRef.current;
+    if (!textarea) return;
+    if (!hasCompletedTurn || !input) {
+      textarea.style.height = "44px";
+      return;
+    }
+    textarea.style.height = "44px";
+    textarea.style.height = `${Math.min(Math.max(textarea.scrollHeight, 44), 88)}px`;
+  }, [input, hasCompletedTurn]);
 
   useEffect(() => {
-    if (hasPrimaryResult && !hadRecommendationRef.current && followCurrentTurnRef.current) {
+    if (
+      hasPrimaryResult &&
+      !hadRecommendationRef.current &&
+      followCurrentTurnRef.current
+    ) {
       requestAnimationFrame(() =>
         currentResultRef.current?.scrollIntoView({
           behavior: "smooth",
@@ -356,7 +535,8 @@ export default function ConciergePage() {
 
   const runDemo = async () => {
     const turnId = crypto.randomUUID();
-    const requestText = "맑은 날 78세 어머니를 모시고 자동차로 방문합니다. 어머니는 무릎이 불편해 짧은 보행이 필요하고 오후 5시까지 머물 예정입니다.";
+    const requestText =
+      "맑은 날 78세 어머니를 모시고 자동차로 방문합니다. 어머니는 무릎이 불편해 짧은 보행이 필요하고 오후 5시까지 머물 예정입니다.";
     setLoading(true);
     setCurrentTurn(beginCurrentTurn(turnId, requestText));
     setMessages((prev) => [
@@ -376,7 +556,13 @@ export default function ConciergePage() {
       } as any;
       setMessages((prev) => [
         ...prev,
-        { role: "ai", text: summarizeResult(merged), result: merged, requestText, turnId },
+        {
+          role: "ai",
+          text: summarizeResult(merged),
+          result: merged,
+          requestText,
+          turnId,
+        },
       ]);
       setCurrentTurn((current) => resolveCurrentTurn(current, turnId, merged));
     } catch (e: any) {
@@ -400,7 +586,7 @@ export default function ConciergePage() {
           {tripMode === "NOW" && (
             <header className="journey-mode-header now">
               <small>NOW · 여행 중</small>
-              <h1>지금 필요한 것</h1>
+              <h1>지금 무엇을 하고 싶으세요?</h1>
               <p>
                 현재 시간과 상황에 맞춰 지금 할 수 있는 선택을 찾아드릴게요.
               </p>
@@ -425,23 +611,35 @@ export default function ConciergePage() {
         </div>
       )}
       <div className="chat-window">
-          {messages.map((m, i) => (
-            <div key={i} className="chat-message">
-              <div
-                className={`chat-bubble ${m.role === "user" ? "user" : "ai"}`}
-              >
-                {m.role === "ai" ? <GlossaryText text={m.text} /> : m.text}
-              </div>
-              {m.role === "ai" && m.result && isCurrentTurn(m.turnId, currentTurn) && <AiResponseActions rawMessage={m.requestText || ""} result={m.result} turnId={m.turnId!} excludedEntityIds={excludedDiscoveryIds} onExcludedEntityIdsChange={setExcludedDiscoveryIds} />}
+        {messages.map((m, i) => (
+          <div key={i} className="chat-message">
+            <div className={`chat-bubble ${m.role === "user" ? "user" : "ai"}`}>
+              {m.role === "ai" ? <GlossaryText text={m.text} /> : m.text}
             </div>
-          ))}
-          {loading && (
-            <div className="loading">
-              말씀하신 상황에 맞는 일정을 살펴보고 있습니다...
-            </div>
-          )}
-          <div ref={currentTurnConversationRef} className="current-turn-conversation-anchor" aria-hidden="true" />
-        </div>
+            {m.role === "ai" &&
+              m.result &&
+              isCurrentTurn(m.turnId, currentTurn) && (
+                <AiResponseActions
+                  rawMessage={m.requestText || ""}
+                  result={m.result}
+                  turnId={m.turnId!}
+                  excludedEntityIds={excludedDiscoveryIds}
+                  onExcludedEntityIdsChange={setExcludedDiscoveryIds}
+                />
+              )}
+          </div>
+        ))}
+        {loading && (
+          <div className="loading">
+            말씀하신 상황에 맞는 일정을 살펴보고 있습니다...
+          </div>
+        )}
+        <div
+          ref={currentTurnConversationRef}
+          className="current-turn-conversation-anchor"
+          aria-hidden="true"
+        />
+      </div>
       {requestError && (
         <div className="visitor-error" role="alert">
           <b>잠시 연결이 원활하지 않습니다.</b>
@@ -461,15 +659,41 @@ export default function ConciergePage() {
 
       {!hasCompletedTurn && (
         <>
-          <section className="natural-language-entry" aria-labelledby="natural-language-title">
+          <section
+            className="natural-language-entry"
+            aria-labelledby="natural-language-title"
+          >
             <small>AI에게 바로 물어보기</small>
             <h2 id="natural-language-title">말하거나 입력해서 알려주세요</h2>
             <p>“부모님과 왔는데 지금 어디 가지?”처럼 편하게 말씀하셔도 돼요.</p>
-            <button type="button" className="btn btn-primary btn-block" aria-expanded={freeTextOpen} onClick={() => { const next = !freeTextOpen; setFreeTextOpen(next); if (next) { track("NATURAL_LANGUAGE_ENTRY_SELECTED", tripSession.id, { mode: tripMode }); requestAnimationFrame(() => textInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })); requestAnimationFrame(() => textInputRef.current?.focus()); } }}>
+            <button
+              type="button"
+              className="btn btn-primary btn-block"
+              aria-expanded={freeTextOpen}
+              onClick={() => {
+                const next = !freeTextOpen;
+                setFreeTextOpen(next);
+                if (next) {
+                  track("NATURAL_LANGUAGE_ENTRY_SELECTED", tripSession.id, {
+                    mode: tripMode,
+                  });
+                  requestAnimationFrame(() =>
+                    textInputRef.current?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "center",
+                    }),
+                  );
+                  requestAnimationFrame(() => textInputRef.current?.focus());
+                }
+              }}
+            >
               말하거나 입력해서 물어보기
             </button>
           </section>
-          <div className="planning-choice-divider"><span>또는</span><strong>조건을 선택해서 일정 만들기</strong></div>
+          <div className="planning-choice-divider">
+            <span>또는</span>
+            <strong>조건을 선택해서 일정 만들기</strong>
+          </div>
           {tripMode === "PLAN" ? (
             <PlanVisitorIntake
               loading={loading}
@@ -554,23 +778,24 @@ export default function ConciergePage() {
       {latestPrimaryResult?.discovery && (
         <div ref={currentResultRef} className="recommendation-journey-start">
           <UnderstoodContext result={latestPrimaryResult} />
-          <PlaceDiscoveryPanel result={latestPrimaryResult} excludedEntityIds={excludedDiscoveryIds} />
+          <PlaceDiscoveryPanel
+            result={latestPrimaryResult}
+            excludedEntityIds={excludedDiscoveryIds}
+          />
           {loading && (
             <div className="loading">이어서 살펴보고 있습니다...</div>
           )}
         </div>
       )}
       {latestPrimaryResult?.distanceInfo && (
-        <div ref={currentResultRef} className="recommendation-journey-start"><DistanceInfoPanel result={latestPrimaryResult} /></div>
+        <div ref={currentResultRef} className="recommendation-journey-start">
+          <DistanceInfoPanel result={latestPrimaryResult} />
+        </div>
       )}
       <InstallExperience usefulResult={hasPrimaryResult} />
 
       {(hasCompletedTurn || freeTextOpen) && (
-        <div
-          className={
-            "concierge-input-panel concierge-unified-composer"
-          }
-        >
+        <div className={"concierge-input-panel concierge-unified-composer"}>
           <div className="input-panel-heading">
             {!hasCompletedTurn && <small>말하거나 직접 입력하세요</small>}
             <h2>
@@ -639,10 +864,21 @@ export default function ConciergePage() {
             disabled={loading}
             aria-label={hasCompletedTurn ? "질문 전송" : "대화로 찾기"}
           >
-            {hasCompletedTurn ? <><span aria-hidden="true">➤</span><span className="sr-only">전송</span></> : "대화로 찾기"}
+            {hasCompletedTurn ? (
+              <>
+                <span aria-hidden="true">➤</span>
+                <span className="sr-only">전송</span>
+              </>
+            ) : (
+              "대화로 찾기"
+            )}
           </button>
           {hasCompletedTurn && (
-            <button type="button" className="btn btn-outline btn-block concierge-return-trip" onClick={() => navigate(regionLink("/itinerary"))}>
+            <button
+              type="button"
+              className="btn btn-outline btn-block concierge-return-trip"
+              onClick={() => navigate(regionLink("/itinerary"))}
+            >
               내 여행으로 돌아가기
             </button>
           )}
@@ -684,18 +920,15 @@ function NowImmediateActions({
 }) {
   return (
     <section className="now-needs" aria-labelledby="now-needs-title">
-      <h2 id="now-needs-title">바로 필요한 것을 선택하세요</h2>
-      {[
-        "지금 갈 곳",
-        "오늘 뭐 먹을까요?",
-        "한 시간 남았어요",
-        "내 주변",
-        "오늘 행사",
-        "비가 와요",
-        "쉬고 싶어요",
-      ].map((label) => (
-        <button type="button" key={label} onClick={() => onSelect(label)}>
-          {label}
+      <h2 id="now-needs-title">현재 필요한 것을 빠르게 선택하세요</h2>
+      {NOW_QUICK_ACTIONS.map((action) => (
+        <button
+          type="button"
+          key={action.label}
+          aria-label={action.label}
+          onClick={() => onSelect(action.prompt)}
+        >
+          {action.label}
         </button>
       ))}
     </section>
@@ -762,9 +995,17 @@ function PlanSummary({ planned }: { planned: PlannedContext }) {
 }
 
 function UnderstoodContext({ result }: { result: ConciergeChatResponse }) {
-  const rows = withRequestedDestinations(buildContextSummary(result.context || {}),result.requestedDestinations);
+  const rows = withRequestedDestinations(
+    buildContextSummary(result.context || {}),
+    result.requestedDestinations,
+  );
   if (result.discovery)
-    return <section className="understood-context-card"><h2>{SHARED_VISITOR_COPY.understoodHeading}</h2><p className="muted-line">{understoodSummary(result)}</p></section>;
+    return (
+      <section className="understood-context-card">
+        <h2>{SHARED_VISITOR_COPY.understoodHeading}</h2>
+        <p className="muted-line">{understoodSummary(result)}</p>
+      </section>
+    );
   return (
     <section className="understood-context-card">
       <h2>{SHARED_VISITOR_COPY.understoodHeading}</h2>
@@ -778,9 +1019,7 @@ function UnderstoodContext({ result }: { result: ConciergeChatResponse }) {
           ))}
         </dl>
       ) : (
-        <p className="muted-line">
-          {understoodSummary(result)}
-        </p>
+        <p className="muted-line">{understoodSummary(result)}</p>
       )}
     </section>
   );
@@ -856,7 +1095,13 @@ function ResultPanel({
   );
 }
 
-function PlaceDiscoveryPanel({ result, excludedEntityIds = [] }: { result: ConciergeChatResponse; excludedEntityIds?: string[] }) {
+function PlaceDiscoveryPanel({
+  result,
+  excludedEntityIds = [],
+}: {
+  result: ConciergeChatResponse;
+  excludedEntityIds?: string[];
+}) {
   const discovery = result.discovery!,
     alternatives = discoveryAlternatives(discovery.entities, excludedEntityIds),
     label =
@@ -888,10 +1133,20 @@ function PlaceDiscoveryPanel({ result, excludedEntityIds = [] }: { result: Conci
       {discovery.categoryFallbackNotice && (
         <p className="text-muted">{discovery.categoryFallbackNotice}</p>
       )}
-      {discovery.visitorMessage && <p className="text-muted">{discovery.visitorMessage}</p>}
+      {discovery.visitorMessage && (
+        <p className="text-muted">{discovery.visitorMessage}</p>
+      )}
       {alternatives.length ? (
         alternatives.map((entity: any, index: number) => (
-          <div className="place-discovery-item" key={entity.entityId || entity.programUri || entity.facilityUri || `unidentified-${index}`}>
+          <div
+            className="place-discovery-item"
+            key={
+              entity.entityId ||
+              entity.programUri ||
+              entity.facilityUri ||
+              `unidentified-${index}`
+            }
+          >
             <RecommendationItineraryItem step={entity} index={index} />
             {entity.reasons?.length > 0 && (
               <p className="place-discovery-reasons">
@@ -901,10 +1156,29 @@ function PlaceDiscoveryPanel({ result, excludedEntityIds = [] }: { result: Conci
           </div>
         ))
       ) : (
-        <p className="text-muted">위 추천 외에 현재 조건에 맞는 추가 후보가 없습니다.</p>
+        <p className="text-muted">
+          위 추천 외에 현재 조건에 맞는 추가 후보가 없습니다.
+        </p>
       )}
     </section>
   );
 }
 
-function DistanceInfoPanel({result}:{result:ConciergeChatResponse}){const info=result.distanceInfo!;return <section className="recommendation-section distance-info-result"><h2>거리 확인</h2><p>{info.status==="RESOLVED"?`${info.fromLabel}에서 ${info.toLabel}까지 직선거리로 약 ${info.distanceMeters}m입니다.`:info.message}</p>{info.status==="RESOLVED"&&<p className="text-muted">실제 이동 거리는 선택한 길과 교통수단에 따라 달라질 수 있어요.</p>}</section>}
+function DistanceInfoPanel({ result }: { result: ConciergeChatResponse }) {
+  const info = result.distanceInfo!;
+  return (
+    <section className="recommendation-section distance-info-result">
+      <h2>거리 확인</h2>
+      <p>
+        {info.status === "RESOLVED"
+          ? `${info.fromLabel}에서 ${info.toLabel}까지 직선거리로 약 ${info.distanceMeters}m입니다.`
+          : info.message}
+      </p>
+      {info.status === "RESOLVED" && (
+        <p className="text-muted">
+          실제 이동 거리는 선택한 길과 교통수단에 따라 달라질 수 있어요.
+        </p>
+      )}
+    </section>
+  );
+}

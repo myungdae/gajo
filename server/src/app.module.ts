@@ -22,6 +22,7 @@ import { RegionModule } from './region/region.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { RegionalDataModule } from './regional-data/regional-data.module';
 import { AnonymousTripModule } from './anonymous-trip/anonymous-trip.module';
+import { PartnerModule } from './partner/partner.module';
 import { ExkoSemanticModule } from './exko-semantic/exko-semantic.module';
 import { CopilotModule } from './copilot/copilot.module';
 import { GuideModule } from './guide/guide.module';
@@ -51,6 +52,7 @@ import { GuideModule } from './guide/guide.module';
     AnalyticsModule,
     RegionalDataModule,
     AnonymousTripModule,
+    PartnerModule,
     ExkoSemanticModule,
     CopilotModule,
     GuideModule,

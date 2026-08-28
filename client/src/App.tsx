@@ -8,6 +8,10 @@ import AdminPage from './pages/AdminPage';
 import OntologyExplorerPage from './pages/OntologyExplorerPage';
 import NearbyRestaurantsPage from './pages/NearbyRestaurantsPage';
 import { RegionProvider } from './RegionContext';
+import PartnerEntryPage from './pages/PartnerEntryPage';
+import PartnerVisitPage from './pages/PartnerVisitPage';
+import PartnerApplicationPage from './pages/PartnerApplicationPage';
+import PartnerConsolePage from './pages/PartnerConsolePage';
 
 export default function App() {
   return (
@@ -15,6 +19,10 @@ export default function App() {
       <RegionProvider><Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/go/:partnerSlug" element={<PartnerEntryPage />} />
+          <Route path="/visit/:partnerSlug" element={<PartnerVisitPage />} />
+          <Route path="/partners/apply" element={<PartnerApplicationPage />} />
+          <Route path="/partners/:partnerSlug/manage" element={<PartnerConsolePage />} />
           <Route path="/gajo" element={<HomePage />} />
           <Route path="/okcheon" element={<HomePage />} />
           <Route path="/muan" element={<HomePage />} />

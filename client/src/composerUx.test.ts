@@ -36,8 +36,8 @@ test("360 390 430 and desktop widths retain compact 44px controls without overfl
 });
 test("resolved-turn focus is conservative and targets the current result", () => {
   assert.match(page, /followCurrentTurnRef/);
-  assert.match(page, /scrollHeight - scrollSurface\.scrollTop - scrollSurface\.clientHeight < 280/);
+  assert.match(page, /scrollHeight\s*-\s*scrollSurface\.scrollTop\s*-\s*scrollSurface\.clientHeight\s*<\s*280/);
   assert.match(page, /currentResultRef\.current\?\.scrollIntoView/);
   assert.match(page, /currentTurnConversationRef\.current\?\.scrollIntoView/);
 });
-test("voice activation cannot resize the Android composer without text content",()=>{assert.match(page,/\[input,hasCompletedTurn\]/);assert.doesNotMatch(page,/\[input,hasCompletedTurn,listening\]|\[listening,input/);assert.match(page,/Math\.min\(Math\.max\(textarea\.scrollHeight,44\),88\)/);assert.match(css,/max-block-size:\s*88px/);assert.match(css,/max-height:\s*112px/)});
+test("voice activation cannot resize the Android composer without text content",()=>{assert.match(page,/\[\s*input\s*,\s*hasCompletedTurn\s*\]/);assert.doesNotMatch(page,/\[\s*input\s*,\s*hasCompletedTurn\s*,\s*listening\s*\]|\[\s*listening\s*,\s*input/);assert.match(page,/Math\.min\(\s*Math\.max\(textarea\.scrollHeight\s*,\s*44\)\s*,\s*88\s*\)/);assert.match(css,/max-block-size:\s*88px/);assert.match(css,/max-height:\s*112px/)});

@@ -23,6 +23,7 @@ export interface TripSession {
   anonymousTripId: string;
   regionId: string;
   mode: "PLAN" | "NOW";
+  partnerEntryContext?: { partnerId:string; partnerSlug:string; partnerName:string; enteredAt:string; source:"PARTNER_QR" };
   plannedContext?: PlannedContext;
   runtimeContext?: any;
   itinerary?: unknown;

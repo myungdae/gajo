@@ -284,6 +284,24 @@ export class ConciergeService {
     }
 
     if (
+      route.intentRoute === 'REPLAN' &&
+      route.category === 'LODGING' &&
+      !input.accommodationIntents?.length
+    ) {
+      return {
+        context,
+        evidence,
+        firedRules,
+        recommendation: null,
+        intentRoute: route.intentRoute,
+        visitorMessage:
+          '현재 여행에 확인된 숙소가 없습니다. 돌아갈 숙소 이름을 알려주시면 검증된 장소인지 확인해 드릴게요.',
+        nearbyRestaurantIntent: false,
+        nearbyDiscoveryIntent: false,
+      };
+    }
+
+    if (
       (route.intentRoute === 'PLACE_DISCOVERY' ||
         route.intentRoute === 'IMMEDIATE_NOW') &&
       route.category &&
