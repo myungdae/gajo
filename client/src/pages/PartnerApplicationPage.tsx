@@ -31,7 +31,7 @@ export default function PartnerApplicationPage() {
     );
   return (
     <main className="partner-flow">
-      <small>지역 업소와 관광객을 연결합니다</small>
+      <section className="partner-value-intro"><small>EXKOVIA · 지역 업소</small>
       <h1>AI 관광 파트너 참여하기</h1>
       <p>
         AI가 관광객의 현재 상황과 여행 목적에 맞는 지역 업소를 발견하고 실제
@@ -44,7 +44,8 @@ export default function PartnerApplicationPage() {
         <li>선택적 방문 혜택 제공</li>
         <li>추천·방문·혜택 사용 성과 확인</li>
         <li>혜택 없이도 참여 가능</li>
-      </ul>
+      </ul><p className="partner-security-note">현재는 시범 참여 단계입니다. 승인된 업소에는 별도의 안전한 관리 방법을 안내해 드립니다.</p></section>
+      <h2>참여 신청</h2>
       <form className="partner-form" onSubmit={submit}>
         <label className="sr-only" aria-hidden="true">
           웹사이트
@@ -94,6 +95,7 @@ export default function PartnerApplicationPage() {
           참여 신청
         </button>
       </form>
+      <details className="partner-pilot-details"><summary>시범운영 안내</summary><p>현재 운영 화면은 시범 운영용 관리 키를 사용합니다. 일반 공개 운영 전에는 업주 계정, 다중 인증(MFA), 키 회수와 감사 정책을 갖춰야 합니다.</p></details>
     </main>
   );
 }

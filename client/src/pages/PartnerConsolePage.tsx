@@ -7,7 +7,8 @@ import {
   fetchPartnerMetrics,
 } from "../api/client";
 export default function PartnerConsolePage() {
-  const { partnerSlug = "" } = useParams(),
+  const { partnerSlug: routePartnerSlug = "" } = useParams(),
+    [partnerSlug,setPartnerSlug]=useState(routePartnerSlug),
     [key, setKey] = useState(""),
     [metrics, setMetrics] = useState<any>(),
     [redemption, setRedemption] = useState(""),
@@ -64,6 +65,8 @@ export default function PartnerConsolePage() {
   return (
     <main className="partner-flow">
       <h1>파트너 운영·성과</h1>
+      {!routePartnerSlug&&<label>파트너 식별자<input value={partnerSlug} onChange={(e)=>setPartnerSlug(e.target.value.trim())} placeholder="신청 시 발급된 파트너 주소" /></label>}
+      <p className="partner-security-note">현재 관리 키는 시범 운영용 자격 증명입니다. 일반 공개 운영 전 업주 계정과 MFA가 필요합니다.</p>
       <label>
         파트너 관리 키
         <input value={key} onChange={(e) => setKey(e.target.value)} />

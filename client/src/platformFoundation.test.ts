@@ -1,0 +1,22 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { appSurface, isExkoviaHost, isPlatformPreview, regionFromLocation, shouldRegisterVisitorPwa } from './regionRouting.ts';
+import { createTripSession, loadTripSession, saveTripSession } from './tripSession.ts';
+
+const app=readFileSync(new URL('./App.tsx',import.meta.url),'utf8');
+const main=readFileSync(new URL('./main.tsx',import.meta.url),'utf8');
+const portal=readFileSync(new URL('./pages/PlatformPortalPage.tsx',import.meta.url),'utf8');
+const selection=readFileSync(new URL('./pages/RegionSelectionPage.tsx',import.meta.url),'utf8');
+const adoption=readFileSync(new URL('./pages/RegionAdoptionPage.tsx',import.meta.url),'utf8');
+const partner=readFileSync(new URL('./pages/PartnerApplicationPage.tsx',import.meta.url),'utf8');
+const css=readFileSync(new URL('./platform.css',import.meta.url),'utf8');
+
+test('exkovia host owns the platform root while legacy host remains gajo',()=>{for(const host of['exkovia.com','www.exkovia.com','EXKOVIA.COM']){assert.equal(isExkoviaHost(host),true);assert.equal(appSurface('/','',host),'PLATFORM')}assert.equal(isPlatformPreview('gajo.odex.kr'),false);assert.equal(regionFromLocation('/','','gajo.odex.kr'),'gajo')});
+test('regional direct paths resolve Hapcheon without hostname fallback',()=>{for(const path of['/hapcheon','/hapcheon/concierge','/hapcheon/nearby']){assert.equal(regionFromLocation(path,'','exkovia.com'),'hapcheon');assert.equal(appSurface(path,'','exkovia.com'),'REGION')}for(const path of['/partner/apply','/partner/console','/region/apply'])assert.equal(appSurface(path,'','exkovia.com'),'PLATFORM');for(const path of['/go/example','/visit/example'])assert.equal(appSurface(path,'','exkovia.com'),'PUBLIC_PARTNER');assert.match(app,/path="\/hapcheon\/concierge"/);assert.match(app,/path="\/hapcheon\/nearby"/)});
+test('portal has three clear entrances and never imports trip state',()=>{for(const text of['AI 여행 시작하기','AI 관광 파트너 참여하기','우리 지역 AI 도입하기','지자체·관광기관'])assert.match(portal,new RegExp(text));assert.doesNotMatch(portal,/TripSession|ensureTripSession/)});
+test('platform acquisition surfaces do not register the regional PWA or manifest',()=>{for(const path of['/','/regions','/partner/apply','/partner/console','/region/apply'])assert.equal(shouldRegisterVisitorPwa(path,'','exkovia.com'),false);assert.match(main,/if\(surface!==['"]REGION['"]\)manifest\?\.remove/)});
+test('only Hapcheon is active in phase 2 region selection',()=>{assert.match(selection,/name:'합천',active:true/);assert.equal((selection.match(/active:true/g)||[]).length,1);for(const name of['가조','옥천','거창','함안','준비 중'])assert.match(selection,new RegExp(name))});
+test('participation and adoption boundaries use public language and retain detail',()=>{assert.match(partner,/현재는 시범 참여 단계입니다/);assert.match(partner,/시범운영 안내/);assert.match(partner,/다중 인증\(MFA\)/);for(const field of['기관명','지역','담당부서','담당자','연락처','이메일','관심 분야','개인정보·상담 동의'])assert.match(adoption,new RegExp(field));assert.match(adoption,/온라인 도입 상담은 준비 중입니다/);assert.match(adoption,/상담 시 확인할 내용/);assert.doesNotMatch(adoption,/Phase 2\.0/)});
+test('mobile foundation prevents overflow and keeps touch targets',()=>{assert.match(css,/overflow-x:\s*hidden/);assert.match(css,/@media\s*\(max-width:\s*430px\)/);assert.match(css,/min-height:\s*(44|48)px/)});
+test('opening the portal policy does not create or alter a regional trip',()=>{const data=new Map<string,string>(),storage={getItem:(k:string)=>data.get(k)||null,setItem:(k:string,v:string)=>void data.set(k,v)};saveTripSession(createTripSession('gajo'),storage as any);const before=new Map(data);assert.equal(appSurface('/','','exkovia.com'),'PLATFORM');assert.deepEqual(data,before);assert.equal(loadTripSession(storage as any,'hapcheon'),undefined)});

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useRegion } from "../RegionContext";
-import { regionalPath } from "../regionRouting";
+import { isPlatformPreview, regionalPath } from "../regionRouting";
 import ConnectionStatus from "./ConnectionStatus";
 import { loadTripSession, tripRestorationDiagnostics } from "../tripSession";
 import { itineraryItemCount } from "../tripContinuity";
@@ -54,7 +54,7 @@ function NavIcon({ name }: { name: string }) {
 
 export default function Layout() {
   const region = useRegion();
-  const location=useLocation(),diagnosticMode=new URLSearchParams(location.search).get("trip-diagnostics")==="1",partnerEntryRoute=location.pathname.startsWith("/go/");
+  const location=useLocation(),diagnosticMode=new URLSearchParams(location.search).get("trip-diagnostics")==="1",platformRoute=['/','/regions','/partner/apply','/partner/console','/region/apply'].includes(location.pathname)&&isPlatformPreview(window.location.hostname,location.search),partnerEntryRoute=location.pathname.startsWith("/go/")||location.pathname.startsWith("/visit/")||platformRoute;
   const mainRef = useRef<HTMLElement>(null);
   const [tripCount, setTripCount] = useState(() =>
     diagnosticMode?0:itineraryItemCount(loadTripSession(localStorage, region.id)),
