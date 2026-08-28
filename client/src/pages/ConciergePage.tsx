@@ -56,7 +56,7 @@ import {
 import { GlossaryText } from "../components/GlossaryText";
 import { discoveryAlternatives, isExplanationOnly } from "../aiResponseActions";
 import { understoodSummary } from "../understoodSummary";
-import { NOW_QUICK_ACTIONS } from "../nowQuickActions";
+import { NOW_HEADING, NOW_HEADING_LINES, NOW_QUICK_ACTIONS } from "../nowQuickActions";
 
 interface Message {
   role: "user" | "ai";
@@ -106,6 +106,7 @@ export default function ConciergePage() {
     initialMessage?: string;
     autoSubmit?: boolean;
     entryMessage?: string;
+    entryDescription?: string;
   } | null;
   const queryMode = new URLSearchParams(location.search)
     .get("mode")
@@ -122,7 +123,7 @@ export default function ConciergePage() {
         tripMode === "PLAN"
           ? "여행 날짜를 아직 정하지 않았어도 괜찮아요. 알고 있는 내용만으로 준비할게요."
           : tripMode === "NOW"
-            ? entryState?.entryMessage ||
+            ? (entryState?.entryDescription ? undefined : entryState?.entryMessage) ||
               "필요한 선택을 누르거나 달라진 상황을 편하게 알려주세요."
             : "함께 오신 분, 머무는 시간, 이동 방법, 걷기 편한 정도를 알려주시면 알맞은 일정을 안내해 드릴게요.",
     },
@@ -586,10 +587,16 @@ export default function ConciergePage() {
           {tripMode === "NOW" && (
             <header className="journey-mode-header now">
               <small>NOW · 여행 중</small>
-              <h1>지금 무엇을 하고 싶으세요?</h1>
+              <h1 aria-label={NOW_HEADING}>{NOW_HEADING_LINES.map(line=><span className="now-heading-line" key={line}>{line}</span>)}</h1>
               <p>
-                현재 시간과 상황에 맞춰 지금 할 수 있는 선택을 찾아드릴게요.
+                배가 고프거나, 잠시 쉬고 싶거나, 다음 갈 곳을 찾고 있다면 편하게 말씀해 주세요.
               </p>
+              {entryState?.entryDescription && entryState.entryMessage && (
+                <strong className="partner-entry-title">{entryState.entryMessage}</strong>
+              )}
+              {entryState?.entryDescription && (
+                <p className="partner-entry-description">{entryState.entryDescription}</p>
+              )}
             </header>
           )}
           <GajoLiveStatus

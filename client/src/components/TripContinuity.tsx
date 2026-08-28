@@ -6,17 +6,17 @@ import { track } from "../analytics";
 import { regionalPath } from "../regionRouting";
 import {
   archiveAndStartNewTrip,
-  ensureTripSession,
   loadTripSession,
   safeTripState,
   saveTripSession,
-  hasSavedTrip,
+  hasTripEvidence,
   tripRestorationDiagnostics,
   type TripSession,
 } from "../tripSession";
 import { itineraryItemCount, reconcileTrip } from "../tripContinuity";
 import { journeyDayCounts } from "../fullJourney";
 import { itinerarySteps, savedPlaceItems } from "../journeyExecution";
+import { continueTripLabel, homeTripSummary } from "../homeExperience";
 export default function TripContinuity() {
   const region = useRegion(),
     location = useLocation(),
@@ -28,11 +28,14 @@ export default function TripContinuity() {
   useEffect(() => {
     if (!home) return;
     let live = true;
-    const local = ensureTripSession(region.id);
-    if (hasSavedTrip(local)) {
-      setTrip(local);
-      setVisible(true);
+    const local = loadTripSession(localStorage, region.id);
+    if (!local || !hasTripEvidence(local)) {
+      setTrip(undefined);
+      setVisible(false);
+      return;
     }
+    setTrip(local);
+    setVisible(true);
     if (import.meta.env.DEV)
       console.debug("[trip-restoration]", tripRestorationDiagnostics(region.id));
     const restore = async () => {
@@ -86,18 +89,15 @@ export default function TripContinuity() {
     return () => window.removeEventListener("regional-trip-saved", sync);
   }, [region.id]);
   if (!visible || !trip) return null;
-  const count = itineraryItemCount(trip);
+  const count = itineraryItemCount(trip), summary = homeTripSummary(trip);
   const dayCount = journeyDayCounts(trip.itinerary).length;
   const fullCount = itinerarySteps(trip.itinerary).length,
     savedCount = savedPlaceItems(trip).length;
   return (
-    <section className="card trip-continuity" aria-label="지난 여행 이어가기">
-      <h2>지난 {region.regionName} 여행을 이어볼까요?</h2>
-      <p>
-        {(trip.itinerary as any)?.savedAsFullJourney
-          ? `${dayCount > 1 ? `${dayCount - 1}박${dayCount}일 · ` : ""}일정 ${fullCount}곳${savedCount ? ` · 담아둔 곳 ${savedCount}곳` : ""}`
-          : `담아둔 곳 ${count}곳이 있습니다.`}
-      </p>
+    <section className="home-resume-card" aria-labelledby="resume-trip-title">
+      <small>나의 여행</small>
+      <h2 id="resume-trip-title">이어갈 여행이 있어요</h2>
+      {region.id === "hapcheon" ? <><p className="home-resume-heading">{summary.heading}</p>{summary.detail&&<p>{summary.detail}</p>}</> : <p>{(trip.itinerary as any)?.savedAsFullJourney ? `${dayCount > 1 ? `${dayCount - 1}박${dayCount}일 · ` : ""}일정 ${fullCount}곳${savedCount ? ` · 담아둔 곳 ${savedCount}곳` : ""}` : `담아둔 곳 ${count}곳이 있습니다.`}</p>}
       <div className="entity-actions">
         <button
           className="btn btn-primary"
@@ -107,13 +107,13 @@ export default function TripContinuity() {
             navigate(regionalPath("/itinerary", region.id));
           }}
         >
-          내 여행 계속하기
+          {continueTripLabel(trip)}
         </button>
         <button
           className="btn btn-text"
           onClick={() => setConfirmingNew(true)}
         >
-          새 여행 시작
+          새 여행 만들기
         </button>
       </div>
       {confirmingNew && (
@@ -130,6 +130,7 @@ export default function TripContinuity() {
           </div>
         </div>
       )}
+      <p className="home-new-trip-copy">새로운 동행·시간·목적으로 다시 계획합니다.</p>
     </section>
   );
 }

@@ -50,6 +50,12 @@ export interface RegionConfig {
   heroSubtitle: string;
   heroCopy: string;
   home: {
+    hero?: {
+      title: string;
+      titleLines?: string[];
+      description: string;
+      image?: string;
+    };
     question: string;
     supportingCopy: string;
     examples: string[];
@@ -466,6 +472,12 @@ export const HAPCHEON_CONFIG: RegionConfig = {
   heroCopy:
     "호수와 자연, 드라이브와 가족 체류를 중심으로 합천 여행을 준비해 보세요.",
   home: {
+    hero: {
+      title: "수려한 합천, 여행이 시작됩니다",
+      titleLines: ["수려한 합천,", "여행이 시작됩니다"],
+      description:
+        "자연과 문화가 어우러진 합천을 AI 여행도우미와 편하게 만나보세요.",
+    },
     question: "합천 여행, 무엇을 도와드릴까요?",
     supportingCopy: "말씀하시거나 편하게 입력해 주세요.",
     brandLine: "합천에 오신 것을 환영합니다",

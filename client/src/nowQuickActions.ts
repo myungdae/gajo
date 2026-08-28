@@ -5,3 +5,6 @@ export const NOW_QUICK_ACTIONS = [
   { label: "🌧️ 비가 와요", prompt: "비가 와요" },
   { label: "🏠 숙소로 갈래요", prompt: "숙소로 갈래요" },
 ] as const;
+
+export const NOW_HEADING = "지금 무엇을 하고 싶으세요?";
+export const NOW_HEADING_LINES = ["지금 무엇을", "하고 싶으세요?"] as const;
