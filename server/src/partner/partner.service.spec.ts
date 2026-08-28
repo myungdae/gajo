@@ -390,10 +390,37 @@ describe('benefit policy and redemption trust', () => {
     await expect(
       m.service.confirm('one', 'redeem-x', key, 'OTHER'),
     ).rejects.toBeInstanceOf(BadRequestException);
-    m.redemptions.findOne.mockResolvedValue(null);
     await expect(
       m.service.confirm('one', 'redeem-x', key, 'CONFIRM'),
     ).rejects.toBeInstanceOf(NotFoundException);
+  });
+  it('claims an owner decision with one atomic REQUESTED transition', async () => {
+    const m = models();
+    m.partners.findOne.mockResolvedValue(operating);
+    m.redemptions.findOneAndUpdate.mockResolvedValue({
+      redemptionId: 'r1',
+      benefitId: 'b1',
+      partnerId: 'p1',
+      regionId: 'hapcheon',
+      anonymousTripId: trip,
+      status: 'CONFIRMED',
+      requestedAt: new Date(),
+    });
+    m.activities.create.mockResolvedValue({});
+    await expect(
+      m.service.confirm('one', 'r1', key, 'CONFIRM'),
+    ).resolves.toEqual({ redemptionId: 'r1', status: 'CONFIRMED' });
+    expect(m.redemptions.findOneAndUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        redemptionId: 'r1',
+        status: 'REQUESTED',
+        expiresAt: { $gt: expect.any(Date) },
+      }),
+      expect.objectContaining({
+        $set: expect.objectContaining({ status: 'CONFIRMED' }),
+      }),
+      { new: true },
+    );
   });
   it('expires stale owner confirmation and releases reserved counters', async () => {
     const m = models();
@@ -407,16 +434,23 @@ describe('benefit policy and redemption trust', () => {
       status: 'REQUESTED',
       requestedAt: new Date('2026-08-28T00:00:00Z'),
       expiresAt: new Date('2026-08-28T00:01:00Z'),
-      save: jest.fn(),
     };
-    m.redemptions.findOne.mockResolvedValue(row);
+    m.redemptions.findOneAndUpdate
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(row);
     m.benefits.updateOne.mockResolvedValue({});
     m.daily.updateOne.mockResolvedValue({});
+    m.activities.create.mockResolvedValue({});
     jest.useFakeTimers().setSystemTime(new Date('2026-08-28T00:02:00Z'));
     await expect(
       m.service.confirm('one', 'r1', key, 'CONFIRM'),
     ).rejects.toThrow('만료');
-    expect(row.status).toBe('EXPIRED');
+    expect(m.redemptions.findOneAndUpdate).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ status: 'REQUESTED', expiresAt: { $lte: expect.any(Date) } }),
+      { $set: { status: 'EXPIRED', decidedAt: expect.any(Date) } },
+      { new: false },
+    );
     expect(m.benefits.updateOne).toHaveBeenCalledWith(
       { benefitId: 'b1', reservedCount: { $gt: 0 } },
       { $inc: { reservedCount: -1 } },

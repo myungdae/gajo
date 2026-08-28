@@ -433,24 +433,46 @@ export class PartnerService implements OnModuleInit {
     const p = await this.owned(slug, key);
     if (!['CONFIRM', 'DECLINE'].includes(decision))
       throw new BadRequestException('unsupported redemption decision');
-    const row: any = await this.redemptions.findOne({
-      redemptionId,
-      partnerId: p.partnerId,
-      status: 'REQUESTED',
-    });
-    if (!row) throw new NotFoundException();
     const now = new Date();
-    if (new Date(row.expiresAt) <= now) {
-      row.status = 'EXPIRED';
-      row.decidedAt = now;
-      await row.save();
-      await this.releaseReservation(row.benefitId, row.requestedAt);
+    const status = decision === 'CONFIRM' ? 'CONFIRMED' : 'DECLINED';
+    const row: any = await this.redemptions.findOneAndUpdate(
+      {
+        redemptionId,
+        partnerId: p.partnerId,
+        status: 'REQUESTED',
+        expiresAt: { $gt: now },
+      },
+      {
+        $set: {
+          status,
+          decidedAt: now,
+          ...(status === 'CONFIRMED' ? { confirmedAt: now } : {}),
+        },
+      },
+      { new: true },
+    );
+    if (!row) {
+      const stale: any = await this.redemptions.findOneAndUpdate(
+        {
+          redemptionId,
+          partnerId: p.partnerId,
+          status: 'REQUESTED',
+          expiresAt: { $lte: now },
+        },
+        { $set: { status: 'EXPIRED', decidedAt: now } },
+        { new: false },
+      );
+      if (!stale) throw new NotFoundException();
+      await this.releaseReservation(stale.benefitId, stale.requestedAt);
+      await this.event(
+        'BENEFIT_USE_EXPIRED',
+        { partnerId: stale.partnerId, regionId: stale.regionId },
+        stale.anonymousTripId,
+        { benefitId: stale.benefitId, redemptionId },
+        `redemption-decision:${redemptionId}`,
+      );
       throw new BadRequestException('사용 요청이 만료되었습니다.');
     }
-    row.status = decision === 'CONFIRM' ? 'CONFIRMED' : 'DECLINED';
-    row.decidedAt = now;
-    if (row.status === 'CONFIRMED') row.confirmedAt = now;
-    await row.save();
     if (row.status === 'DECLINED')
       await this.releaseReservation(row.benefitId, row.requestedAt);
     await this.event(

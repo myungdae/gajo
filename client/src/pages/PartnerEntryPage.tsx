@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { fetchPublicPartner, recordPartnerEntry, type PublicPartner } from "../api/client";
 import { ensureTripSession, saveTripSession } from "../tripSession";
 import { applyPartnerEntryToTrip } from "../partnerEntry";
+import { getRegionConfig } from "../regionConfig";
 export default function PartnerEntryPage() {
   const { partnerSlug = "" } = useParams(),
     navigate = useNavigate(),
@@ -38,12 +39,13 @@ export default function PartnerEntryPage() {
   }, [partnerSlug]);
   const start = () => {
     if (!partner) return;
+    const regionName = getRegionConfig(partner.regionId).regionName;
     navigate(`/${partner.regionId}/concierge?mode=NOW`, {
       state: {
         tripMode: "NOW",
         freeTextOpen: false,
-        entryMessage: `${partner.displayName}에서 ${partner.regionId === "hapcheon" ? "합천" : "지역"} 여행을 시작하셨군요.`,
-        entryDescription: partner.regionId === "hapcheon" ? "지금 갈 곳, 먹을 곳, 비 오는 날 코스를 AI가 함께 찾아드립니다." : undefined,
+        entryMessage: `${partner.displayName}에서 ${regionName} 여행을 시작하셨군요.`,
+        entryDescription: "지금 갈 곳, 먹을 곳, 비 오는 날 코스를 AI가 함께 찾아드립니다.",
       },
     });
   };
@@ -55,17 +57,17 @@ export default function PartnerEntryPage() {
           <p>{error}</p>
           <button
             className="btn btn-outline"
-            onClick={() => navigate("/hapcheon")}
+            onClick={() => navigate("/")}
           >
-            합천 여행 홈으로
+            여행 홈으로
           </button>
         </>
       ) : partner ? <>
         <small>파트너 QR로 시작하기</small>
-        <h1>{partner.displayName}에서 합천 여행을 시작하셨군요</h1>
+        <h1>{partner.displayName}에서 {getRegionConfig(partner.regionId).regionName} 여행을 시작하셨군요</h1>
         <p>지금 갈 곳, 먹을 곳, 비 오는 날 코스를 AI가 함께 찾아드립니다.</p>
         <p className="partner-entry-note">QR 방문확인이 아닌 여행 시작용 파트너 QR입니다.</p>
-        <button type="button" className="btn btn-primary" onClick={start}>합천 AI 여행 시작하기</button>
+        <button type="button" className="btn btn-primary" onClick={start}>{getRegionConfig(partner.regionId).regionName} AI 여행 시작하기</button>
       </> : <><h1>파트너 QR을 확인하고 있어요</h1><p>승인된 참여업체와 현재 여행을 안전하게 연결하는 중입니다.</p></>}
     </main>
   );
