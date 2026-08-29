@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { beginCurrentTurn, isCurrentTurn, resolveCurrentTurn } from "./currentTurnResult.ts";
 import { buildAiResponseActionModel } from "./aiResponseActions.ts";
+import { readFileSync } from "node:fs";
 const entity = (category: string, id: string) => ({ entityId: `https://hapcheon.example/ontology#${id}`, regionId: "hapcheon", programLabel: id, category, actions: { navigate: { latitude: 35.5, longitude: 128.1 } } });
 const discovery = (category: string, id: string) => ({ intentRoute: "PLACE_DISCOVERY", discovery: { category, entities: [entity(category, id), entity(category, `${id}-2`)] } });
 test("food to cafe to replan to knowledge replaces one current execution turn", () => {
@@ -17,3 +18,4 @@ test("food to cafe to replan to knowledge replaces one current execution turn", 
 test("late response cannot overwrite a newer turn", () => { const current = beginCurrentTurn("new", "카페 가고 싶어."); assert.equal(resolveCurrentTurn(current, "old", discovery("FOOD", "restaurant")), current); assert.equal(isCurrentTurn("old", current), false); });
 test("alternatives stay in the current category", () => { const result = discovery("CAFE", "lowful"); const next = buildAiResponseActionModel({ result, excludedEntityIds: [result.discovery.entities[0].entityId] })!; assert.equal(next.decision.entity.category, "CAFE"); });
 test("transient replacement does not mutate My Trip", () => { const trip = { anonymousTripId: "stable", savedPlaces: [entity("FOOD", "saved")] }; resolveCurrentTurn(beginCurrentTurn("new", "카페"), "new", discovery("CAFE", "lowful")); assert.equal(trip.anonymousTripId, "stable"); assert.equal(trip.savedPlaces[0].category, "FOOD"); });
+test("lodging dead-end response renders the Nearby CTA and restores conversation after browser back",()=>{const page=readFileSync(new URL("./pages/ConciergePage.tsx",import.meta.url),"utf8");assert.match(page,/!hasRecommendation && currentResult && \(currentResult\.nearbyDiscoveryIntent \|\| currentResult\.nearbyRestaurantIntent\)/);assert.match(page,/ResultPanel result=\{currentResult\} onFindNearbyRestaurants=\{openNearby\}/);assert.match(page,/state:\{category\}/);assert.match(page,/conversationSnapshot:\{messages,currentTurn,input,freeTextOpen\}/);assert.match(page,/entryState\?\.conversationSnapshot\?\.messages/);assert.match(page,/autoSubmit:false/)});

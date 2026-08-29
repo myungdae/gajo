@@ -46,7 +46,7 @@ export function explicitDestinationPhrases(message = ''): string[] {
   const single = parts[0];
   return single &&
     single.length <= 20 &&
-    !/보고|먹고|갔다가|들렀다가|먼저|숙소|펜션|호텔|카페|식당|온천/.test(single)
+    !/보고|먹고|갔다가|들렀다가|먼저|숙소|펜션|호텔|리조트|캠핑|글램핑|모텔|게스트\s*하우스|카페|식당|온천/.test(single)
     ? [single]
     : [];
 }
@@ -93,7 +93,7 @@ export function discoveryCategory(message = '') {
     )
   )
     return 'FOOD';
-  if (/숙박|자고\s*싶|묵고\s*싶|체크인/.test(message)) return 'LODGING';
+  if (/숙박|자고\s*싶|묵고\s*싶|잘\s*(?:곳|데)|체크인/.test(message)) return 'LODGING';
   return CATEGORY_PATTERNS.map(([category, pattern]) => ({
     category,
     index: message.search(pattern),
@@ -162,7 +162,7 @@ export function routeNaturalLanguageIntent(input: {
       intentRoute: 'REPLAN' as const,
       category: 'TOURISM_NATURE' as const,
     };
-  if (/(?:숙소|펜션|호텔)(?:로|에)\s*(?:갈래|가고|돌아)/.test(message))
+  if (/(?:숙소|펜션|호텔|리조트|캠핑|글램핑|모텔|게스트\s*하우스)(?:으?로|에)\s*(?:갈래|가고|돌아)/.test(message))
     return { intentRoute: 'REPLAN' as const, category: 'LODGING' as const };
   if (immediateEssentialNeed)
     return {
@@ -198,7 +198,7 @@ export function routeNaturalLanguageIntent(input: {
   if (input.inputMode !== 'FREE_TEXT' || !message)
     return { intentRoute: 'JOURNEY_PLAN' as const, category };
   if (
-    /지금|현재\s*위치|내\s*주변|오늘\s*(?:저녁|점심|아침|갈|먹)/.test(message)
+    /지금|현재\s*위치|내\s*주변|오늘\s*(?:저녁|점심|아침|갈|먹|잘|묵)/.test(message)
   )
     return { intentRoute: 'IMMEDIATE_NOW' as const, category };
   if (

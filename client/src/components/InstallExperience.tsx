@@ -8,7 +8,7 @@ import { clearInstallPrompt, currentInstallPrompt, installDismissalKey, installE
 export default function InstallExperience({usefulResult}:{usefulResult:boolean}){
   const region=useRegion(),location=useLocation(),session=ensureTripSession(region.id),key=installDismissalKey(region.id);
   const[prompt,setPrompt]=useState<BeforeInstallPromptEvent|null>(()=>currentInstallPrompt()),[dismissed,setDismissed]=useState(()=>sessionStorage.getItem(key)==='1'),[installed,setInstalled]=useState(()=>isStandalone()),[showGuide,setShowGuide]=useState(false);
-  const offered=useRef(false),platform=installPlatform(navigator.userAgent,navigator.vendor),source=new URLSearchParams(location.search).get('source')||'recommendation';
+  const offered=useRef(false),platform=installPlatform(navigator.userAgent,navigator.vendor),requestedSource=new URLSearchParams(location.search).get('source'),source=requestedSource==='standalone'?'standalone':'recommendation';
   useEffect(()=>subscribeToInstallPrompt(setPrompt),[]);
   useEffect(()=>{const completed=()=>{setInstalled(true);clearInstallPrompt();track('PWA_INSTALL_ACCEPTED',session.id,{source:'appinstalled'})};window.addEventListener('appinstalled',completed);return()=>window.removeEventListener('appinstalled',completed)},[session.id]);
   const mode=installExperienceMode({usefulResult,dismissed,standalone:installed,platform,promptAvailable:Boolean(prompt)}),visible=mode!=='hidden';

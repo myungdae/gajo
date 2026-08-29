@@ -5,7 +5,7 @@ import './guide.css';
 import { GlossaryText } from './components/GlossaryText';
 
 const popular = [
-  '지역 AI 컨시어지를 한마디로 설명하면 무엇인가요?',
+  '지역 AI 여행안내를 한마디로 설명하면 무엇인가요?',
   '여행 중에는 실제로 무엇을 해주나요?',
   '여행 계획이 갑자기 바뀌어도 되나요?',
   'ChatGPT·Gemini와 무엇이 다른가요?',
@@ -49,7 +49,7 @@ function GuideApp() {
   const restart = () => { if (window.confirm('이전 질문과 답변을 지우고 새 대화를 시작할까요?')) { setMessages([]); setAnswerToReveal(null); setInput(''); home(); } };
   return <main className="guide-shell">
     <section className="guide-landing" ref={landingRef} tabIndex={-1} aria-label="Guide 홈">
-      <header><span className="guide-kicker">CONCIERGE GUIDE COPILOT</span><h1>지역 AI 컨시어지</h1><p>무엇이 궁금하세요?</p></header>
+      <header><span className="guide-kicker">AI 여행안내 가이드</span><h1>지역 AI 여행안내</h1><p>무엇이 궁금하세요?</p></header>
       <form onSubmit={(event) => { event.preventDefault(); void send(); }} className="guide-composer"><label htmlFor="guide-question">질문을 입력하세요</label><div><textarea id="guide-question" value={input} onChange={(event) => setInput(event.target.value)} rows={2} maxLength={500} placeholder="예: 구글 지도가 있는데 왜 필요한가요?"/><button disabled={busy || !input.trim()}>{busy ? '답변 중…' : '질문하기'}</button></div></form>
       <section className="guide-popular"><h2>많이 묻는 질문</h2><div className="guide-popular-list" tabIndex={0} aria-label="많이 묻는 질문 목록, 스크롤하여 더 보기">{popular.map((question) => <button key={question} onClick={() => void send(question)}>{question}<span aria-hidden="true">→</span></button>)}</div></section>
       <section className="guide-perspective"><span>다른 관점으로 보기</span><div>{([['VISITOR', '관광객'], ['BUSINESS', '업체'], ['PUBLIC_SECTOR', '지자체']] as const).map(([value, label]) => <button key={value} className={audience === value ? 'selected' : ''} onClick={() => setAudience(value)}>{label} 입장</button>)}</div></section>

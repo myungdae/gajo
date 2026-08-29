@@ -55,6 +55,8 @@ export interface RegionConfig {
       titleLines?: string[];
       description: string;
       image?: string;
+      alt?: string;
+      overlay?: string;
     };
     question: string;
     supportingCopy: string;
@@ -156,6 +158,11 @@ export const GAJO_CONFIG: RegionConfig = {
   heroSubtitle: "오늘의 가조를 편안하게 만나보세요.",
   heroCopy: "계획할 때부터 여행 중인 지금까지, 필요한 다음 일정을 이어드려요.",
   home: {
+    hero: {
+      title: "가조에서, 여행의 다음을 찾으세요",
+      description: "여행 전 계획부터 현장의 맛집·숙소·길찾기, 상황이 달라진 뒤의 새 일정까지 이어드립니다.",
+      overlay: "#164d46",
+    },
     question: "가조 여행, 무엇을 도와드릴까요?",
     supportingCopy: "말씀하시거나 편하게 입력해 주세요.",
     examples: [
@@ -237,6 +244,11 @@ export const OKCHEON_CONFIG: RegionConfig = {
   heroSubtitle: "오늘의 옥천을 편안하게 만나보세요.",
   heroCopy: "문학과 전통문화가 이어지는 구읍 여행을 차분하게 준비해 보세요.",
   home: {
+    hero: {
+      title: "옥천의 풍경과 이야기를 이어가세요",
+      description: "여행 전 계획부터 현장의 맛집·숙소·길찾기, 상황이 달라진 뒤의 새 일정까지 이어드립니다.",
+      overlay: "#315f63",
+    },
     question: "옥천 여행, 무엇을 도와드릴까요?",
     supportingCopy: "말씀하시거나 편하게 입력해 주세요.",
     examples: [
@@ -476,7 +488,8 @@ export const HAPCHEON_CONFIG: RegionConfig = {
       title: "수려한 합천, 여행이 시작됩니다",
       titleLines: ["수려한 합천,", "여행이 시작됩니다"],
       description:
-        "자연과 문화가 어우러진 합천을 AI 여행도우미와 편하게 만나보세요.",
+        "여행 전 계획부터 현장의 맛집·숙소·길찾기, 상황이 달라진 뒤의 새 일정까지 이어드립니다.",
+      overlay: "#294f56",
     },
     question: "합천 여행, 무엇을 도와드릴까요?",
     supportingCopy: "말씀하시거나 편하게 입력해 주세요.",

@@ -54,7 +54,26 @@ const ALLOWED = new Set([
   'SEARCH_ENTITY_UNVERIFIED',
   'SEARCH_TO_ACTION_CONTINUED',
 ]);
-const PRIVATE = /raw|text|message|query|prompt/i;
+export const ANALYTICS_EVENT_TYPES = [...ALLOWED];
+export const ANALYTICS_METADATA_KEYS = new Set([
+  'regionId','administrativeLevel','parentRegionId','mode','source','intent',
+  'turnId','actionType','entityId','entityType','itemCount','journeyId','dayCount',
+  'hasFullJourney','savedPlaceCount','clearedCount','editScope','category','provider',
+  'location','candidateRegionIds','intentRoute','stage','platform','method','reason',
+  'interestId',
+]);
+export const ANALYTICS_SOURCES = new Set([
+  'appinstalled','standalone','recommendation','planning-entry','trip-management',
+  'local','server','saved-itinerary','demo-weather-change','live-runtime','itinerary-summary',
+]);
+export const ANALYTICS_INTENTS = new Set([
+  'first-time','place-now','food-now','two-hour-course','senior-comfort','rainy-day',
+  'events-today','nearby','nearby-lodging','free-talk',
+]);
+const REGIONS=new Set(['gajo','okcheon','muan','gyeryong','hapcheon','daejeon-junggu']);
+const PRIVATE_KEY=/raw|message|prompt|query|text|free.?text|anonymous.?trip|trip.?session|previous.?trip|session.?id|latitude|longitude|coordinates?|\blat\b|\blng\b/i;
+const DANGEROUS_KEY=/^(?:__proto__|prototype|constructor)$/i;
+const validString=(value:unknown,max=160)=>typeof value==='string'&&value.trim()===value&&value.length>0&&value.length<=max;
 @Injectable()
 export class AnalyticsService {
   constructor(
@@ -66,16 +85,18 @@ export class AnalyticsService {
     regionId?: string;
     metadata?: Record<string, unknown>;
   }) {
-    if (!input.sessionId || !input.regionId || !input.eventType || !ALLOWED.has(input.eventType))
+    if (!input||!validString(input.sessionId,128)||!validString(input.regionId,40)||!REGIONS.has(input.regionId!)||!input.eventType||!ALLOWED.has(input.eventType))
       return { accepted: false };
-    const metadata = Object.fromEntries(
-      Object.entries(input.metadata || {}).filter(
-        ([key, value]) =>
-          !PRIVATE.test(key) &&
-          ['string', 'number', 'boolean'].includes(typeof value),
-      ),
-    ) as Record<string, string | number | boolean>;
-    const regionId = input.regionId;
+    if(input.metadata===null||input.metadata===undefined)input.metadata={};
+    if(typeof input.metadata!=='object'||Array.isArray(input.metadata))return{accepted:false};
+    const entries=Object.entries(input.metadata);
+    if(entries.some(([key,value])=>DANGEROUS_KEY.test(key)||PRIVATE_KEY.test(key)||value===null||typeof value==='object'||!['string','number','boolean'].includes(typeof value)))return{accepted:false};
+    const metadata=Object.fromEntries(entries.filter(([key])=>ANALYTICS_METADATA_KEYS.has(key)))as Record<string,string|number|boolean>;
+    if(Object.values(metadata).some(value=>typeof value==='string'&&!validString(value,512)))return{accepted:false};
+    if(typeof metadata.source==='string'&&!ANALYTICS_SOURCES.has(metadata.source))return{accepted:false};
+    if(typeof metadata.intent==='string'&&!ANALYTICS_INTENTS.has(metadata.intent))return{accepted:false};
+    if(metadata.regionId!==undefined&&metadata.regionId!==input.regionId)return{accepted:false};
+    const regionId = input.regionId as string;
     metadata.regionId = regionId;
     await this.model.create({
       eventType: input.eventType,

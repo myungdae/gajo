@@ -8,3 +8,13 @@
 .home-conversation-first .home-conversation-form{width:100%;min-width:0}
 .home-voice-button.is-listening{color:var(--color-primary);background:#edf3ed}
 .home-voice-error{margin:8px 2px 0!important;color:#8a433a!important;font-size:12px!important}
+.home-regional-hero{position:relative;isolation:isolate;min-height:360px;margin:0 0 18px;display:flex;align-items:flex-end;overflow:hidden;border-radius:0 0 24px 24px;background-color:var(--hero-overlay);background-size:cover;background-position:center;color:#fff}
+.home-regional-hero::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,color-mix(in srgb,var(--hero-overlay) 94%,#000 6%) 0%,color-mix(in srgb,var(--hero-overlay) 72%,transparent) 68%,transparent 100%)}
+.home-regional-hero.awaiting-image::after{content:"";position:absolute;z-index:-1;right:-8%;bottom:-48%;width:72%;aspect-ratio:1;border:1px solid #ffffff1f;border-radius:46% 54% 0 0;box-shadow:-70px -42px 0 -1px #ffffff0b,-138px -76px 0 -1px #ffffff08;transform:rotate(-8deg)}
+.home-regional-hero-copy{width:min(100%,560px);padding:clamp(28px,7vw,48px) clamp(20px,6vw,42px)}
+.home-regional-hero-copy small{font-size:12px;font-weight:800;letter-spacing:.08em}
+.home-regional-hero-copy h1{margin:10px 0 14px;font-size:clamp(30px,7vw,46px);line-height:1.13;letter-spacing:-.045em;word-break:keep-all;text-shadow:0 2px 14px #0006}
+.home-regional-hero-copy h1 span{display:block}.home-regional-hero-copy p{max-width:34rem;margin:0;color:#fff;font-size:clamp(15px,2vw,18px);line-height:1.65;word-break:keep-all}
+.home-regional-hero-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:22px}.home-regional-hero-actions button{min-height:48px;padding:11px 17px;border-radius:10px;font:inherit;font-weight:800;cursor:pointer}.hero-main-action{border:1px solid #fff;background:#fff;color:var(--hero-overlay)}.hero-secondary-action{border:1px solid #ffffff80;background:#ffffff12;color:#fff}.home-regional-hero-actions button:focus-visible{outline:3px solid #f8d36b;outline-offset:3px}
+@media(max-width:430px){.home-regional-hero{min-height:410px}.home-regional-hero-copy{padding:78px 18px 24px}.home-regional-hero-copy h1{font-size:31px}.home-regional-hero-actions{display:grid}.home-regional-hero-actions button{width:100%}}
+@media(prefers-reduced-motion:reduce){.home-regional-hero *{scroll-behavior:auto!important;transition:none!important}}

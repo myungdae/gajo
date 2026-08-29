@@ -48,7 +48,7 @@ export default function PlatformPortalPage() {
           <h1 id="platform-hero-title"><span>대한민국 어디서든,</span><span>그 지역을 가장 잘 아는 AI와 여행하세요</span></h1>
           <p className="platform-hero-lead">메뉴를 배우지 마세요.<br />그냥 지금 상황을 말씀하세요.</p>
           <div className="platform-hero-actions">
-            <Link className="platform-primary-action" to="/regions">지역 AI 컨시어지 시작하기</Link>
+            <Link className="platform-primary-action" to="/regions">지역 AI 여행안내 시작하기</Link>
             <a className="platform-secondary-action" href="#why-exkovia">어떻게 다른가요?</a>
           </div>
         </div>

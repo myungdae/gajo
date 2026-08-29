@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const source = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
-const layout = source("./components/Layout.tsx"), itinerary = source("./pages/ItineraryPage.tsx"), conversation = source("./pages/ConciergePage.tsx"), guide = source("./guide-main.tsx"), portal = source("./portal-main.tsx"), css = source("./index.css");
+const layout = source("./components/Layout.tsx"), itinerary = source("./pages/ItineraryPage.tsx"), conversation = source("./pages/ConciergePage.tsx"), guide = source("./guide-main.tsx"), css = source("./index.css");
 
 test("Local Concierge visitor navigation and CTAs use AI 여행도우미", () => {
   assert.match(layout, /label: "AI 여행도우미"/);
@@ -11,9 +11,9 @@ test("Local Concierge visitor navigation and CTAs use AI 여행도우미", () =>
   assert.doesNotMatch(`${layout}\n${itinerary}`, /AI 컨시어지/);
 });
 
-test("professional Guide and Portal terminology remains Regional AI Concierge", () => {
-  assert.match(guide, /지역 AI 컨시어지/);
-  assert.match(portal, /Regional AI Concierge|REGIONAL AI CONCIERGE|AI 컨시어지/);
+test("public Guide uses plain travel language", () => {
+  assert.match(guide, /지역 AI 여행안내/);
+  assert.doesNotMatch(guide, /컨시어지|Concierge/i);
 });
 
 test("voice guidance appears once with examples and one privacy reassurance", () => {

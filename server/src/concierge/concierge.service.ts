@@ -303,9 +303,10 @@ export class ConciergeService {
         recommendation: null,
         intentRoute: route.intentRoute,
         visitorMessage:
-          '현재 여행에 확인된 숙소가 없습니다. 돌아갈 숙소 이름을 알려주시면 검증된 장소인지 확인해 드릴게요.',
+          '아직 저장한 숙소가 없습니다. 현재 위치 주변의 숙소를 찾아드릴까요?',
         nearbyRestaurantIntent: false,
-        nearbyDiscoveryIntent: false,
+        nearbyDiscoveryIntent: true,
+        nearbyCategory: this.nearbyLodgingCategory(input.rawMessage),
       };
     }
 
@@ -406,6 +407,15 @@ export class ConciergeService {
           }
         : {}),
     };
+  }
+
+  private nearbyLodgingCategory(message = '') {
+    if (/호텔|리조트/.test(message)) return 'LODGING_HOTEL_RESORT';
+    if (/펜션|민박/.test(message)) return 'LODGING_PENSION_MINBAK';
+    if (/캠핑|글램핑|야영|카라반/.test(message)) return 'LODGING_CAMPING_GLAMPING';
+    if (/모텔/.test(message)) return 'LODGING_MOTEL';
+    if (/게스트\s*하우스/.test(message)) return 'LODGING_GUESTHOUSE';
+    return 'LODGING';
   }
 
   private orderingMessage(destinations: any[]) {

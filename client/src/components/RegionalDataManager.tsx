@@ -11,7 +11,7 @@ const REGIONS = {
 } as Record<string, string>;
 const SOURCE_LABELS:Record<string,string>={OFFICIAL_LOCAL_GOV:"지자체 공식 정보",OFFICIAL_BUSINESS:"공식 사업자",KTO:"한국관광공사",OFFICIAL_MAP_LISTING:"공식 지도 정보",OTHER_VERIFIED_SOURCE:"기타 검증 출처"};
 const FIELD_LABELS:Record<string,string>={displayName:"이름",aliases:"별칭",entityType:"엔티티 유형",category:"카테고리",tags:"의미 태그",areaLabel:"권역",phone:"전화",address:"주소",latitude:"위도",longitude:"경도",websiteUrl:"홈페이지",reservationUrl:"예약 URL",operatingHours:"운영시간",closureDays:"휴무일",parking:"주차",accessibility:"접근성",walkingAccess:"보행 특성",shortDescription:"설명"};
-export default function RegionalDataManager() {
+export default function RegionalDataManager({onAdminTokenChange}:{onAdminTokenChange?:(token:string)=>void}={}) {
   const [data, setData] = useState<any>({ records: [], quality: {} }),
     [filters, setFilters] = useState({
       regionId: "",
@@ -158,7 +158,7 @@ export default function RegionalDataManager() {
       </div>
       <section className="regional-transfer" aria-label="데이터 관리">
         <h3>데이터 관리</h3><p className="text-muted">기본 가져오기는 방문객에게 보이지 않는 검증 대기 상태입니다.</p>
-        <input type="password" value={token} onChange={e=>setToken(e.target.value)} placeholder="관리자 쓰기 토큰" aria-label="데이터 관리 관리자 쓰기 토큰"/>
+        <input type="password" value={token} onChange={e=>setToken(e.target.value)} onBlur={()=>{if(token){sessionStorage.setItem("admin-write-token",token);onAdminTokenChange?.(token)}}} placeholder="관리자 쓰기 토큰" aria-label="데이터 관리 관리자 쓰기 토큰"/>
         <div className="regional-transfer-actions"><button className="btn btn-outline" onClick={exportData}>운영 데이터 내보내기</button><label className="btn btn-outline">데이터 가져오기<input type="file" accept="application/json,.json" onChange={e=>void chooseImport(e.target.files?.[0])}/></label></div>
         {importPackage&&<div className="regional-import-review"><p>지역: <b>{REGIONS[importPackage.regionId]||importPackage.regionId}</b> · 레코드: <b>{importPackage.records?.length??0}</b> · 스키마: <b>{importPackage.schemaVersion||"-"}</b></p><label><input type="checkbox" checked={trustedImport} onChange={e=>{setTrustedImport(e.target.checked);setImportPreview(undefined)}}/> 명시적 trusted verified import (즉시 활성화)</label><button className="btn btn-outline" onClick={previewImport}>가져오기 검토</button></div>}
         {importPreview&&<div className="regional-import-summary" role="status"><span>신규 {importPreview.newRecords}</span><span>충돌 {importPreview.conflicts}</span><span>변경 없음 {importPreview.unchangedRecords}</span><span>검증 대기 {importPreview.stagedRecords}</span><button className="btn btn-primary" onClick={applyImport}>{trustedImport?"검증 데이터 활성화":"검증 대기로 가져오기"}</button></div>}

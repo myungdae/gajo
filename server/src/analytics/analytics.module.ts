@@ -1,2 +1,3 @@
 import{Module}from'@nestjs/common';import{MongooseModule}from'@nestjs/mongoose';import{PilotEvent,PilotEventSchema}from'../schemas/pilot-event.schema';import{AnalyticsService}from'./analytics.service';import{AnalyticsController}from'./analytics.controller';
-@Module({imports:[MongooseModule.forFeature([{name:PilotEvent.name,schema:PilotEventSchema}])],providers:[AnalyticsService],controllers:[AnalyticsController],exports:[AnalyticsService]})export class AnalyticsModule{}
+import{RegionalDataModule}from'../regional-data/regional-data.module';import{PartnerModule}from'../partner/partner.module';
+@Module({imports:[MongooseModule.forFeature([{name:PilotEvent.name,schema:PilotEventSchema}]),RegionalDataModule,PartnerModule],providers:[AnalyticsService],controllers:[AnalyticsController],exports:[AnalyticsService]})export class AnalyticsModule{}

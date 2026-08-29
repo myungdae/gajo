@@ -122,7 +122,7 @@ export default function TripContinuity() {
           <div className="grid-2">
             <button className="btn btn-primary" onClick={() => {
               const next = archiveAndStartNewTrip(region.id);
-              track("NEW_TRIP_STARTED", next.id, { previousTripId: trip.anonymousTripId });
+              track("NEW_TRIP_STARTED", next.id);
               setConfirmingNew(false);
               setVisible(false);
             }}>새 여행 시작</button>

@@ -472,8 +472,8 @@ export async function importRegionalData(
   );
   return data;
 }
-export async function fetchPilotAnalytics() {
-  const { data } = await api.get("/analytics/summary");
+export async function fetchPilotAnalytics(token: string) {
+  const { data } = await api.get("/analytics/summary", { headers: { "x-admin-token": token } });
   return data;
 }
 

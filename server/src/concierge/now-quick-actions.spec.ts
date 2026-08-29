@@ -6,6 +6,7 @@ describe('NOW quick actions', () => {
     ['다음 어디 갈까요?', 'REPLAN', 'TOURISM_NATURE'],
     ['비가 와요', 'REPLAN', undefined],
     ['숙소로 갈래요', 'REPLAN', 'LODGING'],
+    ['오늘 잘 곳', 'IMMEDIATE_NOW', 'LODGING'],
   ])(
     '%s enters the existing AI intent pipeline',
     (rawMessage, intentRoute, category) =>

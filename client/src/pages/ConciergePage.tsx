@@ -112,6 +112,12 @@ export default function ConciergePage() {
     autoSubmit?: boolean;
     entryMessage?: string;
     entryDescription?: string;
+    conversationSnapshot?: {
+      messages: Message[];
+      currentTurn: CurrentTurnResult<ConciergeChatResponse> | null;
+      input: string;
+      freeTextOpen: boolean;
+    };
   } | null;
   const queryMode = new URLSearchParams(location.search)
     .get("mode")
@@ -121,7 +127,7 @@ export default function ConciergePage() {
     (queryMode === "PLAN" || queryMode === "NOW" ? queryMode : "GENERIC");
   const preset = getQuickStartPreset(entryState?.quickStartPreset);
   const tripSession = ensureTripSession(region.id);
-  const [messages, setMessages] = useState<Message[]>([
+  const [messages, setMessages] = useState<Message[]>(entryState?.conversationSnapshot?.messages || [
     {
       role: "ai",
       text:
@@ -133,9 +139,9 @@ export default function ConciergePage() {
             : "함께 오신 분, 머무는 시간, 이동 방법, 걷기 편한 정도를 알려주시면 알맞은 일정을 안내해 드릴게요.",
     },
   ]);
-  const [input, setInput] = useState(entryState?.initialMessage || "");
+  const [input, setInput] = useState(entryState?.conversationSnapshot?.input || entryState?.initialMessage || "");
   const [currentTurn, setCurrentTurn] =
-    useState<CurrentTurnResult<ConciergeChatResponse> | null>(null);
+    useState<CurrentTurnResult<ConciergeChatResponse> | null>(entryState?.conversationSnapshot?.currentTurn || null);
   const [conversationAnchor, setConversationAnchor] = useState<NonNullable<
     CreateContextInput["conversationalAnchor"]
   > | null>(null);
@@ -154,7 +160,7 @@ export default function ConciergePage() {
   const [requestError, setRequestError] = useState(false);
   const [locationFreshnessNotice,setLocationFreshnessNotice]=useState<{label?:string;confirmedAt?:string}|null>(null);
   const [freeTextOpen, setFreeTextOpen] = useState(
-    Boolean(entryState?.freeTextOpen),
+    entryState?.conversationSnapshot?.freeTextOpen ?? Boolean(entryState?.freeTextOpen),
   );
   const [structuredDraft, setStructuredDraft] = useState<CreateContextInput>(
     () =>
@@ -178,6 +184,10 @@ export default function ConciergePage() {
     structured?: CreateContextInput;
   } | null>(null);
   const allowStaleLocationOnceRef=useRef(false);
+  const openNearby=(category?:ConciergeChatResponse["nearbyCategory"])=>{
+    navigate(`${location.pathname}${location.search}`,{replace:true,state:{...entryState,autoSubmit:false,conversationSnapshot:{messages,currentTurn,input,freeTextOpen}}});
+    queueMicrotask(()=>navigate(regionLink("/nearby-discovery"),{state:{category}}));
+  };
   const {
     listening,
     voiceSupported,
@@ -799,9 +809,7 @@ export default function ConciergePage() {
           <UnderstoodContext result={latestRecommendation} />
           <ResultPanel
             result={latestRecommendation}
-            onFindNearbyRestaurants={() =>
-              navigate(regionLink("/nearby-discovery"))
-            }
+            onFindNearbyRestaurants={openNearby}
           />
           <FullJourneySave
             itinerary={latestRecommendation.recommendation?.itinerary}
@@ -843,6 +851,12 @@ export default function ConciergePage() {
           {loading && (
             <div className="loading">이어서 살펴보고 있습니다...</div>
           )}
+        </div>
+      )}
+
+      {!hasRecommendation && currentResult && (currentResult.nearbyDiscoveryIntent || currentResult.nearbyRestaurantIntent) && (
+        <div className="recommendation-journey-start nearby-fallback-action">
+          <ResultPanel result={currentResult} onFindNearbyRestaurants={openNearby} />
         </div>
       )}
 
@@ -1110,7 +1124,7 @@ function ResultPanel({
   onFindNearbyRestaurants,
 }: {
   result: ConciergeChatResponse;
-  onFindNearbyRestaurants: () => void;
+  onFindNearbyRestaurants: (category?: ConciergeChatResponse["nearbyCategory"]) => void;
 }) {
   const rec = result.recommendation;
   const itinerarySteps: any[] = rec?.itinerary?.steps || rec?.steps || [];
@@ -1146,15 +1160,13 @@ function ResultPanel({
               margin: "6px 0 10px",
             }}
           >
-            현재 위치를 기준으로 맛집, 카페, 숙박, 온천, 체험 등 실제 주변
-            장소를 찾아볼 수 있어요. 보여주고, 선택하시면 도보 경로와 길찾기까지
-            안내해드립니다.
+            현재 위치를 확인한 뒤 선택한 종류의 주변 장소를 보여드리고 지도·전화·길찾기로 이어드려요.
           </p>
           <button
             className="btn btn-primary btn-block"
-            onClick={onFindNearbyRestaurants}
+            onClick={() => onFindNearbyRestaurants(result.nearbyCategory)}
           >
-            주변 즐길거리 찾기
+            {result.nearbyCategory?.startsWith("LODGING") ? "주변 숙소 찾기" : "주변 장소 찾기"}
           </button>
         </div>
       )}

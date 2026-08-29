@@ -8,9 +8,11 @@ import { archiveAndStartNewTrip, createTripSession, loadTripSession, saveTripSes
 const source = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
 const memory = () => { const values = new Map<string, string>(); return { getItem: (key: string) => values.get(key) || null, setItem: (key: string, value: string) => values.set(key, value) }; };
 
-test("Hapcheon owns the Phase 1.5 hero without leaking it to another region", () => {
-  assert.deepEqual(REGION_CONFIGS.hapcheon.home.hero, { title: "수려한 합천, 여행이 시작됩니다", titleLines: ["수려한 합천,", "여행이 시작됩니다"], description: "자연과 문화가 어우러진 합천을 AI 여행도우미와 편하게 만나보세요." });
-  for (const [id, region] of Object.entries(REGION_CONFIGS)) if (id !== "hapcheon") assert.equal(region.home.hero, undefined);
+test("regional Hero content is configured without a Hapcheon-only component", () => {
+  assert.equal(REGION_CONFIGS.hapcheon.home.hero?.title, "수려한 합천, 여행이 시작됩니다");
+  for (const id of ["gajo", "okcheon", "hapcheon"] as const) assert.ok(REGION_CONFIGS[id].home.hero?.title);
+  assert.match(source("./pages/HomePage.tsx"), /<RegionalHero region=\{region\}/);
+  assert.doesNotMatch(source("./components/RegionalHero.tsx"), /hapcheon|okcheon|gajo/);
 });
 test("same Seoul date and previous Seoul date use distinct continuation labels", () => {
   const now = new Date("2026-08-28T05:00:00Z");
@@ -35,9 +37,9 @@ test("Home action cards enter the existing PLAN and NOW routes and confirmation 
   assert.match(home, /여행을 계획하고 싶어요/); assert.match(home, /지금 어디로 갈까요\?/);
   assert.match(continuity, /onClick=\{\(\) => setConfirmingNew\(true\)\}/); assert.match(continuity, /archiveAndStartNewTrip\(region\.id\)/);
 });
-test("Hapcheon quick entry opens the existing lodging Nearby category", () => {
+test("every regional Home opens the existing lodging Nearby category", () => {
   const home = source("./pages/HomePage.tsx"), nearby = source("./pages/NearbyRestaurantsPage.tsx");
-  assert.match(home, /근처 숙소/); assert.match(home, /link\('\/nearby'\)/); assert.match(home, /category:'LODGING'/);
+  assert.match(home, /근처 숙소/); assert.match(home, /link\('\/nearby-discovery'\)/); assert.match(home, /findNearby\('LODGING'\)/);
   assert.match(nearby, /nearbyUiCategory\(routeState\?\.category\)/); assert.match(nearby, /nearbyGroupFor\(initialCategory\)\.id/);
 });
 test("NOW copy and all five existing intent actions remain wired to send", () => {
