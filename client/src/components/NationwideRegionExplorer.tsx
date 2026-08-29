@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import ExkoRegionKnowledgeLink from './ExkoRegionKnowledgeLink';
 import { findNationwideRegion, REGION_STATUS_LABELS, regionsForParent, searchNationwideRegions, TOP_LEVEL_REGIONS, type NationwideRegion } from '../nationwideRegions';
@@ -25,21 +25,37 @@ function RegionCard({ region }: { region: NationwideRegion }) {
   </article>;
 }
 
-export default function NationwideRegionExplorer({ initialRegionId }: { initialRegionId?: string }) {
+export default function NationwideRegionExplorer({ routeRegionId, routed = false }: { routeRegionId?: string; routed?: boolean }) {
   const navigate = useNavigate();
-  const initial = findNationwideRegion(initialRegionId);
-  const [selectedParent, setSelectedParent] = useState(initial?.parentId ?? initial?.id ?? TOP_LEVEL_REGIONS[0].id);
-  const [mobileDetail, setMobileDetail] = useState(Boolean(initialRegionId));
+  const routeRegion = routed && routeRegionId ? findNationwideRegion(routeRegionId) : undefined;
+  const routeParent = routeRegion?.parentId ?? routeRegion?.id;
+  const invalidRoute = routed && Boolean(routeRegionId) && !routeRegion;
+  const [embeddedParent, setEmbeddedParent] = useState(TOP_LEVEL_REGIONS[0].id);
+  const selectedParent = routeParent ?? embeddedParent;
+  const [mobileDetail, setMobileDetail] = useState(Boolean(routeRegionId && routeRegion));
   const [query, setQuery] = useState('');
   const results = useMemo(() => searchNationwideRegions(query), [query]);
   const children = regionsForParent(selectedParent);
   const selected = findNationwideRegion(selectedParent)!;
+
+  useEffect(() => {
+    if (!routed) return;
+    setQuery('');
+    setMobileDetail(Boolean(routeRegionId && routeRegion));
+    if (invalidRoute) navigate('/regions', { replace: true });
+  }, [invalidRoute, navigate, routeRegion, routeRegionId, routed]);
+
   const selectParent = (id: string) => {
-    setSelectedParent(id);
     setMobileDetail(true);
     setQuery('');
-    navigate(`/regions/${id}`, { replace: false });
+    if (routed) {
+      if (routeRegionId !== id) navigate(`/regions/${id}`, { replace: false });
+      return;
+    }
+    setEmbeddedParent(id);
   };
+
+  if (invalidRoute) return <section className="nationwide-explorer" aria-labelledby="nationwide-title"><div className="platform-section-heading"><p className="platform-kicker">EXPLORE KOREA</p><h2 id="nationwide-title">지역을 찾을 수 없습니다</h2><p>전국 지역 목록으로 이동합니다.</p></div></section>;
 
   return <section className="nationwide-explorer" aria-labelledby="nationwide-title">
     <div className="platform-section-heading">

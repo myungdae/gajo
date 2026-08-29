@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
 import ConciergePage from './pages/ConciergePage';
@@ -27,6 +27,7 @@ export default function App() {
           <Route path="/" element={<RootEntry />} />
           <Route path="/regions" element={<RegionSelectionPage />} />
           <Route path="/regions/:regionId" element={<RegionSelectionPage />} />
+          <Route path="/regions/:regionId/*" element={<Navigate to="/regions" replace />} />
           <Route path="/go/:partnerSlug" element={<PartnerEntryPage />} />
           <Route path="/visit/:partnerSlug" element={<PartnerVisitPage />} />
           <Route path="/partners/apply" element={<PartnerApplicationPage />} />
