@@ -681,8 +681,17 @@
 .region-child-heading strong { margin-left:auto; color:#63766c; font-size:13px; white-space:nowrap; }
 .region-mobile-back { display:none; }
 .region-explorer-results { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
-.region-explorer-card { min-width:0; min-height:178px; padding:20px; display:flex; flex-direction:column; border:1px solid var(--exko-line); border-radius:16px; background:#fff; }
+.region-explorer-card { position:relative; min-width:0; min-height:178px; padding:20px; display:flex; flex-direction:column; border:1px solid var(--exko-line); border-radius:16px; background:#fff; }
 .region-explorer-card.status-ai_live,.region-explorer-card.status-field_test { border-color:#83a995; }
+.region-service-corsage { position:absolute; z-index:1; top:-7px; left:12px; width:38px; height:46px; overflow:visible; pointer-events:none; filter:drop-shadow(0 3px 4px #173c2d2b); }
+.region-service-corsage-flower { fill:#fffaf0; stroke:#b99a4b; stroke-width:1; }
+.region-service-corsage-center { fill:#c99a35; stroke:#fff4d9; stroke-width:2; }
+.region-service-corsage-ribbon { fill:#174c3a; stroke:#0d3e2e; stroke-width:1; }
+.status-field_test .region-service-corsage { opacity:.78; }
+.status-field_test .region-service-corsage-flower { fill:#f5f2e7; stroke:#9bad92; }
+.status-field_test .region-service-corsage-center { fill:#b9a46a; }
+.status-field_test .region-service-corsage-ribbon { fill:#587867; stroke:#456756; }
+.region-explorer-card:has(.region-service-corsage) .region-explorer-card-heading { padding-left:36px; }
 .region-explorer-card-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
 .region-explorer-card-heading small { color:#6b7d74; font-size:11px; }
 .region-explorer-card h3 { margin:6px 0 0; font-size:20px; word-break:keep-all; }
@@ -709,4 +718,7 @@
   .region-explorer-results { grid-template-columns:1fr; }
   .region-explorer-card { min-height:156px; }
   .nationwide-explorer { padding-block:58px; }
+}
+@media (forced-colors:active) {
+  .region-service-corsage { forced-color-adjust:none; filter:none; }
 }

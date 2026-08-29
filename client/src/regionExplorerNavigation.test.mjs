@@ -138,3 +138,21 @@ test('embedded Portal explorer stays local and does not create route or storage 
   assert.equal(document.querySelector('link[rel="manifest"]'), null);
   await unmount(root);
 });
+
+test('service corsages decorate only live and field-test region cards', async () => {
+  for (const [parentId, expectedStatuses] of [
+    ['gyeongnam', ['FIELD_TEST', 'AI_LIVE']],
+    ['chungbuk', ['FIELD_TEST']],
+    ['seoul', []],
+  ]) {
+    const { root } = await renderAt([`/regions/${parentId}`]);
+    const corsages = [...document.querySelectorAll('.region-service-corsage')];
+    assert.deepEqual(corsages.map((corsage) => corsage.getAttribute('data-service-status')), expectedStatuses);
+    for (const corsage of corsages) {
+      assert.equal(corsage.getAttribute('aria-hidden'), 'true');
+      assert.equal(corsage.getAttribute('focusable'), 'false');
+      assert.equal(corsage.getAttribute('tabindex'), null);
+    }
+    await unmount(root);
+  }
+});

@@ -13,8 +13,31 @@ function RegionAction({ region }: { region: NationwideRegion }) {
   return <p className="region-explorer-unavailable">아직 AI 여행안내가 제공되지 않습니다.</p>;
 }
 
+function hasServiceCorsage(status: NationwideRegion['status']) {
+  return status === 'AI_LIVE' || status === 'FIELD_TEST';
+}
+
+function ServiceCorsage({ status }: { status: NationwideRegion['status'] }) {
+  if (!hasServiceCorsage(status)) return null;
+
+  return <svg className="region-service-corsage" data-service-status={status} aria-hidden="true" focusable="false" viewBox="0 0 48 58">
+    <path className="region-service-corsage-ribbon" d="M19 33 12 55l11-6 4 8 4-24Z" />
+    <path className="region-service-corsage-ribbon" d="m29 33 7 22-11-6-4 8-4-24Z" />
+    <g className="region-service-corsage-flower">
+      <ellipse cx="24" cy="12" rx="8" ry="11" />
+      <ellipse cx="35" cy="18" rx="8" ry="11" transform="rotate(60 35 18)" />
+      <ellipse cx="35" cy="30" rx="8" ry="11" transform="rotate(120 35 30)" />
+      <ellipse cx="24" cy="36" rx="8" ry="11" />
+      <ellipse cx="13" cy="30" rx="8" ry="11" transform="rotate(60 13 30)" />
+      <ellipse cx="13" cy="18" rx="8" ry="11" transform="rotate(120 13 18)" />
+      <circle className="region-service-corsage-center" cx="24" cy="24" r="7" />
+    </g>
+  </svg>;
+}
+
 function RegionCard({ region }: { region: NationwideRegion }) {
   return <article className={`region-explorer-card status-${region.status.toLowerCase()}`}>
+    <ServiceCorsage status={region.status} />
     <div className="region-explorer-card-heading">
       <div><small>{REGION_STATUS_LABELS[region.status]}</small><h3>{region.displayName ?? region.name}</h3></div>
       <span className="region-explorer-status" aria-label={`서비스 상태: ${REGION_STATUS_LABELS[region.status]}`}>{REGION_STATUS_LABELS[region.status]}</span>
