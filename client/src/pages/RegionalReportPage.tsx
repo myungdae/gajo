@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { entrySourceLabel, featureLabel } from "../regionalReportPresentation";
+import {
+  canonicalRegionalReportPath,
+  regionalReportRegion,
+  reportScopeMatchesRoute,
+} from "../regionalReportRouting";
 import "./regional-report.css";
 type Cell = {
   status: "AVAILABLE" | "SUPPRESSED" | "PREPARING";
@@ -15,22 +21,38 @@ const value = (v: Cell | number | undefined) =>
       ? Number(v.total || 0).toLocaleString()
       : v?.label || "측정 준비 중";
 export default function RegionalReportPage() {
-  const [token, setToken] = useState(
+  const navigate = useNavigate(),
+    { regionId: routeRegionId } = useParams(),
+    routeRegion = regionalReportRegion(routeRegionId),
+    unsupportedRegion = Boolean(routeRegionId && !routeRegion),
+    [token, setToken] = useState(
       () => sessionStorage.getItem("regional-report-token") || "",
     ),
     [period, setPeriod] = useState("7d"),
-    [report, setReport] = useState<any>(),
+    [reportState, setReport] = useState<any>(),
     [error, setError] = useState(""),
     [loading, setLoading] = useState(false);
   const load = async (current = token) => {
-    if (!current) return;
+    if (!current || unsupportedRegion) return;
     setLoading(true);
     setError("");
+    setReport(undefined);
     try {
       const { data } = await api.get("/regional-report", {
-        params: { period },
+        params: { period, ...(routeRegion ? { regionId: routeRegion.id } : {}) },
         headers: { "x-regional-report-token": current },
       });
+      const responseRegion = regionalReportRegion(data?.region?.id);
+      if (
+        !responseRegion ||
+        !reportScopeMatchesRoute(routeRegion?.id, responseRegion.id)
+      )
+        throw new Error("Regional report scope mismatch");
+      sessionStorage.setItem("regional-report-token", current);
+      if (!routeRegion)
+        navigate(canonicalRegionalReportPath(responseRegion.id), {
+          replace: true,
+        });
       setReport(data);
     } catch {
       setReport(undefined);
@@ -43,10 +65,9 @@ export default function RegionalReportPage() {
     if (token) void load();
     // A period change refreshes the already-authenticated report. Token submission is explicit.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period]);
+  }, [period, routeRegionId]);
   const login = (e: FormEvent) => {
     e.preventDefault();
-    sessionStorage.setItem("regional-report-token", token);
     void load();
   };
   const logout = () => {
@@ -55,11 +76,26 @@ export default function RegionalReportPage() {
     setReport(undefined);
     setError("");
   };
+  const report =
+    reportState &&
+    reportScopeMatchesRoute(routeRegion?.id, reportState.region?.id)
+      ? reportState
+      : undefined;
+  if (unsupportedRegion)
+    return (
+      <section className="report-login">
+        <div className="report-brand">EXKOVIA</div>
+        <h1>지원하지 않는 지역 리포트</h1>
+        <p>등록된 지역 운영 리포트 주소인지 확인해 주세요.</p>
+      </section>
+    );
   if (!report)
     return (
       <section className="report-login">
         <div className="report-brand">EXKOVIA</div>
-        <h1>현장 운영 리포트</h1>
+        <h1>
+          {routeRegion ? `${routeRegion.regionName} 현장 운영 리포트` : "현장 운영 리포트"}
+        </h1>
         <p>지역 운영자용 읽기 전용 화면입니다.</p>
         <form onSubmit={login}>
           <label htmlFor="report-token">읽기 전용 접근 키</label>

@@ -36,6 +36,7 @@ export default function App() {
           <Route path="/partner/console" element={<PartnerConsolePage />} />
           <Route path="/region/apply" element={<RegionAdoptionPage />} />
           <Route path="/regional-report" element={<RegionalReportPage />} />
+          <Route path="/:regionId/regional-report" element={<RegionalReportPage />} />
           <Route path="/partners/:partnerSlug/manage" element={<PartnerConsolePage />} />
           <Route path="/gajo" element={<HomePage />} />
           <Route path="/okcheon" element={<HomePage />} />

@@ -5,6 +5,11 @@ import {
   entrySourceLabel,
   featureLabel,
 } from "./regionalReportPresentation.ts";
+import {
+  canonicalRegionalReportPath,
+  regionalReportRegion,
+  reportScopeMatchesRoute,
+} from "./regionalReportRouting.ts";
 const page = readFileSync(
     new URL("./pages/RegionalReportPage.tsx", import.meta.url),
     "utf8",
@@ -16,6 +21,7 @@ const page = readFileSync(
   app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
 test("regional report is read-only, header-authenticated, and has fixed periods", () => {
   assert.match(app, /path="\/regional-report"/);
+  assert.match(app, /path="\/:regionId\/regional-report"/);
   assert.match(page, /x-regional-report-token/);
   assert.match(
     page,
@@ -35,6 +41,17 @@ test("regional report is read-only, header-authenticated, and has fixed periods"
     page,
     /sessionStorage\.removeItem\(["']regional-report-token["']\)/,
   );
+});
+test("regional report canonical routes reuse the registry and reject mismatched scope", () => {
+  assert.equal(canonicalRegionalReportPath("hapcheon"), "/hapcheon/regional-report");
+  assert.equal(regionalReportRegion("hapcheon")?.regionName, "합천");
+  assert.equal(regionalReportRegion("future-unknown"), undefined);
+  assert.equal(reportScopeMatchesRoute("hapcheon", "hapcheon"), true);
+  assert.equal(reportScopeMatchesRoute(undefined, "hapcheon"), true);
+  assert.equal(reportScopeMatchesRoute("okcheon", "hapcheon"), false);
+  assert.match(page, /navigate\(canonicalRegionalReportPath\(responseRegion\.id\)/);
+  assert.match(page, /setReport\(undefined\)/);
+  assert.match(page, /지원하지 않는 지역 리포트/);
 });
 test("responsive report supplies touch and focus boundaries", () => {
   assert.match(css, /min-height:\s*44px/);

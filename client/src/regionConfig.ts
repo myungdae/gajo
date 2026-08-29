@@ -727,6 +727,11 @@ export const REGION_CONFIGS: Record<RegionId, RegionConfig> = {
 export const REGION_CONFIG = GAJO_CONFIG;
 export const REGION_INTEREST_OPTIONS = [...GAJO_CONFIG.interests];
 export const REGION_PLACE_SUGGESTIONS = [...GAJO_CONFIG.places];
+export function findRegionConfig(value?: string | null) {
+  return value && Object.prototype.hasOwnProperty.call(REGION_CONFIGS, value)
+    ? REGION_CONFIGS[value as RegionId]
+    : undefined;
+}
 export function setActiveRegionConfig(config: RegionConfig) {
   REGION_INTEREST_OPTIONS.splice(
     0,
@@ -740,19 +745,7 @@ export function setActiveRegionConfig(config: RegionConfig) {
   );
 }
 export function getRegionConfig(value?: string | null) {
-  return REGION_CONFIGS[
-    value === "okcheon"
-      ? "okcheon"
-      : value === "muan"
-        ? "muan"
-        : value === "gyeryong"
-          ? "gyeryong"
-          : value === "hapcheon"
-            ? "hapcheon"
-            : value === "daejeon-junggu"
-              ? "daejeon-junggu"
-              : "gajo"
-  ];
+  return findRegionConfig(value) || GAJO_CONFIG;
 }
 const campaigns: Record<string, QuickIntentId> = {
   "next-place": "place-now",

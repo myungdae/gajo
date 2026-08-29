@@ -48,4 +48,12 @@ describe('RegionalReportController boundary', () => {
       .expect(200, { region: { id: 'hapcheon' }, period: { key: '30d' } });
     expect(report).toHaveBeenCalledWith('hapcheon', '30d');
   });
+  it('accepts a matching canonical region and ignores body scope', async () => {
+    await request(app.getHttpServer())
+      .get('/api/regional-report?period=7d&regionId=hapcheon')
+      .send({ regionId: 'okcheon' })
+      .set('x-regional-report-token', 'h'.repeat(32))
+      .expect(200, { region: { id: 'hapcheon' }, period: { key: '7d' } });
+    expect(report).toHaveBeenCalledWith('hapcheon', '7d');
+  });
 });
