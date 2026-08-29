@@ -52,11 +52,13 @@ test("saved-place collection is independent with restrained persistent removal",
   assert.match(page, /담아둔 곳/);
   assert.match(page, /모두 방문하지 않아도 괜찮아요/);
   assert.match(page, /<details\s+className="saved-place-menu">/);
-  assert.match(page, /내 여행에서 빼기/);
+  assert.match(page, /담아둔 곳에서 빼기/);
   assert.match(page, /removeSavedPlace/);
   assert.match(item, /collection/);
   assert.match(item, /!collection\s*&&\s*\(/);
 });
+test("stored full journey wins over a stale route snapshot after returning",()=>{const page=source("./pages/ItineraryPage.tsx");assert.match(page,/tripSession\.itinerary as any\)\?\.savedAsFullJourney[\s\S]*location\.state\?\.result/)});
+test("nearby location step names the target and shows provider type plus address",()=>{const bar=source("./components/LocationContextBar.tsx"),nearby=source("./pages/NearbyRestaurantsPage.tsx");assert.match(nearby,/searchTarget=\{nearbyLabel\(category\)\}/);assert.match(bar,/찾을 기준 위치를 선택하세요/);assert.match(bar,/검색 기준 장소/);assert.match(bar,/providerCategoryName/);assert.match(bar,/roadAddress/)});
 test("full journey remains ordered while saved places render separately", () => {
   const page = source("./pages/ItineraryPage.tsx"),
     journey = source("./journeyExecution.ts");

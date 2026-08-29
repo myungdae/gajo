@@ -56,8 +56,7 @@ export default function ItineraryPage() {
   );
   const [result, setResult] = useState<ConciergeChatResponse | undefined>(
     () =>
-      location.state?.result ||
-      (hasFullJourney
+      ((tripSession.itinerary as any)?.savedAsFullJourney
         ? ({
             context: tripSession.runtimeContext,
             recommendation: {
@@ -65,7 +64,7 @@ export default function ItineraryPage() {
               reasonSummary: "저장한 여행 일정을 순서대로 보여드려요.",
             },
           } as ConciergeChatResponse)
-        : undefined),
+        : location.state?.result),
   );
   const [proposal, setProposal] = useState<ReplanningProposal | null>(null);
   const [runtimeMessage, setRuntimeMessage] = useState("");
@@ -584,7 +583,7 @@ function SavedPlacesSection({
                 className="btn btn-text"
                 onClick={() => onRemove(entityId)}
               >
-                내 여행에서 빼기
+                담아둔 곳에서 빼기
               </button>
             </details>
           </article>

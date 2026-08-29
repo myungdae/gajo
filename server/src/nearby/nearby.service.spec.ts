@@ -41,6 +41,26 @@ describe('NearbyService', () => {
     const [row] = await new NearbyService(config({ KAKAO_REST_API_KEY: 'key' })).search('LODGING', 35.7, 128);
     expect(row.availabilityMessage).toBe('예약 가능 여부는 숙소에 직접 확인해 주세요.');
   });
+  it('keeps all-lodging results inside the provider AD5 boundary',async()=>{
+    jest.spyOn(global,'fetch').mockImplementation(async(input:any)=>response({documents:String(input).includes('category_group_code=AD5')?[document('AD5','합천호 스마일펜션')]:[{...document('','오도산자연휴양림'),id:'forest',category_group_code:'AT4',category_name:'여행 > 관광명소 > 자연휴양림'}],meta:{is_end:true}}));
+    const rows=await new NearbyService(config({KAKAO_REST_API_KEY:'key'})).search('LODGING',35.7,128,5000);
+    expect(rows.map(row=>row.name)).toEqual(['합천호 스마일펜션']);
+    expect(rows.every(row=>row.providerCategoryName.includes('숙박'))).toBe(true);
+  });
+  it('does not infer lodging from accommodation-like words without provider evidence',()=>{
+    expect(normalizeNearbyCategory('오도산자연휴양림','여행 > 관광명소','AT4','OTHER')).toBe('TOURISM_NATURE');
+    expect(normalizeNearbyCategory('이름뿐인 펜션','여행 > 관광명소','','OTHER')).toBe('TOURISM_NATURE');
+    expect(normalizeNearbyCategory('복합 휴양시설','여행 > 숙박 > 펜션','')).toBe('LODGING');
+  });
+  it('ranks location anchors by region and removes unsuitable school candidates',async()=>{
+    jest.spyOn(global,'fetch').mockResolvedValue(response({documents:[
+      {...document('','합천홀씨유치원'),id:'school',category_name:'교육 > 유치원',address_name:'경상남도 합천군'},
+      {...document('','합천호회양관광단지'),id:'tourism',category_name:'여행 > 관광명소',address_name:'경상남도 합천군'},
+      {...document('','합천군청'),id:'office',category_name:'사회 > 관공서',address_name:'경상남도 합천군'},
+    ],meta:{is_end:true}}));
+    const regions={get:jest.fn(()=>({regionName:'합천'}))}as any,rows=await new NearbyService(config({KAKAO_REST_API_KEY:'key'}),undefined,undefined,regions).searchByKeyword('합천','hapcheon');
+    expect(rows.map(row=>row.id)).toEqual(['tourism','office']);
+  });
   it('uses Kakao lodging evidence for camping and keeps distance order',async()=>{
     jest.spyOn(global,'fetch').mockResolvedValue(response({documents:[
       {...document('AD5','가까운 캠핑장'),id:'near',distance:'120'},

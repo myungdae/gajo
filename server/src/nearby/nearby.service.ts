@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { MasterDataService } from '../master-data/master-data.service';
 import { RegionalDataService } from '../regional-data/regional-data.service';
 import { REGIONAL_CANDIDATE_DATASETS } from '../regions/regional-candidate.registry';
+import { RegionConfigService } from '../region/region-config.service';
 
 export type NearbyCategory =
   | 'FOOD' | 'CAFE' | 'LODGING' | 'HOT_SPRING_WELLNESS'
@@ -73,7 +74,7 @@ type NearbyPlan = { codes: string[]; keywords: string[]; providerGroup?: 'FOOD' 
 const PLANS: Record<NearbyCategory, NearbyPlan> = {
   FOOD: { codes: ['FD6'], keywords: ['약선요리', '건강식당', '사찰음식', '채식뷔페'] },
   CAFE: { codes: ['CE7'], keywords: ['카페'] },
-  LODGING: { codes: ['AD5'], keywords: ['호텔', '모텔', '펜션', '숙박시설'] },
+  LODGING: { codes: ['AD5'], keywords: ['호텔', '모텔', '펜션', '숙박시설'], providerGroup: 'LODGING' },
   TOURIST_ATTRACTION: { codes: ['AT4'], keywords: [], providerGroup: 'TOURISM' },
   NATURE: { codes: [], keywords: ['자연명소', '자연휴양림', '수목원'], providerGroup: 'TOURISM' },
   CULTURE_ART: { codes: [], keywords: ['박물관', '미술관', '문화예술'], providerGroup: 'TOURISM' },
@@ -112,7 +113,7 @@ const PLANS: Record<NearbyCategory, NearbyPlan> = {
 export function normalizeNearbyCategory(name: string, providerCategory = '', code = '', requested?: NearbyCategory): NearbyCategory {
   const text = `${name} ${providerCategory}`;
   if (code === 'CE7' || /카페|커피|다방/.test(text)) return 'CAFE';
-  if (code === 'AD5' || /호텔|모텔|펜션|민박|숙박|리조트/.test(text)) return 'LODGING';
+  if (code === 'AD5' || /(?:^|\s|>)숙박(?:\s|>|$)/.test(providerCategory) || providerCategory === 'ACCOMMODATION' || (!providerCategory && /호텔|모텔|펜션|민박|숙박|리조트/.test(name))) return 'LODGING';
   if (/온천|사우나|찜질|스파|웰니스|spa/i.test(text)) return 'HOT_SPRING_WELLNESS';
   if (/스크린\s*골프|골프연습장/.test(text)) return 'GOLF_SCREEN_GOLF';
   if (code === 'AT4' || /관광|공원|산책|자연|명소/.test(text)) return 'TOURISM_NATURE';
@@ -147,7 +148,7 @@ function providerSupportsRequestedCategory(requested: NearbyCategory, code = '',
 @Injectable()
 export class NearbyService {
   private readonly logger = new Logger(NearbyService.name);
-  constructor(private readonly config: ConfigService, @Optional() private readonly master?: MasterDataService, @Optional() private readonly regionalData?: RegionalDataService) {}
+  constructor(private readonly config: ConfigService, @Optional() private readonly master?: MasterDataService, @Optional() private readonly regionalData?: RegionalDataService, @Optional() private readonly regions?:RegionConfigService) {}
   private get kakaoKey() { return (this.config.get<string>('KAKAO_REST_API_KEY') || process.env.KAKAO_REST_API_KEY)?.trim() || undefined; }
   private get timeoutMs() { const n = Number(this.config.get('KAKAO_LOCAL_TIMEOUT_MS') || 5000); return Number.isFinite(n) && n >= 500 && n <= 30000 ? n : 5000; }
   isConfigured() { return !!this.kakaoKey; }
@@ -184,8 +185,14 @@ export class NearbyService {
     if(origin){url.searchParams.set('x',String(origin.longitude));url.searchParams.set('y',String(origin.latitude));url.searchParams.set('sort','distance')}
     const data=await this.kakaoGet(url,key),byId=new Map<string,NearbyPlace>();
     for(const item of data.documents)this.upsert(byId,item,'OTHER',query);
-    return[...byId.values()].map(place=>({...place,regionId}));
+    const normalizedQuery=this.normalizeSearchText(query),regionTokens=this.regionTokens(regionId);
+    return[...byId.values()].map(place=>({...place,regionId})).filter(place=>!this.isUnsuitableLocationAnchor(place.providerCategoryName)).sort((a,b)=>this.locationAnchorScore(b,normalizedQuery,regionTokens)-this.locationAnchorScore(a,normalizedQuery,regionTokens)||(a.distanceMeters??Infinity)-(b.distanceMeters??Infinity));
   }
+
+  private normalizeSearchText(value:string){return value.replace(/\s/g,'').toLowerCase()}
+  private regionTokens(regionId:string){try{return[this.regions?.get(regionId).regionName].filter((value):value is string=>Boolean(value))}catch{return[]}}
+  private isUnsuitableLocationAnchor(category:string){return /유치원|어린이집|학교|학원/.test(category)}
+  private locationAnchorScore(place:NearbyPlace,query:string,regionTokens:string[]){const name=this.normalizeSearchText(place.name),address=`${place.roadAddress||''} ${place.address||''}`;return(name===query?100:0)+(name.startsWith(query)?40:0)+(name.includes(query)?20:0)+(regionTokens.some(token=>address.includes(token))?30:0)+(/관공서|행정기관|관광명소|문화시설|교통시설/.test(place.providerCategoryName)?10:0)}
 
   async reverseGeocode(latitude:number,longitude:number){const key=this.kakaoKey;if(!key)throw new NearbyServiceError('NOT_CONFIGURED','주소 확인은 현재 준비 중입니다.');const url=new URL('https://dapi.kakao.com/v2/local/geo/coord2address.json');url.searchParams.set('x',String(longitude));url.searchParams.set('y',String(latitude));const data=await this.kakaoGet(url,key,false),document=data.documents?.[0],address=document?.road_address||document?.address;if(!address)return{status:'EMPTY' as const,label:'주소를 확인하지 못했습니다.'};const region1=address.region_1depth_name||'',region2=address.region_2depth_name||'',region3=address.region_3depth_name||'';return{status:'RESOLVED' as const,label:[region1,region2,region3].filter(Boolean).join(' '),address:address.address_name||'',region1,region2,region3}}
 

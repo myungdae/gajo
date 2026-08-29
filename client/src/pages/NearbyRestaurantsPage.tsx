@@ -83,7 +83,7 @@ export default function NearbyRestaurantsPage() {
       {NEARBY_GROUPS.filter(group=>group.id===categoryGroup).map(group=><div id={`nearby-options-${group.id}`} role="tabpanel" className="nearby-subcategories" key={group.id}>{group.options.map(item=><button key={item.id} type="button" disabled={loading} className={category===item.id?'active':''} aria-pressed={category===item.id} onClick={()=>{setCategory(item.id);setRadius(1000)}}><span aria-hidden="true">{category===item.id?'✓':''}</span>{item.label}</button>)}</div>)}
       {isLodgingCategory(category)&&<div className="nearby-lodging-actions"><div><strong>숙소 찾기</strong><p>주변 숙소 후보를 찾습니다. 예약 가능 여부는 숙소에 직접 확인해 주세요.</p></div>{tripSession.plannedContext?.accommodationIntents?.[0]&&<Link to={`/${region.id}/concierge`} state={{quickStartPreset:'saved-lodging'}}><span>저장된 숙소</span><b>{tripSession.plannedContext.accommodationIntents[0].label}로 돌아가기</b></Link>}</div>}
     </section>
-    {!anchor&&<LocationContextBar mode="NOW" onConfirmed={location=>{setPlaces([]);setSelected(null);setRadius(1000);setSearchedAt(undefined);setOrigin([location.latitude!,location.longitude!]);setDistanceTrusted(true)}}/>}
+    {!anchor&&<LocationContextBar mode="NOW" searchTarget={nearbyLabel(category)} onConfirmed={location=>{setPlaces([]);setSelected(null);setRadius(1000);setSearchedAt(undefined);setOrigin([location.latitude!,location.longitude!]);setDistanceTrusted(true)}}/>}
     {notice && <div className="card location-confidence-message"><p>{notice}</p></div>}
     {loading && <div className="loading">주변 장소를 찾고 있어요…</div>}{error && <div className="card status-warning">{error}</div>}
     {!loading && !error && origin && <>

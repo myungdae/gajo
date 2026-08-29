@@ -1,6 +1,6 @@
 import { canonicalEntityId } from "./recommendationItem.ts";
 import { itinerarySteps } from "./journeyExecution.ts";
-import { loadTripSession, saveTripSession, type TripSession } from "./tripSession.ts";
+import { loadTripSession, updateLatestTripSession, type TripSession } from "./tripSession.ts";
 
 export type ItineraryEdit =
   | { type: "REPLACE"; replacement: any }
@@ -13,9 +13,10 @@ const reorder=(steps:any[])=>steps.map((step,index)=>({...step,order:index+1}));
 export function editItineraryItem(regionId:string,entityId:string,edit:ItineraryEdit,storage:Pick<Storage,"getItem"|"setItem">=localStorage):ItineraryEditResult{
   const session=loadTripSession(storage,regionId);
   if(!session||session.regionId!==regionId)return{status:"not-found"};
-  const steps=itinerarySteps(session.itinerary),index=steps.findIndex(step=>canonicalEntityId(step)===entityId);
+  const matches=(step:any)=>step.itemId===entityId||(!step.itemId&&canonicalEntityId(step)===entityId),steps=itinerarySteps(session.itinerary),index=steps.findIndex(matches);
   if(index<0)return{status:"not-found"};
   const selected=steps[index];
+  const selectedEntityId=canonicalEntityId(selected)||entityId;
   if(selected.status==="COMPLETED")return{status:"blocked",reason:"완료한 일정은 방문 기록을 보호하기 위해 수정할 수 없습니다."};
   let nextSteps=[...steps],replacementId:string|undefined;
   if(edit.type==="REPLACE"){
@@ -31,14 +32,15 @@ export function editItineraryItem(regionId:string,entityId:string,edit:Itinerary
   }else nextSteps[index]={...selected,scheduledTime:edit.scheduledTime||undefined};
   nextSteps=reorder(nextSteps);
   const statuses={...(session.execution?.statusByEntityId||{})};
-  const oldStatus=statuses[entityId];delete statuses[entityId];
+  const oldStatus=statuses[selectedEntityId];delete statuses[selectedEntityId];
   if(replacementId&&oldStatus)statuses[replacementId]=oldStatus;
   let current=session.execution?.currentEntityId;
-  if(current===entityId){
+  if(current===selectedEntityId){
     if(replacementId)current=replacementId;
     else current=canonicalEntityId(nextSteps[Math.min(index,nextSteps.length-1)])||undefined;
   }
-  const updated=saveTripSession({...session,itinerary:{...((session.itinerary as object)||{}),steps:nextSteps},execution:{...session.execution,currentEntityId:current,statusByEntityId:statuses}},storage);
+  const updated=updateLatestTripSession(regionId,session.anonymousTripId,latest=>({...latest,itinerary:{...((latest.itinerary as object)||{}),steps:nextSteps},execution:{...latest.execution,currentEntityId:current,statusByEntityId:statuses}}),storage);
+  if(!updated)return{status:"blocked",reason:"변경 내용을 저장하지 못했습니다. 다시 시도해 주세요."};
   return{status:"updated",session:updated};
 }
 
