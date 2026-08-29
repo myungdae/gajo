@@ -35,6 +35,11 @@ test("Home action cards enter the existing PLAN and NOW routes and confirmation 
   assert.match(home, /여행을 계획하고 싶어요/); assert.match(home, /지금 어디로 갈까요\?/);
   assert.match(continuity, /onClick=\{\(\) => setConfirmingNew\(true\)\}/); assert.match(continuity, /archiveAndStartNewTrip\(region\.id\)/);
 });
+test("Hapcheon quick entry opens the existing lodging Nearby category", () => {
+  const home = source("./pages/HomePage.tsx"), nearby = source("./pages/NearbyRestaurantsPage.tsx");
+  assert.match(home, /근처 숙소/); assert.match(home, /link\('\/nearby'\)/); assert.match(home, /category:'LODGING'/);
+  assert.match(nearby, /nearbyUiCategory\(routeState\?\.category\)/); assert.match(nearby, /nearbyGroupFor\(initialCategory\)\.id/);
+});
 test("NOW copy and all five existing intent actions remain wired to send", () => {
   const concierge = source("./pages/ConciergePage.tsx"), actions = source("./nowQuickActions.ts");
   assert.ok(actions.includes('NOW_HEADING = "지금 무엇을 하고 싶으세요?"')); assert.ok(actions.includes('["지금 무엇을", "하고 싶으세요?"]')); assert.match(concierge, /배가 고프거나, 잠시 쉬고 싶거나/); assert.match(concierge, /NowImmediateActions onSelect=\{\(label\) => send\(label\)\}/);

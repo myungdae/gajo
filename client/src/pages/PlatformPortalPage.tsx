@@ -5,10 +5,10 @@ import ExkoRegionKnowledgeLink from '../components/ExkoRegionKnowledgeLink';
 import NationwideRegionExplorer from '../components/NationwideRegionExplorer';
 
 const journeyStages = [
-  { stage: 'PLAN', copy: '부모님과 합천 하루 여행하고 싶어요.' },
-  { stage: 'NOW', copy: '지금 오후 4시고 여기까지 봤어요.' },
-  { stage: 'RE-PLAN', copy: '비가 오고 어머니가 좀 힘들어하세요.' },
-  { stage: 'ACTION', copy: '그럼 가까운 곳부터 갈게. 길찾기 해줘.' },
+  { stage: 'PLAN', korean: '여행 전', copy: '부모님과 합천 하루 여행하고 싶어요.' },
+  { stage: 'NOW', korean: '여행 중', copy: '지금 오후 4시고 여기까지 봤어요.' },
+  { stage: 'RE-PLAN', korean: '상황 변화', copy: '비가 오고 어머니가 좀 힘들어하세요.' },
+  { stage: 'ACTION', korean: '바로 이동', copy: '그럼 가까운 곳부터 갈게. 길찾기 해줘.' },
 ];
 
 const regions = [
@@ -25,7 +25,7 @@ const entrances = [
 
 const differenceQuestions = [
   { question: 'T맵이나 카카오맵과 무엇이 다른가요?', answer: '지도는 장소를 찾고 경로를 비교해 내비게이션으로 이동하는 데 강합니다. EXKOVIA는 그 기능을 대신하지 않습니다. 현재 위치와 현지시간, 날씨, 여행 상태를 함께 살핀 뒤 여러 후보와 이유를 제시하고 지도·길찾기로 연결합니다.' },
-  { question: 'ChatGPT에 여행 일정을 물으면 되지 않나요?', answer: '범용 AI는 질문과 일반 지식에 답하는 데 강합니다. EXKOVIA는 지역의 확인된 정보와 TripSession, 저장 장소를 이어 보며 PLAN → NOW → RE-PLAN → ACTION 흐름이 여행 중 끊기지 않도록 돕습니다.' },
+  { question: 'ChatGPT에 여행 일정을 물으면 되지 않나요?', answer: '범용 AI는 질문과 일반 지식에 답하는 데 강합니다. EXKOVIA는 지역의 확인된 정보와 지금까지의 일정·방문 장소·저장 장소를 이어 보며 PLAN → NOW → RE-PLAN → ACTION 흐름이 여행 중 끊기지 않도록 돕습니다.' },
   { question: '지자체 관광 홈페이지와 무엇이 다른가요?', answer: '관광 홈페이지의 신뢰할 수 있는 지역 정보를 다시 만드는 대신, 여행자의 지금 상황에 맞는 후보로 연결합니다. 역사·문화·자연 정보는 출처와 상태를 구분하고 실제 이동·전화·내 여행 저장 같은 다음 행동으로 이어갑니다.' },
   { question: '여행 중 위치·날씨·시간이 바뀌면 무엇을 해주나요?', answer: '확인된 현재 위치와 현지시간, 날씨, 남은 여행 상태를 다시 반영해 다음 순서를 제안합니다. 확인되지 않은 GPS 방문이나 영업 여부를 실제 사실처럼 말하지 않고 현장 확인이 필요한 정보는 분명히 표시합니다.' },
   { question: '지역 업소는 혜택이나 광고비 없이도 참여할 수 있나요?', answer: '혜택·할인·파트너 여부는 추천 순위를 사는 수단이 아닙니다. 관련성과 거리, 여행 맥락을 바탕으로 여러 후보와 선택 이유를 보여주며 특정 업소 한 곳을 근거 없이 정답처럼 단정하지 않습니다.' },
@@ -54,7 +54,7 @@ export default function PlatformPortalPage() {
 
         <ol className="platform-journey" aria-label="EXKOVIA 여행 흐름">
           {journeyStages.map((item, index) => <li key={item.stage}>
-            <div><span>{item.stage}</span><small>{String(index + 1).padStart(2, '0')}</small></div>
+            <div><span>{item.stage}<em>{item.korean}</em></span><small>{String(index + 1).padStart(2, '0')}</small></div>
             <p>“{item.copy}”</p>
           </li>)}
         </ol>
@@ -105,7 +105,7 @@ export default function PlatformPortalPage() {
           </article>})}
         </div>
         <div className="platform-lifecycle" aria-label="EXKOVIA 여행 연결 흐름">
-          {['PLAN', 'NOW', '상황 변화', 'RE-PLAN', 'ACTION'].map((step, index) => <span key={step}>{step}{index < 4 && <i aria-hidden="true">→</i>}</span>)}
+          {journeyStages.map((step, index) => <span key={step.stage}>{step.stage}<small>{step.korean}</small>{index < 3 && <i aria-hidden="true">→</i>}</span>)}
         </div>
       </section>
     </main>

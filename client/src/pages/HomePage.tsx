@@ -22,6 +22,7 @@ export default function HomePage(){
   const contextualTitle=resolved.intent?.title||entryCopy[resolved.entrySource],examples=region.home.examples.slice(0,3);
   const secondaryIntents=region.quickIntents.filter(intent=>['first-time','food-now','place-now','senior-comfort','nearby','events-today'].includes(intent.id));
   const chooseMode=(mode:'PLAN'|'NOW')=>{session();navigate(link(`/concierge?mode=${mode.toLowerCase()}`),{state:{tripMode:mode}})};
+  const findLodging=()=>{const current=session();track('QUICK_INTENT_SELECTED',current.id,{intent:'nearby-lodging'});navigate(link('/nearby'),{state:{category:'LODGING'}})};
   const hero=region.home.hero;
   return <div className="home-page home-conversation-first" style={{'--region-accent':region.accent}as React.CSSProperties}>
     <section className="hero home-identity" style={hero?.image?{backgroundImage:`linear-gradient(#1238,#1238),url(${hero.image})`}:region.id==='hapcheon'?undefined:region.home.heroImage?{backgroundImage:`linear-gradient(#1238,#1238),url(${region.home.heroImage})`}:undefined}>{region.id!=='hapcheon'&&<small>{region.regionName} 여행 안내</small>}<h2 aria-label={hero?.title}>{hero?.titleLines?.map(line=><span className="home-hero-title-line" key={line}>{line}</span>)||hero?.title||region.home.brandLine||region.heroTitle}</h2><p>{hero?.description||contextualTitle||region.heroSubtitle}</p>{region.id!=='hapcheon'&&<span>{region.serviceName}</span>}</section>
@@ -34,6 +35,6 @@ export default function HomePage(){
     </section>
     <section className="mode-entry" aria-label="여행 시작 방법" style={region.id==='hapcheon'?{gridTemplateColumns:'minmax(0, 1fr)'}:undefined}><button type="button" onClick={()=>chooseMode('PLAN')}><span className="mode-entry-icon" aria-hidden="true">✦</span><b>여행을 계획하고 싶어요</b><small>일정과 가볼 곳을 함께 만들어 드려요.</small></button><button type="button" onClick={()=>chooseMode('NOW')}><span className="mode-entry-icon" aria-hidden="true">→</span><b>지금 어디로 갈까요?</b><small>식당·카페·관광지 등 지금 필요한 곳을 찾아드려요.</small></button></section>
     {region.id==='hapcheon'&&<p className="home-no-signup">회원가입 없이 바로 시작할 수 있어요</p>}
-    <section className="home-quick-intents" aria-labelledby="home-shortcuts"><h2 id="home-shortcuts">바로 찾기</h2><div>{secondaryIntents.map(intent=><button type="button" key={intent.id} onClick={()=>open(intent)}>{intent.title}</button>)}</div></section>
+    <section className="home-quick-intents" aria-labelledby="home-shortcuts"><h2 id="home-shortcuts">바로 찾기</h2><div>{secondaryIntents.map(intent=><button type="button" key={intent.id} onClick={()=>open(intent)}>{intent.title}</button>)}{region.id==='hapcheon'&&<button type="button" onClick={findLodging}>근처 숙소</button>}</div></section>
   </div>
 }

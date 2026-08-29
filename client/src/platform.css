@@ -131,6 +131,7 @@
   padding: 0;
   list-style: none;
 }
+.platform-journey li span em,.platform-lifecycle span small { margin-left:7px; color:#62766c; font-size:.68em; font-style:normal; font-weight:650; }
 .platform-journey li {
   padding: 16px 0;
   display: grid;
@@ -580,7 +581,8 @@
   }
   .platform-hero h1,
   .platform-heading h1 {
-    font-size: 34px;
+    font-size: 30px;
+    line-height: 1.12;
   }
   .platform-hero-actions {
     align-items: stretch;
