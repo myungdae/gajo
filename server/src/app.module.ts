@@ -26,6 +26,7 @@ import { PartnerModule } from './partner/partner.module';
 import { ExkoSemanticModule } from './exko-semantic/exko-semantic.module';
 import { CopilotModule } from './copilot/copilot.module';
 import { GuideModule } from './guide/guide.module';
+import { RegionalReportModule } from './regional-report/regional-report.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { GuideModule } from './guide/guide.module';
     ExkoSemanticModule,
     CopilotModule,
     GuideModule,
+    RegionalReportModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -432,6 +432,18 @@ describe('benefit policy and redemption trust', () => {
       m.service.confirm('one', 'redeem-x', key, 'CONFIRM'),
     ).rejects.toBeInstanceOf(NotFoundException);
   });
+  it('rejects benefit confirmation when the authenticated partner is not public-operating', async () => {
+    const m = models();
+    m.partners.findOne.mockResolvedValue({
+      ...operating,
+      status: 'DRAFT',
+      qrStatus: 'INACTIVE',
+    });
+    await expect(
+      m.service.confirm('one', 'r1', key, 'CONFIRM'),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(m.redemptions.findOneAndUpdate).not.toHaveBeenCalled();
+  });
   it('claims an owner decision with one atomic REQUESTED transition', async () => {
     const m = models();
     m.partners.findOne.mockResolvedValue(operating);

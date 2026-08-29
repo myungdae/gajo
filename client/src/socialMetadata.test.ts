@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
-import {appSurface} from './regionRouting.ts';
+import {appSurface,shouldRegisterVisitorPwa} from './regionRouting.ts';
 
 const root=new URL('../',import.meta.url),read=(name:string)=>readFileSync(new URL(name,root),'utf8');
 const exkovia=read('exkovia.html'),gajo=read('index.html'),nginx=read('nginx.conf'),css=read('src/platform.css');
@@ -15,3 +15,4 @@ test('Nginx never converts missing static assets or branding files into SPA HTML
 test('unknown hosts cannot reach platform region or QR surfaces',()=>{for(const path of['/','/partner/apply','/region/apply','/hapcheon','/hapcheon/concierge','/go/example','/visit/example'])assert.equal(appSurface(path,'?platform=exkovia','unknown.example'),'UNSUPPORTED')});
 test('Korean platform headings use keep-all without removing responsive overflow guards',()=>{assert.match(css,/platform-hero h1[^]*word-break:\s*keep-all/);assert.match(css,/platform-entrances h2[^]*word-break:\s*keep-all/);assert.match(css,/platform-cta[^]*word-break:\s*keep-all/);assert.match(css,/overflow-x:\s*hidden/);assert.match(css,/@media \(max-width: 430px\)/)});
 test('social image is a real 1200 by 630 PNG and icons exist',()=>{const image=new URL('public/branding/exkovia-social-1200x630.png',root),data=readFileSync(image);assert.equal(data.subarray(0,8).toString('hex'),'89504e470d0a1a0a');assert.equal(data.readUInt32BE(16),1200);assert.equal(data.readUInt32BE(20),630);for(const name of['public/branding/exkovia-favicon.svg','public/branding/exkovia-mark.svg','public/branding/exkovia-icon-192.png','public/branding/exkovia-icon-512.png'])assert.equal(existsSync(new URL(name,root)),true,name)});
+test('regional report is noindex and excluded from the regional PWA bootstrap',()=>{assert.match(nginx,/location = \/regional-report \{[^}]*X-Robots-Tag "noindex, nofollow" always/);assert.match(gajo,/platformPaths = \[[^\]]*'\/regional-report'/);for(const host of['exkovia.com','gajo.odex.kr','localhost'])assert.equal(shouldRegisterVisitorPwa('/regional-report','',host),false)});

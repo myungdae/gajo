@@ -1,0 +1,232 @@
+.regional-report,
+.report-login {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 40px 24px 70px;
+  color: #20332e;
+}
+.report-login {
+  max-width: 460px;
+  padding-top: 12vh;
+}
+.report-brand {
+  color: #315e54;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+}
+.readonly-badge {
+  display: inline-block;
+  margin-left: 12px;
+  padding: 5px 9px;
+  border: 1px solid #9ab5ac;
+  border-radius: 999px;
+  color: #315e54;
+  font-size: 12px;
+  font-weight: 800;
+}
+.regional-report header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: end;
+  padding-bottom: 25px;
+  border-bottom: 1px solid #d7e0dc;
+}
+.regional-report h1 {
+  margin: 12px 0 6px;
+  font-size: clamp(28px, 4vw, 44px);
+  letter-spacing: -0.045em;
+}
+.regional-report h2 {
+  margin: 36px 0 14px;
+  font-size: 20px;
+}
+.regional-report header p {
+  margin: 0;
+  color: #65736e;
+}
+.report-logout {
+  min-height: 44px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border: 1px solid #aebdb7;
+  background: transparent;
+  color: #29463e;
+  font: inherit;
+  cursor: pointer;
+}
+.period-tabs {
+  display: flex;
+  gap: 6px;
+}
+.period-tabs button,
+.report-login button {
+  min-height: 44px;
+  padding: 9px 15px;
+  border: 1px solid #aebdb7;
+  background: #fff;
+  color: #29463e;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.period-tabs button[aria-pressed="true"],
+.report-login button {
+  border-color: #315e54;
+  background: #315e54;
+  color: #fff;
+}
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-top: 22px;
+}
+.metric-card,
+.funnel-card {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #d5dfdb;
+  background: #fff;
+}
+.metric-card span,
+.metric-card small,
+.funnel-card span {
+  display: block;
+  color: #68766f;
+  font-size: 12px;
+}
+.metric-card strong {
+  display: block;
+  margin: 13px 0 4px;
+  font-size: 30px;
+}
+.funnel-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.funnel-card small {
+  color: #7c948b;
+  font-weight: 800;
+}
+.funnel-card h3 {
+  margin: 18px 0 9px;
+}
+.funnel-card strong {
+  display: block;
+  min-height: 32px;
+  font-size: 20px;
+}
+.report-note,
+.empty-state {
+  padding: 14px;
+  background: #f1f5f3;
+  color: #566861;
+}
+.report-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+}
+.compact-list {
+  border-top: 2px solid #315e54;
+}
+.compact-list > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 4px;
+  border-bottom: 1px solid #dce3e0;
+}
+.compact-list small {
+  font-weight: 400;
+  color: #6a7772;
+}
+.partner-table {
+  overflow-x: auto;
+  border-top: 2px solid #315e54;
+}
+.partner-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.4fr) repeat(5, minmax(100px, 1fr));
+  min-width: 720px;
+  border-bottom: 1px solid #dce3e0;
+}
+.partner-row > * {
+  padding: 13px 8px;
+}
+.partner-head {
+  background: #f1f5f3;
+  font-size: 12px;
+  font-weight: 800;
+}
+.regional-report footer {
+  margin-top: 38px;
+  padding: 22px;
+  border-left: 4px solid #315e54;
+  background: #edf3f0;
+}
+.regional-report footer p {
+  margin: 7px 0;
+}
+.report-login form {
+  display: grid;
+  gap: 9px;
+  margin-top: 25px;
+}
+.report-login input {
+  min-height: 46px;
+  padding: 0 12px;
+  border: 1px solid #9fada8;
+  font: inherit;
+}
+.report-error {
+  color: #9b2c2c;
+}
+.regional-report button:focus-visible,
+.report-login input:focus-visible,
+.report-login button:focus-visible {
+  outline: 3px solid #bc7a3b;
+  outline-offset: 3px;
+}
+@media (max-width: 760px) {
+  .regional-report,
+  .report-login {
+    padding: 24px 16px 60px;
+  }
+  .regional-report header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .period-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .summary-grid .metric-card:last-child {
+    grid-column: 1/-1;
+  }
+  .funnel-grid,
+  .report-columns {
+    grid-template-columns: 1fr;
+  }
+  .metric-card strong {
+    font-size: 26px;
+  }
+}
+@media (max-width: 380px) {
+  .regional-report {
+    padding-inline: 12px;
+  }
+  .metric-card,
+  .funnel-card {
+    padding: 14px;
+  }
+  .period-tabs button {
+    padding-inline: 8px;
+  }
+}

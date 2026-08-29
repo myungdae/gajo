@@ -473,6 +473,10 @@ export class PartnerService implements OnModuleInit {
     decision: string,
   ) {
     const p = await this.owned(slug, key);
+    if (!isPublicPartner(p))
+      throw new ForbiddenException(
+        '운영 중인 승인 파트너만 혜택을 확인할 수 있습니다.',
+      );
     if (!['CONFIRM', 'DECLINE'].includes(decision))
       throw new BadRequestException('unsupported redemption decision');
     const now = new Date();
