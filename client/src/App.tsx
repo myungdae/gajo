@@ -26,6 +26,7 @@ export default function App() {
         <Route element={<Layout />}>
           <Route path="/" element={<RootEntry />} />
           <Route path="/regions" element={<RegionSelectionPage />} />
+          <Route path="/regions/:regionId" element={<RegionSelectionPage />} />
           <Route path="/go/:partnerSlug" element={<PartnerEntryPage />} />
           <Route path="/visit/:partnerSlug" element={<PartnerVisitPage />} />
           <Route path="/partners/apply" element={<PartnerApplicationPage />} />

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import '../platform.css';
 import ExkoRegionKnowledgeLink from '../components/ExkoRegionKnowledgeLink';
+import NationwideRegionExplorer from '../components/NationwideRegionExplorer';
 
 const journeyStages = [
   { stage: 'PLAN', copy: '부모님과 합천 하루 여행하고 싶어요.' },
@@ -75,6 +76,8 @@ export default function PlatformPortalPage() {
           </article>)}
         </div>
       </section>
+
+      <NationwideRegionExplorer />
 
       <section className="platform-section platform-audiences" aria-labelledby="audiences-title">
         <div className="platform-section-heading">

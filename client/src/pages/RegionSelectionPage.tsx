@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import '../platform.css';
-const regions=[{name:'합천',active:true,copy:'자연과 문화가 어우러진 합천을 AI 여행도우미와 만나보세요.'},{name:'가조'},{name:'옥천'},{name:'거창'},{name:'함안'}];
-export default function RegionSelectionPage(){return <div className="platform-page"><header className="platform-header"><Link to="/" className="platform-brand">EXKOVIA</Link><span>여행 지역 선택</span></header><main className="platform-main platform-narrow"><section className="platform-heading"><small>여행자</small><h1>어느 지역을 여행하세요?</h1><p>현재 실제 운영 중인 지역부터 차례로 연결합니다.</p></section><section className="region-choice-list">{regions.map(r=><article key={r.name} className={r.active?'is-active':'is-coming'}><div><h2>{r.name}</h2><p>{r.copy||'지역 AI 여행안내를 준비하고 있습니다.'}</p></div>{r.active?<Link className="platform-cta" to="/hapcheon">여행 시작하기 <span aria-hidden="true">→</span></Link>:<span className="coming-badge">준비 중</span>}</article>)}</section></main></div>}
+import NationwideRegionExplorer from '../components/NationwideRegionExplorer';
+
+export default function RegionSelectionPage(){const {regionId}=useParams();return <div className="platform-page"><header className="platform-header"><Link to="/" className="platform-brand">EXKOVIA</Link><span>전국 지역 선택</span></header><main className="platform-main region-directory-main"><NationwideRegionExplorer initialRegionId={regionId}/></main></div>}

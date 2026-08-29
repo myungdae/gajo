@@ -665,3 +665,48 @@
 .structured-intake-heading::after {
   display: none;
 }
+.region-directory-main { width:min(1380px,100%); }
+.nationwide-explorer { padding:clamp(66px,8vw,108px) 0; border-top:1px solid var(--exko-line); }
+.region-search { max-width:720px; display:grid; gap:8px; margin-bottom:26px; color:#425c51; font-weight:750; }
+.region-search input { width:100%; min-height:52px; padding:12px 16px; border:1px solid #aebdb4; border-radius:12px; background:#fff; color:var(--exko-ink); font:inherit; }
+.region-search input:focus-visible { outline:3px solid #24614e55; outline-offset:2px; }
+.region-explorer-layout { display:grid; grid-template-columns:minmax(220px,280px) minmax(0,1fr); gap:clamp(24px,4vw,54px); align-items:start; }
+.region-province-list { position:sticky; top:18px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+.region-province-list button,.region-explorer-results > button { min-height:56px; padding:11px 12px; display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:3px; border:1px solid var(--exko-line); border-radius:11px; background:#fff; color:var(--exko-ink); font:inherit; font-weight:800; text-align:left; cursor:pointer; }
+.region-province-list button small,.region-explorer-results > button span { color:#6b7d74; font-size:11px; font-weight:600; }
+.region-province-list button[aria-pressed="true"] { border-color:var(--exko-green); background:var(--exko-green); color:#fff; }
+.region-province-list button[aria-pressed="true"] small { color:#dce9e2; }
+.region-child-heading { min-height:58px; margin-bottom:14px; display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--exko-line); }
+.region-child-heading p { margin:0; color:var(--exko-ink); font-size:20px; font-weight:850; word-break:keep-all; }
+.region-child-heading strong { margin-left:auto; color:#63766c; font-size:13px; white-space:nowrap; }
+.region-mobile-back { display:none; }
+.region-explorer-results { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.region-explorer-card { min-width:0; min-height:178px; padding:20px; display:flex; flex-direction:column; border:1px solid var(--exko-line); border-radius:16px; background:#fff; }
+.region-explorer-card.status-ai_live,.region-explorer-card.status-field_test { border-color:#83a995; }
+.region-explorer-card-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.region-explorer-card-heading small { color:#6b7d74; font-size:11px; }
+.region-explorer-card h3 { margin:6px 0 0; font-size:20px; word-break:keep-all; }
+.region-explorer-status { flex:0 0 auto; padding:5px 8px; border-radius:999px; background:#edf1eb; color:#52685d; font-size:11px; font-weight:750; }
+.status-ai_live .region-explorer-status,.status-field_test .region-explorer-status { background:#e0ece5; color:#205744; }
+.region-explorer-primary { min-height:46px; margin-top:auto; padding-top:14px; display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--exko-line); color:var(--exko-green); font-weight:800; text-decoration:none; }
+.region-explorer-unavailable { min-height:46px; margin:auto 0 0; padding-top:14px; border-top:1px solid var(--exko-line); color:#718077; font-size:13px; line-height:1.45; word-break:keep-all; }
+.region-explorer-exko { min-height:44px; margin-top:8px; display:flex; align-items:center; justify-content:space-between; gap:10px; color:var(--exko-green); font-size:12px; font-weight:750; text-decoration:none; }
+.region-explorer-card .exko-region-knowledge-compact { margin-top:8px; }
+.region-explorer-card .exko-region-knowledge-compact a { min-height:44px; display:flex; align-items:center; color:var(--exko-green); font-size:12px; font-weight:700; text-decoration:none; }
+.region-search-results > p { color:#5d7066; }
+.region-registry-note { margin:24px 0 0; color:#718077; font-size:12px; line-height:1.6; }
+@media (max-width:1100px) { .region-explorer-results { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (max-width:760px) {
+  .region-explorer-layout { display:block; }
+  .region-province-list { position:static; grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .region-explorer-layout:not(.show-mobile-detail) .region-child-panel { display:none; }
+  .region-explorer-layout.show-mobile-detail .region-province-list { display:none; }
+  .region-mobile-back { min-height:44px; padding:8px 0; display:inline-flex; align-items:center; border:0; background:transparent; color:var(--exko-green); font:inherit; font-size:13px; font-weight:800; cursor:pointer; }
+  .region-child-heading { flex-wrap:wrap; padding-bottom:10px; }
+  .region-child-heading .region-mobile-back { flex-basis:100%; }
+}
+@media (max-width:430px) {
+  .region-explorer-results { grid-template-columns:1fr; }
+  .region-explorer-card { min-height:156px; }
+  .nationwide-explorer { padding-block:58px; }
+}
