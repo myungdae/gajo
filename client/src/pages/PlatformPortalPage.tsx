@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import '../platform.css';
 import ExkoRegionKnowledgeLink from '../components/ExkoRegionKnowledgeLink';
 import NationwideRegionExplorer from '../components/NationwideRegionExplorer';
+import PortalRegionSearch from '../components/PortalRegionSearch';
 
 const journeyStages = [
   { stage: 'PLAN', korean: '여행 전', copy: '부모님과 합천 하루 여행하고 싶어요.' },
@@ -63,9 +64,10 @@ export default function PlatformPortalPage() {
       <section className="platform-section platform-regions" aria-labelledby="active-regions-title">
         <div className="platform-section-heading">
           <p className="platform-kicker">START IN A REGION</p>
-          <h2 id="active-regions-title">운영 지역에서 바로 시작하세요</h2>
-          <p>현재 이용 가능한 지역 AI 여행안내와 운영 상태를 함께 안내합니다.</p>
+          <h2 id="active-regions-title">지역 AI 여행안내를 시작하세요</h2>
+          <p>현재 운영 중이거나 현장 시험 중인 지역을 선택해 바로 이용할 수 있습니다.</p>
         </div>
+        <PortalRegionSearch />
         <div className="platform-region-grid">
           {regions.map(region => <article className="is-active" key={region.name}>
             <div><span>{region.status}</span><h3>{region.name}</h3><p>{region.detail}</p></div>

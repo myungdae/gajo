@@ -35,7 +35,7 @@ function ServiceCorsage({ status }: { status: NationwideRegion['status'] }) {
   </svg>;
 }
 
-function RegionCard({ region }: { region: NationwideRegion }) {
+export function RegionCard({ region }: { region: NationwideRegion }) {
   return <article className={`region-explorer-card status-${region.status.toLowerCase()}`}>
     <ServiceCorsage status={region.status} />
     <div className="region-explorer-card-heading">

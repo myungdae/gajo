@@ -262,6 +262,12 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
+.platform-regions .platform-section-heading { margin-bottom:18px; }
+.portal-region-search { margin-bottom:24px; }
+.portal-region-search .region-search { margin-bottom:0; }
+.portal-region-search-results { margin-top:16px; }
+.portal-region-parent-result { min-height:56px; padding:11px 14px; display:flex; flex-direction:column; justify-content:center; gap:3px; border:1px solid var(--exko-line); border-radius:11px; background:#fff; color:var(--exko-ink); font-weight:800; text-decoration:none; }
+.portal-region-parent-result small { color:#6b7d74; font-size:11px; font-weight:600; }
 .platform-region-grid article {
   min-height: 238px;
   padding: 26px;
@@ -540,6 +546,9 @@
   .platform-region-grid {
     grid-template-columns: 1fr;
   }
+  .platform-regions { padding-block:44px; }
+  .platform-regions .platform-section-heading { margin-bottom:14px; }
+  .portal-region-search { margin-bottom:18px; }
   .platform-accordion-grid { grid-template-columns:1fr; }
   .platform-region-grid article {
     min-height: 210px;
