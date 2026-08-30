@@ -16,6 +16,8 @@ export type NearbyCategory =
   | 'PARKING' | 'PUBLIC_TOILET' | 'GAS_STATION' | 'EV_CHARGER'
   | 'TOURIST_INFORMATION' | 'PHARMACY' | 'HOSPITAL' | 'ATM' | 'OTHER';
 
+const CANONICAL_PROVIDER_MAX_DRIFT_METERS = 100;
+
 
 export type NearbyFailureCode = 'NOT_CONFIGURED' | 'UPSTREAM_ERROR' | 'UPSTREAM_TIMEOUT' | 'INVALID_RESPONSE';
 export class NearbyServiceError extends Error {
@@ -57,6 +59,9 @@ export interface NearbySearchOptions {
   transportMode?: 'car' | 'foot';
 }
 
+// eslint-disable-next-line prettier/prettier
+const TOURISM_CATEGORIES=new Set<NearbyCategory>(['TOURIST_ATTRACTION','NATURE','CULTURE_ART','EXPERIENCE','FESTIVAL_EXHIBITION','ACTIVITY','TOURISM_NATURE']);
+
 const LABELS: Record<NearbyCategory, string> = {
   FOOD: '맛집', CAFE: '카페', LODGING: '숙박', HOT_SPRING_WELLNESS: '온천·휴식',
   TOURIST_ATTRACTION: '관광지', NATURE: '자연', CULTURE_ART: '문화·예술', EXPERIENCE: '체험', FESTIVAL_EXHIBITION: '축제·전시',
@@ -72,7 +77,8 @@ const LABELS: Record<NearbyCategory, string> = {
 const INDOOR = new Set<NearbyCategory>(['CAFE', 'CAFE_BAKERY', 'FOOD', 'FOOD_KOREAN', 'FOOD_WESTERN', 'FOOD_CHINESE', 'FOOD_JAPANESE', 'LODGING', 'LODGING_HOTEL_RESORT', 'LODGING_PENSION_MINBAK', 'LODGING_CAMPING_GLAMPING', 'LODGING_MOTEL', 'LODGING_GUESTHOUSE', 'HOT_SPRING_WELLNESS', 'GOLF_SCREEN_GOLF', 'CONVENIENCE', 'ESSENTIAL_SHOPPING', 'CONVENIENCE_STORE', 'MART_SUPERMARKET', 'PHARMACY', 'HOSPITAL', 'MEDICAL', 'ATM']);
 type NearbyPlan = { codes: string[]; keywords: string[]; providerGroup?: 'FOOD' | 'LODGING' | 'TOURISM' };
 const PLANS: Record<NearbyCategory, NearbyPlan> = {
-  FOOD: { codes: ['FD6'], keywords: ['약선요리', '건강식당', '사찰음식', '채식뷔페'] },
+  // eslint-disable-next-line prettier/prettier
+  FOOD: { codes: ['FD6'], keywords: ['약선요리', '건강식당', '사찰음식', '채식뷔페'], providerGroup: 'FOOD' },
   CAFE: { codes: ['CE7'], keywords: ['카페'] },
   LODGING: { codes: ['AD5'], keywords: ['호텔', '모텔', '펜션', '숙박시설'], providerGroup: 'LODGING' },
   TOURIST_ATTRACTION: { codes: ['AT4'], keywords: [], providerGroup: 'TOURISM' },
@@ -155,6 +161,8 @@ export class NearbyService {
   status(regionId?: string) { const configured=this.isConfigured()||Boolean(regionId&&this.regionalData&&REGIONAL_CANDIDATE_DATASETS[regionId]);return { configured, state: configured ? 'READY' : 'NOT_CONFIGURED', provider: this.isConfigured()?'KAKAO_LOCAL':'REGIONAL_OPERATIONAL_DATA', timeoutMs: this.timeoutMs }; }
 
   async search(category: NearbyCategory, lat: number, lng: number, radius = 2000, options: NearbySearchOptions = {}, regionId?: string): Promise<NearbyPlace[]> {
+    // eslint-disable-next-line prettier/prettier
+    const region=regionId?(this.regions||new RegionConfigService()).get(regionId):undefined;
     const key = this.kakaoKey;
     const plan = PLANS[category];
     const byId = new Map<string, NearbyPlace>();
@@ -174,22 +182,37 @@ export class NearbyService {
       }
       if (useDistance && place.distanceMeters != null && place.distanceMeters <= 1500) place.contextualReasons.push('현재 위치에서 가까운 후보입니다.');
     }
-    return [...byId.values()].sort((a, b) => (useDistance ? (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity) : 0) || b.relevanceScore - a.relevanceScore).slice(0,30);
+    // eslint-disable-next-line prettier/prettier
+    return [...byId.values()].filter(place=>!regionId||this.insideRegion(place.lat,place.lng,region?.bounds)).filter(place=>this.canonicalConsistent(place)).filter(place=>this.requestedCategoryMatches(category,place.category)).sort((a, b) => (useDistance ? (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity) : 0) || b.relevanceScore - a.relevanceScore).slice(0,30);
   }
 
   async searchRestaurants(lat: number, lng: number, radius = 2000) { return this.search('FOOD', lat, lng, radius); }
 
   async searchByKeyword(query:string,regionId:string,origin?:{latitude:number;longitude:number}):Promise<NearbyPlace[]>{
+    // eslint-disable-next-line prettier/prettier
+    const region=(this.regions||new RegionConfigService()).get(regionId);
     const key=this.kakaoKey;if(!key)throw new NearbyServiceError('NOT_CONFIGURED','장소명 검색은 현재 준비 중입니다.');
     const url=new URL('https://dapi.kakao.com/v2/local/search/keyword.json');url.searchParams.set('query',query);url.searchParams.set('size','10');
     if(origin){url.searchParams.set('x',String(origin.longitude));url.searchParams.set('y',String(origin.latitude));url.searchParams.set('sort','distance')}
     const data=await this.kakaoGet(url,key),byId=new Map<string,NearbyPlace>();
     for(const item of data.documents)this.upsert(byId,item,'OTHER',query);
     const normalizedQuery=this.normalizeSearchText(query),regionTokens=this.regionTokens(regionId);
-    return[...byId.values()].map(place=>({...place,regionId})).filter(place=>!this.isUnsuitableLocationAnchor(place.providerCategoryName)).sort((a,b)=>this.locationAnchorScore(b,normalizedQuery,regionTokens)-this.locationAnchorScore(a,normalizedQuery,regionTokens)||(a.distanceMeters??Infinity)-(b.distanceMeters??Infinity));
+    // eslint-disable-next-line prettier/prettier
+    return[...byId.values()].filter(place=>this.insideRegion(place.lat,place.lng,region?.bounds)&&this.addressMatchesRegion(place,region?.regionName)).filter(place=>!this.isUnsuitableLocationAnchor(place.providerCategoryName)).sort((a,b)=>this.locationAnchorScore(b,normalizedQuery,regionTokens)-this.locationAnchorScore(a,normalizedQuery,regionTokens)||(a.distanceMeters??Infinity)-(b.distanceMeters??Infinity));
   }
 
+  // eslint-disable-next-line prettier/prettier
+  async representativeAnchors(regionId:string):Promise<NearbyPlace[]>{const region=(this.regions||new RegionConfigService()).get(regionId),dataset=await this.regionalData?.effectiveDataset(regionId);return(dataset?.records||[]).filter(record=>record.runtimeDataStatus==='VERIFIED'&&record.entityType==='ATTRACTION'&&Number.isFinite(record.latitude)&&Number.isFinite(record.longitude)&&this.insideRegion(record.latitude!,record.longitude!,region?.bounds)).slice(0,8).map(record=>({id:`canonical:${record.entityUri}`,name:record.canonicalLabelKo,category:'TOURIST_ATTRACTION',categoryLabel:'관광지',providerCategoryName:record.category,address:record.address||'',roadAddress:record.address,phone:record.telephone,lat:record.latitude!,lng:record.longitude!,placeUrl:record.website||'',indoorRelevance:'UNKNOWN',operatingState:'UNKNOWN',operatingMessage:'현재 운영 여부 확인 필요',contextualReasons:['검증된 지역 대표 장소입니다.'],canonicalEntityUri:record.entityUri,canonicalLabel:record.canonicalLabelKo,masterVerificationStatus:record.runtimeDataStatus,transient:false,relevanceScore:5}))}
+
   private normalizeSearchText(value:string){return value.replace(/\s/g,'').toLowerCase()}
+  // eslint-disable-next-line prettier/prettier
+  private insideRegion(lat:number,lng:number,bounds?:{north:number;south:number;east:number;west:number}){return Boolean(bounds&&Number.isFinite(lat)&&Number.isFinite(lng)&&lat<=bounds.north&&lat>=bounds.south&&lng<=bounds.east&&lng>=bounds.west)}
+  // eslint-disable-next-line prettier/prettier
+  private addressMatchesRegion(place:NearbyPlace,regionName?:string){return Boolean(regionName&&`${place.roadAddress||''} ${place.address||''}`.includes(regionName))}
+  // eslint-disable-next-line prettier/prettier
+  private requestedCategoryMatches(requested:NearbyCategory,actual:NearbyCategory){if(requested==='FOOD')return FOOD_CATEGORIES.has(actual)||actual==='FOOD';if(TOURISM_CATEGORIES.has(requested))return TOURISM_CATEGORIES.has(actual);return requested===actual}
+  // eslint-disable-next-line prettier/prettier
+  private canonicalConsistent(place:NearbyPlace){if(!place.canonicalEntityUri)return true;const canonical=this.master?.resolveCanonical(place.canonicalEntityUri);if(!canonical)return true;const categoryMatches=!canonical.category||this.requestedCategoryMatches(place.category,normalizeNearbyCategory(canonical.canonicalLabelKo,canonical.category,'',canonical.category as NearbyCategory));return categoryMatches&&(!Number.isFinite(canonical.latitude)||!Number.isFinite(canonical.longitude)||this.distanceMeters(place.lat,place.lng,canonical.latitude!,canonical.longitude!)<=CANONICAL_PROVIDER_MAX_DRIFT_METERS)}
   private regionTokens(regionId:string){try{return[this.regions?.get(regionId).regionName].filter((value):value is string=>Boolean(value))}catch{return[]}}
   private isUnsuitableLocationAnchor(category:string){return /유치원|어린이집|학교|학원/.test(category)}
   private locationAnchorScore(place:NearbyPlace,query:string,regionTokens:string[]){const name=this.normalizeSearchText(place.name),address=`${place.roadAddress||''} ${place.address||''}`;return(name===query?100:0)+(name.startsWith(query)?40:0)+(name.includes(query)?20:0)+(regionTokens.some(token=>address.includes(token))?30:0)+(/관공서|행정기관|관광명소|문화시설|교통시설/.test(place.providerCategoryName)?10:0)}
@@ -201,7 +224,7 @@ export class NearbyService {
     for (const record of dataset?.records || []) {
       if (!Number.isFinite(record.latitude) || !Number.isFinite(record.longitude)) continue;
       const category = normalizeNearbyCategory(record.canonicalLabelKo, record.category, '', record.category as NearbyCategory);
-      if (category !== requested) continue;
+      if (!this.requestedCategoryMatches(requested,category)) continue;
       const distanceMeters = this.distanceMeters(lat, lng, record.latitude!, record.longitude!);
       if (distanceMeters > radius) continue;
       const existing = [...byId.values()].find((place) => place.canonicalEntityUri === record.entityUri || (this.distanceMeters(place.lat,place.lng,record.latitude!,record.longitude!)<=30 && Boolean(place.phone&&record.telephone&&place.phone===record.telephone)));

@@ -15,6 +15,7 @@ const CATEGORIES: NearbyCategory[] = [
 export class NearbyController {
   constructor(private readonly nearby: NearbyService) {}
   @Get('status') status(@Query('regionId') regionId?:string) { return this.nearby.status(regionId); }
+  @Get('anchors') async anchors(@Query('regionId') regionId?:string) { if(!regionId?.trim())throw new BadRequestException('regionId가 필요합니다.');return{results:await this.nearby.representativeAnchors(regionId.trim())}; }
 
   @Post('reverse-geocode') @UseGuards(PublicWriteRateLimitGuard) @PublicWriteLimit('NEARBY_LOOKUP') async reverseGeocode(@Body() body:{latitude:number;longitude:number}){const{lat,lng}=this.validateSearch(String(body.latitude),String(body.longitude));this.ensureConfigured();try{return await this.nearby.reverseGeocode(lat,lng)}catch(error){this.rethrow(error)}}
   @Post('location-search') @UseGuards(PublicWriteRateLimitGuard) @PublicWriteLimit('NEARBY_LOOKUP') async locationSearch(@Body() body:{query:string;regionId:string;origin?:{latitude:number;longitude:number}}){const query=(body.query||'').trim();if(query.length<2||query.length>80)throw new BadRequestException('장소명은 2자 이상 80자 이하로 입력해 주세요.');this.ensureConfigured();let origin:typeof body.origin;if(body.origin){const valid=this.validateSearch(String(body.origin.latitude),String(body.origin.longitude));origin={latitude:valid.lat,longitude:valid.lng}}try{return{results:await this.nearby.searchByKeyword(query,body.regionId,origin)}}catch(error){this.rethrow(error)}}
@@ -22,20 +23,22 @@ export class NearbyController {
   @Post('discovery') @UseGuards(PublicWriteRateLimitGuard) @PublicWriteLimit('NEARBY_LOOKUP')
   async discovery(@Body() body:{category:string;latitude:number;longitude:number;radius?:number;weather?:string;useDistance?:boolean;transportMode?:'car'|'foot';regionId?:string}) {
     const {category:categoryValue,weather,transportMode,regionId}=body,useDistanceValue=body.useDistance!==false;
+    if (!regionId?.trim()) throw new BadRequestException('regionId가 필요합니다.');
     if (!CATEGORIES.includes(categoryValue as NearbyCategory)) throw new BadRequestException('지원하지 않는 주변 장소 종류입니다.');
     const { lat, lng, radius } = this.validateSearch(String(body.latitude), String(body.longitude), body.radius==null?undefined:String(body.radius));
     try {
       const results = await this.nearby.search(categoryValue as NearbyCategory, lat, lng, radius, { weather, useDistance: useDistanceValue, transportMode: transportMode === 'car' ? 'car' : 'foot' }, regionId);
-      return { searchedAt:new Date().toISOString(),timeZone:'Asia/Seoul',origin: { lat, lng, distanceTrusted: useDistanceValue }, category: categoryValue, radius, total: results.length, resultStatus: results.length ? 'AVAILABLE' : 'EMPTY', results:results.slice(0,30) };
+      return { searchedAt:new Date().toISOString(),timeZone:'Asia/Seoul',distanceTrusted:useDistanceValue,category:categoryValue,radius,total:results.length,resultStatus:results.length?'AVAILABLE':'EMPTY',results:results.slice(0,30) };
     } catch (error) { this.rethrow(error); }
   }
   @Post('restaurants') @UseGuards(PublicWriteRateLimitGuard) @PublicWriteLimit('NEARBY_LOOKUP')
-  async restaurants(@Body() body:{latitude:number;longitude:number;radius?:number}) {
+  async restaurants(@Body() body:{latitude:number;longitude:number;radius?:number;regionId?:string}) {
+    if(!body.regionId?.trim())throw new BadRequestException('regionId가 필요합니다.');
     const { lat, lng, radius } = this.validateSearch(String(body.latitude),String(body.longitude),body.radius==null?undefined:String(body.radius)); this.ensureConfigured();
     try {
-      const results = await this.nearby.searchRestaurants(lat, lng, radius); const groups: Record<string, typeof results> = {};
+      const results = await this.nearby.search('FOOD',lat,lng,radius,{},body.regionId.trim()); const groups: Record<string, typeof results> = {};
       for (const row of results) (groups[row.categoryGroup || '맛집'] ||= []).push(row);
-      return { origin: { lat, lng }, radius, total: results.length, resultStatus: results.length ? 'AVAILABLE' : 'EMPTY', groups, results };
+      return { radius, total: results.length, resultStatus: results.length ? 'AVAILABLE' : 'EMPTY', groups, results };
     } catch (error) { this.rethrow(error); }
   }
 

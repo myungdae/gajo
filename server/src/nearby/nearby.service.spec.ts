@@ -58,7 +58,7 @@ describe('NearbyService', () => {
       {...document('','합천호회양관광단지'),id:'tourism',category_name:'여행 > 관광명소',address_name:'경상남도 합천군'},
       {...document('','합천군청'),id:'office',category_name:'사회 > 관공서',address_name:'경상남도 합천군'},
     ],meta:{is_end:true}}));
-    const regions={get:jest.fn(()=>({regionName:'합천'}))}as any,rows=await new NearbyService(config({KAKAO_REST_API_KEY:'key'}),undefined,undefined,regions).searchByKeyword('합천','hapcheon');
+    const regions={get:jest.fn(()=>({regionName:'합천',bounds:{north:36,south:35,east:129,west:127}}))}as any,rows=await new NearbyService(config({KAKAO_REST_API_KEY:'key'}),undefined,undefined,regions).searchByKeyword('합천','hapcheon');
     expect(rows.map(row=>row.id)).toEqual(['tourism','office']);
   });
   it('uses Kakao lodging evidence for camping and keeps distance order',async()=>{
@@ -90,6 +90,13 @@ describe('NearbyService', () => {
     expect(rows).toHaveLength(1);expect(rows[0]).toMatchObject({name:'로우풀',canonicalEntityUri:'urn:regional:hapcheon:lowful',transient:false,masterVerificationStatus:'VERIFIED'});expect(rows[0].distanceMeters).toBeGreaterThan(0);
     await expect(service.search('CAFE',35.524485899856,128.01578179029,2500,{},'okcheon')).rejects.toMatchObject({code:'NOT_CONFIGURED'});
   });
+  /* eslint-disable prettier/prettier, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment */
+  it('blocks provider results outside the canonical region boundary',async()=>{jest.spyOn(global,'fetch').mockResolvedValue(response({documents:[{...document('CE7'),id:'inside',y:'35.6',x:'128.05',address_name:'경상남도 합천군'},{...document('CE7'),id:'outside',y:'36.2',x:'128.05',address_name:'경상북도 다른 지역'}],meta:{is_end:true}}));const rows=await new NearbyService(config({KAKAO_REST_API_KEY:'key'})).search('CAFE',35.6,128.05,5000,{},'hapcheon');expect(rows.map(row=>row.id)).toEqual(['inside'])});
+  it('blocks unknown regions before querying a provider',async()=>{const fetchSpy=jest.spyOn(global,'fetch');await expect(new NearbyService(config({KAKAO_REST_API_KEY:'key'})).search('CAFE',35.6,128.05,5000,{},'unknown-region')).rejects.toBeDefined();expect(fetchSpy).not.toHaveBeenCalled()});
+  it('blocks provider categories that do not match the requested category',async()=>{jest.spyOn(global,'fetch').mockResolvedValue(response({documents:[{...document('FD6'),address_name:'경상남도 합천군'}],meta:{is_end:true}}));const rows=await new NearbyService(config({KAKAO_REST_API_KEY:'key'})).search('CAFE',35.6,128.05,5000,{},'hapcheon');expect(rows).toEqual([])});
+  it('blocks a provider result when its canonical coordinates conflict',async()=>{jest.spyOn(global,'fetch').mockResolvedValue(response({documents:[{...document('CE7'),id:'conflict',y:'35.6',x:'128.05',address_name:'경상남도 합천군'}],meta:{is_end:true}}));const master={resolveCanonical:jest.fn(()=>({entityUri:'canonical:cafe',canonicalLabelKo:'검증 카페',category:'CAFE',latitude:35.7,longitude:128.05}))}as any;const rows=await new NearbyService(config({KAKAO_REST_API_KEY:'key'}),master).search('CAFE',35.6,128.05,5000,{},'hapcheon');expect(rows).toEqual([])});
+  it.each([[0.00089,true],[0.00091,false]])('applies the 100 m canonical coordinate boundary (%s)',async(delta,included)=>{jest.spyOn(global,'fetch').mockResolvedValue(response({documents:[{...document('CE7'),y:'35.6',x:'128.05',address_name:'경상남도 합천군'}],meta:{is_end:true}}));const master={resolveCanonical:jest.fn(()=>({entityUri:'canonical:cafe',canonicalLabelKo:'검증 카페',category:'CAFE',latitude:35.6+delta,longitude:128.05}))}as any;const rows=await new NearbyService(config({KAKAO_REST_API_KEY:'key'}),master).search('CAFE',35.6,128.05,5000,{},'hapcheon');expect(rows.length>0).toBe(included)});
+  /* eslint-enable prettier/prettier, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment */
   it('surfaces provider errors, timeout and malformed data', async () => {
     const service = new NearbyService(config({ KAKAO_REST_API_KEY: 'key' }));
     jest.spyOn(global, 'fetch').mockResolvedValueOnce(response({}, 503)); await expect(service.search('CAFE', 35.7, 128)).rejects.toMatchObject({ code: 'UPSTREAM_ERROR' });

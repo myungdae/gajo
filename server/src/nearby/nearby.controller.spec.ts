@@ -47,6 +47,7 @@ describe('NearbyController input policy', () => {
       latitude: 35.5,
       longitude: 128,
       radius: 3000,
+      regionId: 'hapcheon',
     });
     expect(result.results).toHaveLength(30);
     expect(result.timeZone).toBe('Asia/Seoul');
@@ -62,6 +63,11 @@ describe('NearbyController input policy', () => {
       }),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
+  /* eslint-disable prettier/prettier */
+  it('requires a region for every public discovery request', async () => {
+    await expect(controller.discovery({category:'CAFE',latitude:35.5,longitude:128,radius:1000})).rejects.toBeInstanceOf(BadRequestException);
+  });
+  /* eslint-enable prettier/prettier */
   it('does not expose coordinate-bearing nearby lookups as GET routes', () => {
     const source = readFileSync(__dirname + '/nearby.controller.ts', 'utf8');
     for (const route of [
@@ -74,5 +80,6 @@ describe('NearbyController input policy', () => {
     ])
       expect(source).not.toContain(`@Get('${route}')`);
     expect(source).toContain("@Get('status')");
+    expect(source).not.toContain('origin: { lat, lng');
   });
 });

@@ -38,8 +38,8 @@ test("post-save continuation keeps discovery in place and exposes immediate exec
   ])
     assert.ok(continuation.includes(copy));
   assert.match(actions, />내 여행에 담기</);
-  assert.match(nearby, /'내 여행에 담기'/);
-  assert.match(nearby, /'내 여행 숙소로 저장'/);
+  assert.match(nearby, /["']내 여행에 담기["']/);
+  assert.match(nearby, /["']내 여행 숙소로 저장["']/);
   assert.doesNotMatch(continuation, /도착 완료/);
 });
 test("unverified search candidates cannot be added to My Trip", () => {
@@ -58,7 +58,7 @@ test("saved-place collection is independent with restrained persistent removal",
   assert.match(item, /!collection\s*&&\s*\(/);
 });
 test("stored full journey wins over a stale route snapshot after returning",()=>{const page=source("./pages/ItineraryPage.tsx");assert.match(page,/tripSession\.itinerary as any\)\?\.savedAsFullJourney[\s\S]*location\.state\?\.result/)});
-test("nearby location step names the target and shows provider type plus address",()=>{const bar=source("./components/LocationContextBar.tsx"),nearby=source("./pages/NearbyRestaurantsPage.tsx");assert.match(nearby,/searchTarget=\{nearbyLabel\(category\)\}/);assert.match(bar,/찾을 기준 위치를 선택하세요/);assert.match(bar,/검색 기준 장소/);assert.match(bar,/providerCategoryName/);assert.match(bar,/roadAddress/)});
+test("nearby location step names the target and shows provider type plus address",()=>{const bar=source("./components/LocationContextBar.tsx"),nearby=source("./pages/NearbyRestaurantsPage.tsx");assert.match(nearby,/searchTarget=\{nearbyLabel\(category\)\}/);assert.match(bar,/어디를 기준으로 찾을까요/);assert.doesNotMatch(bar,/검색 기준 장소/);assert.match(bar,/providerCategoryName/);assert.match(bar,/roadAddress/)});
 test("full journey remains ordered while saved places render separately", () => {
   const page = source("./pages/ItineraryPage.tsx"),
     journey = source("./journeyExecution.ts");

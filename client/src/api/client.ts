@@ -407,7 +407,6 @@ export interface NearbyRestaurant {
 }
 
 export interface NearbyRestaurantsResponse {
-  origin: { lat: number; lng: number };
   radius: number;
   total: number;
   groups: Record<string, NearbyRestaurant[]>;
@@ -543,7 +542,7 @@ export interface NearbyPlace {
 }
 export interface NearbyDiscoveryResponse {
   searchedAt: string;
-  origin: { lat: number; lng: number; distanceTrusted: boolean };
+  distanceTrusted: boolean;
   category: NearbyCategory;
   radius: number;
   total: number;
@@ -561,12 +560,18 @@ export async function fetchNearbyStatus(regionId?: string) {
   return data;
 }
 
+export async function fetchNearbyAnchors(regionId: string) {
+  const { data } = await api.get<{ results: NearbyPlace[] }>("/nearby/anchors", { params: { regionId } });
+  return data.results;
+}
+
 export async function fetchNearbyRestaurants(
   lat: number,
   lng: number,
+  regionId: string,
   radius = 1000,
 ) {
-  const { data } = await api.post<NearbyRestaurantsResponse>("/nearby/restaurants", { latitude:lat, longitude:lng, radius });
+  const { data } = await api.post<NearbyRestaurantsResponse>("/nearby/restaurants", { latitude:lat, longitude:lng, radius, regionId });
   return data;
 }
 
