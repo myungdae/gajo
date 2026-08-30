@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import {
   monthlyWindow,
   publicNetwork,
@@ -15,8 +16,25 @@ const partner = (id: string, category = 'RESTAURANT') => ({
 const query = (rows: any[]) => ({ lean: jest.fn().mockResolvedValue(rows) });
 const flow = (index: number) =>
   `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`;
+const requiredIndexes = () => [
+  { name: '_id_', key: { _id: 1 } },
+  { name: 'aggregateKey_1', key: { aggregateKey: 1 }, unique: true },
+  {
+    name: 'regionId_1_kind_1_periodKey_1',
+    key: { regionId: 1, kind: 1, periodKey: 1 },
+    unique: true,
+  },
+  { name: 'expiresAt_1', key: { expiresAt: 1 }, expireAfterSeconds: 0 },
+];
 
 describe('tourism network aggregation', () => {
+  beforeEach(() => {
+    process.env.REGIONAL_NETWORK_MAINTENANCE_APPROVED = 'true';
+  });
+
+  afterEach(() => {
+    delete process.env.REGIONAL_NETWORK_MAINTENANCE_APPROVED;
+  });
   it('uses the last completed Seoul day for a fixed rolling 30-day window', () => {
     expect(rolling30dWindow(new Date('2026-08-30T05:00:00Z'))).toEqual({
       periodKey: '2026-07-31/2026-08-30',
@@ -150,7 +168,14 @@ describe('tourism network aggregation', () => {
       activities = { find: jest.fn().mockReturnValue(query([])) },
       partners = { find: jest.fn().mockReturnValue(query([])) },
       lean = jest.fn().mockResolvedValue({}),
-      aggregates = { findOneAndUpdate: jest.fn().mockReturnValue({ lean }) },
+      aggregates = {
+        collection: {
+          listIndexes: jest.fn().mockReturnValue({
+            toArray: jest.fn().mockResolvedValue(requiredIndexes()),
+          }),
+        },
+        findOneAndUpdate: jest.fn().mockReturnValue({ lean }),
+      },
       service = new TourismNetworkAggregationService(
         events as any,
         activities as any,
@@ -173,5 +198,59 @@ describe('tourism network aggregation', () => {
       new: true,
     });
     expect(calls[0][2]).not.toHaveProperty('upsert');
+  });
+
+  it('fails closed before reads or writes without explicit snapshot approval', async () => {
+    delete process.env.REGIONAL_NETWORK_MAINTENANCE_APPROVED;
+    const events = { find: jest.fn() },
+      activities = { find: jest.fn() },
+      partners = { find: jest.fn() },
+      aggregates = {
+        collection: { listIndexes: jest.fn() },
+        findOneAndUpdate: jest.fn(),
+        create: jest.fn(),
+      },
+      service = new TourismNetworkAggregationService(
+        events as any,
+        activities as any,
+        partners as any,
+        aggregates as any,
+      );
+    await expect(service.generate('hapcheon', 'ROLLING_30D')).rejects.toThrow(
+      'Explicit snapshot maintenance approval is required',
+    );
+    expect(aggregates.collection.listIndexes).not.toHaveBeenCalled();
+    expect(events.find).not.toHaveBeenCalled();
+    expect(aggregates.findOneAndUpdate).not.toHaveBeenCalled();
+    expect(aggregates.create).not.toHaveBeenCalled();
+  });
+
+  it('fails closed without creating a collection when snapshot indexes are absent', async () => {
+    const events = { find: jest.fn() },
+      activities = { find: jest.fn() },
+      partners = { find: jest.fn() },
+      aggregates = {
+        collection: {
+          listIndexes: jest.fn().mockReturnValue({
+            toArray: jest.fn().mockRejectedValue({ code: 26 }),
+          }),
+        },
+        findOneAndUpdate: jest.fn(),
+        create: jest.fn(),
+      },
+      service = new TourismNetworkAggregationService(
+        events as any,
+        activities as any,
+        partners as any,
+        aggregates as any,
+      );
+    await expect(service.generate('hapcheon', 'ROLLING_30D')).rejects.toThrow(
+      'Regional network snapshot indexes are not ready',
+    );
+    expect(events.find).not.toHaveBeenCalled();
+    expect(activities.find).not.toHaveBeenCalled();
+    expect(partners.find).not.toHaveBeenCalled();
+    expect(aggregates.findOneAndUpdate).not.toHaveBeenCalled();
+    expect(aggregates.create).not.toHaveBeenCalled();
   });
 });

@@ -76,6 +76,15 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const ANONYMOUS_FLOW_ID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_PUBLIC_EDGES = 200;
+const REQUIRED_SNAPSHOT_INDEXES = [
+  { name: 'aggregateKey_1', key: { aggregateKey: 1 }, unique: true },
+  {
+    name: 'regionId_1_kind_1_periodKey_1',
+    key: { regionId: 1, kind: 1, periodKey: 1 },
+    unique: true,
+  },
+  { name: 'expiresAt_1', key: { expiresAt: 1 }, expireAfterSeconds: 0 },
+] as const;
 const CATEGORY_LABELS: Record<string, string> = {
   ACCOMMODATION: '숙박',
   LODGING: '숙박',
@@ -352,6 +361,37 @@ export class TourismNetworkAggregationService {
     private aggregates: Model<TourismNetworkAggregateDocument>,
   ) {}
 
+  private async assertSnapshotWriteReady() {
+    if (process.env.REGIONAL_NETWORK_MAINTENANCE_APPROVED !== 'true')
+      throw new Error('Explicit snapshot maintenance approval is required');
+    let indexes: Array<{
+      name?: string;
+      key?: Record<string, number>;
+      unique?: boolean;
+      expireAfterSeconds?: number;
+    }>;
+    try {
+      const listed: unknown = await this.aggregates.collection
+        .listIndexes()
+        .toArray();
+      indexes = listed as typeof indexes;
+    } catch {
+      throw new Error('Regional network snapshot indexes are not ready');
+    }
+    const ready = REQUIRED_SNAPSHOT_INDEXES.every((required) =>
+      indexes.some(
+        (index) =>
+          index.name === required.name &&
+          JSON.stringify(index.key) === JSON.stringify(required.key) &&
+          (!('unique' in required) || index.unique === required.unique) &&
+          (!('expireAfterSeconds' in required) ||
+            index.expireAfterSeconds === required.expireAfterSeconds),
+      ),
+    );
+    if (!ready)
+      throw new Error('Regional network snapshot indexes are not ready');
+  }
+
   async generate(
     regionId: string,
     kind: TourismNetworkAggregateKind,
@@ -359,6 +399,7 @@ export class TourismNetworkAggregationService {
     now = new Date(),
     minimumCellSize = 5,
   ) {
+    await this.assertSnapshotWriteReady();
     const window =
       kind === 'ROLLING_30D'
         ? rolling30dWindow(now)

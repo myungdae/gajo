@@ -47,16 +47,22 @@ describe('regional network retention', () => {
         ),
         'utf8',
       );
-    expect(appModule).toMatch(/autoIndex:\s*false/);
+    expect(appModule).toMatch(/autoIndex:\s*false,\s*autoCreate:\s*false/);
+    expect(appModule).not.toMatch(/createCollection|\.init\(|syncIndexes/);
     expect(migration).toMatch(/--apply/);
     expect(migration).toMatch(/REGIONAL_NETWORK_INDEX_MIGRATION_APPROVED/);
+    expect(migration).toMatch(/aggregateKey_1/);
+    expect(migration).toMatch(/regionId_1_kind_1_periodKey_1/);
     expect(check).toMatch(/READ_ONLY/);
     expect(check).not.toMatch(/createIndex|dropIndex|insert|update|delete/);
     expect(maintenance).toMatch(/REGIONAL_NETWORK_MAINTENANCE_APPROVED/);
     expect(maintenanceModule).toMatch(/autoIndex:\s*false/);
+    expect(maintenanceModule).toMatch(/autoCreate:\s*false/);
     expect(maintenanceModule).not.toMatch(/AppModule|SeedModule/);
   });
   it('declares TTL only on explicit expiry fields so legacy rows without them are untouched', () => {
+    expect(TourismNetworkAggregateSchema.get('autoCreate')).toBe(false);
+    expect(TourismNetworkAggregateSchema.get('autoIndex')).toBe(false);
     expect(PilotEventSchema.indexes()).toContainEqual([
       { expiresAt: 1 },
       expect.objectContaining({

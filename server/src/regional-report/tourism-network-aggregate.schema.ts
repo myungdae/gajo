@@ -3,7 +3,7 @@ import { Document } from 'mongoose';
 
 export type TourismNetworkAggregateKind = 'ROLLING_30D' | 'MONTHLY';
 
-@Schema({ timestamps: true })
+@Schema({ timestamps: true, autoCreate: false, autoIndex: false })
 export class TourismNetworkAggregate {
   @Prop({ required: true, unique: true, index: true }) aggregateKey: string;
   @Prop({ required: true, index: true }) regionId: string;

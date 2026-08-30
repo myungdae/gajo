@@ -19,7 +19,7 @@
 - TTL index는 `expiresAt`이 Date인 문서만 대상으로 한다. 따라서 기존 필드 없는 레코드는 index 생성만으로 즉시 삭제되지 않는다. 기존 데이터 소급 정리는 dry-run과 별도 승인을 거친다.
 - `BenefitRedemption`은 생성 시 `linkExpiresAt` 90일과 `retentionExpiresAt` 365일을 기록한다. 승인된 maintenance 실행은 90일 뒤 `anonymousTripId`와 재연결 가능한 `idempotencyKey`를 함께 제거하고 운영 상태·파트너·혜택·redemption ID·필요 시각을 유지한다. 365일 뒤 TTL로 문서를 삭제한다.
 - 월간 비식별 snapshot은 최대 3년, rolling 30일 snapshot은 45일 보존한다. snapshot에는 session/redemption/event ID, 좌표, 원문, 개별 timestamp 또는 억제 전 소수값이 없다.
-- application 연결은 명시적으로 `autoIndex: false`다. schema의 index 선언은 계약일 뿐 application 시작 시 생성되지 않는다. TTL과 redemption partial unique index는 백업·dry-run·별도 승인을 거쳐 `network:retention:index-migrate`로만 생성한다.
+- application과 전용 maintenance 연결은 `autoIndex: false, autoCreate: false`다. aggregate schema에도 두 옵션을 방어적으로 명시한다. 따라서 API bootstrap이나 빈 snapshot 조회만으로 collection 또는 `_id_` index가 생기지 않는다. 정상 write는 MongoDB의 첫 insert에서 collection을 만들 수 있으므로, snapshot 쓰기는 별도 승인과 필수 TTL·unique index 점검을 모두 통과해야 한다. schema의 index 선언은 계약일 뿐 application 시작 시 생성되지 않으며 index는 백업·dry-run·별도 승인을 거친 `network:retention:index-migrate`로만 생성한다.
 - TTL monitor는 만료시각 즉시 삭제를 보장하지 않으며 MongoDB 부하와 monitor 주기에 따라 지연될 수 있다. 운영 점검은 `network:retention:index-check`의 exit code와 만료 문서 backlog를 함께 감시해야 한다.
 - 기존 redemption index는 `anonymousTripId`와 `idempotencyKey` 제거를 허용하는 partial unique index로 바꾸어야 한다. 교체 중 쓰기 경쟁을 막는 maintenance window가 필요하며 이 migration과 기존 데이터 update/delete는 별도 운영 승인을 받아야 한다.
 
@@ -29,7 +29,9 @@ rolling 결과는 현재 진행 중인 날짜를 포함하지 않고, 가장 최
 
 집계 key는 `regionId:kind:periodKey`로 결정된다. 작업은 매번 전체 window를 재계산하고 같은 key에 원자적 upsert하므로 중복 실행이 새 문서를 만들지 않는다. 원시 ID를 쓰지 않는 지역·기간·입력 건수 hash는 운영 진단용 `sourceRevision`으로만 저장되고 API에는 반환하지 않는다. 늦게 도착한 event는 raw 90일 window 안에서 동일 기간을 재실행하면 snapshot을 교체한다. 권장 실행은 rolling snapshot 매일 00:15 KST, 직전 월 snapshot을 월초 7일 동안 매일 재생성한 뒤 확정하는 방식이다.
 
-현재 구현은 집계 service와 반복 실행 가능한 전용 maintenance CLI를 제공한다. retention은 아직 운영 적용 완료 상태가 아니다. CLI는 application bootstrap/seed와 분리되고 `autoIndex: false`이며 `REGIONAL_NETWORK_MAINTENANCE_APPROVED=true npm run network:maintenance`처럼 명시적 승인 플래그가 있어야 실행된다. 실제 scheduler/cron 활성화는 운영 배포 승인과 dry-run·index migration 승인 이후 별도 작업으로 연결해야 한다. 집계 또는 월간 snapshot 생성이 실패하면 unlink 단계로 진행하지 않으며, 부분 성공은 동일 결정적 key로 재실행한다.
+현재 구현은 집계 service와 반복 실행 가능한 전용 maintenance CLI를 제공한다. retention은 아직 운영 적용 완료 상태가 아니다. CLI는 application bootstrap/seed와 분리되고 `autoIndex: false, autoCreate: false`이며 `REGIONAL_NETWORK_MAINTENANCE_APPROVED=true npm run network:maintenance`처럼 명시적 승인 플래그가 있어야 실행된다. 집계 service 자체도 같은 승인 flag와 `aggregateKey_1`, `regionId_1_kind_1_periodKey_1`, `expiresAt_1`의 정확한 정의를 쓰기 전에 확인한다. collection 또는 필수 index가 없으면 원시 데이터 조회나 write 전에 실패하므로 최초 snapshot은 승인된 index migration 이후에만 생성할 수 있다. 실제 scheduler/cron 활성화는 운영 배포 승인과 dry-run·index migration 승인 이후 별도 작업으로 연결해야 한다. 집계 또는 월간 snapshot 생성이 실패하면 unlink 단계로 진행하지 않으며, 부분 성공은 동일 결정적 key로 재실행한다.
+
+운영에 남은 빈 `tourismnetworkaggregates`는 hotfix 배포와 별개로 읽기 전용 재확인을 먼저 한다. 정확한 이름, 문서 0건, `_id_` index 한 개만 존재, 다른 collection 또는 코드의 참조 부재, 운영 API가 rollback 이미지인지 확인한 뒤 별도 삭제 승인을 받는다. 이 hotfix는 운영 collection을 조회하거나 삭제하지 않는다.
 
 ## Suppression과 차분 공격 방어
 

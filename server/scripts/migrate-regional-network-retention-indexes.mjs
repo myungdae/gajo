@@ -44,6 +44,15 @@ try {
       expireAfterSeconds: 0,
       partialFilterExpression,
     });
+  const aggregates = db.collection('tourismnetworkaggregates');
+  await aggregates.createIndex(
+    { aggregateKey: 1 },
+    { name: 'aggregateKey_1', unique: true },
+  );
+  await aggregates.createIndex(
+    { regionId: 1, kind: 1, periodKey: 1 },
+    { name: 'regionId_1_kind_1_periodKey_1', unique: true },
+  );
   const redemption = db.collection('benefitredemptions');
   for (const name of ['benefitId_1_anonymousTripId_1', 'idempotencyKey_1']) {
     const existing = (await redemption.indexes()).find(
