@@ -9,12 +9,6 @@
   max-width: 460px;
   padding-top: 12vh;
 }
-.report-brand {
-  color: #315e54;
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 0.18em;
-}
 .readonly-badge {
   display: inline-block;
   margin-left: 12px;

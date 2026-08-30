@@ -316,6 +316,12 @@ a {
   display: flex;
   align-items: center;
   gap: 10px;
+  justify-content: space-between;
+}
+
+.app-header__region {
+  min-width: 0;
+  text-align: right;
 }
 
 .app-header h1 {

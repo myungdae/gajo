@@ -1,0 +1,83 @@
+.public-brand {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 9px;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.public-brand__symbol {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  overflow: visible;
+  fill: none;
+  stroke: #16a08b;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.65;
+}
+
+.public-brand__traveler {
+  fill: #16a08b;
+  stroke: none;
+}
+
+.public-brand__wordmark {
+  display: grid;
+  gap: 1px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.public-brand__wordmark strong {
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+}
+
+.public-brand__slogan {
+  margin-top: 2px;
+  color: currentColor;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  opacity: 0.78;
+}
+
+.public-brand__wordmark small {
+  color: currentColor;
+  font-size: 8px;
+  font-weight: 750;
+  letter-spacing: 0.055em;
+  opacity: 0.68;
+}
+
+.public-brand--compact {
+  gap: 7px;
+}
+
+.public-brand--compact .public-brand__symbol {
+  width: 23px;
+  height: 23px;
+}
+
+.public-brand--compact .public-brand__wordmark strong {
+  font-size: 14px;
+}
+
+.public-brand--compact .public-brand__wordmark small {
+  font-size: 7px;
+}
+
+.public-brand--compact .public-brand__slogan {
+  display: none;
+}
+
+.public-brand:focus-visible {
+  border-radius: 6px;
+  outline: 3px solid #f1c84c;
+  outline-offset: 4px;
+}

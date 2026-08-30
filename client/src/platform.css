@@ -32,22 +32,10 @@
   gap: 16px;
   border-bottom: 1px solid var(--exko-line);
 }
-.platform-header span {
+.platform-header > span:not(.public-brand) {
   font-size: 13px;
   color: #60746b;
   text-align: right;
-}
-.platform-brand {
-  color: var(--exko-ink);
-  font-weight: 900;
-  letter-spacing: 0.14em;
-  text-decoration: none;
-}
-.platform-brand img {
-  display: block;
-  width: 164px;
-  max-width: 42vw;
-  height: auto;
 }
 .platform-main {
   width: min(1120px, 100%);

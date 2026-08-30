@@ -12,6 +12,7 @@ import "./regional-report.css";
 import RegionalTourismNetwork, {
   type TourismNetworkReport,
 } from "../components/RegionalTourismNetwork";
+import PublicBrand from "../components/PublicBrand";
 type Cell = {
   status: "AVAILABLE" | "SUPPRESSED" | "PREPARING";
   total?: number;
@@ -99,7 +100,7 @@ export default function RegionalReportPage() {
   if (unsupportedRegion)
     return (
       <section className="report-login">
-        <div className="report-brand">EXKOVIA</div>
+        <PublicBrand compact linked={false} />
         <h1>지원하지 않는 지역 리포트</h1>
         <p>등록된 지역 운영 리포트 주소인지 확인해 주세요.</p>
       </section>
@@ -107,7 +108,7 @@ export default function RegionalReportPage() {
   if (!report)
     return (
       <section className="report-login">
-        <div className="report-brand">EXKOVIA</div>
+        <PublicBrand compact linked={false} />
         <h1>
           {routeRegion
             ? `${routeRegion.regionName} 현장 운영 리포트`
@@ -145,7 +146,7 @@ export default function RegionalReportPage() {
     <article className="regional-report">
       <header>
         <div>
-          <span className="report-brand">EXKOVIA</span>
+          <PublicBrand compact linked={false} />
           <span className="readonly-badge">읽기 전용</span>
           <h1>{report.region.name} 현장 운영 리포트</h1>
           <p>

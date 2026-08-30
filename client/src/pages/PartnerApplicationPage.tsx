@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { applyForPartnership } from "../api/client";
+import PublicBrand from "../components/PublicBrand";
 export default function PartnerApplicationPage() {
   const [state, setState] = useState<any>({
       regionId: "hapcheon",
@@ -31,7 +32,8 @@ export default function PartnerApplicationPage() {
     );
   return (
     <main className="partner-flow">
-      <section className="partner-value-intro"><small>EXKOVIA · 지역 업소</small>
+      <PublicBrand />
+      <section className="partner-value-intro"><small>지역 업소 파트너</small>
       <h1>AI 관광 파트너 참여하기</h1>
       <p>
         AI가 관광객의 현재 상황과 여행 목적에 맞는 지역 업소를 발견하고 실제

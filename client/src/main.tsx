@@ -21,8 +21,8 @@ const bootRegion=getRegionConfig(regionFromLocation(location.pathname,location.s
 initializeInstallPromptCapture();
 const manifest=document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
 if(surface!=='REGION')manifest?.remove();else if(manifest)manifest.setAttribute('href',manifestHref(bootRegion.id));else{const regionalManifest=document.createElement('link');regionalManifest.rel='manifest';regionalManifest.href=manifestHref(bootRegion.id);document.head.appendChild(regionalManifest)}
-document.title=platformBrandedSurface?'EXKOVIA | 지역과 여행자를 잇는 AI 관광 플랫폼':bootRegion.serviceName;
-document.querySelector<HTMLMetaElement>('meta[name="description"]')?.setAttribute('content',platformBrandedSurface?'여행자, 지역 업소, 지자체를 연결하는 지역형 AI 관광 플랫폼입니다.':`${bootRegion.regionName} 여행을 위한 AI 여행안내`);
+document.title=platformBrandedSurface?'찾아오는 여행도우미 | 필요한 순간 먼저 찾아가는 AI 여행서비스':bootRegion.serviceName;
+document.querySelector<HTMLMetaElement>('meta[name="description"]')?.setAttribute('content',platformBrandedSurface?'여행자의 상황을 이해하고 필요한 순간 서비스가 먼저 찾아가는 AI 여행도우미입니다.':`${bootRegion.regionName} 여행을 위한 AI 여행안내`);
 if(isStandalone()){setAnalyticsRegion(bootRegion.id);track('PWA_STANDALONE_OPEN',ensureTripSession(bootRegion.id).id,{source:'standalone'})}
 
 createRoot(document.getElementById('root')!).render(

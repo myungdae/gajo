@@ -4,6 +4,7 @@ import '../platform.css';
 import ExkoRegionKnowledgeLink from '../components/ExkoRegionKnowledgeLink';
 import NationwideRegionExplorer from '../components/NationwideRegionExplorer';
 import PortalRegionSearch from '../components/PortalRegionSearch';
+import PublicBrand from '../components/PublicBrand';
 
 const journeyStages = [
   { stage: 'PLAN', korean: '여행 전', copy: '부모님과 합천 하루 여행하고 싶어요.' },
@@ -37,8 +38,8 @@ export default function PlatformPortalPage() {
   const [openDifference,setOpenDifference]=useState(0);
   return <div className="platform-page platform-portal-page">
     <header className="platform-header">
-      <Link to="/" className="platform-brand"><img src="/branding/exkovia-mark.svg" alt="EXKOVIA" /></Link>
-      <span>지역과 여행자를 잇는 AI 관광 플랫폼</span>
+      <PublicBrand />
+      <span>여행자의 상황을 이해하고 필요한 순간 먼저 찾아가는 AI 여행서비스</span>
     </header>
 
     <main className="platform-main platform-portal-main">

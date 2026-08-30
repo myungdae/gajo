@@ -6,6 +6,7 @@ import ConnectionStatus from "./ConnectionStatus";
 import { loadTripSession, tripRestorationDiagnostics } from "../tripSession";
 import { itineraryItemCount } from "../tripContinuity";
 import { resetShellScroll } from "../routeScroll";
+import PublicBrand from "./PublicBrand";
 
 const navItems = [
   { to: "/", label: "홈", icon: "home", end: true },
@@ -76,7 +77,8 @@ export default function Layout() {
     <div className={`app-shell${webShell?' app-shell--web':''}`}>
       <ConnectionStatus />
       {!webShell&&<header className="app-header">
-        <div>
+        <PublicBrand compact />
+        <div className="app-header__region">
           <h1>{region.serviceName}</h1>
           <div className="subtitle">{region.heroSubtitle}</div>
         </div>
