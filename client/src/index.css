@@ -1269,6 +1269,59 @@ table.simple td {
     padding: 7px;
   }
 }
+.map-selection-map {
+  padding: 0;
+  overflow: hidden;
+}
+.facility-map-marker.selected {
+  z-index: 700 !important;
+}
+.map-selected-place {
+  margin-top: 12px;
+  scroll-margin-top: 18vh;
+  overflow-wrap: anywhere;
+}
+.map-selected-place h2 {
+  margin: 5px 0 8px;
+}
+.map-facility-row {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.map-facility-row:last-child {
+  border-bottom: 0;
+}
+.map-facility-row.selected {
+  border-left: 4px solid var(--color-primary);
+  padding-left: 12px;
+}
+.map-facility-select {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+}
+.map-facility-select span {
+  flex: 0 0 auto;
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 700;
+}
+.map-facility-select:focus-visible {
+  outline: 3px solid var(--color-focus, #0f766e);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .map-selected-place {
+    scroll-behavior: auto;
+  }
+}
 @media (max-width: 380px) {
   .concierge-followup-composer {
     grid-template-columns: minmax(0, 1fr) 44px 44px;

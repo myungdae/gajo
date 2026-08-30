@@ -215,9 +215,9 @@ describe('RegionalDataService', () => {
     expect(effective.actions).toMatchObject({
       call: { phone: '055-930-3742' },
       website: { url: expect.stringContaining('foresttrip') },
-      reserve: { url: expect.stringContaining('foresttrip') },
       navigate: { latitude: 35.66525101, longitude: 128.0528925 },
     });
+    expect(effective.actions).not.toHaveProperty('reserve');
     const discovery: any = await new PlaceDiscoveryService(
       service as any,
     ).discover('hapcheon', 'LODGING', '오도산자연휴양림 근처 숙소', {});

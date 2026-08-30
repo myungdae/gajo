@@ -7,6 +7,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { randomUUID } from 'crypto';
+import { verifiedDirectBookingAction } from './public-action-policy';
 import {
   REGIONAL_CANDIDATE_DATASETS,
   REGIONAL_BOOTSTRAP_REGION_IDS,
@@ -967,7 +968,26 @@ export class RegionalDataService implements OnModuleInit {
     const actions: any = { ...(base?.actions || {}) };
     if (row.phone) actions.call = { phone: row.phone };
     if (row.websiteUrl) actions.website = { url: row.websiteUrl };
-    if (row.reservationUrl) actions.reserve = { url: row.reservationUrl };
+    const reservationEvidence = row.fieldEvidence?.reservationUrl;
+    const reserve = verifiedDirectBookingAction(
+      row.reservationUrl,
+      reservationEvidence?.status === 'APPROVED' &&
+        reservationEvidence.evidenceStatus === 'VERIFIED_DIRECT_BOOKING' &&
+        typeof reservationEvidence.current === 'string' &&
+        typeof reservationEvidence.source?.sourceUrl === 'string'
+        ? {
+            kind: 'DIRECT_BOOKING',
+            verificationStatus: 'VERIFIED',
+            verifiedUrl: reservationEvidence.current,
+            sourceUrl: reservationEvidence.source.sourceUrl,
+            verifiedAt:
+              reservationEvidence.reviewedAt || reservationEvidence.observedAt,
+          }
+        : undefined,
+      row.websiteUrl,
+    );
+    if (reserve) actions.reserve = reserve;
+    else delete actions.reserve;
     if (coordinatesSafe)
       actions.navigate = { latitude: row.latitude, longitude: row.longitude };
     else delete actions.navigate;

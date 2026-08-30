@@ -294,7 +294,7 @@ describe('regional recommendation ownership', () => {
       latitude: 35.524485899856,
       longitude: 128.01578179029,
     });
-    expect(pension.actions).toHaveProperty('reserve');
+    expect(pension.actions).not.toHaveProperty('reserve');
     expect(pension.actions).toHaveProperty('call');
     expect(pension.actions.navigate).toEqual({
       latitude: 35.524485899856,
@@ -372,12 +372,12 @@ describe('regional recommendation ownership', () => {
     ]);
     expect(steps.at(-1).actions).toEqual(
       expect.objectContaining({
-        reserve: expect.any(Object),
         call: expect.any(Object),
         website: expect.any(Object),
         navigate: expect.any(Object),
       }),
     );
+    expect(steps.at(-1).actions).not.toHaveProperty('reserve');
     expect(normal.interestCoverage.uncovered).toEqual([]);
     expect(normal.candidateRegionIds).toEqual(['hapcheon']);
     const now = await service().instance.buildRecommendation({
