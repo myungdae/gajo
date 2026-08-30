@@ -34,6 +34,12 @@ const differenceQuestions = [
   { question: '지자체는 기존 관광 데이터를 다시 만들어야 하나요?', answer: '기존 관광 데이터와 안정적인 식별자를 우선 연결하고, 출처·검토 상태를 보존하는 방식으로 확장합니다. 같은 장소를 중복 생성하지 않으며 부족한 정보만 단계적으로 보완할 수 있습니다.' },
 ];
 
+const serviceRoles = [
+  { name: 'ChatGPT', copy: '질문하면 일반적인 정보를 답합니다.' },
+  { name: 'T맵', copy: '목적지를 정하면 가는 길을 안내합니다.' },
+  { name: '찾아오는 여행도우미', copy: '여행자의 시간·날씨·동행자·남은 시간 등 현재 상황을 이해해 지금 할 일을 먼저 제안하고, 상황이 바뀌면 일정을 다시 짜며 길찾기·전화·예약 같은 실제 행동으로 연결합니다.' },
+];
+
 export default function PlatformPortalPage() {
   const [openDifference,setOpenDifference]=useState(0);
   return <div className="platform-page platform-portal-page">
@@ -49,7 +55,7 @@ export default function PlatformPortalPage() {
           <p className="platform-hero-lead">메뉴를 배우지 마세요.<br />그냥 지금 상황을 말씀하세요.</p>
           <div className="platform-hero-actions">
             <Link className="platform-primary-action" to="/regions">지역 AI 여행안내 시작하기</Link>
-            <a className="platform-secondary-action" href="#why-exkovia">어떻게 다른가요?</a>
+            <a className="platform-secondary-action" href="#why-exkovia" aria-label="ChatGPT·T맵과 무엇이 다른가요?">ChatGPT·T맵과 무엇이 다른가요?</a>
           </div>
         </div>
 
@@ -99,6 +105,12 @@ export default function PlatformPortalPage() {
           <p className="platform-kicker">WHY EXKOVIA</p>
           <h2 id="difference-title">좋은 도구가 이미 있는데,<br />왜 하나 더 필요할까요?</h2>
           <p>지도와 범용 AI, 지역 관광정보가 잘하는 일을 존중하면서 여행자의 현재를 다음 행동까지 잇습니다.</p>
+        </div>
+        <div className="platform-role-comparison" aria-label="ChatGPT, T맵, 찾아오는 여행도우미의 역할 차이">
+          {serviceRoles.map(item => <article key={item.name}>
+            <h3>{item.name}</h3>
+            <p>{item.copy}</p>
+          </article>)}
         </div>
         <div className="platform-accordion-grid">
           {differenceQuestions.map((item,index)=>{const open=openDifference===index,id=`difference-answer-${index}`;return <article className={open?'is-open':''} key={item.question}>

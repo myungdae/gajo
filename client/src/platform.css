@@ -333,6 +333,10 @@
 .platform-region-grid .exko-region-knowledge-compact a:focus-visible { outline:3px solid #d3a43c; outline-offset:3px; }
 .platform-difference .platform-section-heading > p:last-child { color: #b9c9c0; }
 .platform-difference .platform-kicker { color: #d6ad52; }
+.platform-role-comparison { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin:0 0 34px; }
+.platform-role-comparison article { padding:22px; border:1px solid rgb(237 239 223 / 22%); border-radius:18px; background:#102f27; }
+.platform-role-comparison h3 { margin:0 0 10px; color:#f7f4e9; font-size:19px; line-height:1.3; word-break:keep-all; }
+.platform-role-comparison p { margin:0; color:#c8d5ce; font-size:15px; line-height:1.65; word-break:keep-all; }
 .platform-accordion-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 46px; border-top:1px solid rgb(237 239 223 / 22%); }
 .platform-accordion-grid article { border-bottom:1px solid rgb(237 239 223 / 22%); }
 .platform-accordion-grid h3 { margin:0; }
@@ -538,6 +542,8 @@
   .platform-regions .platform-section-heading { margin-bottom:14px; }
   .portal-region-search { margin-bottom:18px; }
   .platform-accordion-grid { grid-template-columns:1fr; }
+  .platform-role-comparison { grid-template-columns:1fr; }
+  .platform-role-comparison article { padding:18px; }
   .platform-region-grid article {
     min-height: 210px;
   }
