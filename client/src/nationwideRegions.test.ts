@@ -34,7 +34,7 @@ test('only verified existing AI and EXKO destinations are actionable', () => {
     }),
     [
       ['hapcheon','AI_LIVE','/hapcheon','hapcheon','hapcheon'],
-      ['geochang','FIELD_TEST','https://gajo.odex.kr/','gajo','geochang'],
+      ['geochang','FIELD_TEST','/gajo','gajo','geochang'],
       ['okcheon','FIELD_TEST','/okcheon','okcheon','okcheon'],
     ],
   );
@@ -62,6 +62,7 @@ test('duplicate display names use EXKOVIA hierarchy while verified EXKO identity
 
 test('nationwide explorer exposes accessible selection, search, status and safe unavailable cards', () => {
   for (const token of ['type="search"','aria-pressed','aria-live="polite"','아직 AI 여행안내가 제공되지 않습니다','region-explorer-primary','ExkoRegionKnowledgeLink']) assert.match(explorer, new RegExp(token));
+  assert.match(explorer, /<a className="region-explorer-primary" href=\{region\.aiUrl\}>/);
   assert.match(portal, /<NationwideRegionExplorer \/>/);
 });
 

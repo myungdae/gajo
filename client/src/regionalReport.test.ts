@@ -44,11 +44,15 @@ test("regional report is read-only, header-authenticated, and has fixed periods"
 });
 test("regional report canonical routes reuse the registry and reject mismatched scope", () => {
   assert.equal(canonicalRegionalReportPath("hapcheon"), "/hapcheon/regional-report");
-  assert.equal(regionalReportRegion("hapcheon")?.regionName, "합천");
+  for (const [regionId, regionName] of [["hapcheon", "합천"], ["okcheon", "옥천"], ["gajo", "가조"]] as const) {
+    assert.equal(canonicalRegionalReportPath(regionId), `/${regionId}/regional-report`);
+    assert.equal(regionalReportRegion(regionId)?.regionName, regionName);
+  }
   assert.equal(regionalReportRegion("future-unknown"), undefined);
   assert.equal(reportScopeMatchesRoute("hapcheon", "hapcheon"), true);
   assert.equal(reportScopeMatchesRoute(undefined, "hapcheon"), true);
   assert.equal(reportScopeMatchesRoute("okcheon", "hapcheon"), false);
+  assert.equal(reportScopeMatchesRoute("gajo", "hapcheon"), false);
   assert.match(page, /navigate\(canonicalRegionalReportPath\(responseRegion\.id\)/);
   assert.match(page, /setReport\(undefined\)/);
   assert.match(page, /지원하지 않는 지역 리포트/);

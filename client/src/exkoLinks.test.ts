@@ -24,11 +24,13 @@ test('verified URL contains no visitor location query or trip identity',()=>{
 
 test('Portal keeps regional AI primary actions separate from verified EXKO links',()=>{
   const portal=readFileSync(new URL('./pages/PlatformPortalPage.tsx',import.meta.url),'utf8');
-  for(const [name,id,to] of [['합천 AI','hapcheon','/hapcheon'],['거창 AI','geochang','https://gajo.odex.kr/'],['옥천 AI','okcheon','/okcheon']]){
+  for(const [name,id,to] of [['합천 AI','hapcheon','/hapcheon'],['거창 AI','geochang','/gajo'],['옥천 AI','okcheon','/okcheon']]){
     assert.match(portal,new RegExp(`name: '${name}'[^\\n]*to: '${to.replaceAll('/','\\/')}'[^\\n]*exkoRegionId:'${id}'`));
   }
   assert.doesNotMatch(portal,/지역 AI 여행안내: 준비 중/);
   assert.match(portal,/className="platform-region-primary"/);
+  assert.match(portal,/<a className="platform-region-primary" href=\{region\.to\}>/);
+  assert.doesNotMatch(portal,/gajo\.odex\.kr|external:true/);
   assert.equal((portal.match(/compact\/>/g)||[]).length,1);
   assert.match(component,/외부 지역지식 서비스/);
   assert.match(component,/EXKO에서 \{name\}군 지역지식 보기/);

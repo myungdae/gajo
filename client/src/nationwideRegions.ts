@@ -56,7 +56,7 @@ const provinces: readonly ProvinceDefinition[] = [
 
 const serviceOverrides: Readonly<Record<string, Partial<NationwideRegion>>> = {
   'gyeongnam-합천군': { id:'hapcheon', status:'AI_LIVE', aiUrl:'/hapcheon', aiRegionId:'hapcheon', exkoRegionId:'hapcheon' },
-  'gyeongnam-거창군': { id:'geochang', status:'FIELD_TEST', aiUrl:'https://gajo.odex.kr/', aiRegionId:'gajo', exkoRegionId:'geochang', aliases:['가조'] },
+  'gyeongnam-거창군': { id:'geochang', status:'FIELD_TEST', aiUrl:'/gajo', aiRegionId:'gajo', exkoRegionId:'geochang', aliases:['가조'] },
   'chungbuk-옥천군': { id:'okcheon', status:'FIELD_TEST', aiUrl:'/okcheon', aiRegionId:'okcheon', exkoRegionId:'okcheon' },
 };
 

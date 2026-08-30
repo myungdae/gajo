@@ -14,7 +14,7 @@ const journeyStages = [
 
 const regions = [
   { name: '합천 AI', detail: '합천의 여행 계획부터 현장 길찾기까지', status: '운영 중', to: '/hapcheon', cta: '합천 AI 시작하기', exkoRegionId:'hapcheon' },
-  { name: '거창 AI', detail: '거창 가조 실증 지역에서 AI 여행안내를 이용해 보세요.', status: '현장 시험 중', to: 'https://gajo.odex.kr/', cta: '거창 AI 시작하기', external:true, exkoRegionId:'geochang' },
+  { name: '거창 AI', detail: '거창 가조 실증 지역에서 AI 여행안내를 이용해 보세요.', status: '현장 시험 중', to: '/gajo', cta: '거창 AI 시작하기', exkoRegionId:'geochang' },
   { name: '옥천 AI', detail: '옥천의 문학·문화·자연 여행을 AI와 준비해 보세요.', status: '현장 시험 중', to: '/okcheon', cta: '옥천 AI 시작하기', exkoRegionId:'okcheon' },
 ];
 
@@ -72,7 +72,7 @@ export default function PlatformPortalPage() {
           {regions.map(region => <article className="is-active" key={region.name}>
             <div><span>{region.status}</span><h3>{region.name}</h3><p>{region.detail}</p></div>
             <div className="platform-region-actions">
-              {region.external ? <a className="platform-region-primary" href={region.to}>{region.cta} <span aria-hidden="true">→</span></a> : <Link className="platform-region-primary" to={region.to}>{region.cta} <span aria-hidden="true">→</span></Link>}
+              <a className="platform-region-primary" href={region.to}>{region.cta} <span aria-hidden="true">→</span></a>
               <ExkoRegionKnowledgeLink regionId={region.exkoRegionId} compact/>
             </div>
           </article>)}

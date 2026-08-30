@@ -1,14 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import ExkoRegionKnowledgeLink from './ExkoRegionKnowledgeLink';
 import { findNationwideRegion, REGION_STATUS_LABELS, regionsForParent, searchNationwideRegions, TOP_LEVEL_REGIONS, type NationwideRegion } from '../nationwideRegions';
 
 function RegionAction({ region }: { region: NationwideRegion }) {
   if (region.aiUrl) {
     const label = `${region.name.replace(/[시군구]$/, '')} AI 시작하기`;
-    return region.aiUrl.startsWith('http')
-      ? <a className="region-explorer-primary" href={region.aiUrl}>{label}<span aria-hidden="true">→</span></a>
-      : <Link className="region-explorer-primary" to={region.aiUrl}>{label}<span aria-hidden="true">→</span></Link>;
+    return <a className="region-explorer-primary" href={region.aiUrl}>{label}<span aria-hidden="true">→</span></a>;
   }
   return <p className="region-explorer-unavailable">아직 AI 여행안내가 제공되지 않습니다.</p>;
 }
