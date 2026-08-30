@@ -1996,6 +1996,15 @@ table.simple td {
   opacity: 1;
   margin-top: 2px;
 }
+@media (max-width: 430px) {
+  .app-header {
+    padding-inline: 10px;
+    gap: 4px;
+  }
+  .app-header__region .subtitle {
+    font-size: 11px;
+  }
+}
 .app-main {
   padding: 0 20px 28px;
 }

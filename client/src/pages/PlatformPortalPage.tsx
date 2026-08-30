@@ -39,7 +39,6 @@ export default function PlatformPortalPage() {
   return <div className="platform-page platform-portal-page">
     <header className="platform-header">
       <PublicBrand />
-      <span>여행자의 상황을 이해하고 필요한 순간 먼저 찾아가는 AI 여행서비스</span>
     </header>
 
     <main className="platform-main platform-portal-main">

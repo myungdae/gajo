@@ -9,8 +9,8 @@
 }
 
 .public-brand__symbol {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   flex: 0 0 auto;
   overflow: visible;
   fill: none;
@@ -33,7 +33,7 @@
 }
 
 .public-brand__wordmark strong {
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 900;
   letter-spacing: -0.035em;
 }
@@ -49,7 +49,7 @@
 
 .public-brand__wordmark small {
   color: currentColor;
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 750;
   letter-spacing: 0.055em;
   opacity: 0.68;
@@ -60,16 +60,16 @@
 }
 
 .public-brand--compact .public-brand__symbol {
-  width: 23px;
-  height: 23px;
+  width: 28px;
+  height: 28px;
 }
 
 .public-brand--compact .public-brand__wordmark strong {
-  font-size: 14px;
+  font-size: 18px;
 }
 
 .public-brand--compact .public-brand__wordmark small {
-  font-size: 7px;
+  font-size: 9px;
 }
 
 .public-brand--compact .public-brand__slogan {
@@ -80,4 +80,33 @@
   border-radius: 6px;
   outline: 3px solid #f1c84c;
   outline-offset: 4px;
+}
+
+@media (min-width: 768px) {
+  .public-brand__symbol {
+    width: 34px;
+    height: 34px;
+  }
+
+  .public-brand__wordmark strong {
+    font-size: 22px;
+  }
+
+  .public-brand__slogan,
+  .public-brand__wordmark small {
+    font-size: 10px;
+  }
+
+  .public-brand--compact .public-brand__symbol {
+    width: 30px;
+    height: 30px;
+  }
+
+  .public-brand--compact .public-brand__wordmark strong {
+    font-size: 20px;
+  }
+
+  .public-brand--compact .public-brand__wordmark small {
+    font-size: 9px;
+  }
 }

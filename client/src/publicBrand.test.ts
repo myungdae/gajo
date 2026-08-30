@@ -24,6 +24,10 @@ test("public surfaces share the proactive travel helper brand with EXKOVIA attri
   assert.match(selection, /<PublicBrand\/>/);
   assert.match(adoption, /<PublicBrand\/>/);
   assert.match(partner, /<PublicBrand \/>/);
+  assert.doesNotMatch(
+    portal,
+    /여행자의 상황을 이해하고 필요한 순간 먼저 찾아가는 AI 여행서비스/,
+  );
 });
 
 test("brand symbol depicts a lightweight service approaching a traveler without external assets", () => {
@@ -32,8 +36,11 @@ test("brand symbol depicts a lightweight service approaching a traveler without 
   assert.match(brand, /focusable="false"/);
   assert.match(brand, /public-brand__traveler/);
   assert.doesNotMatch(brand, /script|https?:|href=/i);
-  assert.match(brandCss, /\.public-brand__symbol[^{]*\{[^}]*width: 28px/);
-  assert.match(brandCss, /\.public-brand--compact \.public-brand__symbol[^{]*\{[^}]*width: 23px/);
+  assert.match(brandCss, /\.public-brand__symbol[^{]*\{[^}]*width: 30px/);
+  assert.match(brandCss, /\.public-brand--compact \.public-brand__symbol[^{]*\{[^}]*width: 28px/);
+  assert.match(brandCss, /\.public-brand__wordmark strong[^{]*\{[^}]*font-size: 19px/);
+  assert.match(brandCss, /\.public-brand--compact \.public-brand__wordmark strong[^{]*\{[^}]*font-size: 18px/);
+  assert.match(brandCss, /@media \(min-width: 768px\)/);
   assert.match(brandCss, /\.public-brand--compact \.public-brand__slogan[^{]*\{[^}]*display: none/);
   assert.match(brandCss, /\.public-brand:focus-visible/);
   assert.doesNotMatch(brandCss, /gradient|box-shadow|filter:/i);
