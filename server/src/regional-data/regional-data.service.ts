@@ -21,6 +21,7 @@ import {
   operationalVerificationMatrix,
   operationalVerificationTasks,
 } from './operational-readiness';
+import { automaticBootstrapSeedEnabled } from '../bootstrap/startup-data-policy';
 const SOURCE_TYPES = new Set([
   'OFFICIAL_LOCAL_GOV',
   'OFFICIAL_BUSINESS',
@@ -78,6 +79,23 @@ export class RegionalDataService implements OnModuleInit {
     private model: Model<RegionalDataRecordDocument>,
   ) {}
   async onModuleInit() {
+    if (!automaticBootstrapSeedEnabled()) {
+      let missing = 0;
+      for (const regionId of REGIONAL_BOOTSTRAP_REGION_IDS)
+        for (const item of REGIONAL_CANDIDATE_DATASETS[regionId].records)
+          if (
+            !(await this.model.findOne({
+              canonicalEntityId: item.entityUri,
+              regionId,
+            }))
+          )
+            missing++;
+      if (missing)
+        throw new Error(
+          `Regional data bootstrap validation failed: missing documents=${missing}`,
+        );
+      return;
+    }
     for (const regionId of REGIONAL_BOOTSTRAP_REGION_IDS)
       for (const item of REGIONAL_CANDIDATE_DATASETS[regionId].records) {
         await this.model.updateOne(

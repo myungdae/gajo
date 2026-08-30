@@ -33,6 +33,7 @@ import {
   minimalFieldDemoTasks,
 } from '../regional-data/field-demo-readiness';
 import { diagnoseHeatShelterCoverage } from './public-safety-coverage';
+import { automaticBootstrapSeedEnabled } from '../bootstrap/startup-data-policy';
 
 @Injectable()
 export class CopilotService implements OnModuleInit {
@@ -46,6 +47,10 @@ export class CopilotService implements OnModuleInit {
     @Optional() private readonly exko?: ExkoSemanticAdapter,
   ) {}
   async onModuleInit() {
+    if (!automaticBootstrapSeedEnabled()) {
+      await this.validateBootstrapState();
+      return;
+    }
     for (const candidate of okcheonEssentialShopping)
       await this.ingestSearchCandidate(candidate);
     if (this.cores)
@@ -74,6 +79,36 @@ export class CopilotService implements OnModuleInit {
             },
             { upsert: true },
           );
+  }
+  private async validateBootstrapState() {
+    let missingCandidates = 0,
+      missingCores = 0;
+    for (const candidate of okcheonEssentialShopping) {
+      const fingerprint = this.normalize(
+        `${candidate.displayName}:${candidate.address || ''}:${candidate.phone || ''}`,
+      );
+      if (
+        !(await this.model.findOne({
+          regionId: candidate.regionId,
+          fingerprint,
+        }))
+      )
+        missingCandidates++;
+    }
+    if (this.cores)
+      for (const [regionId, items] of Object.entries(INITIAL_CORE_DESTINATIONS))
+        for (const item of items)
+          if (
+            !(await this.cores.findOne({
+              regionId,
+              displayName: item.displayName,
+            }))
+          )
+            missingCores++;
+    if (missingCandidates || missingCores)
+      throw new Error(
+        `Copilot bootstrap validation failed: missing candidates=${missingCandidates}, core destinations=${missingCores}`,
+      );
   }
   private normalize(value = '') {
     return value

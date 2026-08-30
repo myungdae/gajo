@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import { OntologyGraphService } from '../ontology/ontology-graph.service';
 import { OntologyIndividualDoc } from '../schemas/ontology-individual.schema';
 import { CLASS } from '../ontology/ontology.constants';
+import { automaticBootstrapSeedEnabled } from '../bootstrap/startup-data-policy';
 
 /**
  * OntologySyncService: materializes RDF individuals from the in-memory
@@ -67,10 +68,16 @@ export class OntologySyncService implements OnModuleInit {
       [CLASS.Operation, 'ConciergeOperation', this.operationModel],
     ];
 
-    let total = 0;
+    let total = 0,
+      missing = 0;
     for (const [classUri, , model] of jobs) {
       const uris = this.graph.individualsOfIncludingSubclasses(classUri);
       for (const uri of uris) {
+        if (!automaticBootstrapSeedEnabled()) {
+          if (!(await model.findOne({ uri }))) missing++;
+          total++;
+          continue;
+        }
         await model.findOneAndUpdate(
           { uri },
           {
@@ -86,6 +93,14 @@ export class OntologySyncService implements OnModuleInit {
         total++;
       }
     }
-    this.logger.log(`Materialized ${total} ontology individuals into MongoDB collections`);
+    if (!automaticBootstrapSeedEnabled() && missing)
+      throw new Error(
+        `Ontology bootstrap validation failed: missing documents=${missing}`,
+      );
+    this.logger.log(
+      automaticBootstrapSeedEnabled()
+        ? `Materialized ${total} ontology individuals into MongoDB collections`
+        : `Validated ${total} ontology individuals without startup writes`,
+    );
   }
 }

@@ -21,7 +21,8 @@
     "network:retention:dry-run": "node scripts/regional-network-retention-dry-run.mjs",
     "network:retention:index-check": "node scripts/check-regional-network-retention-indexes.mjs",
     "network:retention:index-migrate": "node scripts/migrate-regional-network-retention-indexes.mjs",
-    "network:maintenance": "node dist/regional-report/regional-network-maintenance.js"
+    "network:maintenance": "node dist/regional-report/regional-network-maintenance.js",
+    "bootstrap:seed": "node dist/bootstrap/bootstrap-seed.js --apply"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

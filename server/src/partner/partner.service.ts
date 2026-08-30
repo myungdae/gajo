@@ -29,6 +29,7 @@ import {
   redemptionExpiresAt,
   redemptionLinkExpiresAt,
 } from '../regional-report/retention-policy';
+import { automaticBootstrapSeedEnabled } from '../bootstrap/startup-data-policy';
 const REGION = /^[a-z0-9-]{2,40}$/,
   SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
   UUID = /^[0-9a-f-]{36}$/i;
@@ -117,6 +118,18 @@ export class PartnerService implements OnModuleInit {
     private dailyCounters: Model<BenefitDailyCounterDocument>,
   ) {}
   async onModuleInit() {
+    if (!automaticBootstrapSeedEnabled()) {
+      const existing = await this.partners.findOne({
+        regionId: 'hapcheon',
+        canonicalEntityId:
+          'https://hapcheon.example/ontology#hapcheonLakeSmilePension',
+      });
+      if (!existing)
+        throw new Error(
+          'Partner bootstrap validation failed: missing documents=1',
+        );
+      return;
+    }
     await this.partners.updateOne(
       {
         regionId: 'hapcheon',
