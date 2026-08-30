@@ -1285,6 +1285,13 @@ table.simple td {
 .location-context-bar p { margin: 7px 0; color: var(--color-text-muted); line-height: 1.55; }
 .location-methods { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 14px; }
 .location-methods button,.location-result { min-height: 46px; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 10px; background: #fff; text-align: left; }
+.location-methods .location-primary-action { border-color: var(--color-primary); background: var(--color-primary); color: #fff; opacity: 1; }
+@media (hover: hover) and (pointer: fine) { .location-methods .location-primary-action:hover:not(:disabled) { border-color: var(--color-primary-dark); background: var(--color-primary-dark); color: #fff; } }
+@media (hover: none) { .location-methods .location-primary-action:hover:not(:disabled) { border-color: var(--color-primary); background: var(--color-primary); color: #fff; } }
+.location-methods .location-primary-action:focus-visible { border-color: var(--color-primary-dark); background: var(--color-primary); color: #fff; outline: 3px solid #111827; outline-offset: 3px; }
+.location-methods .location-primary-action:active:not(:disabled) { border-color: #073f3b; background: #073f3b; color: #fff; }
+.location-methods .location-primary-action:disabled { border-color: #496b66; background: #496b66; color: #fff; opacity: 1; }
+@media (forced-colors: active) { .location-methods .location-primary-action { border: 2px solid ButtonText; background: ButtonFace; color: ButtonText; forced-color-adjust: auto; } .location-methods .location-primary-action:focus-visible { outline: 3px solid Highlight; } }
 .location-manual { display: grid; gap: 8px; margin-top: 12px; }
 .location-manual label { display: grid; gap: 5px; font-weight: 700; }
 .location-manual input { min-height: 46px; padding: 10px; border: 1px solid var(--color-border); border-radius: 9px; }
