@@ -1,4 +1,4 @@
-import { NearbyService, NearbyServiceError, normalizeNearbyCategory } from './nearby.service';
+import { classifyRegionMembership, NearbyService, NearbyServiceError, normalizeNearbyCategory } from './nearby.service';
 
 describe('NearbyService', () => {
   const config = (values: Record<string, unknown>) => ({ get: jest.fn((key: string) => values[key]) } as any);
@@ -9,7 +9,8 @@ describe('NearbyService', () => {
     expect(normalizeNearbyCategory('행복 스크린골프')).toBe('GOLF_SCREEN_GOLF');
   });
   it('reports missing key without exposing it', () => expect(new NearbyService(config({})).status()).toEqual(expect.objectContaining({ configured: false, state: 'NOT_CONFIGURED' })));
-  it('reverse geocodes with the server key without returning it',async()=>{jest.spyOn(global,'fetch').mockResolvedValue(response({documents:[{address:{address_name:'경상남도 합천군 대병면',region_1depth_name:'경상남도',region_2depth_name:'합천군',region_3depth_name:'대병면'}}]}));const result=await new NearbyService(config({KAKAO_REST_API_KEY:'server-secret'})).reverseGeocode(35.5,128);expect(result).toMatchObject({label:'경상남도 합천군 대병면'});expect(JSON.stringify(result)).not.toContain('server-secret')});
+  it('reverse geocodes with the server key without returning it',async()=>{jest.spyOn(global,'fetch').mockResolvedValue(response({documents:[{address:{address_name:'경상남도 합천군 대병면',region_1depth_name:'경상남도',region_2depth_name:'합천군',region_3depth_name:'대병면'}}]}));const result=await new NearbyService(config({KAKAO_REST_API_KEY:'server-secret'})).reverseGeocode(35.5,128,'hapcheon',20);expect(result).toMatchObject({label:'경상남도 합천군 대병면',regionMembership:'INSIDE'});expect(JSON.stringify(result)).not.toContain('server-secret')});
+  it('classifies canonical administrative evidence without trusting a place label',()=>{const hapcheon={id:'hapcheon',regionName:'합천',bounds:{north:35.84,south:35.45,east:128.18,west:127.95}};expect(classifyRegionMembership(hapcheon,35.4822804994,127.9831021731,20,{region2:'합천군'})).toBe('INSIDE');expect(classifyRegionMembership(hapcheon,35.49,127.99,20,{region2:'산청군'})).toBe('OUTSIDE');expect(classifyRegionMembership(hapcheon,35.49,127.99,350,{region2:'산청군'})).toBe('UNCERTAIN');expect(classifyRegionMembership(hapcheon,35.4,127.98,20,{region2:'합천군'})).toBe('UNCERTAIN');expect(classifyRegionMembership(hapcheon,35.4822804994,127.9831021731,20)).toBe('UNCERTAIN');expect(classifyRegionMembership({id:'gajo',regionName:'가조',bounds:{north:35.84,south:35.58,east:128.05,west:127.78}},35.714,127.918,20,{region2:'거창군',region3:'가조면'})).toBe('INSIDE');expect(classifyRegionMembership({id:'okcheon',regionName:'옥천',bounds:{north:36.45,south:36.18,east:127.93,west:127.47}},36.3064,127.5714,20,{region2:'옥천군'})).toBe('INSIDE')});
   it('rejects search when key is missing', async () => expect(new NearbyService(config({})).search('CAFE', 35.7, 128)).rejects.toMatchObject({ code: 'NOT_CONFIGURED' }));
   it.each([
     ['CAFE', 'CE7', '카페'], ['LODGING', 'AD5', '숙박'], ['FOOD', 'FD6', '맛집'],

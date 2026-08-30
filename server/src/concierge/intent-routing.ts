@@ -55,7 +55,7 @@ const CATEGORY_PATTERNS: [DiscoveryCategory, RegExp][] = [
     'LODGING',
     /숙박|숙소|호텔|모텔|펜션|민박|한옥|리조트|글램핑|캠핑|야영|오토\s*캠핑|카라반|자연\s*휴양림/,
   ],
-  ['CAFE', /카페|커피(?:\s*한\s*잔)?|다방|차\s*(?:한\s*잔|마실)/],
+  ['CAFE', /카페|커피(?:\s*한\s*잔)?|다방|차\s*(?:한\s*잔|마실)|잠깐\s*쉬|쉬어갈\s*곳/],
   ['HOT_SPRING_WELLNESS', /온천|사우나|찜질(?:방)?|스파|목욕(?:탕|시설)?/],
   ['ACTIVITY', /놀거리|체험|레저|실내\s*체험/],
   [
@@ -83,7 +83,7 @@ const CATEGORY_PATTERNS: [DiscoveryCategory, RegExp][] = [
   ['CONVENIENCE', /약국|병원/],
   [
     'FOOD',
-    /식당|맛집|밥집|배고|밥\s*(?:먹|을)|먹을\s*(?:곳|데)|저녁\s*먹|점심\s*먹|음식점|식사/,
+    /식당|맛집|밥집|배고|밥\s*(?:먹|을)|뭐\s*먹|먹을\s*(?:곳|데)|저녁\s*먹|점심\s*먹|음식점|식사/,
   ],
 ];
 export function discoveryCategory(message = '') {
@@ -157,7 +157,9 @@ export function routeNaturalLanguageIntent(input: {
     };
   if (/비가\s*와|비\s*오는|우천/.test(message))
     return { intentRoute: 'REPLAN' as const, category };
-  if (/다음\s*(?:어디|갈\s*곳)/.test(message))
+  if (/(?:남은\s*)?일정.{0,8}(?:다시|재).{0,8}(?:짜|추천)|일정\s*다시\s*짜/.test(message))
+    return { intentRoute: 'REPLAN' as const, category };
+  if (/다음\s*(?:어디|갈\s*곳|여행지)/.test(message))
     return {
       intentRoute: 'REPLAN' as const,
       category: 'TOURISM_NATURE' as const,
@@ -203,7 +205,7 @@ export function routeNaturalLanguageIntent(input: {
     return { intentRoute: 'IMMEDIATE_NOW' as const, category };
   if (
     category === 'FOOD' &&
-    /(?:배가|배는)?\s*(?:너무|많이|진짜|정말)?\s*(?:고프|고파|고픈|곱|고푸)|배고|허기(?:져|지)|출출/.test(
+    /(?:배가|배는)?\s*(?:너무|많이|진짜|정말)?\s*(?:고프|고파|고픈|곱|고푸)|배고|허기(?:져|지)|출출|뭐\s*먹지/.test(
       message,
     )
   )
@@ -215,7 +217,7 @@ export function routeNaturalLanguageIntent(input: {
   if (journey) return { intentRoute: 'JOURNEY_PLAN' as const, category };
   if (
     category &&
-    /주변|근처|가까운|인근|알려|찾아|보여|추천|어디|있어|아니|먹을\s*(?:곳|데)|살\s*(?:곳|데)|장\s*볼|가고\s*싶|(?:숙박|목욕|자고|묵고).{0,6}싶|가기\s*좋|편한|갈\s*만한|(?:아이와|부모님과)?\s*갈\s+(?:실내\s*)?(?:체험|카페|식당)/.test(
+    /주변|근처|가까운|인근|알려|찾아|보여|추천|어디|있어|아니|먹을\s*(?:곳|데)|살\s*(?:곳|데)|장\s*볼|(?:가고|먹고|쉬고)\s*싶|(?:숙박|목욕|자고|묵고).{0,6}싶|가기\s*좋|편한|갈\s*만한|^카페$|^커피$|(?:아이와|부모님과)?\s*갈\s+(?:실내\s*)?(?:체험|카페|식당)/.test(
       message,
     )
   )

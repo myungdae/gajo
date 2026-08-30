@@ -6,11 +6,11 @@ test("NOW exposes the five approved accessible action labels and AI prompts", ()
   assert.deepEqual(
     NOW_QUICK_ACTIONS.map((x) => x.label),
     [
-      "🍚 밥 먹고 싶어요",
-      "☕ 카페 가고 싶어요",
-      "📍 다음 어디 갈까요?",
-      "🌧️ 비가 와요",
-      "🏠 숙소로 갈래요",
+      "🍚 식당을 찾고 싶어요",
+      "☕ 잠시 쉬어갈 곳을 찾고 싶어요",
+      "📍 주변에 가볼 만한 곳을 찾고 싶어요",
+      "✦ 다음 여행지를 추천해 주세요",
+      "🏠 숙소를 찾고 싶어요",
     ],
   );
   assert.equal(new Set(NOW_QUICK_ACTIONS.map((x) => x.prompt)).size, 5);

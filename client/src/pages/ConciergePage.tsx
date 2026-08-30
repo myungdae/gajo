@@ -663,7 +663,7 @@ export default function ConciergePage() {
               <small>NOW · 여행 중</small>
               <h1 aria-label={NOW_HEADING}>{NOW_HEADING_LINES.map(line=><span className="now-heading-line" key={line}>{line}</span>)}</h1>
               <p>
-                배가 고프거나, 잠시 쉬고 싶거나, 다음 갈 곳을 찾고 있다면 편하게 말씀해 주세요.
+                주변 장소를 찾거나 다음 여행지를 정하고 싶다면 편하게 말씀해 주세요.
               </p>
               {entryState?.entryDescription && entryState.entryMessage && (
                 <strong className="partner-entry-title">{entryState.entryMessage}</strong>

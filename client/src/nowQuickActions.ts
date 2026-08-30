@@ -1,10 +1,10 @@
 export const NOW_QUICK_ACTIONS = [
-  { label: "🍚 밥 먹고 싶어요", prompt: "지금 밥 먹고 싶어요" },
-  { label: "☕ 카페 가고 싶어요", prompt: "지금 카페 가고 싶어요" },
-  { label: "📍 다음 어디 갈까요?", prompt: "다음 어디 갈까요?" },
-  { label: "🌧️ 비가 와요", prompt: "비가 와요" },
-  { label: "🏠 숙소로 갈래요", prompt: "숙소로 갈래요" },
+  { label: "🍚 식당을 찾고 싶어요", prompt: "지금 식당을 찾고 싶어요" },
+  { label: "☕ 잠시 쉬어갈 곳을 찾고 싶어요", prompt: "잠시 쉬어갈 카페를 찾고 싶어요" },
+  { label: "📍 주변에 가볼 만한 곳을 찾고 싶어요", prompt: "주변에 가볼 만한 곳을 찾고 싶어요" },
+  { label: "✦ 다음 여행지를 추천해 주세요", prompt: "다음 여행지를 추천해 주세요" },
+  { label: "🏠 숙소를 찾고 싶어요", prompt: "지금 숙소를 찾고 싶어요" },
 ] as const;
 
-export const NOW_HEADING = "지금 무엇을 하고 싶으세요?";
-export const NOW_HEADING_LINES = ["지금 무엇을", "하고 싶으세요?"] as const;
+export const NOW_HEADING = "무엇을 도와드릴까요?";
+export const NOW_HEADING_LINES = ["무엇을", "도와드릴까요?"] as const;

@@ -647,8 +647,8 @@ export async function fetchNearbyDiscovery(
   return data;
 }
 
-export interface ReverseGeocodeResult { status:"RESOLVED"|"EMPTY";label:string;address?:string;region1?:string;region2?:string;region3?:string }
-export async function reverseGeocodeLocation(latitude:number,longitude:number){const{data}=await api.post<ReverseGeocodeResult>("/nearby/reverse-geocode",{latitude,longitude});return data}
+export interface ReverseGeocodeResult { status:"RESOLVED"|"EMPTY";label:string;address?:string;region1?:string;region2?:string;region3?:string;regionMembership?:"INSIDE"|"OUTSIDE"|"UNCERTAIN" }
+export async function reverseGeocodeLocation(latitude:number,longitude:number,regionId:string,accuracy?:number){const{data}=await api.post<ReverseGeocodeResult>("/nearby/reverse-geocode",{latitude,longitude,regionId,accuracy});return data}
 export async function searchLocation(query:string,regionId:string,origin?:{latitude:number;longitude:number}){const{data}=await api.post<{results:NearbyPlace[]}>("/nearby/location-search",{query,regionId,origin});return data.results}
 
 export interface OntologyEntityDetail {

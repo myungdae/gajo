@@ -44,8 +44,8 @@ test("every regional Home opens the existing lodging Nearby category", () => {
 });
 test("NOW copy and all five existing intent actions remain wired to send", () => {
   const concierge = source("./pages/ConciergePage.tsx"), actions = source("./nowQuickActions.ts");
-  assert.ok(actions.includes('NOW_HEADING = "지금 무엇을 하고 싶으세요?"')); assert.ok(actions.includes('["지금 무엇을", "하고 싶으세요?"]')); assert.match(concierge, /배가 고프거나, 잠시 쉬고 싶거나/); assert.match(concierge, /NowImmediateActions onSelect=\{\(label\) => send\(label\)\}/);
-  for (const label of ["밥 먹고 싶어요", "카페 가고 싶어요", "다음 어디 갈까요?", "비가 와요", "숙소로 갈래요"]) assert.ok(actions.includes(label));
+  assert.ok(actions.includes('NOW_HEADING = "무엇을 도와드릴까요?"')); assert.ok(actions.includes('["무엇을", "도와드릴까요?"]')); assert.match(concierge, /주변 장소를 찾거나 다음 여행지를 정하고 싶다면/); assert.match(concierge, /NowImmediateActions onSelect=\{\(label\) => send\(label\)\}/);
+  for (const label of ["식당을 찾고 싶어요", "잠시 쉬어갈 곳을 찾고 싶어요", "주변에 가볼 만한 곳을 찾고 싶어요", "다음 여행지를 추천해 주세요", "숙소를 찾고 싶어요"]) assert.ok(actions.includes(label));
 });
 test("partner entry copy comes from the public projection and never bypasses the public API", () => {
   const entry = source("./pages/PartnerEntryPage.tsx");

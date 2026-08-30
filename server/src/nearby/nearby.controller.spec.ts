@@ -67,6 +67,7 @@ describe('NearbyController input policy', () => {
   it('requires a region for every public discovery request', async () => {
     await expect(controller.discovery({category:'CAFE',latitude:35.5,longitude:128,radius:1000})).rejects.toBeInstanceOf(BadRequestException);
   });
+  it('requires an allowlisted region and usable accuracy before reverse geocoding',async()=>{await expect(controller.reverseGeocode({latitude:35.5,longitude:128,accuracy:20})).rejects.toBeInstanceOf(BadRequestException);await expect(controller.reverseGeocode({latitude:35.5,longitude:128,regionId:'hapcheon',accuracy:501})).rejects.toBeInstanceOf(BadRequestException)});
   /* eslint-enable prettier/prettier */
   it('does not expose coordinate-bearing nearby lookups as GET routes', () => {
     const source = readFileSync(__dirname + '/nearby.controller.ts', 'utf8');

@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { MasterDataService } from '../master-data/master-data.service';
 import { RegionalDataService } from '../regional-data/regional-data.service';
 import { REGIONAL_CANDIDATE_DATASETS } from '../regions/regional-candidate.registry';
-import { RegionConfigService } from '../region/region-config.service';
+import { REGION_ADMINISTRATIVE_AREAS, RegionConfigService } from '../region/region-config.service';
 
 export type NearbyCategory =
   | 'FOOD' | 'CAFE' | 'LODGING' | 'HOT_SPRING_WELLNESS'
@@ -58,6 +58,8 @@ export interface NearbySearchOptions {
   useDistance?: boolean;
   transportMode?: 'car' | 'foot';
 }
+export type RegionMembership='INSIDE'|'OUTSIDE'|'UNCERTAIN';
+export function classifyRegionMembership(region:{id:string;regionName:string;bounds?:{north:number;south:number;east:number;west:number}},latitude:number,longitude:number,accuracy:number,address:{region1?:string;region2?:string;region3?:string}={}):RegionMembership{const expected=REGION_ADMINISTRATIVE_AREAS[region.id],insideBounds=Boolean(region.bounds&&latitude<=region.bounds.north&&latitude>=region.bounds.south&&longitude<=region.bounds.east&&longitude>=region.bounds.west),administrativeMatch=Boolean(expected&&(!expected.region1||address.region1?.includes(expected.region1))&&address.region2?.includes(expected.region2)&&(!expected.region3||address.region3?.includes(expected.region3)));if(administrativeMatch)return insideBounds?'INSIDE':'UNCERTAIN';if(!address.region2)return'UNCERTAIN';return accuracy>100?'UNCERTAIN':'OUTSIDE'}
 
 // eslint-disable-next-line prettier/prettier
 const TOURISM_CATEGORIES=new Set<NearbyCategory>(['TOURIST_ATTRACTION','NATURE','CULTURE_ART','EXPERIENCE','FESTIVAL_EXHIBITION','ACTIVITY','TOURISM_NATURE']);
@@ -217,7 +219,7 @@ export class NearbyService {
   private isUnsuitableLocationAnchor(category:string){return /유치원|어린이집|학교|학원/.test(category)}
   private locationAnchorScore(place:NearbyPlace,query:string,regionTokens:string[]){const name=this.normalizeSearchText(place.name),address=`${place.roadAddress||''} ${place.address||''}`;return(name===query?100:0)+(name.startsWith(query)?40:0)+(name.includes(query)?20:0)+(regionTokens.some(token=>address.includes(token))?30:0)+(/관공서|행정기관|관광명소|문화시설|교통시설/.test(place.providerCategoryName)?10:0)}
 
-  async reverseGeocode(latitude:number,longitude:number){const key=this.kakaoKey;if(!key)throw new NearbyServiceError('NOT_CONFIGURED','주소 확인은 현재 준비 중입니다.');const url=new URL('https://dapi.kakao.com/v2/local/geo/coord2address.json');url.searchParams.set('x',String(longitude));url.searchParams.set('y',String(latitude));const data=await this.kakaoGet(url,key,false),document=data.documents?.[0],address=document?.road_address||document?.address;if(!address)return{status:'EMPTY' as const,label:'주소를 확인하지 못했습니다.'};const region1=address.region_1depth_name||'',region2=address.region_2depth_name||'',region3=address.region_3depth_name||'';return{status:'RESOLVED' as const,label:[region1,region2,region3].filter(Boolean).join(' '),address:address.address_name||'',region1,region2,region3}}
+  async reverseGeocode(latitude:number,longitude:number,regionId:string,accuracy:number){const region=(this.regions||new RegionConfigService()).get(regionId),key=this.kakaoKey;if(!key)throw new NearbyServiceError('NOT_CONFIGURED','주소 확인은 현재 준비 중입니다.');const url=new URL('https://dapi.kakao.com/v2/local/geo/coord2address.json');url.searchParams.set('x',String(longitude));url.searchParams.set('y',String(latitude));const data=await this.kakaoGet(url,key,false),document=data.documents?.[0],address=document?.road_address||document?.address;if(!address)return{status:'EMPTY' as const,label:'주소를 확인하지 못했습니다.',regionMembership:'UNCERTAIN' as const};const region1=address.region_1depth_name||'',region2=address.region_2depth_name||'',region3=address.region_3depth_name||'',regionMembership=classifyRegionMembership(region,latitude,longitude,accuracy,{region1,region2,region3});return{status:'RESOLVED' as const,label:[region1,region2,region3].filter(Boolean).join(' '),address:address.address_name||'',region1,region2,region3,regionMembership}}
 
   private async addOperationalPlaces(byId: Map<string, NearbyPlace>, requested: NearbyCategory, lat: number, lng: number, radius: number, regionId: string) {
     const dataset = await this.regionalData!.effectiveDataset(regionId);
