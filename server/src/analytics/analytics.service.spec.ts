@@ -23,9 +23,9 @@ describe('AnalyticsService', () => {
     const create = jest.fn();
     const service = new AnalyticsService({ create } as any);
     await service.record({eventType:'INTEREST_UNCOVERED',sessionId:'s2',regionId:'hapcheon',metadata:{interestId:'GOLF'}});
-    expect(create).toHaveBeenCalledWith({eventType:'INTEREST_UNCOVERED',sessionId:'s2',regionId:'hapcheon',metadata:{interestId:'GOLF',regionId:'hapcheon'}});
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({eventType:'INTEREST_UNCOVERED',sessionId:'s2',regionId:'hapcheon',metadata:{interestId:'GOLF',regionId:'hapcheon'},expiresAt:expect.any(Date)}));
   });
-  it('accepts canonical journey execution events without visitor text',async()=>{const create=jest.fn(),service=new AnalyticsService({create}as any);await service.record({eventType:'JOURNEY_START_ACTION',sessionId:'s3',regionId:'hapcheon',metadata:{entityId:'https://hapcheon.example/ontology#hwangmaesanCountyPark',provider:'KAKAO'}});expect(create).toHaveBeenCalledWith({eventType:'JOURNEY_START_ACTION',sessionId:'s3',regionId:'hapcheon',metadata:{entityId:'https://hapcheon.example/ontology#hwangmaesanCountyPark',provider:'KAKAO',regionId:'hapcheon'}})});
+  it('accepts canonical journey execution events without visitor text',async()=>{const create=jest.fn(),service=new AnalyticsService({create}as any);await service.record({eventType:'JOURNEY_START_ACTION',sessionId:'s3',regionId:'hapcheon',metadata:{entityId:'https://hapcheon.example/ontology#hwangmaesanCountyPark',provider:'KAKAO'}});expect(create).toHaveBeenCalledWith(expect.objectContaining({eventType:'JOURNEY_START_ACTION',sessionId:'s3',regionId:'hapcheon',metadata:{entityId:'https://hapcheon.example/ontology#hwangmaesanCountyPark',provider:'KAKAO',regionId:'hapcheon'},expiresAt:expect.any(Date)}))});
   it.each([
     ['unknown event',{eventType:'RAW_TEXT',sessionId:'s1',regionId:'gajo'}],
     ['unknown source',{eventType:'ENTRY_SOURCE',sessionId:'s1',regionId:'gajo',metadata:{source:'attacker-label'}}],

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { PilotEvent, PilotEventDocument } from '../schemas/pilot-event.schema';
+import { rawLinkExpiresAt } from '../regional-report/retention-policy';
 const ALLOWED = new Set([
   'MY_TRIP_OPENED',
   'SAVED_TRIP_LOADED',
@@ -103,6 +104,7 @@ export class AnalyticsService {
       sessionId: input.sessionId,
       regionId,
       metadata,
+      expiresAt: rawLinkExpiresAt(),
     });
     return { accepted: true };
   }

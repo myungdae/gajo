@@ -1,5 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
+import {
+  rawLinkExpiresAt,
+  redemptionExpiresAt,
+  redemptionLinkExpiresAt,
+} from '../regional-report/retention-policy';
 
 export type PartnerStatus =
   | 'DRAFT'
@@ -133,12 +138,20 @@ export class PartnerActivity {
     string,
     string | number | boolean
   >;
+  @Prop({ default: rawLinkExpiresAt }) expiresAt?: Date;
   createdAt?: Date;
 }
 export type PartnerActivityDocument = PartnerActivity & Document;
 export const PartnerActivitySchema =
   SchemaFactory.createForClass(PartnerActivity);
 PartnerActivitySchema.index({ dedupeKey: 1 }, { unique: true, sparse: true });
+PartnerActivitySchema.index(
+  { expiresAt: 1 },
+  {
+    expireAfterSeconds: 0,
+    partialFilterExpression: { expiresAt: { $type: 'date' } },
+  },
+);
 
 @Schema({ timestamps: true })
 export class BenefitRedemption {
@@ -146,21 +159,40 @@ export class BenefitRedemption {
   @Prop({ required: true, index: true }) benefitId: string;
   @Prop({ required: true, index: true }) partnerId: string;
   @Prop({ required: true, index: true }) regionId: string;
-  @Prop({ required: true, index: true }) anonymousTripId: string;
-  @Prop({ required: true, unique: true, index: true }) idempotencyKey: string;
+  @Prop({ index: true }) anonymousTripId?: string;
+  @Prop({ index: true }) idempotencyKey?: string;
   @Prop({ required: true, default: 'REQUESTED' }) status:
     'REQUESTED' | 'CONFIRMED' | 'DECLINED' | 'CANCELLED' | 'EXPIRED';
   @Prop({ required: true }) requestedAt: Date;
   @Prop({ required: true, index: true }) expiresAt: Date;
   @Prop() confirmedAt?: Date;
   @Prop() decidedAt?: Date;
+  @Prop({ index: true, default: redemptionLinkExpiresAt }) linkExpiresAt?: Date;
+  @Prop({ default: redemptionExpiresAt }) retentionExpiresAt?: Date;
 }
 export type BenefitRedemptionDocument = BenefitRedemption & Document;
 export const BenefitRedemptionSchema =
   SchemaFactory.createForClass(BenefitRedemption);
 BenefitRedemptionSchema.index(
   { benefitId: 1, anonymousTripId: 1 },
-  { unique: true },
+  {
+    unique: true,
+    partialFilterExpression: { anonymousTripId: { $type: 'string' } },
+  },
+);
+BenefitRedemptionSchema.index(
+  { idempotencyKey: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { idempotencyKey: { $type: 'string' } },
+  },
+);
+BenefitRedemptionSchema.index(
+  { retentionExpiresAt: 1 },
+  {
+    expireAfterSeconds: 0,
+    partialFilterExpression: { retentionExpiresAt: { $type: 'date' } },
+  },
 );
 
 @Schema({ timestamps: true })

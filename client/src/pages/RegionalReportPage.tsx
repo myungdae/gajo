@@ -9,6 +9,9 @@ import {
   reportScopeMatchesRoute,
 } from "../regionalReportRouting";
 import "./regional-report.css";
+import RegionalTourismNetwork, {
+  type TourismNetworkReport,
+} from "../components/RegionalTourismNetwork";
 type Cell = {
   status: "AVAILABLE" | "SUPPRESSED" | "PREPARING";
   total?: number;
@@ -30,6 +33,7 @@ export default function RegionalReportPage() {
     ),
     [period, setPeriod] = useState("7d"),
     [reportState, setReport] = useState<any>(),
+    [networkState, setNetwork] = useState<TourismNetworkReport>(),
     [error, setError] = useState(""),
     [loading, setLoading] = useState(false);
   const load = async (current = token) => {
@@ -37,25 +41,35 @@ export default function RegionalReportPage() {
     setLoading(true);
     setError("");
     setReport(undefined);
+    setNetwork(undefined);
     try {
-      const { data } = await api.get("/regional-report", {
-        params: { period, ...(routeRegion ? { regionId: routeRegion.id } : {}) },
-        headers: { "x-regional-report-token": current },
-      });
+      const headers = { "x-regional-report-token": current },
+        params = {
+          period,
+          ...(routeRegion ? { regionId: routeRegion.id } : {}),
+        },
+        [{ data }, { data: network }] = await Promise.all([
+          api.get("/regional-report", { params, headers }),
+          api.get("/regional-report/network", { headers }),
+        ]);
       const responseRegion = regionalReportRegion(data?.region?.id);
       if (
         !responseRegion ||
         !reportScopeMatchesRoute(routeRegion?.id, responseRegion.id)
       )
         throw new Error("Regional report scope mismatch");
+      if (network?.region?.id !== responseRegion.id)
+        throw new Error("Regional network scope mismatch");
       sessionStorage.setItem("regional-report-token", current);
       if (!routeRegion)
         navigate(canonicalRegionalReportPath(responseRegion.id), {
           replace: true,
         });
       setReport(data);
+      setNetwork(network);
     } catch {
       setReport(undefined);
+      setNetwork(undefined);
       setError("리포트 인증을 확인하거나 잠시 후 다시 시도해 주세요.");
     } finally {
       setLoading(false);
@@ -74,6 +88,7 @@ export default function RegionalReportPage() {
     sessionStorage.removeItem("regional-report-token");
     setToken("");
     setReport(undefined);
+    setNetwork(undefined);
     setError("");
   };
   const report =
@@ -94,7 +109,9 @@ export default function RegionalReportPage() {
       <section className="report-login">
         <div className="report-brand">EXKOVIA</div>
         <h1>
-          {routeRegion ? `${routeRegion.regionName} 현장 운영 리포트` : "현장 운영 리포트"}
+          {routeRegion
+            ? `${routeRegion.regionName} 현장 운영 리포트`
+            : "현장 운영 리포트"}
         </h1>
         <p>지역 운영자용 읽기 전용 화면입니다.</p>
         <form onSubmit={login}>
@@ -269,6 +286,7 @@ export default function RegionalReportPage() {
           </p>
         )}
       </section>
+      <RegionalTourismNetwork report={networkState} />
       <footer>
         <strong>개인정보 보호 안내</strong>
         <p>{report.privacy.notice}</p>

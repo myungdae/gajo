@@ -40,3 +40,7 @@ Regional Manager는 자신의 지역 고정 기간 집계만 읽는다. Platform
 상위 지역 합계와 억제된 세부 합계를 함께 제공하면 다른 기간 또는 알려진 외부 수치와의 비교로 작은 집단을 추론할 가능성을 완전히 제거할 수 없다. 고정 기간과 cell suppression은 우회를 어렵게 하는 초기 방어이며, 공개 전 dimension 수·기간 조합·보유 정책을 별도 검토한다. `/regional-report` 응답에는 `X-Robots-Tag: noindex, nofollow`를 설정하고 일반 관광객 메뉴에는 연결하지 않는다.
 
 정식 쿠폰·체크인·회원계정 또는 위치정보를 결합하기 전 처리 목적·법적 근거·고지·동의·보유·파기·정보주체 권리·외부 제공에 대한 별도 법률 및 개인정보 검토가 필요하다.
+
+## 익명·집계 기반 지역 관광 연결망
+
+연결망 MVP는 별도 `GET /api/regional-report/network`에서 가장 최근 완료된 Asia/Seoul 일자를 기준으로 고정 30일 비식별 snapshot만 제공한다. today·7d·임의 기간은 제공하지 않는다. node·edge·단계 합계는 동일한 최소 5건 release rule을 통과해야 하며, 억제 edge를 포함하는 상위 원합계는 반환하지 않는다. 상세 보존·집계·재실행·late event 정책은 [익명·집계 기반 지역 관광 연결망 MVP](./anonymized-regional-tourism-network.md)를 따른다.

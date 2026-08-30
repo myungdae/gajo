@@ -416,7 +416,11 @@ describe('benefit policy and redemption trust', () => {
     });
     expect(result.status).toBe('REQUESTED');
     expect(m.redemptions.create).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 'REQUESTED' }),
+      expect.objectContaining({
+        status: 'REQUESTED',
+        linkExpiresAt: expect.any(Date),
+        retentionExpiresAt: expect.any(Date),
+      }),
     );
   });
   it('requires owner key and rejects invalid decisions and completed reuse', async () => {

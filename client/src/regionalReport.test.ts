@@ -19,6 +19,10 @@ const page = readFileSync(
     "utf8",
   ),
   app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
+const network = readFileSync(
+  new URL("./components/RegionalTourismNetwork.tsx", import.meta.url),
+  "utf8",
+);
 test("regional report is read-only, header-authenticated, and has fixed periods", () => {
   assert.match(app, /path="\/regional-report"/);
   assert.match(app, /path="\/:regionId\/regional-report"/);
@@ -43,9 +47,19 @@ test("regional report is read-only, header-authenticated, and has fixed periods"
   );
 });
 test("regional report canonical routes reuse the registry and reject mismatched scope", () => {
-  assert.equal(canonicalRegionalReportPath("hapcheon"), "/hapcheon/regional-report");
-  for (const [regionId, regionName] of [["hapcheon", "합천"], ["okcheon", "옥천"], ["gajo", "가조"]] as const) {
-    assert.equal(canonicalRegionalReportPath(regionId), `/${regionId}/regional-report`);
+  assert.equal(
+    canonicalRegionalReportPath("hapcheon"),
+    "/hapcheon/regional-report",
+  );
+  for (const [regionId, regionName] of [
+    ["hapcheon", "합천"],
+    ["okcheon", "옥천"],
+    ["gajo", "가조"],
+  ] as const) {
+    assert.equal(
+      canonicalRegionalReportPath(regionId),
+      `/${regionId}/regional-report`,
+    );
     assert.equal(regionalReportRegion(regionId)?.regionName, regionName);
   }
   assert.equal(regionalReportRegion("future-unknown"), undefined);
@@ -53,7 +67,10 @@ test("regional report canonical routes reuse the registry and reject mismatched 
   assert.equal(reportScopeMatchesRoute(undefined, "hapcheon"), true);
   assert.equal(reportScopeMatchesRoute("okcheon", "hapcheon"), false);
   assert.equal(reportScopeMatchesRoute("gajo", "hapcheon"), false);
-  assert.match(page, /navigate\(canonicalRegionalReportPath\(responseRegion\.id\)/);
+  assert.match(
+    page,
+    /navigate\(canonicalRegionalReportPath\(responseRegion\.id\)/,
+  );
   assert.match(page, /setReport\(undefined\)/);
   assert.match(page, /지원하지 않는 지역 리포트/);
 });
@@ -63,6 +80,25 @@ test("responsive report supplies touch and focus boundaries", () => {
   assert.match(css, /@media\s*\(max-width:\s*380px\)/);
   assert.match(css, /:focus-visible/);
   assert.doesNotMatch(css, /width:\s*(?:1024|1440)px/);
+});
+test("tourism network uses a fixed privacy-safe 30-day aggregate and accessible cards", () => {
+  assert.match(page, /\/regional-report\/network/);
+  for (const label of [
+    "익명·집계 기반 지역 관광 연결망",
+    "같은 익명 이용 흐름에서 함께 관찰된 연결",
+    "연결 이벤트 횟수",
+    "이동 의도 연결",
+    "현장 QR 확인",
+    "검증된 혜택 이용",
+    "연결 데이터 준비 중",
+  ])
+    assert.match(network, new RegExp(label));
+  assert.match(network, /최근 완료된 30일/);
+  assert.match(network, /network-cards/);
+  assert.doesNotMatch(
+    network,
+    /실제 방문자|순 방문자|매출 발생|GPS로 확인된 도착/,
+  );
 });
 test("internal report keys always render through Korean allowlists", () => {
   const keys = [

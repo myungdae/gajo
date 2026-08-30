@@ -185,6 +185,137 @@
 .report-error {
   color: #9b2c2c;
 }
+.tourism-network {
+  margin-top: 32px;
+  padding: 24px;
+  border: 1px solid #d5dfdb;
+  background: #fff;
+}
+.network-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: flex-start;
+}
+.network-heading h2 {
+  margin: 5px 0 8px;
+}
+.network-heading p,
+.network-heading small {
+  color: #587269;
+}
+.network-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  justify-content: flex-end;
+}
+.network-filters button {
+  min-height: 40px;
+  padding: 7px 11px;
+  border: 1px solid #c8d8d2;
+  border-radius: 999px;
+  background: #fff;
+  color: #294c41;
+}
+.network-filters button[aria-pressed="true"] {
+  border-color: #315e54;
+  background: #315e54;
+  color: #fff;
+}
+.network-empty {
+  margin-top: 20px;
+  padding: 28px;
+  text-align: center;
+  background: #f1f5f3;
+  color: #48645b;
+}
+.network-map {
+  display: grid;
+  gap: 10px;
+  margin-top: 22px;
+}
+.network-link {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(70px, 1.5fr) minmax(
+      120px,
+      1fr
+    );
+  align-items: center;
+  gap: 12px;
+}
+.network-node {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #edf3f0;
+  text-align: center;
+  font-weight: 700;
+}
+.network-line {
+  display: block;
+  border-radius: 999px;
+  background: #66a98e;
+}
+.stage-movement_intent .network-line {
+  background: #4d82b8;
+}
+.stage-qr_visit_confirmed .network-line {
+  background: #c08b39;
+}
+.stage-benefit_use_confirmed .network-line {
+  background: #8b61ad;
+}
+.network-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+.network-cards article {
+  padding: 18px;
+  background: #f7faf9;
+}
+.network-cards h3 {
+  margin: 6px 0;
+  font-size: 1rem;
+}
+.network-cards p {
+  color: #587269;
+  font-size: 0.9rem;
+}
+.network-cards strong {
+  display: block;
+  font-size: 1.4rem;
+}
+.network-cards span {
+  font-size: 0.82rem;
+  color: #587269;
+}
+.network-category-list {
+  margin-top: 22px;
+  border-top: 2px solid #315e54;
+}
+.network-category-list h3 {
+  margin: 16px 0 8px;
+}
+.network-category-list > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 4px;
+  border-bottom: 1px solid #dce3e0;
+}
+.network-privacy-note {
+  margin-top: 20px;
+  padding: 18px;
+  border-left: 4px solid #7aa692;
+  background: #f4f8f6;
+}
+.network-privacy-note p {
+  margin: 6px 0 0;
+  line-height: 1.65;
+  color: #48645b;
+}
 .regional-report button:focus-visible,
 .report-login input:focus-visible,
 .report-login button:focus-visible {
@@ -216,6 +347,22 @@
   }
   .metric-card strong {
     font-size: 26px;
+  }
+  .network-heading {
+    display: block;
+  }
+  .network-filters {
+    justify-content: flex-start;
+    margin-top: 14px;
+  }
+  .network-map {
+    display: none;
+  }
+  .network-cards {
+    grid-template-columns: 1fr;
+  }
+  .tourism-network {
+    padding: 18px;
   }
 }
 @media (max-width: 380px) {

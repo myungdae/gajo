@@ -24,6 +24,11 @@ import {
   PARTNER_APPLICATION_FINGERPRINT_INDEX,
 } from './partner.schema';
 import { partnerApplicationFingerprint } from './public-write-security';
+import {
+  rawLinkExpiresAt,
+  redemptionExpiresAt,
+  redemptionLinkExpiresAt,
+} from '../regional-report/retention-policy';
 const REGION = /^[a-z0-9-]{2,40}$/,
   SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
   UUID = /^[0-9a-f-]{36}$/i;
@@ -429,6 +434,8 @@ export class PartnerService implements OnModuleInit {
           status: 'REQUESTED',
           requestedAt: now,
           expiresAt,
+          linkExpiresAt: redemptionLinkExpiresAt(now),
+          retentionExpiresAt: redemptionExpiresAt(now),
         });
       await this.event(
         'BENEFIT_USE_REQUESTED',
@@ -442,6 +449,8 @@ export class PartnerService implements OnModuleInit {
         status: row.status,
         partnerConfirmationRequired: true,
         expiresAt,
+        linkExpiresAt: redemptionLinkExpiresAt(now),
+        retentionExpiresAt: redemptionExpiresAt(now),
       };
     } catch (error: any) {
       if (dailyReserved)
@@ -871,6 +880,7 @@ export class PartnerService implements OnModuleInit {
         anonymousTripId,
         metadata,
         dedupeKey,
+        expiresAt: rawLinkExpiresAt(),
       })
       .catch((error: any) => {
         if (error?.code === 11000) return undefined;

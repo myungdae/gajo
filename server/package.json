@@ -17,7 +17,11 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "network:retention:dry-run": "node scripts/regional-network-retention-dry-run.mjs",
+    "network:retention:index-check": "node scripts/check-regional-network-retention-indexes.mjs",
+    "network:retention:index-migrate": "node scripts/migrate-regional-network-retention-indexes.mjs",
+    "network:maintenance": "node dist/regional-report/regional-network-maintenance.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

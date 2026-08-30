@@ -1,3 +1,3 @@
-import{Prop,Schema,SchemaFactory}from'@nestjs/mongoose';import{Document}from'mongoose';
-@Schema({timestamps:true})export class PilotEvent{@Prop({required:true,index:true})eventType:string;@Prop({required:true,index:true})sessionId:string;@Prop({required:true,index:true,default:'gajo'})regionId:string;@Prop({type:Object,default:{}})metadata:Record<string,string|number|boolean>}
-export type PilotEventDocument=PilotEvent&Document;export const PilotEventSchema=SchemaFactory.createForClass(PilotEvent);
+import{Prop,Schema,SchemaFactory}from'@nestjs/mongoose';import{Document}from'mongoose';import{rawLinkExpiresAt}from'../regional-report/retention-policy';
+@Schema({timestamps:true})export class PilotEvent{@Prop({required:true,index:true})eventType:string;@Prop({required:true,index:true})sessionId:string;@Prop({required:true,index:true,default:'gajo'})regionId:string;@Prop({type:Object,default:{}})metadata:Record<string,string|number|boolean>;@Prop({default:rawLinkExpiresAt})expiresAt?:Date}
+export type PilotEventDocument=PilotEvent&Document;export const PilotEventSchema=SchemaFactory.createForClass(PilotEvent);PilotEventSchema.index({expiresAt:1},{expireAfterSeconds:0,partialFilterExpression:{expiresAt:{$type:'date'}}});
