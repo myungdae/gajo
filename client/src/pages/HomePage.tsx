@@ -9,6 +9,7 @@ import { useSpeechInput } from '../hooks/useSpeechInput';
 import TripContinuity from '../components/TripContinuity';
 import ExkoRegionKnowledgeLink from '../components/ExkoRegionKnowledgeLink';
 import RegionalHero from '../components/RegionalHero';
+import type { NearbyCategory } from '../api/client';
 
 export default function HomePage(){
   const navigate=useNavigate(),location=useLocation(),region=useRegion();
@@ -23,9 +24,11 @@ export default function HomePage(){
   const contextualTitle=resolved.intent?.title||entryCopy[resolved.entrySource],examples=region.home.examples.slice(0,3);
   const secondaryIntents=region.quickIntents.filter(intent=>['first-time','food-now','place-now','senior-comfort','nearby','events-today'].includes(intent.id));
   const chooseMode=(mode:'PLAN'|'NOW')=>{session();navigate(link(`/concierge?mode=${mode.toLowerCase()}`),{state:{tripMode:mode}})};
-  const findNearby=(category:'LODGING'|'TOURIST_ATTRACTION'='TOURIST_ATTRACTION')=>{const current=session();track('QUICK_INTENT_SELECTED',current.id,{intent:category==='LODGING'?'nearby-lodging':'nearby'});navigate(link('/nearby-discovery'),{state:{category}})};
+  const findNearby=(category:NearbyCategory='TOURIST_ATTRACTION')=>{const current=session();track('QUICK_INTENT_SELECTED',current.id,{intent:category==='LODGING'?'nearby-lodging':category==='FOOD'?'food-now':'nearby'});navigate(link('/nearby-discovery'),{state:{category}})};
+  const askNow=(initialMessage:string)=>{session();navigate(link('/concierge?mode=now'),{state:{tripMode:'NOW',freeTextOpen:true,initialMessage,autoSubmit:true}})};
   return <div className="home-page home-conversation-first" style={{'--region-accent':region.accent}as React.CSSProperties}>
     <RegionalHero region={region} description={contextualTitle} onPlan={()=>chooseMode('PLAN')} onNearby={()=>findNearby()} />
+    <section className="home-arrival" aria-labelledby="home-arrival-title"><div><p className="eyebrow">여행 중 필요한 다음 행동</p><h2 id="home-arrival-title">{region.regionName}에 오셨나요?<br/>지금 필요한 것을 말씀해 주세요.</h2><p>현재 위치와 여행 상황에 맞춰<br/>먹을 곳 · 쉴 곳 · 갈 곳을 찾아드립니다.</p></div><div className="home-arrival-actions" aria-label={`${region.regionName}에서 지금 필요한 것`}><button type="button" onClick={()=>findNearby('FOOD')}>지금 밥 먹고 싶어요</button><button type="button" onClick={()=>askNow('잠깐 쉬고 싶어요.')}>잠깐 쉬고 싶어요</button><button type="button" onClick={()=>findNearby('TOURIST_ATTRACTION')}>주변을 찾고 싶어요</button><button type="button" onClick={()=>askNow('지금 상황에서 다음 갈 곳을 추천해 주세요.')}>다음 갈 곳 추천</button><button type="button" onClick={()=>findNearby('LODGING')}>숙소 찾기</button></div><small>위치 권한은 주변 찾기에서 ‘현재 위치로 찾기’를 누를 때만 요청합니다.</small></section>
     <ExkoRegionKnowledgeLink regionId={region.id}/>
     <TripContinuity />
     <section className="home-conversation" aria-labelledby="home-question"><h2 id="home-question">{region.home.question}</h2><p>{region.home.supportingCopy}</p>

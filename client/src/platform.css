@@ -666,6 +666,14 @@
   margin: 24px 0 0;
   font-size: 16px;
 }
+.adoption-reasons,.adoption-info,.adoption-hapcheon { margin-top: 28px; padding: clamp(22px,4vw,34px); border: 1px solid var(--exko-line); border-radius: 18px; background: #fff; }
+.adoption-reasons h2,.adoption-info h2,.adoption-hapcheon h2 { margin-top: 0; }
+.adoption-reasons > p,.adoption-hapcheon h2 { line-height: 1.65; word-break: keep-all; }
+.adoption-public-info { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; margin: 22px 0; }
+.adoption-public-info span { min-width: 0; padding: 12px 14px; border-radius: 11px; background: #edf3ef; color: #294d40; font-weight: 750; overflow-wrap: anywhere; }
+.adoption-source-note,.adoption-coming-soon { color: #63766e; font-size: 14px; }
+.adoption-hapcheon .platform-cta { margin-top: 8px; }
+@media (max-width:560px) { .adoption-public-info { grid-template-columns: 1fr; } }
 /* The shared visitor bundle used an unlabeled empty oval in this heading. */
 .structured-intake-heading::after {
   display: none;
