@@ -33,7 +33,7 @@ export const INITIAL_CORE_DESTINATIONS: Record<
       aliases: ['황매산 군립공원'],
     },
     {
-      displayName: '합천영상테마파크',
+      displayName: '합천 영상테마파크',
       canonicalEntityId:
         'https://hapcheon.example/ontology#hapcheonVideoThemePark',
       expectedCategory: 'TOURISM_NATURE',

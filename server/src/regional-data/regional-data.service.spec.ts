@@ -180,7 +180,7 @@ describe('RegionalDataService', () => {
     for (const item of batch) first.push(await service.create(item));
     expect(first).toHaveLength(9);
     expect(
-      first.find((x) => x.displayName === '합천영상테마파크'),
+      first.find((x) => x.displayName === '합천 영상테마파크'),
     ).toMatchObject({
       canonicalEntityId:
         'https://hapcheon.example/ontology#hapcheonVideoThemePark',

@@ -18,7 +18,7 @@ describe('three-region golden isolation', () => {
         new RegionConfigService(),
       ),
       [hapcheon] = await discovery.resolveRequestedDestinations('hapcheon', [
-        '합천영상테마파크',
+        '합천 영상테마파크',
       ]),
       [gajo] = await discovery.resolveRequestedDestinations('gajo', [
         '가조온천',

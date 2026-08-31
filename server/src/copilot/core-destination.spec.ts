@@ -63,7 +63,7 @@ function fixtures() {
       regionId: 'hapcheon',
       canonicalEntityId:
         'https://hapcheon.example/ontology#hapcheonVideoThemePark',
-      displayName: '합천영상테마파크',
+      displayName: '합천 영상테마파크',
       expectedCategory: 'TOURISM_NATURE',
       aliases: ['합천 영상테마파크'],
       active: true,
@@ -156,7 +156,7 @@ describe('Regional Copilot Phase 1.1 core destination coverage', () => {
       },
     });
     expect(
-      health.items.find((x: any) => x.core.displayName === '합천영상테마파크'),
+      health.items.find((x: any) => x.core.displayName === '합천 영상테마파크'),
     ).toMatchObject({
       health: 'HEALTHY',
       evidence: {

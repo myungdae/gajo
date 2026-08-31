@@ -26,7 +26,7 @@ const mountain = {
 const videoPark = {
   uri: "https://hapcheon.example/ontology#hapcheonGardenThemePark",
   regionId: "hapcheon",
-  label: "합천영상테마파크",
+  label: "합천 영상테마파크",
   actions: { navigate: { latitude: 35.553365758, longitude: 128.0738450568 } },
 };
 const memory = () => {
@@ -69,7 +69,7 @@ test("production-like EntityActions write persists Hapcheon video theme park exa
     1,
   );
   assert.deepEqual(events, ["ITINERARY_ITEM_ADDED"]);
-  assert.equal(verifiedNavigation(first.item).name, "합천영상테마파크");
+  assert.equal(verifiedNavigation(first.item).name, "합천 영상테마파크");
 });
 test("saved places remain independently selectable and removal persists without changing another place", () => {
   const storage = memory(),

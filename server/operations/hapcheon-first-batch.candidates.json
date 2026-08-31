@@ -16,7 +16,7 @@
       ]
     },
     "proposedFacts": {
-      "displayName": "합천영상테마파크",
+      "displayName": "합천 영상테마파크",
       "aliases": ["영상테마파크"],
       "entityType": "ATTRACTION",
       "category": "TOURISM_CULTURE",
@@ -157,7 +157,7 @@
       "corroboratingSources": [
         {
           "sourceType": "OFFICIAL_LOCAL_GOV",
-          "sourceName": "합천영상테마파크 입점시설 자료",
+          "sourceName": "합천 영상테마파크 입점시설 자료",
           "sourceUrl": "https://www.hc.go.kr/_res/portal/data/pdf/h05000/03.pdf"
         }
       ]
@@ -168,10 +168,10 @@
       "entityType": "RESTAURANT",
       "category": "FOOD",
       "tags": ["FOOD"],
-      "areaLabel": "용주면 · 합천영상테마파크",
+      "areaLabel": "용주면 · 합천 영상테마파크",
       "address": "경상남도 합천군 용주면 합천호수로 757",
       "phone": "055-931-0992",
-      "shortDescription": "합천영상테마파크 안에서 한식 정식 메뉴를 제공하는 음식점"
+      "shortDescription": "합천 영상테마파크 안에서 한식 정식 메뉴를 제공하는 음식점"
     }
   },
   {
