@@ -182,9 +182,8 @@ describe('RegionalDataService', () => {
     expect(
       first.find((x) => x.displayName === '합천 영상테마파크'),
     ).toMatchObject({
-      canonicalEntityId:
-        'https://hapcheon.example/ontology#hapcheonVideoThemePark',
-      lifecycleStatus: 'CHANGE_DETECTED',
+      canonicalEntityId: 'urn:regional:hapcheon:hapcheon-video-theme-park',
+      lifecycleStatus: 'NEW_CANDIDATE',
     });
     expect(db.rows).toHaveLength(9);
     const second = [] as any[];
@@ -235,6 +234,28 @@ describe('RegionalDataService', () => {
         (x) => x.entityUri === odosan.canonicalEntityId,
       ),
     ).toBe(false);
+  });
+  it('keeps proposed identity evidence out of matching and public search',async()=>{
+    const db=model(),service=new RegionalDataService(db as any),facts={entityType:'ATTRACTION',category:'TOURISM_NATURE'};
+    const a:any=await service.create({regionId:'hapcheon',canonicalEntityId:'urn:test:a',source,proposedFacts:{displayName:'A 문화공원',aliases:['A 공원'],...facts}});await service.action(a.id,'APPROVE');
+    await service.create({regionId:'hapcheon',canonicalEntityId:'urn:test:a',source,proposedFacts:{displayName:'A 문화공원',aliases:['B 문화공원'],...facts}});
+    const b:any=await service.create({regionId:'hapcheon',source,proposedFacts:{displayName:'B 문화공원',...facts}});
+    expect(b.canonicalEntityId).not.toBe('urn:test:a');expect(db.rows).toHaveLength(2);
+    await expect(new PlaceDiscoveryService(service as any).resolveExactPlaceIntent('hapcheon','B 문화공원 찾아줘')).resolves.toBeUndefined();
+  });
+  it('never merges different explicit canonical identities by similar name and category',async()=>{
+    const db=model(),service=new RegionalDataService(db as any);
+    for(const [canonicalEntityId,displayName]of[['urn:test:garden','정원 테마파크'],['urn:test:video','영상 테마파크']])await service.create({regionId:'hapcheon',canonicalEntityId,source,proposedFacts:{displayName,aliases:['테마파크'],entityType:'ATTRACTION',category:'TOURISM_NATURE'}});
+    expect(db.rows.map(row=>row.canonicalEntityId)).toEqual(['urn:test:garden','urn:test:video']);
+  });
+  it('IGNORE_CHANGE retains current facts, clears review evidence and leaves other canonicals unchanged',async()=>{
+    const db=model(),service=new RegionalDataService(db as any),common={entityType:'ATTRACTION',category:'TOURISM_NATURE'};
+    const garden:any=await service.create({regionId:'hapcheon',canonicalEntityId:'urn:test:garden',source,proposedFacts:{displayName:'정원테마파크',aliases:['정원공원'],address:'정원로 1',...common}}),video:any=await service.create({regionId:'hapcheon',canonicalEntityId:'urn:test:video',source,proposedFacts:{displayName:'영상테마파크',aliases:['영상공원'],...common}});
+    await service.action(garden.id,'APPROVE');await service.action(video.id,'APPROVE');
+    await service.create({regionId:'hapcheon',canonicalEntityId:'urn:test:garden',source,proposedFacts:{displayName:'영상테마파크',aliases:['영상공원'],address:'영상로 2',...common}});
+    const current=db.rows.find(row=>row.id===garden.id).toObject(),other=JSON.stringify(db.rows.find(row=>row.id===video.id).toObject());await service.action(garden.id,'IGNORE_CHANGE');const after=db.rows.find(row=>row.id===garden.id);
+    expect(after).toMatchObject({displayName:current.displayName,aliases:current.aliases,address:current.address,lifecycleStatus:'ACTIVE',detectedChanges:[],proposedFacts:undefined});expect(JSON.stringify(db.rows.find(row=>row.id===video.id).toObject())).toBe(other);
+    const resolver=new PlaceDiscoveryService(service as any);await expect(resolver.resolveExactPlaceIntent('hapcheon','정원공원 찾아줘')).resolves.toMatchObject({entityId:'urn:test:garden'});await expect(resolver.resolveExactPlaceIntent('hapcheon','영상공원 찾아줘')).resolves.toMatchObject({entityId:'urn:test:video'});
   });
   it('keeps unapproved candidates out, promotes explicitly approved records, and isolates regions', async () => {
     const db = model(),
