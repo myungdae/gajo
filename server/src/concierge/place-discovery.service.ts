@@ -501,7 +501,7 @@ export class PlaceDiscoveryService {
     const requestedName = message
       .replace(/(?:을|를|에)?\s*(?:찾아\s*줘|찾아줘|알려\s*줘|알려줘|보여\s*줘|보여줘|어디(?:야|예요|에요|인가요)?)[.!?\s]*$/u, '')
       .trim();
-    if (!requestedName || requestedName === message.trim()) return undefined;
+    if (!requestedName) return undefined;
     const dataset = await this.regionalData?.effectiveDataset(regionId);
     const normalized = this.normalize(requestedName);
     const record = dataset?.records.find((candidate) =>
