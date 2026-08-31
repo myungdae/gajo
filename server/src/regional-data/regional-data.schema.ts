@@ -56,6 +56,8 @@ export class RegionalDataRecord {
     at: string;
     source?: object;
     changes?: unknown;
+    actorId?: string;
+    regionId?: string;
   }>;
   @Prop({ type: Object }) proposedFacts?: Record<string, unknown>;
   @Prop({ type: Object, default: {} }) fieldEvidence?: Record<

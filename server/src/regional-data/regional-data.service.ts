@@ -280,7 +280,7 @@ export class RegionalDataService implements OnModuleInit {
       at: new Date().toISOString(),
       source: row.source,
       changes: auditedChanges,
-      actorId: auditContext?.actorId,
+      actorId: auditContext?.actorId || 'SYSTEM_INTERNAL',
       regionId: auditContext?.regionId || row.regionId,
     });
     await row.save();

@@ -5,9 +5,10 @@ import {
   Param,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
-import { AdminTokenGuard } from './admin-token.guard';
+import { AdminTokenGuard, type AdminPrincipal } from './admin-token.guard';
 import { RegionalDataService } from './regional-data.service';
 
 @Controller('api/admin/regional-data')
@@ -53,7 +54,10 @@ export class RegionalDataController {
     @Param('id') id: string,
     @Param('action') action: string,
     @Body() body: any,
+    @Req() request: { adminPrincipal?: AdminPrincipal },
   ) {
-    return this.service.action(id, action, body?.editedFacts);
+    return this.service.action(id, action, body?.editedFacts, {
+      actorId: request.adminPrincipal?.actorId,
+    });
   }
 }
