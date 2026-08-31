@@ -254,7 +254,7 @@ describe('RegionalDataService', () => {
     await service.action(garden.id,'APPROVE');await service.action(video.id,'APPROVE');
     await service.create({regionId:'hapcheon',canonicalEntityId:'urn:test:garden',source,proposedFacts:{displayName:'영상테마파크',aliases:['영상공원'],address:'영상로 2',...common}});
     const current=db.rows.find(row=>row.id===garden.id).toObject(),other=JSON.stringify(db.rows.find(row=>row.id===video.id).toObject());await service.action(garden.id,'IGNORE_CHANGE');const after=db.rows.find(row=>row.id===garden.id);
-    expect(after).toMatchObject({displayName:current.displayName,aliases:current.aliases,address:current.address,lifecycleStatus:'ACTIVE',detectedChanges:[],proposedFacts:undefined});expect(JSON.stringify(db.rows.find(row=>row.id===video.id).toObject())).toBe(other);
+    expect(after).toMatchObject({displayName:current.displayName,aliases:current.aliases,address:current.address,lifecycleStatus:'ACTIVE',detectedChanges:[],proposedFacts:undefined});expect(after.auditTrail.at(-1).actorId).toBe('SYSTEM_INTERNAL');expect(JSON.stringify(db.rows.find(row=>row.id===video.id).toObject())).toBe(other);
     const resolver=new PlaceDiscoveryService(service as any);await expect(resolver.resolveExactPlaceIntent('hapcheon','정원공원 찾아줘')).resolves.toMatchObject({entityId:'urn:test:garden'});await expect(resolver.resolveExactPlaceIntent('hapcheon','영상공원 찾아줘')).resolves.toMatchObject({entityId:'urn:test:video'});
   });
   it('keeps unapproved candidates out, promotes explicitly approved records, and isolates regions', async () => {
