@@ -463,12 +463,30 @@ export class PlaceDiscoveryService {
     const normalizedMessage = this.normalize(message);
     const matches = records.flatMap((record) =>
       [record.canonicalLabelKo, ...(record.alternateLabels || [])]
-        .map((label: string) => ({ record, label: this.normalize(label) }))
+        .map((label: string, index: number) => ({record,label:this.normalize(label),official:index===0}))
         .filter(
           ({ label }) => label.length > 0 && normalizedMessage.includes(label),
         ),
     );
-    return matches.sort((a, b) => b.label.length - a.label.length)[0]?.record;
+    if(!matches.length)return undefined;
+    const longest=Math.max(...matches.map(match=>match.label.length));
+    const longestMatches=matches.filter(match=>match.label.length===longest);
+    const officialMatches=longestMatches.filter(match=>match.official);
+    const preferred=officialMatches.length?officialMatches:longestMatches;
+    const entities=new Map(preferred.map(match=>[match.record.entityUri,match.record]));
+    return entities.size===1?[...entities.values()][0]:undefined;
+  }
+
+  private exactCanonicalMatch(records:readonly any[],requestedName:string){
+    const normalized=this.normalize(requestedName);
+    const matching=(official:boolean)=>[...new Map(records.filter(record=>(official?[record.canonicalLabelKo]:record.alternateLabels||[]).some((label:string)=>this.normalize(label)===normalized)).map(record=>[record.entityUri,record])).values()];
+    const official=matching(true);
+    if(official.length===1)return{status:'RESOLVED' as const,record:official[0]};
+    if(official.length>1)return{status:'AMBIGUOUS' as const,records:official};
+    const aliases=matching(false);
+    if(aliases.length===1)return{status:'RESOLVED' as const,record:aliases[0]};
+    if(aliases.length>1)return{status:'AMBIGUOUS' as const,records:aliases};
+    return undefined;
   }
 
   private resolveConceptAnchor(config:any,records:readonly any[],message:string,category:DiscoveryCategory){
@@ -503,18 +521,16 @@ export class PlaceDiscoveryService {
       .trim();
     if (!requestedName) return undefined;
     const dataset = await this.regionalData?.effectiveDataset(regionId);
-    const normalized = this.normalize(requestedName);
-    const record = dataset?.records.find((candidate) =>
-      [candidate.canonicalLabelKo, ...(candidate.alternateLabels || [])].some(
-        (label: string) => this.normalize(label) === normalized,
-      ),
-    );
-    if (!record) return undefined;
+    const match=dataset&&this.exactCanonicalMatch(dataset.records,requestedName);
+    if(!match)return undefined;
+    if(match.status==='AMBIGUOUS')return{status:'AMBIGUOUS' as const,candidates:match.records.map(record=>({entityId:record.entityUri,label:record.canonicalLabelKo}))};
+    const record=match.record;
     const category = (Object.keys(CATEGORY_MATCH) as DiscoveryCategory[]).find(
       (candidate) => CATEGORY_MATCH[candidate](record),
     );
     return category
       ? {
+          status: 'RESOLVED' as const,
           category,
           entityId: record.entityUri,
           label: record.canonicalLabelKo,
@@ -529,7 +545,9 @@ export class PlaceDiscoveryService {
     for(const label of labels){
       const concept=config?.placeConcepts?.find(item=>[item.label,...(item.aliases||[])].some(name=>this.normalize(name)===this.normalize(label)));
       if(concept){result.push({entityId:concept.entityId,label:concept.label,requestedLabel:label,resolved:false,requested:true,source:'SEMANTIC',category:concept.category,entityType:concept.entityType,verificationStatus:'UNVERIFIED',semanticRelations:concept.relations});continue}
-      const canonical=dataset?.records.find(record=>[record.canonicalLabelKo,...(record.alternateLabels||[])].some(name=>this.normalize(name)===this.normalize(label)));
+      const canonicalMatch=dataset&&this.exactCanonicalMatch(dataset.records,label);
+      if(canonicalMatch?.status==='AMBIGUOUS'){result.push({label,requestedLabel:label,resolved:false,requested:true,source:'SEMANTIC',verificationStatus:'UNVERIFIED',ambiguity:{candidateEntityIds:canonicalMatch.records.map(record=>record.entityUri)}});continue}
+      const canonical=canonicalMatch?.status==='RESOLVED'?canonicalMatch.record:undefined;
       if(canonical){result.push({entityId:canonical.entityUri,label:canonical.canonicalLabelKo,requestedLabel:label,resolved:true,requested:true,source:'RDM',category:canonical.category,entityType:canonical.entityType,latitude:canonical.latitude,longitude:canonical.longitude,verificationStatus:canonical.runtimeDataStatus});continue}
       let searched:any;
       try{const found=await (this.nearby as any)?.searchByKeyword?.(label,regionId,this.contextOrigin(context));searched=found?.find((place:any)=>inside(place)&&(this.normalize(place.name).includes(this.normalize(label))||this.normalize(label).includes(this.normalize(place.name))))}catch(error){if(!(error instanceof NearbyServiceError))throw error}

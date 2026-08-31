@@ -159,21 +159,22 @@ export class RegionalDataService implements OnModuleInit {
       );
     if (!SOURCE_TYPES.has(input.source.sourceType))
       throw new BadRequestException('Unsupported sourceType');
-    const identityBaseline = this.findEquivalentBaseline(
-      input.regionId,
-      input.proposedFacts,
-    );
     const requestedCanonical = input.canonicalEntityId;
-    const regionalRows: any[] = await this.model
-      .find({ regionId: input.regionId })
-      .lean();
-    const identityRow = regionalRows.find((row) =>
-      this.sameIdentity(row, input.proposedFacts),
-    );
+    const identityBaseline = requestedCanonical
+      ? undefined
+      : this.findEquivalentBaseline(input.regionId, input.proposedFacts);
+    const regionalRows: any[] = requestedCanonical
+      ? []
+      : await this.model.find({ regionId: input.regionId }).lean();
+    const identityRow = requestedCanonical
+      ? undefined
+      : regionalRows.find((row) =>
+          this.sameIdentity(row, input.proposedFacts),
+        );
     const canonical =
+      requestedCanonical ||
       identityBaseline?.entityUri ||
       identityRow?.canonicalEntityId ||
-      requestedCanonical ||
       `urn:regional-candidate:${input.regionId}:${randomUUID()}`;
     const baseline = this.baseline(input.regionId, canonical);
     const existing: any = await this.model.findOne({
@@ -831,7 +832,6 @@ export class RegionalDataService implements OnModuleInit {
       row.displayName,
       ...(row.alternateLabels || []),
       ...(row.aliases || []),
-      ...(row.proposedFacts?.aliases || []),
     ]
       .map(normalize)
       .filter(Boolean);
@@ -842,13 +842,13 @@ export class RegionalDataService implements OnModuleInit {
     const sameKind =
       Boolean(
         facts.entityType &&
-        facts.entityType === (row.entityType || row.proposedFacts?.entityType),
+        facts.entityType === row.entityType,
       ) ||
       Boolean(
         facts.category &&
-        facts.category === (row.category || row.proposedFacts?.category),
+        facts.category === row.category,
       );
-    const rowAddress = normalize(row.address || row.proposedFacts?.address);
+    const rowAddress = normalize(row.address);
     const proposedAddress = normalize(facts.address);
     if (sameKind && proposedAddress && proposedAddress === rowAddress)
       return true;
@@ -856,11 +856,11 @@ export class RegionalDataService implements OnModuleInit {
     if (
       phone(facts.phone) &&
       phone(facts.phone) ===
-        phone(row.phone || row.telephone || row.proposedFacts?.phone)
+        phone(row.phone || row.telephone)
     )
       return true;
-    const rowLat = row.latitude ?? row.proposedFacts?.latitude,
-      rowLng = row.longitude ?? row.proposedFacts?.longitude;
+    const rowLat = row.latitude,
+      rowLng = row.longitude;
     if (
       Number.isFinite(facts.latitude) &&
       Number.isFinite(facts.longitude) &&

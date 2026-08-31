@@ -135,7 +135,7 @@ export class ConciergeService {
       regionId,
       input.rawMessage || '',
     );
-    if (exactPlaceIntent)
+    if (exactPlaceIntent && exactPlaceIntent.status !== 'AMBIGUOUS')
       route = {
         intentRoute: 'PLACE_DISCOVERY',
         category: exactPlaceIntent.category,
