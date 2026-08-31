@@ -84,3 +84,35 @@ Core restore is an independent one-document compare-and-set. It restores display
 8. Only then switch the client and perform the 390px mobile end-to-end check.
 
 The interval after core alignment and before the new API is healthy is deliberately treated as a compatibility risk window: the old stable image expects the old compact core display name. Do not recycle its healthy container during this interval. If infrastructure automatically restarts it, restore the core first or pin traffic to an already healthy stable instance whose bootstrap has completed.
+
+## Approved Docker one-off runtime
+
+Do not run these scripts with the host Node.js and do not install host dependencies. From the fixed checkout, first verify `pwd` is exactly `/var/www/gajo`, then create the Git-ignored bind-mount directory with `install -d -m 0700 -- /var/www/gajo/server/.maintenance-private/receipt32`. Every command below creates only a disposable `api` one-off container: `--no-deps` does not start MongoDB, API or Client dependencies, and `--no-build` reuses the already selected production image.
+
+```sh
+cd /var/www/gajo
+test "$(pwd -P)" = /var/www/gajo
+
+docker compose run --rm --no-deps --no-build \
+  -v "$PWD/server/scripts:/app/scripts:ro" \
+  -v "$PWD/server/.maintenance-private/receipt32:/app/.maintenance-private/receipt32:rw" \
+  -w /app api node scripts/receipt32-capture.mjs --before
+
+docker compose run --rm --no-deps --no-build \
+  -v "$PWD/server/scripts:/app/scripts:ro" \
+  -v "$PWD/server/.maintenance-private/receipt32:/app/.maintenance-private/receipt32:rw" \
+  -w /app api node scripts/receipt32-core-align.mjs \
+  --core-pre-image /app/.maintenance-private/receipt32/core-pre-image.ejson \
+  --core-manifest /app/.maintenance-private/receipt32/core-align-manifest.json \
+  --actor RECEIPT32_OPERATOR --reason "receipt 32 core identity dry-run"
+
+docker compose run --rm --no-deps --no-build \
+  -v "$PWD/server/scripts:/app/scripts:ro" \
+  -v "$PWD/server/.maintenance-private/receipt32:/app/.maintenance-private/receipt32:rw" \
+  -w /app api node scripts/receipt32-restore.mjs \
+  --pre-image /app/.maintenance-private/receipt32/garden-pre-image.ejson \
+  --manifest /app/.maintenance-private/receipt32/garden-ignore-manifest.json \
+  --check-ignore
+```
+
+The compose service supplies `MONGODB_URI`; never put it on the command line. The scripts accept no output directory, collection, document ID or canonical-ID option. Capture queries fixed identities and fixed collection names, verifies the known unique indexes and counts before opening output files, refuses existing files, and logs only counts, basenames and SHA-256 values. Apply and restore commands remain separately gated and are not authorized by this runbook.

@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 
 const { EJSON, ObjectId } = mongoose.mongo.BSON;
 export const TARGET=Object.freeze({_id:'6a851cbab346fbf150ee371f',id:'seed-hapcheon-garden-theme-park',regionId:'hapcheon',canonicalEntityId:'https://hapcheon.example/ontology#hapcheonGardenThemePark'});
-export const NEIGHBORS=Object.freeze([{key:'video',canonicalEntityId:'https://hapcheon.example/ontology#hapcheonVideoThemePark'},{key:'festival',canonicalEntityId:'https://hapcheon.example/ontology#hwangmaesanSilverGrassFestival'}]);
+export const NEIGHBORS=Object.freeze([{key:'video',canonicalEntityId:'https://hapcheon.example/ontology#hapcheonVideoThemePark'},{key:'festival',canonicalEntityId:'https://hapcheon.example/ontology#hwangmaesanSilverGrassFestival'},{key:'cPark',canonicalEntityId:'https://hapcheon.example/ontology#cPark'}]);
 export const RESTORED_FIELDS=Object.freeze(['lifecycleStatus','detectedChanges','proposedFacts']);
 const equal=(a,b)=>EJSON.stringify(a,{relaxed:false})===EJSON.stringify(b,{relaxed:false});
 export const documentHash=document=>createHash('sha256').update(EJSON.stringify(document,{relaxed:false})).digest('hex');

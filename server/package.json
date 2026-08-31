@@ -28,6 +28,8 @@
     "receipt32:core-align": "node scripts/receipt32-core-align.mjs",
     "test:receipt32:core-align": "node --test scripts/receipt32-core-align.test.mjs",
     "test:receipt32:cli": "node --test scripts/receipt32-cli.test.mjs",
+    "receipt32:capture": "node scripts/receipt32-capture.mjs",
+    "test:receipt32:capture": "node --test scripts/receipt32-capture.test.mjs",
     "network:maintenance": "node dist/regional-report/regional-network-maintenance.js",
     "bootstrap:seed": "node dist/bootstrap/bootstrap-seed.js --apply"
   },
