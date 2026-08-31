@@ -539,6 +539,7 @@ export interface NearbyPlace {
   masterVerificationStatus?: string;
   transient: boolean;
   relevanceScore: number;
+  tourismTrustLevel?: "REGIONAL_VERIFIED" | "PROVIDER_CATEGORY";
 }
 export interface NearbyDiscoveryResponse {
   searchedAt: string;
