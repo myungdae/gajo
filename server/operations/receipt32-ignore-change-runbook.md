@@ -79,7 +79,7 @@ Core restore is an independent one-document compare-and-set. It restores display
 3. Run core alignment dry-run, then the one-document core compare-and-set.
 4. Immediately start only the new API candidate and verify bootstrap and health.
 5. If the new candidate fails, do not restart the stable image against the aligned core. Keep the already-running stable container serving, restore the core with the separate core restore gate, verify its hash and audit, then retain/restart the stable image only after the old core identity is back.
-6. Only after the new API is healthy, run the garden `IGNORE_CHANGE` dry-run and separately approved domain action. Its restore remains an independent document operation.
+6. Only after the new API is healthy, run `npm run receipt32:restore -- --check-ignore` with the garden pre-image and manifest. This mode is read-only and refuses `--apply`. If it passes, use the separately approved domain action for `IGNORE_CHANGE`. Its restore remains an independent document operation.
 7. Recheck the three invariant RegionalDataRecords and all unrelated core hashes.
 8. Only then switch the client and perform the 390px mobile end-to-end check.
 
