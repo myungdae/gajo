@@ -55,6 +55,9 @@ export interface NearbyPlace {
   relevanceScore: number;
   tourismTrustLevel?: 'REGIONAL_VERIFIED' | 'PROVIDER_CATEGORY';
   tourismSelectionReason?: 'APPROVED_REGIONAL_TOURISM' | 'PROVIDER_TOURISM_CATEGORY';
+  season?: string;
+  eventAvailability?: string;
+  accessNotice?: string;
   /** Legacy restaurant bucket, retained for /restaurants clients. */
   categoryGroup?: string;
 }
@@ -231,7 +234,7 @@ export class NearbyService {
   }
 
   // eslint-disable-next-line prettier/prettier
-  async representativeAnchors(regionId:string):Promise<NearbyPlace[]>{const region=(this.regions||new RegionConfigService()).get(regionId),dataset=await this.regionalData?.effectiveDataset(regionId);return(dataset?.records||[]).filter(record=>record.runtimeDataStatus==='VERIFIED'&&record.entityType==='ATTRACTION'&&Number.isFinite(record.latitude)&&Number.isFinite(record.longitude)&&this.insideRegion(record.latitude!,record.longitude!,region?.bounds)).slice(0,8).map(record=>({id:`canonical:${record.entityUri}`,name:record.canonicalLabelKo,category:'TOURIST_ATTRACTION',categoryLabel:'관광지',providerCategoryName:record.category,address:record.address||'',roadAddress:record.address,phone:record.telephone,lat:record.latitude!,lng:record.longitude!,placeUrl:record.website||'',indoorRelevance:'UNKNOWN',operatingState:'UNKNOWN',operatingMessage:'현재 운영 여부 확인 필요',contextualReasons:['검증된 지역 대표 장소입니다.'],canonicalEntityUri:record.entityUri,canonicalLabel:record.canonicalLabelKo,masterVerificationStatus:record.runtimeDataStatus,transient:false,relevanceScore:5}))}
+  async representativeAnchors(regionId:string):Promise<NearbyPlace[]>{const region=(this.regions||new RegionConfigService()).get(regionId),dataset=await this.regionalData?.effectiveDataset(regionId);return(dataset?.records||[]).filter(record=>record.runtimeDataStatus==='VERIFIED'&&record.entityType==='ATTRACTION'&&record.representativeAnchor!==false&&Number.isFinite(record.latitude)&&Number.isFinite(record.longitude)&&this.insideRegion(record.latitude!,record.longitude!,region?.bounds)).slice(0,8).map(record=>({id:`canonical:${record.entityUri}`,name:record.canonicalLabelKo,category:'TOURIST_ATTRACTION',categoryLabel:'관광지',providerCategoryName:record.category,address:record.address||'',roadAddress:record.address,phone:record.telephone,lat:record.latitude!,lng:record.longitude!,placeUrl:record.website||'',indoorRelevance:'UNKNOWN',operatingState:'UNKNOWN',operatingMessage:'현재 운영 여부 확인 필요',contextualReasons:['검증된 지역 대표 장소입니다.'],canonicalEntityUri:record.entityUri,canonicalLabel:record.canonicalLabelKo,masterVerificationStatus:record.runtimeDataStatus,transient:false,relevanceScore:5}))}
 
   private normalizeSearchText(value:string){return value.replace(/\s/g,'').toLowerCase()}
   // eslint-disable-next-line prettier/prettier
@@ -243,7 +246,7 @@ export class NearbyService {
   private tourismTrustRank(place:NearbyPlace){return place.tourismTrustLevel==='REGIONAL_VERIFIED'?1:0}
   private compareResults(category:NearbyCategory,a:NearbyPlace,b:NearbyPlace,useDistance:boolean){return(TOURISM_CATEGORIES.has(category)?this.tourismTrustRank(b)-this.tourismTrustRank(a):0)||(useDistance?(a.distanceMeters??Infinity)-(b.distanceMeters??Infinity):0)||b.relevanceScore-a.relevanceScore}
   // eslint-disable-next-line prettier/prettier
-  private requestedCategoryMatches(requested:NearbyCategory,actual:NearbyCategory){if(requested==='FOOD')return FOOD_CATEGORIES.has(actual)||actual==='FOOD';if(TOURISM_CATEGORIES.has(requested))return TOURISM_CATEGORIES.has(actual);return requested===actual}
+  private requestedCategoryMatches(requested:NearbyCategory,actual:NearbyCategory){if(requested==='FOOD')return FOOD_CATEGORIES.has(actual)||actual==='FOOD';if(requested==='FESTIVAL_EXHIBITION')return actual==='FESTIVAL_EXHIBITION';if(TOURISM_CATEGORIES.has(requested))return TOURISM_CATEGORIES.has(actual);return requested===actual}
   private operationalCategory(record:{canonicalLabelKo:string;category:string;accommodationType?:string},requested:NearbyCategory){if(!LODGING_CATEGORIES.has(requested))return normalizeNearbyCategory(record.canonicalLabelKo,record.category,'',record.category as NearbyCategory);const type=record.accommodationType||'';if(requested==='LODGING')return'LODGING';if(requested==='LODGING_CAMPING_GLAMPING'&&/GLAMPING|CAMPING|AUTO_CAMPING|CARAVAN/.test(type))return requested;if(requested==='LODGING_PENSION_MINBAK'&&/PENSION|MINBAK/.test(type))return requested;if(requested==='LODGING_HOTEL_RESORT'&&/HOTEL|RESORT|FOREST_LODGE|HANOK_STAY/.test(type))return requested;if(requested==='LODGING_MOTEL'&&type==='MOTEL')return requested;if(requested==='LODGING_GUESTHOUSE'&&type==='GUESTHOUSE')return requested;return'LODGING'}
   // eslint-disable-next-line prettier/prettier
   private canonicalConsistent(place:NearbyPlace){if(!place.canonicalEntityUri)return true;const canonical=this.master?.resolveCanonical(place.canonicalEntityUri);if(!canonical)return true;const categoryMatches=!canonical.category||this.requestedCategoryMatches(place.category,normalizeNearbyCategory(canonical.canonicalLabelKo,canonical.category,'',canonical.category as NearbyCategory));return categoryMatches&&(!Number.isFinite(canonical.latitude)||!Number.isFinite(canonical.longitude)||this.distanceMeters(place.lat,place.lng,canonical.latitude!,canonical.longitude!)<=CANONICAL_PROVIDER_MAX_DRIFT_METERS)}
@@ -281,6 +284,7 @@ export class NearbyService {
         operatingState: 'UNKNOWN', operatingMessage: '현재 운영 여부 확인 필요', contextualReasons: ['검증된 지역 운영 데이터입니다.'],
         canonicalEntityUri: record.entityUri, canonicalLabel: record.canonicalLabelKo,
         masterVerificationStatus: record.runtimeDataStatus, transient: false, relevanceScore: 5,
+        season: record.season, eventAvailability: record.eventAvailability, accessNotice: record.accessNotice,
         ...(TOURISM_CATEGORIES.has(requested)?{tourismTrustLevel:'REGIONAL_VERIFIED' as const}:{}),
       });
       const stored=byId.get(`canonical:${record.entityUri}`);if(stored&&TOURISM_CATEGORIES.has(requested))Object.defineProperty(stored,'tourismSelectionReason',{value:'APPROVED_REGIONAL_TOURISM',enumerable:false,configurable:true});

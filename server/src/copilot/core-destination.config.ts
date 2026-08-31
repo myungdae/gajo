@@ -35,9 +35,9 @@ export const INITIAL_CORE_DESTINATIONS: Record<
     {
       displayName: '합천영상테마파크',
       canonicalEntityId:
-        'https://hapcheon.example/ontology#hapcheonGardenThemePark',
+        'https://hapcheon.example/ontology#hapcheonVideoThemePark',
       expectedCategory: 'TOURISM_NATURE',
-      aliases: ['합천 영상테마파크', '합천 정원테마파크'],
+      aliases: ['합천 영상테마파크'],
     },
     {
       displayName: '황계폭포',

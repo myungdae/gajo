@@ -183,7 +183,7 @@ describe('RegionalDataService', () => {
       first.find((x) => x.displayName === '합천영상테마파크'),
     ).toMatchObject({
       canonicalEntityId:
-        'https://hapcheon.example/ontology#hapcheonGardenThemePark',
+        'https://hapcheon.example/ontology#hapcheonVideoThemePark',
       lifecycleStatus: 'CHANGE_DETECTED',
     });
     expect(db.rows).toHaveLength(9);

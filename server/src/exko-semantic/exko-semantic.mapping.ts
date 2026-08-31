@@ -56,10 +56,10 @@ export const ENTITY_ALIGNMENTS = [
   {
     exkoUri: exko + '합천_영상테마파크',
     regionalEntityId:
-      'https://hapcheon.example/ontology#hapcheonGardenThemePark',
+      'https://hapcheon.example/ontology#hapcheonVideoThemePark',
     regionId: 'hapcheon',
-    status: 'POSSIBLE',
-    evidence: ['RDM alias matches but canonical scope differs'],
+    status: 'EXACT',
+    evidence: ['exact canonical name and official tourism identity'],
   },
   {
     exkoUri: exko + '옥천구읍',
