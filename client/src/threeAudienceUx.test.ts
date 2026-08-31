@@ -3,17 +3,27 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const source=(path:string)=>readFileSync(new URL(path,import.meta.url),'utf8');
-const home=source('./pages/HomePage.tsx'),partner=source('./pages/PartnerApplicationPage.tsx'),adoption=source('./pages/RegionAdoptionPage.tsx');
+const home=source('./pages/HomePage.tsx'),css=source('./index.css'),partner=source('./pages/PartnerApplicationPage.tsx'),adoption=source('./pages/RegionAdoptionPage.tsx');
 
-test('traveler identity uses the canonical region display name and existing action routes',()=>{
-  assert.match(home,/\{region\.regionName\}에 오셨나요\?/);
-  assert.doesNotMatch(home,/pathname.*오셨나요|split\([^)]*pathname/);
-  for(const label of['지금 밥 먹고 싶어요','잠깐 쉬고 싶어요','주변을 찾고 싶어요','다음 갈 곳 추천','숙소 찾기'])assert.match(home,new RegExp(label));
+test('traveler welcome uses the canonical region name, explicit help copy and existing action routes',()=>{
+  for(const copy of['여행 중 필요한 도움','에 오신 것을 환영합니다.','지금 무엇을 도와드릴까요?','현재 위치와 여행 상황에 맞춰 먹을 곳·쉴 곳·볼 곳·숙소 등을 찾아드립니다.'])assert.match(home,new RegExp(copy.replace(/[?]/g,'\\?')));
+  assert.match(home,/\{region\.regionName\}에 오신 것을 환영합니다/);
+  assert.doesNotMatch(home,/합천에 오셨나요\?|주변을 찾고 싶어요|pathname.*오신 것을|split\([^)]*pathname/);
+  for(const label of['지금 밥 먹고 싶어요','카페에서 쉬고 싶어요','주변 관광지 보고 싶어요','다음에 갈 곳 추천해 주세요','숙소를 찾고 싶어요'])assert.match(home,new RegExp(label));
   assert.match(home,/findNearby\('FOOD'\)/);
   assert.match(home,/findNearby\('TOURIST_ATTRACTION'\)/);
   assert.match(home,/findNearby\('LODGING'\)/);
+  assert.match(home,/askNow\('카페에서 쉬고 싶어요\.'\)/);
+  assert.match(home,/askNow\('지금 상황에서 다음에 갈 곳을 추천해 주세요\.'\)/);
   assert.match(home,/\/concierge\?mode=now/);
   assert.doesNotMatch(home,/geolocation|getCurrentPosition|watchPosition/);
+});
+
+test('mobile first actions use a two-column card grid with a full-width odd final action',()=>{
+  assert.match(css,/@media \(max-width: 640px\)[\s\S]*\.home-arrival-actions\s*\{[^}]*grid-template-columns: repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(css,/\.home-arrival-actions button:last-child:nth-child\(odd\)\s*\{[^}]*grid-column: 1 \/ -1/);
+  assert.match(css,/\.home-arrival-actions button\s*\{[^}]*min-height: 64px/);
+  assert.match(home,/aria-label=\{`\$\{region\.regionName\} 여행 중 필요한 도움`\}/);
 });
 
 test('partner pilot example is visibly synthetic and preserves the aggregated trust boundary',()=>{
