@@ -130,9 +130,17 @@ export class ConciergeService {
       const explanation=this.guide.approvedExplanation({question:input.rawMessage});
       if(explanation)return{intentRoute:'GUIDE_EXPLANATION',guideExplanation:explanation,recommendation:null,visitorMessage:`${explanation.answer}\n\n여행을 계속할까요?`,journeyContinuation:{prompt:'여행을 계속할까요?',preserveJourney:true}};
     }
-    const
-      route = routeNaturalLanguageIntent(input),
-      routeDetails: any = route;
+    let route: any = routeNaturalLanguageIntent(input);
+    const exactPlaceIntent = await this.placeDiscovery?.resolveExactPlaceIntent?.(
+      regionId,
+      input.rawMessage || '',
+    );
+    if (exactPlaceIntent)
+      route = {
+        intentRoute: 'PLACE_DISCOVERY',
+        category: exactPlaceIntent.category,
+      };
+    const routeDetails: any = route;
     if(route.intentRoute==='FIRST_TIME_VISITOR'){
       const candidates=(INITIAL_CORE_DESTINATIONS[regionId]||[]).map(item=>({entityId:item.canonicalEntityId,label:item.displayName,category:item.expectedCategory,reason:`${regionId==='hapcheon'?'합천':regionId==='gajo'?'가조·거창':'옥천'}의 기존 Core Destination 후보로 관리되는 대표 방문지입니다.`}));
       const labels=candidates.map(x=>x.label).join(', ');

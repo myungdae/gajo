@@ -496,6 +496,32 @@ export class PlaceDiscoveryService {
       : undefined;
   }
 
+  async resolveExactPlaceIntent(regionId: string, message: string) {
+    if (/주변|근처|가까|인근|기준/.test(message)) return undefined;
+    const requestedName = message
+      .replace(/(?:을|를|에)?\s*(?:찾아\s*줘|찾아줘|알려\s*줘|알려줘|보여\s*줘|보여줘|어디(?:야|예요|에요|인가요)?)[.!?\s]*$/u, '')
+      .trim();
+    if (!requestedName || requestedName === message.trim()) return undefined;
+    const dataset = await this.regionalData?.effectiveDataset(regionId);
+    const normalized = this.normalize(requestedName);
+    const record = dataset?.records.find((candidate) =>
+      [candidate.canonicalLabelKo, ...(candidate.alternateLabels || [])].some(
+        (label: string) => this.normalize(label) === normalized,
+      ),
+    );
+    if (!record) return undefined;
+    const category = (Object.keys(CATEGORY_MATCH) as DiscoveryCategory[]).find(
+      (candidate) => CATEGORY_MATCH[candidate](record),
+    );
+    return category
+      ? {
+          category,
+          entityId: record.entityUri,
+          label: record.canonicalLabelKo,
+        }
+      : undefined;
+  }
+
   async resolveRequestedDestinations(regionId:string,labels:string[],context:any={}){
     const dataset=await this.regionalData?.effectiveDataset(regionId),config=this.regionConfig?.get(regionId),bounds=config?.bounds;
     const inside=(place:any)=>Boolean(bounds&&place.lat<=bounds.north&&place.lat>=bounds.south&&place.lng<=bounds.east&&place.lng>=bounds.west);
