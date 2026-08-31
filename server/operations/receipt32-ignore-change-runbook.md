@@ -36,6 +36,8 @@ Abort verification unless the post-image has `lifecycleStatus=ACTIVE`, no `propo
 
 There is currently no safe reverse action in the public controller. Do not add a general restore endpoint. If restoration is separately approved, use a one-run, non-HTTP maintenance entry point that calls a domain service operation and is compiled out of normal routing. It must accept the fixed manifest and pre-image file, not an arbitrary document selector.
 
+The prepared entry point is `npm run receipt32:restore`. It is dry-run unless `--apply`, `--confirm RESTORE_RECEIPT_32_6a851cba`, and `RECEIPT32_RESTORE_APPROVED=true` are all present. The pre-image and manifest must be regular files under `server/.maintenance-private/receipt32/`, which is excluded from Git. Restrict that directory to the operating account before placing backup material there.
+
 The operation must atomically compare `_id`, service `id`, canonical ID, region, expected post-action `__v`, and expected post-image SHA-256. It may restore only `lifecycleStatus`, `detectedChanges`, and `proposedFacts`; it must append a new `RESTORE_IGNORE_CHANGE` audit event with opaque actor ID, timestamp, reason, pre-image SHA-256 and restored field names. It must not replace or truncate the audit trail, timestamps, identity or current canonical facts.
 
 Success requires one matched and modified document, restored-field equality with the pre-image, unchanged protected-facts hash, a new restore audit event, and unchanged hashes for the two non-target documents. A mismatch or zero/multiple matches is a failure and must perform no write.

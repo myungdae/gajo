@@ -23,6 +23,8 @@
     "network:retention:index-migrate": "node scripts/migrate-regional-network-retention-indexes.mjs",
     "receipt32:migration": "node scripts/migrate-receipt32-regional-data.mjs",
     "test:receipt32:migration": "node --test scripts/receipt32-regional-data-migration.test.mjs",
+    "receipt32:restore": "node scripts/receipt32-restore.mjs",
+    "test:receipt32:restore": "node --test scripts/receipt32-restore.test.mjs",
     "network:maintenance": "node dist/regional-report/regional-network-maintenance.js",
     "bootstrap:seed": "node dist/bootstrap/bootstrap-seed.js --apply"
   },
