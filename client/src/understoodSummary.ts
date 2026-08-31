@@ -8,6 +8,12 @@ export function understoodSummary(result: any): string {
   const discovery = result?.discovery;
   if (!discovery)
     return "말씀하신 방문 상황을 바탕으로 일정을 구성했습니다.";
+  if (discovery.referenceResolution?.mode === "EXPLICIT_ENTITY_TARGET") {
+    const label = discovery.entities?.[0]?.programLabel || discovery.entities?.[0]?.facilityLabel;
+    return label
+      ? `요청하신 ${objectParticle(label)} 정확히 찾았습니다.`
+      : "요청하신 장소를 정확히 찾았습니다.";
+  }
   const anchor = discovery.anchorLabel
     ? `${objectParticle(discovery.anchorLabel)} 기준으로`
     : "현재 장소를 기준으로";
