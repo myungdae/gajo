@@ -1,5 +1,4 @@
 import { HAPCHEON_MASTER_DATA } from '../regions/hapcheon/master-data';
-import { routeNaturalLanguageIntent } from './intent-routing';
 import { PlaceDiscoveryService } from './place-discovery.service';
 
 const canonicalId =
@@ -19,11 +18,9 @@ describe('receipt 32 user-visible exact attraction search', () => {
     '합천영상테마파크 찾아줘',
     '영상테마파크 찾아줘',
   ])('returns the canonical public place first for %s', async (message) => {
-    expect(
-      routeNaturalLanguageIntent({ rawMessage: message, inputMode: 'FREE_TEXT' }),
-    ).toEqual({
-      intentRoute: 'PLACE_DISCOVERY',
+    await expect(service.resolveExactPlaceIntent('hapcheon', message)).resolves.toMatchObject({
       category: 'TOURISM_NATURE',
+      entityId: canonicalId,
     });
 
     const result: any = await service.discover(
