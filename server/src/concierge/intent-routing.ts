@@ -60,7 +60,7 @@ const CATEGORY_PATTERNS: [DiscoveryCategory, RegExp][] = [
   ['ACTIVITY', /놀거리|체험|레저|실내\s*체험/],
   [
     'TOURISM_NATURE',
-    /산책|관광(?!\s*안내)|공원|명소|볼\s*만한|갈\s*곳|다\s*봤|이제\s*어디/,
+    /산책|관광(?!\s*안내)|공원|테마\s*파크|명소|볼\s*만한|갈\s*곳|다\s*봤|이제\s*어디/,
   ],
   ['CONVENIENCE_STORE', /(?:24\s*시간\s*)?편의점/],
   ['MART_SUPERMARKET', /마트|슈퍼마켓|슈퍼(?!맨)|식료품점|동네\s*가게/],

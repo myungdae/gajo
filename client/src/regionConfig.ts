@@ -566,7 +566,7 @@ export const HAPCHEON_CONFIG: RegionConfig = {
     {
       id: "https://hapcheon.example/ontology#hapcheonVideoThemePark",
       label: "합천 영상테마파크",
-      aliases: ["합천영상테마파크"],
+      aliases: ["합천영상테마파크", "영상테마파크"],
       category: "체험",
       runtimeDataStatus: "VERIFIED",
     },

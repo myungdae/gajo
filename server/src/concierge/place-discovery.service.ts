@@ -41,9 +41,14 @@ export class PlaceDiscoveryService {
     if (/쉬|휴식|편안|부모님/.test(message)) requested.add('REST');
     requested.add(category);
 
-    const explicitAnchor =
+    const explicitMatch =
       this.resolveExplicitAnchor(dataset.records, message) ||
       this.resolveConceptAnchor(config, dataset.records, message, category);
+    const explicitTarget =
+      explicitMatch && !/주변|근처|가까|인근|기준/.test(message)
+        ? explicitMatch
+        : undefined;
+    const explicitAnchor = explicitTarget ? undefined : explicitMatch;
     const contextualReference =
       /거기|그곳|그중|그\s*(?:근처|주변|카페|식당|숙소)/.test(message);
     const supplied = context.conversationalAnchor;
@@ -136,7 +141,7 @@ export class PlaceDiscoveryService {
         );
         const distanceMeters = this.distance(origin, this.coordinates(record));
         const score =
-          100 +
+          (explicitTarget?.entityUri === record.entityUri ? 10000 : 100) +
           matched.length * 20 +
           (semanticIds.has(record.entityUri) ? 15 : 0) +
           (Number.isFinite(record.latitude) && Number.isFinite(record.longitude)
@@ -149,6 +154,8 @@ export class PlaceDiscoveryService {
       })
       .sort(
         (a, b) =>
+          Number(b.record.entityUri === explicitTarget?.entityUri) -
+            Number(a.record.entityUri === explicitTarget?.entityUri) ||
           (context.preferCloser
             ? (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity)
             : b.score - a.score) ||
@@ -230,6 +237,8 @@ export class PlaceDiscoveryService {
       referenceResolution: {
         mode: explicitAnchor
           ? 'EXPLICIT_ENTITY'
+          : explicitTarget
+            ? 'EXPLICIT_ENTITY_TARGET'
           : priorAnchor
             ? 'DISCOVERY_CONTEXT'
             : contextualAnchor
@@ -297,6 +306,9 @@ export class PlaceDiscoveryService {
             lastVerifiedAt: record.lastVerifiedAt,
             distanceMeters,
             reasons: [
+              ...(explicitTarget?.entityUri === record.entityUri
+                ? ['요청한 장소명과 정확히 일치']
+                : []),
               ...matched.map((tag: string) =>
                 tag === 'HAPCHEON_LAKE'
                   ? '합천호 관련 맥락'
