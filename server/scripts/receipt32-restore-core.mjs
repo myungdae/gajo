@@ -12,6 +12,12 @@ const targetMatches=document=>document&&String(document._id)===TARGET._id&&['id'
 const fail=message=>{throw new Error(`Receipt 32 restore refused: ${message}`)};
 export function assertApplyAuthorization({apply=false,confirm,approved}){if(apply&&(confirm!=='RESTORE_RECEIPT_32_6a851cba'||approved!=='true'))fail('apply confirmation is incomplete');return apply}
 
+export async function runIgnoreChangeDryRun({collection,preImage,manifest}){
+  if(!targetMatches(preImage)||documentHash(preImage)!==manifest.preImageSha256)fail('IGNORE_CHANGE pre-image identity or SHA-256 mismatch');const rows=await collection.find({...TARGET,_id:new ObjectId(TARGET._id)}).toArray();if(rows.length!==1)fail(`target count was ${rows.length}`);const current=rows[0];if(documentHash(current)!==manifest.preImageSha256||Number(current.__v)!==Number(manifest.preImageVersion))fail('current document no longer matches the IGNORE_CHANGE pre-image');if(current.lifecycleStatus!=='CHANGE_DETECTED'||!current.proposedFacts||(current.detectedChanges||[]).length===0)fail('current document is not ready for IGNORE_CHANGE');
+  for(const neighbor of NEIGHBORS){const found=await collection.find({regionId:TARGET.regionId,canonicalEntityId:neighbor.canonicalEntityId}).toArray();if(found.length!==1||documentHash(found[0])!==manifest[`${neighbor.key}Sha256`])fail(`${neighbor.key} SHA-256 mismatch`)}
+  return{mode:'IGNORE_CHANGE_DRY_RUN',valid:true,target:TARGET,currentSha256:documentHash(current),expectedChanges:{lifecycleStatus:'ACTIVE',detectedChanges:[],proposedFacts:'REMOVE',auditAction:'IGNORE_CHANGE'}};
+}
+
 export function planReceipt32Restore({preImage,current,neighbors,manifest,actorId,reason}){
   if(!targetMatches(preImage)||!targetMatches(current))fail('fixed target identity mismatch');
   if(!/^[A-Za-z0-9:_-]{3,64}$/.test(actorId||''))fail('opaque actorId is required');
