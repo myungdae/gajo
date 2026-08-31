@@ -48,7 +48,7 @@ An operator with an already configured read-only MongoDB session can run the fol
 
 ```javascript
 db.getCollectionNames()
-  .filter(name => /regional|place|tour|candidate/i.test(name))
+  .filter(name => /regional|place|tour|candidate|core/i.test(name))
   .sort()
   .forEach(name => printjson({ collection: name, indexes: db.getCollection(name).getIndexes().map(({ name, key, unique, partialFilterExpression }) => ({ name, key, unique, partialFilterExpression })) }));
 ```
