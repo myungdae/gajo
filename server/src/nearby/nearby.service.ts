@@ -179,7 +179,7 @@ export class NearbyService {
   async searchProgressively(category:NearbyCategory,lat:number,lng:number,options:NearbySearchOptions={},regionId:string,requestedRadius?:NearbyRadius):Promise<ProgressiveNearbySearchResult>{
     const region=(this.regions||new RegionConfigService()).get(regionId),policy=nearbyRadiusPolicy(category,region),radii=requestedRadius?[requestedRadius]:policy.steps.filter(radius=>radius<=policy.automaticMaxRadius),budget:ProviderSearchBudget={calls:0,deadline:Date.now()+PROVIDER_SEARCH_TIME_BUDGET_MS};
     let results:NearbyPlace[]=[],radius=radii[0];
-    for(const step of radii){radius=step;results=await this.search(category,lat,lng,step,options,regionId,policy.minimumCandidates,budget);if(results.length>=policy.minimumCandidates||budget.exhausted)break}
+    for(const step of radii){radius=step;const nextResults=await this.search(category,lat,lng,step,options,regionId,policy.minimumCandidates,budget);results=budget.exhausted?[...new Map([...results,...nextResults].map(place=>[place.id,place])).values()].sort((a,b)=>(a.distanceMeters??Infinity)-(b.distanceMeters??Infinity)):nextResults;if(results.length>=policy.minimumCandidates||budget.exhausted)break}
     return{results,radius,initialRadius:policy.steps[0],nextRadius:budget.exhausted?undefined:policy.steps.find(step=>step>radius),minimumCandidates:policy.minimumCandidates,expanded:!requestedRadius&&radius>policy.steps[0],coverageStatus:budget.exhausted?'PARTIAL':'COMPLETE',providerCalls:budget.calls};
   }
 
