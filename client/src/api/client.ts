@@ -549,6 +549,8 @@ export interface NearbyDiscoveryResponse {
   nextRadius?: number;
   minimumCandidates: number;
   expanded: boolean;
+  coverageStatus: "COMPLETE" | "PARTIAL";
+  providerCalls: number;
   total: number;
   resultStatus: "AVAILABLE" | "EMPTY";
   results: NearbyPlace[];
@@ -636,6 +638,7 @@ export async function fetchNearbyDiscovery(
     useDistance?: boolean;
     transportMode?: "car" | "foot";
     regionId?: string;
+    signal?: AbortSignal;
   } = {},
 ) {
   const { data } = await api.post<NearbyDiscoveryResponse>("/nearby/discovery", {
@@ -647,7 +650,7 @@ export async function fetchNearbyDiscovery(
       useDistance: options.useDistance !== false,
       transportMode: options.transportMode || "foot",
       regionId: options.regionId,
-  });
+  },{signal:options.signal});
   return data;
 }
 

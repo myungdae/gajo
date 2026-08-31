@@ -18,6 +18,9 @@ export type NearbyCategory =
   | 'TOURIST_INFORMATION' | 'PHARMACY' | 'HOSPITAL' | 'ATM' | 'OTHER';
 
 const CANONICAL_PROVIDER_MAX_DRIFT_METERS = 100;
+const PROVIDER_SEARCH_MAX_CALLS = 12;
+const PROVIDER_SEARCH_TIME_BUDGET_MS = 10000;
+type ProviderSearchBudget = { calls:number; deadline:number; exhausted?:'CALL_LIMIT'|'TIME_LIMIT' };
 
 
 export type NearbyFailureCode = 'NOT_CONFIGURED' | 'UPSTREAM_ERROR' | 'UPSTREAM_TIMEOUT' | 'INVALID_RESPONSE';
@@ -66,6 +69,8 @@ export interface ProgressiveNearbySearchResult {
   nextRadius?: NearbyRadius;
   minimumCandidates: number;
   expanded: boolean;
+  coverageStatus: 'COMPLETE'|'PARTIAL';
+  providerCalls: number;
 }
 export type RegionMembership='INSIDE'|'OUTSIDE'|'UNCERTAIN';
 export function classifyRegionMembership(region:{id:string;regionName:string;bounds?:{north:number;south:number;east:number;west:number}},latitude:number,longitude:number,accuracy:number,address:{region1?:string;region2?:string;region3?:string}={}):RegionMembership{const expected=REGION_ADMINISTRATIVE_AREAS[region.id],insideBounds=Boolean(region.bounds&&latitude<=region.bounds.north&&latitude>=region.bounds.south&&longitude<=region.bounds.east&&longitude>=region.bounds.west),administrativeMatch=Boolean(expected&&(!expected.region1||address.region1?.includes(expected.region1))&&address.region2?.includes(expected.region2)&&(!expected.region3||address.region3?.includes(expected.region3)));if(administrativeMatch)return insideBounds?'INSIDE':'UNCERTAIN';if(!address.region2)return'UNCERTAIN';return accuracy>100?'UNCERTAIN':'OUTSIDE'}
@@ -172,13 +177,13 @@ export class NearbyService {
   status(regionId?: string) { const configured=this.isConfigured()||Boolean(regionId&&this.regionalData&&REGIONAL_CANDIDATE_DATASETS[regionId]);return { configured, state: configured ? 'READY' : 'NOT_CONFIGURED', provider: this.isConfigured()?'KAKAO_LOCAL':'REGIONAL_OPERATIONAL_DATA', timeoutMs: this.timeoutMs }; }
 
   async searchProgressively(category:NearbyCategory,lat:number,lng:number,options:NearbySearchOptions={},regionId:string,requestedRadius?:NearbyRadius):Promise<ProgressiveNearbySearchResult>{
-    const region=(this.regions||new RegionConfigService()).get(regionId),policy=nearbyRadiusPolicy(category,region),radii=requestedRadius?[requestedRadius]:policy.steps.filter(radius=>radius<=policy.automaticMaxRadius);
+    const region=(this.regions||new RegionConfigService()).get(regionId),policy=nearbyRadiusPolicy(category,region),radii=requestedRadius?[requestedRadius]:policy.steps.filter(radius=>radius<=policy.automaticMaxRadius),budget:ProviderSearchBudget={calls:0,deadline:Date.now()+PROVIDER_SEARCH_TIME_BUDGET_MS};
     let results:NearbyPlace[]=[],radius=radii[0];
-    for(const step of radii){radius=step;results=await this.search(category,lat,lng,step,options,regionId,policy.minimumCandidates);if(results.length>=policy.minimumCandidates)break}
-    return{results,radius,initialRadius:policy.steps[0],nextRadius:policy.steps.find(step=>step>radius),minimumCandidates:policy.minimumCandidates,expanded:!requestedRadius&&radius>policy.steps[0]};
+    for(const step of radii){radius=step;results=await this.search(category,lat,lng,step,options,regionId,policy.minimumCandidates,budget);if(results.length>=policy.minimumCandidates||budget.exhausted)break}
+    return{results,radius,initialRadius:policy.steps[0],nextRadius:budget.exhausted?undefined:policy.steps.find(step=>step>radius),minimumCandidates:policy.minimumCandidates,expanded:!requestedRadius&&radius>policy.steps[0],coverageStatus:budget.exhausted?'PARTIAL':'COMPLETE',providerCalls:budget.calls};
   }
 
-  async search(category: NearbyCategory, lat: number, lng: number, radius = 2000, options: NearbySearchOptions = {}, regionId?: string,minimumCandidates?:number): Promise<NearbyPlace[]> {
+  async search(category: NearbyCategory, lat: number, lng: number, radius = 2000, options: NearbySearchOptions = {}, regionId?: string,minimumCandidates?:number,budget?:ProviderSearchBudget): Promise<NearbyPlace[]> {
     // eslint-disable-next-line prettier/prettier
     const region=regionId?(this.regions||new RegionConfigService()).get(regionId):undefined;
     const key = this.kakaoKey;
@@ -186,8 +191,8 @@ export class NearbyService {
     const byId = new Map<string, NearbyPlace>();
     if (key) {
       const enough=()=>Boolean(minimumCandidates&&this.trustedResults(byId,category,regionId,region).length>=minimumCandidates);
-      for (const code of plan.codes) {await this.fetchCategory(key, code, category, lat, lng, radius, byId,enough);if(enough())break}
-      if(!enough())for (const keyword of plan.keywords) {await this.fetchKeyword(key, keyword, category, lat, lng, radius, byId,enough);if(enough())break}
+      for (const code of plan.codes) {await this.fetchCategory(key, code, category, lat, lng, radius, byId,enough,budget);if(enough()||budget?.exhausted)break}
+      if(!enough()&&!budget?.exhausted)for (const keyword of plan.keywords) {await this.fetchKeyword(key, keyword, category, lat, lng, radius, byId,enough,budget);if(enough()||budget?.exhausted)break}
     }
     if (regionId && this.regionalData) await this.addOperationalPlaces(byId, category, lat, lng, radius, regionId);
     if (!key && byId.size === 0) throw new NearbyServiceError('NOT_CONFIGURED', '주변 장소 검색은 현재 준비 중입니다.');
@@ -269,21 +274,27 @@ export class NearbyService {
 
   private distanceMeters(aLat:number,aLng:number,bLat:number,bLng:number){const r=6371000,toRad=(v:number)=>v*Math.PI/180;const dLat=toRad(bLat-aLat),dLng=toRad(bLng-aLng);const h=Math.sin(dLat/2)**2+Math.cos(toRad(aLat))*Math.cos(toRad(bLat))*Math.sin(dLng/2)**2;return Math.round(2*r*Math.asin(Math.sqrt(h)))}
 
-  private async fetchCategory(key: string, code: string, requested: NearbyCategory, lat: number, lng: number, radius: number, byId: Map<string, NearbyPlace>,shouldStop?:()=>boolean) {
+  private async fetchCategory(key: string, code: string, requested: NearbyCategory, lat: number, lng: number, radius: number, byId: Map<string, NearbyPlace>,shouldStop?:()=>boolean,budget?:ProviderSearchBudget) {
     for (let page = 1; page <= 3; page++) {
+      if(!this.reserveProviderCall(budget))break;
       const url = this.url('category', lat, lng, radius);
       url.searchParams.set('category_group_code', code); url.searchParams.set('page', String(page)); url.searchParams.set('size', '15');
-      const data = await this.kakaoGet(url, key);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const data = await this.kakaoGetWithinBudget(url,key,budget);
+      if(!data)break;
       for (const d of data.documents) this.upsert(byId, d, requested);
       if(shouldStop?.())break;
       if (data.meta.is_end) break;
     }
   }
 
-  private async fetchKeyword(key: string, keyword: string, requested: NearbyCategory, lat: number, lng: number, radius: number, byId: Map<string, NearbyPlace>,shouldStop?:()=>boolean) {
+  private async fetchKeyword(key: string, keyword: string, requested: NearbyCategory, lat: number, lng: number, radius: number, byId: Map<string, NearbyPlace>,shouldStop?:()=>boolean,budget?:ProviderSearchBudget) {
     for(let page=1;page<=3;page++){
+      if(!this.reserveProviderCall(budget))break;
       const url = this.url('keyword', lat, lng, radius); url.searchParams.set('query', keyword); url.searchParams.set('page',String(page));url.searchParams.set('size', '15');
-      const data = await this.kakaoGet(url, key);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const data = await this.kakaoGetWithinBudget(url,key,budget);
+      if(!data)break;
       for (const d of data.documents) this.upsert(byId, d, requested, keyword);
       if(shouldStop?.())break;
       if(data.meta.is_end)break;
@@ -295,6 +306,10 @@ export class NearbyService {
     url.searchParams.set('x', String(lng)); url.searchParams.set('y', String(lat)); url.searchParams.set('radius', String(radius)); url.searchParams.set('sort', 'distance');
     return url;
   }
+
+  private reserveProviderCall(budget?:ProviderSearchBudget){if(!budget)return true;if(Date.now()>=budget.deadline){budget.exhausted='TIME_LIMIT';return false}if(budget.calls>=PROVIDER_SEARCH_MAX_CALLS){budget.exhausted='CALL_LIMIT';return false}budget.calls++;return true}
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  private async kakaoGetWithinBudget(url:URL,key:string,budget?:ProviderSearchBudget){const remaining=budget?budget.deadline-Date.now():this.timeoutMs;if(remaining<=0){if(budget)budget.exhausted='TIME_LIMIT';return undefined}try{return await this.kakaoGet(url,key,true,Math.min(this.timeoutMs,remaining))}catch(error){if(error instanceof NearbyServiceError&&error.code==='UPSTREAM_TIMEOUT'&&budget&&Date.now()>=budget.deadline){budget.exhausted='TIME_LIMIT';return undefined}throw error}}
 
   private upsert(byId: Map<string, NearbyPlace>, d: any, requested: NearbyCategory, keyword?: string) {
     const lat = Number(d.y), lng = Number(d.x); if (!d?.id || !d?.place_name || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
@@ -319,8 +334,8 @@ export class NearbyService {
     byId.set(place.id, place);
   }
 
-  private async kakaoGet(url: URL, key: string, requireMeta=true): Promise<any> {
-    const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+  private async kakaoGet(url: URL, key: string, requireMeta=true,timeoutMs=this.timeoutMs): Promise<any> {
+    const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const response = await fetch(url, { headers: { Authorization: `KakaoAK ${key}` }, signal: controller.signal });
       if (!response.ok) throw new NearbyServiceError('UPSTREAM_ERROR', '주변 장소 정보를 불러오지 못했습니다.', response.status);

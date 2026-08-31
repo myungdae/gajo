@@ -4,7 +4,7 @@ import { NearbyController } from './nearby.controller';
 
 describe('NearbyController input policy', () => {
   const nearby = {
-    searchProgressively: jest.fn(() => Promise.resolve({results:Array.from({ length: 40 }, (_, index) => ({ id: String(index) })),radius:3000,initialRadius:1000,nextRadius:5000,minimumCandidates:5,expanded:true})),
+    searchProgressively: jest.fn(() => Promise.resolve({results:Array.from({ length: 40 }, (_, index) => ({ id: String(index) })),radius:3000,initialRadius:1000,nextRadius:5000,minimumCandidates:5,expanded:true,coverageStatus:'COMPLETE',providerCalls:6})),
     isConfigured: jest.fn(() => true),
   };
   const controller = new NearbyController(nearby as any);

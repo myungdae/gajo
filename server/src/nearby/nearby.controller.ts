@@ -29,7 +29,7 @@ export class NearbyController {
     const { lat, lng, radius } = this.validateSearch(String(body.latitude), String(body.longitude), body.radius==null?undefined:String(body.radius),false);
     try {
       const search = await this.nearby.searchProgressively(categoryValue as NearbyCategory, lat, lng, { weather, useDistance: useDistanceValue, transportMode: transportMode === 'car' ? 'car' : 'foot' }, regionId.trim(), radius as NearbyRadius|undefined),results=search.results;
-      return { searchedAt:new Date().toISOString(),timeZone:'Asia/Seoul',distanceTrusted:useDistanceValue,category:categoryValue,radius:search.radius,initialRadius:search.initialRadius,nextRadius:search.nextRadius,minimumCandidates:search.minimumCandidates,expanded:search.expanded,total:results.length,resultStatus:results.length?'AVAILABLE':'EMPTY',results:results.slice(0,30) };
+      return { searchedAt:new Date().toISOString(),timeZone:'Asia/Seoul',distanceTrusted:useDistanceValue,category:categoryValue,radius:search.radius,initialRadius:search.initialRadius,nextRadius:search.nextRadius,minimumCandidates:search.minimumCandidates,expanded:search.expanded,coverageStatus:search.coverageStatus,providerCalls:search.providerCalls,total:results.length,resultStatus:results.length?'AVAILABLE':'EMPTY',results:results.slice(0,30) };
     } catch (error) { this.rethrow(error); }
   }
   @Post('restaurants') @UseGuards(PublicWriteRateLimitGuard) @PublicWriteLimit('NEARBY_LOOKUP')
