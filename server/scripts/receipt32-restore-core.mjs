@@ -7,6 +7,7 @@ export const NEIGHBORS=Object.freeze([{key:'video',canonicalEntityId:'https://ha
 export const RESTORED_FIELDS=Object.freeze(['lifecycleStatus','detectedChanges','proposedFacts']);
 const equal=(a,b)=>EJSON.stringify(a,{relaxed:false})===EJSON.stringify(b,{relaxed:false});
 export const documentHash=document=>createHash('sha256').update(EJSON.stringify(document,{relaxed:false})).digest('hex');
+export const exactDocumentFilter=document=>EJSON.parse(EJSON.stringify(document,{relaxed:false}),{relaxed:false});
 const targetMatches=document=>document&&String(document._id)===TARGET._id&&['id','regionId','canonicalEntityId'].every(key=>document[key]===TARGET[key]);
 const fail=message=>{throw new Error(`Receipt 32 restore refused: ${message}`)};
 export function assertApplyAuthorization({apply=false,confirm,approved}){if(apply&&(confirm!=='RESTORE_RECEIPT_32_6a851cba'||approved!=='true'))fail('apply confirmation is incomplete');return apply}
@@ -26,15 +27,14 @@ export function planReceipt32Restore({preImage,current,neighbors,manifest,actorI
   return{target:TARGET,expectedVersion:Number(current.__v),restored,audit,protectedFactsUnchanged:Object.keys(preImage).filter(key=>![...RESTORED_FIELDS,'auditTrail','updatedAt','__v'].includes(key)).every(key=>equal(preImage[key],current[key]))};
 }
 
-export async function runReceipt32Restore({collection,preImage,manifest,actorId,reason,apply=false,session}){
-  const options=session?{session}:undefined,targetRows=await collection.find({...TARGET,_id:new ObjectId(TARGET._id)},options).toArray();if(targetRows.length!==1)fail(`target count was ${targetRows.length}`);
-  const neighbors={};for(const neighbor of NEIGHBORS){const rows=await collection.find({regionId:TARGET.regionId,canonicalEntityId:neighbor.canonicalEntityId},options).toArray();if(rows.length!==1)fail(`${neighbor.key} count was ${rows.length}`);neighbors[neighbor.key]=rows[0]}
+export async function runReceipt32Restore({collection,preImage,manifest,actorId,reason,apply=false}){
+  const targetRows=await collection.find({...TARGET,_id:new ObjectId(TARGET._id)}).toArray();if(targetRows.length!==1)fail(`target count was ${targetRows.length}`);
+  const neighbors={};for(const neighbor of NEIGHBORS){const rows=await collection.find({regionId:TARGET.regionId,canonicalEntityId:neighbor.canonicalEntityId}).toArray();if(rows.length!==1)fail(`${neighbor.key} count was ${rows.length}`);neighbors[neighbor.key]=rows[0]}
   const current=targetRows[0],plan=planReceipt32Restore({preImage,current,neighbors,manifest,actorId,reason});if(!plan.protectedFactsUnchanged)fail('protected canonical facts differ from pre-image');
   if(!apply)return{mode:'DRY_RUN',valid:true,target:TARGET,preImageSha256:manifest.preImageSha256,currentPostImageSha256:documentHash(current),neighborHashes:Object.fromEntries(NEIGHBORS.map(({key})=>[key,documentHash(neighbors[key])])),restoredFields:[...RESTORED_FIELDS]};
-  const result=await collection.updateOne({...TARGET,_id:new ObjectId(TARGET._id),__v:plan.expectedVersion,lifecycleStatus:'ACTIVE',proposedFacts:{$exists:false},detectedChanges:{$size:0},'auditTrail.action':'IGNORE_CHANGE'},{$set:plan.restored,$push:{auditTrail:plan.audit},$inc:{__v:1}},options);
-  if(result.matchedCount!==1||result.modifiedCount!==1)fail(`atomic update matched ${result.matchedCount} and modified ${result.modifiedCount}`);
-  const afterRows=await collection.find({...TARGET,_id:new ObjectId(TARGET._id)},options).toArray();if(afterRows.length!==1)fail('post-restore target count mismatch');const after=afterRows[0];
+  const result=await collection.findOneAndUpdate(exactDocumentFilter(current),{$set:plan.restored,$push:{auditTrail:plan.audit},$inc:{__v:1}},{returnDocument:'after'}),after=result?.value??result;
+  if(!after)fail('atomic compare-and-set matched 0 documents');
   for(const field of RESTORED_FIELDS)if(!equal(after[field],preImage[field]))fail(`${field} was not restored`);if(after.auditTrail?.at(-1)?.action!=='RESTORE_IGNORE_CHANGE')fail('restore audit missing');
-  for(const neighbor of NEIGHBORS){const rows=await collection.find({regionId:TARGET.regionId,canonicalEntityId:neighbor.canonicalEntityId},options).toArray();if(rows.length!==1||documentHash(rows[0])!==manifest[`${neighbor.key}Sha256`])fail(`${neighbor.key} changed during restore`)}
+  for(const neighbor of NEIGHBORS){const rows=await collection.find({regionId:TARGET.regionId,canonicalEntityId:neighbor.canonicalEntityId}).toArray();if(rows.length!==1||documentHash(rows[0])!==manifest[`${neighbor.key}Sha256`])fail(`${neighbor.key} changed during restore`)}
   return{mode:'APPLIED',valid:true,target:TARGET,preImageSha256:manifest.preImageSha256,restoredFields:[...RESTORED_FIELDS],postRestoreSha256:documentHash(after)};
 }
