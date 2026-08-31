@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { readFileSync } from 'node:fs';
 import { NearbyController } from './nearby.controller';
+import { NearbyServiceError } from './nearby.service';
 
 describe('NearbyController input policy', () => {
   const nearby = {
@@ -51,6 +52,7 @@ describe('NearbyController input policy', () => {
     expect(result).toMatchObject({radius:3000,initialRadius:1000,nextRadius:5000,expanded:true});
   });
   it('allows the lodging policy maximum and leaves an omitted radius to automatic expansion',async()=>{await controller.discovery({category:'LODGING',latitude:35.5,longitude:128,radius:10000,regionId:'hapcheon'});await controller.discovery({category:'LODGING',latitude:35.5,longitude:128,regionId:'hapcheon'});expect(nearby.searchProgressively).toHaveBeenNthCalledWith(1,'LODGING',35.5,128,expect.anything(),'hapcheon',10000);expect(nearby.searchProgressively).toHaveBeenNthCalledWith(2,'LODGING',35.5,128,expect.anything(),'hapcheon',undefined)});
+  it('returns a safe 400 contract for a category radius above its policy maximum',async()=>{nearby.searchProgressively.mockRejectedValueOnce(new NearbyServiceError('INVALID_REQUEST','선택한 분류는 3km까지 찾을 수 있습니다.'));await expect(controller.discovery({category:'FOOD',latitude:35.5,longitude:128,radius:5000,regionId:'hapcheon'})).rejects.toBeInstanceOf(BadRequestException)});
   it('rejects categories outside the allowlist', async () => {
     await expect(
       controller.discovery({

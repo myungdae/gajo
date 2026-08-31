@@ -4,7 +4,7 @@ import { MasterDataService } from '../master-data/master-data.service';
 import { RegionalDataService } from '../regional-data/regional-data.service';
 import { REGIONAL_CANDIDATE_DATASETS } from '../regions/regional-candidate.registry';
 import { REGION_ADMINISTRATIVE_AREAS, RegionConfigService } from '../region/region-config.service';
-import { nearbyRadiusPolicy, type NearbyRadius } from './nearby-radius.policy';
+import { allowedNearbyRadii, nearbyRadiusPolicy, nextNearbyRadius, type NearbyRadius } from './nearby-radius.policy';
 
 export type NearbyCategory =
   | 'FOOD' | 'CAFE' | 'LODGING' | 'HOT_SPRING_WELLNESS'
@@ -23,7 +23,7 @@ const PROVIDER_SEARCH_TIME_BUDGET_MS = 10000;
 type ProviderSearchBudget = { calls:number; deadline:number; exhausted?:'CALL_LIMIT'|'TIME_LIMIT' };
 
 
-export type NearbyFailureCode = 'NOT_CONFIGURED' | 'UPSTREAM_ERROR' | 'UPSTREAM_TIMEOUT' | 'INVALID_RESPONSE';
+export type NearbyFailureCode = 'NOT_CONFIGURED' | 'UPSTREAM_ERROR' | 'UPSTREAM_TIMEOUT' | 'INVALID_RESPONSE'|'INVALID_REQUEST';
 export class NearbyServiceError extends Error {
   constructor(public readonly code: NearbyFailureCode, message: string, public readonly upstreamStatus?: number) { super(message); }
 }
@@ -177,10 +177,11 @@ export class NearbyService {
   status(regionId?: string) { const configured=this.isConfigured()||Boolean(regionId&&this.regionalData&&REGIONAL_CANDIDATE_DATASETS[regionId]);return { configured, state: configured ? 'READY' : 'NOT_CONFIGURED', provider: this.isConfigured()?'KAKAO_LOCAL':'REGIONAL_OPERATIONAL_DATA', timeoutMs: this.timeoutMs }; }
 
   async searchProgressively(category:NearbyCategory,lat:number,lng:number,options:NearbySearchOptions={},regionId:string,requestedRadius?:NearbyRadius):Promise<ProgressiveNearbySearchResult>{
-    const region=(this.regions||new RegionConfigService()).get(regionId),policy=nearbyRadiusPolicy(category,region),radii=requestedRadius?[requestedRadius]:policy.steps.filter(radius=>radius<=policy.automaticMaxRadius),budget:ProviderSearchBudget={calls:0,deadline:Date.now()+PROVIDER_SEARCH_TIME_BUDGET_MS};
+    const region=(this.regions||new RegionConfigService()).get(regionId),policy=nearbyRadiusPolicy(category,region),allowedRadii=allowedNearbyRadii(policy),radii=requestedRadius?[requestedRadius]:allowedRadii,budget:ProviderSearchBudget={calls:0,deadline:Date.now()+PROVIDER_SEARCH_TIME_BUDGET_MS};
+    if(requestedRadius&&!allowedRadii.includes(requestedRadius))throw new NearbyServiceError('INVALID_REQUEST',`선택한 분류는 ${policy.automaticMaxRadius/1000}km까지 찾을 수 있습니다.`);
     let results:NearbyPlace[]=[],radius=radii[0];
     for(const step of radii){radius=step;const nextResults=await this.search(category,lat,lng,step,options,regionId,policy.minimumCandidates,budget);results=budget.exhausted?[...new Map([...results,...nextResults].map(place=>[place.id,place])).values()].sort((a,b)=>(a.distanceMeters??Infinity)-(b.distanceMeters??Infinity)):nextResults;if(results.length>=policy.minimumCandidates||budget.exhausted)break}
-    return{results,radius,initialRadius:policy.steps[0],nextRadius:budget.exhausted?undefined:policy.steps.find(step=>step>radius),minimumCandidates:policy.minimumCandidates,expanded:!requestedRadius&&radius>policy.steps[0],coverageStatus:budget.exhausted?'PARTIAL':'COMPLETE',providerCalls:budget.calls};
+    return{results,radius,initialRadius:policy.steps[0],nextRadius:budget.exhausted?undefined:nextNearbyRadius(policy,radius),minimumCandidates:policy.minimumCandidates,expanded:!requestedRadius&&radius>policy.steps[0],coverageStatus:budget.exhausted?'PARTIAL':'COMPLETE',providerCalls:budget.calls};
   }
 
   async search(category: NearbyCategory, lat: number, lng: number, radius = 2000, options: NearbySearchOptions = {}, regionId?: string,minimumCandidates?:number,budget?:ProviderSearchBudget): Promise<NearbyPlace[]> {

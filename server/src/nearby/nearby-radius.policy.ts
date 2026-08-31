@@ -11,6 +11,18 @@ export interface NearbyRadiusPolicy {
   nearRadius: NearbyRadius;
 }
 
+export function allowedNearbyRadii(policy: NearbyRadiusPolicy) {
+  return policy.steps.filter(
+    (radius) => radius <= policy.automaticMaxRadius,
+  );
+}
+export function nextNearbyRadius(
+  policy: NearbyRadiusPolicy,
+  current: NearbyRadius,
+) {
+  return allowedNearbyRadii(policy).find((radius) => radius > current);
+}
+
 const LODGING = /^LODGING/;
 const TOURISM =
   /^(TOURIST_ATTRACTION|NATURE|CULTURE_ART|EXPERIENCE|FESTIVAL_EXHIBITION|ACTIVITY|TOURISM_NATURE)$/;

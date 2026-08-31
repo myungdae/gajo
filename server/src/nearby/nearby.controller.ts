@@ -65,6 +65,11 @@ export class NearbyController {
   }
   private rethrow(error: unknown): never {
     if (error instanceof NearbyServiceError) {
+      if (error.code === 'INVALID_REQUEST')
+        throw new BadRequestException({
+          code: error.code,
+          message: error.message,
+        });
       if (error.code === 'UPSTREAM_TIMEOUT') throw new GatewayTimeoutException({ code: error.code, message: error.message });
       if (error.code === 'NOT_CONFIGURED') throw new ServiceUnavailableException({ code: error.code, message: error.message });
       throw new BadGatewayException({ code: error.code, message: error.message });
