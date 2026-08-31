@@ -545,6 +545,10 @@ export interface NearbyDiscoveryResponse {
   distanceTrusted: boolean;
   category: NearbyCategory;
   radius: number;
+  initialRadius: number;
+  nextRadius?: number;
+  minimumCandidates: number;
+  expanded: boolean;
   total: number;
   resultStatus: "AVAILABLE" | "EMPTY";
   results: NearbyPlace[];
@@ -638,7 +642,7 @@ export async function fetchNearbyDiscovery(
       category,
       latitude:lat,
       longitude:lng,
-      radius: options.radius || 2500,
+      radius: options.radius,
       weather: options.weather,
       useDistance: options.useDistance !== false,
       transportMode: options.transportMode || "foot",

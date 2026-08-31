@@ -2,6 +2,7 @@
 import { BadGatewayException, BadRequestException, Body, Controller, GatewayTimeoutException, Get, Post, Query, ServiceUnavailableException,UseGuards } from '@nestjs/common';
 import { NearbyCategory, NearbyService, NearbyServiceError } from './nearby.service';
 import { PublicWriteLimit,PublicWriteRateLimitGuard } from '../partner/public-write-security';
+import { NEARBY_RADIUS_STEPS, type NearbyRadius } from './nearby-radius.policy';
 
 const CATEGORIES: NearbyCategory[] = [
   'TOURIST_ATTRACTION', 'NATURE', 'CULTURE_ART', 'EXPERIENCE', 'FESTIVAL_EXHIBITION',
@@ -25,10 +26,10 @@ export class NearbyController {
     const {category:categoryValue,weather,transportMode,regionId}=body,useDistanceValue=body.useDistance!==false;
     if (!regionId?.trim()) throw new BadRequestException('regionId가 필요합니다.');
     if (!CATEGORIES.includes(categoryValue as NearbyCategory)) throw new BadRequestException('지원하지 않는 주변 장소 종류입니다.');
-    const { lat, lng, radius } = this.validateSearch(String(body.latitude), String(body.longitude), body.radius==null?undefined:String(body.radius));
+    const { lat, lng, radius } = this.validateSearch(String(body.latitude), String(body.longitude), body.radius==null?undefined:String(body.radius),false);
     try {
-      const results = await this.nearby.search(categoryValue as NearbyCategory, lat, lng, radius, { weather, useDistance: useDistanceValue, transportMode: transportMode === 'car' ? 'car' : 'foot' }, regionId);
-      return { searchedAt:new Date().toISOString(),timeZone:'Asia/Seoul',distanceTrusted:useDistanceValue,category:categoryValue,radius,total:results.length,resultStatus:results.length?'AVAILABLE':'EMPTY',results:results.slice(0,30) };
+      const search = await this.nearby.searchProgressively(categoryValue as NearbyCategory, lat, lng, { weather, useDistance: useDistanceValue, transportMode: transportMode === 'car' ? 'car' : 'foot' }, regionId.trim(), radius as NearbyRadius|undefined),results=search.results;
+      return { searchedAt:new Date().toISOString(),timeZone:'Asia/Seoul',distanceTrusted:useDistanceValue,category:categoryValue,radius:search.radius,initialRadius:search.initialRadius,nextRadius:search.nextRadius,minimumCandidates:search.minimumCandidates,expanded:search.expanded,total:results.length,resultStatus:results.length?'AVAILABLE':'EMPTY',results:results.slice(0,30) };
     } catch (error) { this.rethrow(error); }
   }
   @Post('restaurants') @UseGuards(PublicWriteRateLimitGuard) @PublicWriteLimit('NEARBY_LOOKUP')
@@ -56,10 +57,10 @@ export class NearbyController {
   }
 
   private ensureConfigured() { if (!this.nearby.isConfigured()) throw new ServiceUnavailableException({ code: 'NOT_CONFIGURED', message: '주변 장소 검색은 현재 준비 중입니다. 다른 컨시어지 기능은 계속 이용할 수 있습니다.' }); }
-  private validateSearch(latValue: string, lngValue: string, radiusValue?: string) {
-    const lat = Number(latValue), lng = Number(lngValue), inputRadius = radiusValue ? Number(radiusValue) : 1000;
+  private validateSearch(latValue: string, lngValue: string, radiusValue?: string,defaultRadius=true) {
+    const lat = Number(latValue), lng = Number(lngValue), inputRadius = radiusValue ? Number(radiusValue) : defaultRadius?1000:undefined;
     if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) throw new BadRequestException('올바른 lat, lng 값이 필요합니다.');
-    if (![1000,3000,5000].includes(inputRadius)) throw new BadRequestException('radius는 1000, 3000, 5000 중 하나여야 합니다.');
+    if (inputRadius!=null&&!NEARBY_RADIUS_STEPS.includes(inputRadius as NearbyRadius)) throw new BadRequestException('radius는 1000, 3000, 5000, 10000 중 하나여야 합니다.');
     return { lat, lng, radius:inputRadius };
   }
   private rethrow(error: unknown): never {

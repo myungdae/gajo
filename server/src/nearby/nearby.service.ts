@@ -4,6 +4,7 @@ import { MasterDataService } from '../master-data/master-data.service';
 import { RegionalDataService } from '../regional-data/regional-data.service';
 import { REGIONAL_CANDIDATE_DATASETS } from '../regions/regional-candidate.registry';
 import { REGION_ADMINISTRATIVE_AREAS, RegionConfigService } from '../region/region-config.service';
+import { nearbyRadiusPolicy, type NearbyRadius } from './nearby-radius.policy';
 
 export type NearbyCategory =
   | 'FOOD' | 'CAFE' | 'LODGING' | 'HOT_SPRING_WELLNESS'
@@ -57,6 +58,14 @@ export interface NearbySearchOptions {
   weather?: string;
   useDistance?: boolean;
   transportMode?: 'car' | 'foot';
+}
+export interface ProgressiveNearbySearchResult {
+  results: NearbyPlace[];
+  radius: NearbyRadius;
+  initialRadius: NearbyRadius;
+  nextRadius?: NearbyRadius;
+  minimumCandidates: number;
+  expanded: boolean;
 }
 export type RegionMembership='INSIDE'|'OUTSIDE'|'UNCERTAIN';
 export function classifyRegionMembership(region:{id:string;regionName:string;bounds?:{north:number;south:number;east:number;west:number}},latitude:number,longitude:number,accuracy:number,address:{region1?:string;region2?:string;region3?:string}={}):RegionMembership{const expected=REGION_ADMINISTRATIVE_AREAS[region.id],insideBounds=Boolean(region.bounds&&latitude<=region.bounds.north&&latitude>=region.bounds.south&&longitude<=region.bounds.east&&longitude>=region.bounds.west),administrativeMatch=Boolean(expected&&(!expected.region1||address.region1?.includes(expected.region1))&&address.region2?.includes(expected.region2)&&(!expected.region3||address.region3?.includes(expected.region3)));if(administrativeMatch)return insideBounds?'INSIDE':'UNCERTAIN';if(!address.region2)return'UNCERTAIN';return accuracy>100?'UNCERTAIN':'OUTSIDE'}
@@ -162,15 +171,23 @@ export class NearbyService {
   isConfigured() { return !!this.kakaoKey; }
   status(regionId?: string) { const configured=this.isConfigured()||Boolean(regionId&&this.regionalData&&REGIONAL_CANDIDATE_DATASETS[regionId]);return { configured, state: configured ? 'READY' : 'NOT_CONFIGURED', provider: this.isConfigured()?'KAKAO_LOCAL':'REGIONAL_OPERATIONAL_DATA', timeoutMs: this.timeoutMs }; }
 
-  async search(category: NearbyCategory, lat: number, lng: number, radius = 2000, options: NearbySearchOptions = {}, regionId?: string): Promise<NearbyPlace[]> {
+  async searchProgressively(category:NearbyCategory,lat:number,lng:number,options:NearbySearchOptions={},regionId:string,requestedRadius?:NearbyRadius):Promise<ProgressiveNearbySearchResult>{
+    const region=(this.regions||new RegionConfigService()).get(regionId),policy=nearbyRadiusPolicy(category,region),radii=requestedRadius?[requestedRadius]:policy.steps.filter(radius=>radius<=policy.automaticMaxRadius);
+    let results:NearbyPlace[]=[],radius=radii[0];
+    for(const step of radii){radius=step;results=await this.search(category,lat,lng,step,options,regionId,policy.minimumCandidates);if(results.length>=policy.minimumCandidates)break}
+    return{results,radius,initialRadius:policy.steps[0],nextRadius:policy.steps.find(step=>step>radius),minimumCandidates:policy.minimumCandidates,expanded:!requestedRadius&&radius>policy.steps[0]};
+  }
+
+  async search(category: NearbyCategory, lat: number, lng: number, radius = 2000, options: NearbySearchOptions = {}, regionId?: string,minimumCandidates?:number): Promise<NearbyPlace[]> {
     // eslint-disable-next-line prettier/prettier
     const region=regionId?(this.regions||new RegionConfigService()).get(regionId):undefined;
     const key = this.kakaoKey;
     const plan = PLANS[category];
     const byId = new Map<string, NearbyPlace>();
     if (key) {
-      for (const code of plan.codes) await this.fetchCategory(key, code, category, lat, lng, radius, byId);
-      for (const keyword of plan.keywords) await this.fetchKeyword(key, keyword, category, lat, lng, radius, byId);
+      const enough=()=>Boolean(minimumCandidates&&this.trustedResults(byId,category,regionId,region).length>=minimumCandidates);
+      for (const code of plan.codes) {await this.fetchCategory(key, code, category, lat, lng, radius, byId,enough);if(enough())break}
+      if(!enough())for (const keyword of plan.keywords) {await this.fetchKeyword(key, keyword, category, lat, lng, radius, byId,enough);if(enough())break}
     }
     if (regionId && this.regionalData) await this.addOperationalPlaces(byId, category, lat, lng, radius, regionId);
     if (!key && byId.size === 0) throw new NearbyServiceError('NOT_CONFIGURED', '주변 장소 검색은 현재 준비 중입니다.');
@@ -185,7 +202,7 @@ export class NearbyService {
       if (useDistance && place.distanceMeters != null && place.distanceMeters <= 1500) place.contextualReasons.push('현재 위치에서 가까운 후보입니다.');
     }
     // eslint-disable-next-line prettier/prettier
-    return [...byId.values()].filter(place=>!regionId||this.insideRegion(place.lat,place.lng,region?.bounds)).filter(place=>this.canonicalConsistent(place)).filter(place=>this.requestedCategoryMatches(category,place.category)).sort((a, b) => (useDistance ? (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity) : 0) || b.relevanceScore - a.relevanceScore).slice(0,30);
+    return this.trustedResults(byId,category,regionId,region).sort((a, b) => (useDistance ? (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity) : 0) || b.relevanceScore - a.relevanceScore).slice(0,30);
   }
 
   async searchRestaurants(lat: number, lng: number, radius = 2000) { return this.search('FOOD', lat, lng, radius); }
@@ -211,8 +228,10 @@ export class NearbyService {
   private insideRegion(lat:number,lng:number,bounds?:{north:number;south:number;east:number;west:number}){return Boolean(bounds&&Number.isFinite(lat)&&Number.isFinite(lng)&&lat<=bounds.north&&lat>=bounds.south&&lng<=bounds.east&&lng>=bounds.west)}
   // eslint-disable-next-line prettier/prettier
   private addressMatchesRegion(place:NearbyPlace,regionName?:string){return Boolean(regionName&&`${place.roadAddress||''} ${place.address||''}`.includes(regionName))}
+  private trustedResults(byId:Map<string,NearbyPlace>,requested:NearbyCategory,regionId?:string,region?:{regionName:string;bounds?:{north:number;south:number;east:number;west:number}}){return[...byId.values()].filter(place=>!regionId||(this.insideRegion(place.lat,place.lng,region?.bounds)&&this.addressMatchesRegion(place,region?.regionName))).filter(place=>this.canonicalConsistent(place)).filter(place=>this.requestedCategoryMatches(requested,place.category))}
   // eslint-disable-next-line prettier/prettier
   private requestedCategoryMatches(requested:NearbyCategory,actual:NearbyCategory){if(requested==='FOOD')return FOOD_CATEGORIES.has(actual)||actual==='FOOD';if(TOURISM_CATEGORIES.has(requested))return TOURISM_CATEGORIES.has(actual);return requested===actual}
+  private operationalCategory(record:{canonicalLabelKo:string;category:string;accommodationType?:string},requested:NearbyCategory){if(!LODGING_CATEGORIES.has(requested))return normalizeNearbyCategory(record.canonicalLabelKo,record.category,'',record.category as NearbyCategory);const type=record.accommodationType||'';if(requested==='LODGING')return'LODGING';if(requested==='LODGING_CAMPING_GLAMPING'&&/GLAMPING|CAMPING|AUTO_CAMPING|CARAVAN/.test(type))return requested;if(requested==='LODGING_PENSION_MINBAK'&&/PENSION|MINBAK/.test(type))return requested;if(requested==='LODGING_HOTEL_RESORT'&&/HOTEL|RESORT|FOREST_LODGE|HANOK_STAY/.test(type))return requested;if(requested==='LODGING_MOTEL'&&type==='MOTEL')return requested;if(requested==='LODGING_GUESTHOUSE'&&type==='GUESTHOUSE')return requested;return'LODGING'}
   // eslint-disable-next-line prettier/prettier
   private canonicalConsistent(place:NearbyPlace){if(!place.canonicalEntityUri)return true;const canonical=this.master?.resolveCanonical(place.canonicalEntityUri);if(!canonical)return true;const categoryMatches=!canonical.category||this.requestedCategoryMatches(place.category,normalizeNearbyCategory(canonical.canonicalLabelKo,canonical.category,'',canonical.category as NearbyCategory));return categoryMatches&&(!Number.isFinite(canonical.latitude)||!Number.isFinite(canonical.longitude)||this.distanceMeters(place.lat,place.lng,canonical.latitude!,canonical.longitude!)<=CANONICAL_PROVIDER_MAX_DRIFT_METERS)}
   private regionTokens(regionId:string){try{return[this.regions?.get(regionId).regionName].filter((value):value is string=>Boolean(value))}catch{return[]}}
@@ -225,7 +244,7 @@ export class NearbyService {
     const dataset = await this.regionalData!.effectiveDataset(regionId);
     for (const record of dataset?.records || []) {
       if (!Number.isFinite(record.latitude) || !Number.isFinite(record.longitude)) continue;
-      const category = normalizeNearbyCategory(record.canonicalLabelKo, record.category, '', record.category as NearbyCategory);
+      const category = this.operationalCategory(record,requested);
       if (!this.requestedCategoryMatches(requested,category)) continue;
       const distanceMeters = this.distanceMeters(lat, lng, record.latitude!, record.longitude!);
       if (distanceMeters > radius) continue;
@@ -250,20 +269,25 @@ export class NearbyService {
 
   private distanceMeters(aLat:number,aLng:number,bLat:number,bLng:number){const r=6371000,toRad=(v:number)=>v*Math.PI/180;const dLat=toRad(bLat-aLat),dLng=toRad(bLng-aLng);const h=Math.sin(dLat/2)**2+Math.cos(toRad(aLat))*Math.cos(toRad(bLat))*Math.sin(dLng/2)**2;return Math.round(2*r*Math.asin(Math.sqrt(h)))}
 
-  private async fetchCategory(key: string, code: string, requested: NearbyCategory, lat: number, lng: number, radius: number, byId: Map<string, NearbyPlace>) {
+  private async fetchCategory(key: string, code: string, requested: NearbyCategory, lat: number, lng: number, radius: number, byId: Map<string, NearbyPlace>,shouldStop?:()=>boolean) {
     for (let page = 1; page <= 3; page++) {
       const url = this.url('category', lat, lng, radius);
       url.searchParams.set('category_group_code', code); url.searchParams.set('page', String(page)); url.searchParams.set('size', '15');
       const data = await this.kakaoGet(url, key);
       for (const d of data.documents) this.upsert(byId, d, requested);
+      if(shouldStop?.())break;
       if (data.meta.is_end) break;
     }
   }
 
-  private async fetchKeyword(key: string, keyword: string, requested: NearbyCategory, lat: number, lng: number, radius: number, byId: Map<string, NearbyPlace>) {
-    const url = this.url('keyword', lat, lng, radius); url.searchParams.set('query', keyword); url.searchParams.set('size', '15');
-    const data = await this.kakaoGet(url, key);
-    for (const d of data.documents) this.upsert(byId, d, requested, keyword);
+  private async fetchKeyword(key: string, keyword: string, requested: NearbyCategory, lat: number, lng: number, radius: number, byId: Map<string, NearbyPlace>,shouldStop?:()=>boolean) {
+    for(let page=1;page<=3;page++){
+      const url = this.url('keyword', lat, lng, radius); url.searchParams.set('query', keyword); url.searchParams.set('page',String(page));url.searchParams.set('size', '15');
+      const data = await this.kakaoGet(url, key);
+      for (const d of data.documents) this.upsert(byId, d, requested, keyword);
+      if(shouldStop?.())break;
+      if(data.meta.is_end)break;
+    }
   }
 
   private url(kind: 'category' | 'keyword', lat: number, lng: number, radius: number) {

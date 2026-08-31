@@ -4,11 +4,7 @@ import { NearbyController } from './nearby.controller';
 
 describe('NearbyController input policy', () => {
   const nearby = {
-    search: jest.fn(() =>
-      Promise.resolve(
-        Array.from({ length: 40 }, (_, index) => ({ id: String(index) })),
-      ),
-    ),
+    searchProgressively: jest.fn(() => Promise.resolve({results:Array.from({ length: 40 }, (_, index) => ({ id: String(index) })),radius:3000,initialRadius:1000,nextRadius:5000,minimumCandidates:5,expanded:true})),
     isConfigured: jest.fn(() => true),
   };
   const controller = new NearbyController(nearby as any);
@@ -29,7 +25,7 @@ describe('NearbyController input policy', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
   it.each(['999', '2000', '5001', 'x'])(
-    'allows only explicit 1, 3, or 5km radii',
+    'allows only explicit policy radii',
     async (radius) => {
       await expect(
         controller.discovery({
@@ -52,7 +48,9 @@ describe('NearbyController input policy', () => {
     expect(result.results).toHaveLength(30);
     expect(result.timeZone).toBe('Asia/Seoul');
     expect(Number.isFinite(Date.parse(result.searchedAt))).toBe(true);
+    expect(result).toMatchObject({radius:3000,initialRadius:1000,nextRadius:5000,expanded:true});
   });
+  it('allows the lodging policy maximum and leaves an omitted radius to automatic expansion',async()=>{await controller.discovery({category:'LODGING',latitude:35.5,longitude:128,radius:10000,regionId:'hapcheon'});await controller.discovery({category:'LODGING',latitude:35.5,longitude:128,regionId:'hapcheon'});expect(nearby.searchProgressively).toHaveBeenNthCalledWith(1,'LODGING',35.5,128,expect.anything(),'hapcheon',10000);expect(nearby.searchProgressively).toHaveBeenNthCalledWith(2,'LODGING',35.5,128,expect.anything(),'hapcheon',undefined)});
   it('rejects categories outside the allowlist', async () => {
     await expect(
       controller.discovery({
