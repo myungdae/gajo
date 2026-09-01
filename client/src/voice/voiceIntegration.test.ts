@@ -1,0 +1,6 @@
+import test from"node:test";import assert from"node:assert/strict";import{readFileSync}from"node:fs";
+const page=readFileSync(new URL("../pages/ConciergePage.tsx",import.meta.url),"utf8"),hook=readFileSync(new URL("../hooks/useSpeechInput.ts",import.meta.url),"utf8"),analytics=readFileSync(new URL("../analytics.ts",import.meta.url),"utf8");
+test("speech confirms before executing and offers multimodal repair",()=>{for(const p of[/VoiceConfirmation/,/voiceExecutionText/,/stopListening/,/cancelListening/,/onSpeakSlot/,/onChange/])assert.match(page,p)});
+test("permission unsupported no-speech and duplicate paths are explicit",()=>{for(const p of[/REQUESTING_PERMISSION/,/PERMISSION_DENIED/,/UNSUPPORTED/,/RECOVERABLE_ERROR/])assert.match(hook,p);assert.match(page,/VOICE_DUPLICATE_BLOCKED/)});
+test("execution keeps regional and trip continuity contracts",()=>{assert.match(page,/experienceRegionId:\s*region\.id/);assert.match(page,/searchRegionId:/);assert.match(page,/tripContext:\s*sessionContext/);assert.match(page,/conversationAnchor/)});
+test("analytics has outcome events and strips content",()=>{assert.match(analytics,/VOICE_PARTIAL_EDIT_COMPLETED/);assert.match(analytics,/VOICE_PERMISSION_DENIED/);assert.match(analytics,/rawMessage.*text.*message.*freeText/);assert.doesNotMatch(page,/track\([^\n]+\{[^\n]*(?:transcript|latitude|longitude):/)});

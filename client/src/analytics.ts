@@ -51,6 +51,10 @@ export type PilotEventType =
   | "PWA_INSTALL_ACCEPTED"
   | "PWA_INSTALL_DISMISSED"
   | "PWA_STANDALONE_OPEN";
+export type VoiceUxEventType =
+  | "VOICE_STARTED" | "VOICE_STATE_CHANGED" | "VOICE_COMPLETED" | "VOICE_ABANDONED"
+  | "VOICE_FULL_RETRY" | "VOICE_PARTIAL_EDIT" | "VOICE_PARTIAL_EDIT_COMPLETED"
+  | "VOICE_INPUT_SWITCHED" | "VOICE_PERMISSION_DENIED" | "VOICE_DUPLICATE_BLOCKED";
 let activeRegionId = "gajo";
 let activeRegionMetadata: Record<string, string> = {};
 export function setAnalyticsRegion(
@@ -65,7 +69,7 @@ export function setAnalyticsRegion(
   );
 }
 export function track(
-  eventType: PilotEventType,
+  eventType: PilotEventType | VoiceUxEventType,
   sessionId: string,
   metadata: Record<string, string | number | boolean | undefined> = {},
 ) {

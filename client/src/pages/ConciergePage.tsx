@@ -63,6 +63,8 @@ import { GlossaryText } from "../components/GlossaryText";
 import { isExplanationOnly } from "../aiResponseActions";
 import { understoodSummary } from "../understoodSummary";
 import { NOW_HEADING, NOW_HEADING_LINES, NOW_QUICK_ACTIONS } from "../nowQuickActions";
+import VoiceConfirmation from "../components/VoiceConfirmation";
+import { understandVoice, updateVoiceSlot, voiceExecutionText, voiceStateMessage, type VoiceSlotName, type VoiceUnderstanding } from "../voice/voiceUx";
 
 interface Message {
   role: "user" | "ai";
@@ -185,21 +187,38 @@ export default function ConciergePage() {
     structured?: CreateContextInput;
   } | null>(null);
   const allowStaleLocationOnceRef=useRef(false);
+  const [voiceUnderstanding,setVoiceUnderstanding]=useState<VoiceUnderstanding|null>(null);
+  const voiceSlotRef=useRef<VoiceSlotName|null>(null);
+  const voiceStartedAtRef=useRef(0);
   const openNearby=(category?:ConciergeChatResponse["nearbyCategory"])=>{
     navigate(`${location.pathname}${location.search}`,{replace:true,state:{...entryState,autoSubmit:false,conversationSnapshot:{messages,currentTurn,input,freeTextOpen}}});
     queueMicrotask(()=>navigate(regionLink("/nearby-discovery"),{state:{category}}));
+  };
+  const onVoiceFinal=(text:string)=>{
+    const slot=voiceSlotRef.current;
+    if(slot&&voiceUnderstanding){setVoiceUnderstanding(updateVoiceSlot(voiceUnderstanding,slot,text));voiceSlotRef.current=null;track("VOICE_PARTIAL_EDIT_COMPLETED",tripSession.id,{slot});setVoiceState("CONFIRMING");return;}
+    const stored=loadTripSession(localStorage,region.id)||tripSession,locationLabel=stored.locationContext?.now?.label||"현재 위치";
+    setVoiceUnderstanding(understandVoice(text,locationLabel));setVoiceState("CONFIRMING");
   };
   const {
     listening,
     voiceSupported,
     voiceError,
+    voiceState,
+    setVoiceState,
     toggleListening,
     stopListening,
-  } = useSpeechInput(input, setInput);
+    cancelListening,
+  } = useSpeechInput(input, setInput,onVoiceFinal);
+  const beginVoice=()=>{if(listening){stopListening();return;}if(voiceState==="REQUESTING_PERMISSION"){track("VOICE_DUPLICATE_BLOCKED",tripSession.id,{state:voiceState});return;}voiceStartedAtRef.current=Date.now();track("VOICE_STARTED",tripSession.id,{standalone:window.matchMedia?.("(display-mode: standalone)").matches||false});toggleListening();};
+  const changeVoiceSlot=(slot:VoiceSlotName,value:string)=>{if(!voiceUnderstanding)return;setVoiceUnderstanding(updateVoiceSlot(voiceUnderstanding,slot,value));track("VOICE_PARTIAL_EDIT",tripSession.id,{slot,inputMethod:"TEXT_OR_TOUCH"});};
+  const speakVoiceSlot=(slot:VoiceSlotName)=>{voiceSlotRef.current=slot;setInput("");track("VOICE_PARTIAL_EDIT",tripSession.id,{slot,inputMethod:"VOICE"});beginVoice();};
+  const dismissVoice=()=>{cancelListening();setVoiceUnderstanding(null);setVoiceState("IDLE");track("VOICE_INPUT_SWITCHED",tripSession.id,{to:"TEXT_OR_TOUCH"});textInputRef.current?.focus();};
 
   useEffect(() => {
     sessionStorage.setItem(contextSessionKey, contextSessionIdRef.current);
   }, [contextSessionKey]);
+  useEffect(()=>{track("VOICE_STATE_CHANGED",tripSession.id,{state:voiceState});if(voiceState==="PERMISSION_DENIED")track("VOICE_PERMISSION_DENIED",tripSession.id);},[voiceState,tripSession.id]);
   useEffect(() => {
     const scrollSurface =
       currentTurnConversationRef.current?.closest(".app-main");
@@ -299,6 +318,7 @@ export default function ConciergePage() {
         scrollSurface.clientHeight <
         280;
     requestInFlightRef.current = true;
+    if(voiceUnderstanding)setVoiceState("EXECUTING");
     stopListening();
     setCurrentTurn(beginCurrentTurn(turnId, text));
     setRequestError(false);
@@ -469,6 +489,7 @@ export default function ConciergePage() {
         },
       ]);
       setCurrentTurn((current) => resolveCurrentTurn(current, turnId, result));
+      if(voiceUnderstanding){track("VOICE_COMPLETED",tripSession.id,{durationMs:Date.now()-voiceStartedAtRef.current});setVoiceUnderstanding(null);setVoiceState("IDLE");}
       setExcludedDiscoveryIds([]);
       const referenceEntity = result.discovery?.entities?.[0];
       const reference = referenceEntity
@@ -923,7 +944,7 @@ export default function ConciergePage() {
               ref={voiceButtonRef}
               type="button"
               className={`speech-session-button${listening ? " is-listening" : ""}`}
-              onClick={toggleListening}
+              onClick={beginVoice}
               disabled={loading}
               aria-pressed={listening}
               aria-label={listening ? "말하기 끝" : "한국어로 여행 조건 말하기"}
@@ -957,10 +978,13 @@ export default function ConciergePage() {
               {voiceError}
             </p>
           )}
+          {!voiceUnderstanding&&<p className="voice-state" role="status" aria-live="polite">{voiceStateMessage(voiceState)}</p>}
+          {listening&&<button type="button" className="btn btn-outline voice-cancel" onClick={()=>{cancelListening();track("VOICE_ABANDONED",tripSession.id,{during:"LISTENING"});}}>취소</button>}
+          {voiceUnderstanding&&<VoiceConfirmation state={voiceState} model={voiceUnderstanding} onChange={changeVoiceSlot} onSpeakSlot={speakVoiceSlot} onCancel={dismissVoice} onConfirm={()=>send(voiceExecutionText(voiceUnderstanding))}/>}
           <button
             className="btn btn-primary btn-block concierge-submit"
             onClick={() => send()}
-            disabled={loading}
+            disabled={loading||Boolean(voiceUnderstanding)}
             aria-label={hasCompletedTurn ? "질문 전송" : "대화로 찾기"}
           >
             {hasCompletedTurn ? (
