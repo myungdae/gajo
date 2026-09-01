@@ -32,6 +32,8 @@ export default function NearbyRestaurantsPage() {
   const routeState=routeLocation.state as {quickStartPreset?:unknown;category?:NearbyCategory;anchor?:{entityId:string;label:string;latitude:number;longitude:number}}|null;
   const preset=getQuickStartPreset(routeState?.quickStartPreset),anchor=routeState?.anchor;
   const confirmed=tripSession.locationContext?.now;
+  const [operationalLocation,setOperationalLocation]=useState(confirmed);
+  const searchRegionId=anchor?region.id:operationalLocation?.searchRegionId;
   const initialCategory=nearbyUiCategory(routeState?.category);
   const [category, setCategory] = useState<NearbyCategory>(initialCategory);
   const [categoryGroup,setCategoryGroup]=useState<NearbyGroupId>(nearbyGroupFor(initialCategory).id);
@@ -67,15 +69,15 @@ export default function NearbyRestaurantsPage() {
     if (!origin || configured !== true) return;
     let current=true;const controller=new AbortController();
     setLoading(true); setError(null); setSelected(null);setPlaces([]);setSearchedAt(undefined);
-    fetchNearbyDiscovery(category, origin[0], origin[1], { radius:requestedRadius,useDistance: distanceTrusted, transportMode: 'car', weather, regionId: region.id,signal:controller.signal })
-      .then(response => {if(current){setPlaces(response.results);setSearchedAt(response.searchedAt);setRadius(response.radius);setNearRadius(response.initialRadius);setNextRadius(response.nextRadius);setExpanded(response.expanded);setCoverageStatus(response.coverageStatus)}})
+    fetchNearbyDiscovery(category, origin[0], origin[1], { radius:requestedRadius,useDistance: distanceTrusted, transportMode: 'car', weather, regionId: region.id,experienceRegionId:region.id,searchRegionId,coordinateSearch:!anchor,regionMembership:operationalLocation?.regionMembership,signal:controller.signal })
+      .then(response => {if(current){const results=anchor?response.results.filter(place=>place.canonicalEntityUri!==anchor.entityId&&`provider:kakao:${place.providerPlaceId||place.id}`!==anchor.entityId):response.results;setPlaces(results);setSearchedAt(response.searchedAt);setRadius(response.radius);setNearRadius(response.initialRadius);setNextRadius(response.nextRadius);setExpanded(response.expanded);setCoverageStatus(response.coverageStatus)}})
       .catch(error => {if(current)setError(error?.response?.data?.message || '주변 장소를 불러오지 못했습니다.')})
       .finally(() => {if(current)setLoading(false)});
     return()=>{current=false;controller.abort()};
-  }, [category, origin, requestedRadius,distanceTrusted, configured, weather,region.id]);
+  }, [category, origin, requestedRadius,distanceTrusted, configured, weather,region.id,searchRegionId,operationalLocation?.regionMembership,anchor]);
   const choose = async (place: NearbyPlace) => { track('PLACE_DETAIL_OPENED',tripSession.id,{category:place.category});setSelected(place); setNotice(null); const links = await fetchNavigationLinks(place.lat, place.lng, place.name); setMapLink(links.kakaoMapWeb); };
   const navigateWith=(provider:NavigationProvider)=>{const destination=navigationPlace&&navigationDestination(navigationPlace);if(!destination)return;track('NAVIGATION_HANDOFF',tripSession.id,{provider});const gps=getSessionLocation();const origin=gps&&isOperationalLocation(gps)?{latitude:gps.latitude!,longitude:gps.longitude!}:undefined;launchNavigation(navigationTarget(provider,destination,origin),{mobile:isMobileNavigation(navigator.userAgent)});setNavigationPlace(null)};
-  const addToItinerary=(place:NearbyPlace)=>{const lodging=isLodgingCategory(place.category),destination=navigationDestination(place),entityId=place.canonicalEntityUri||(!lodging&&`urn:nearby:${region.id}:${place.id}`)||undefined,item={entityId,entityUri:entityId,canonicalEntityUri:place.canonicalEntityUri,providerPlaceId:place.id,regionId:region.id,label:place.canonicalLabel||place.name,name:place.canonicalLabel||place.name,entityType:lodging?'ACCOMMODATION':place.category,address:place.roadAddress||place.address,telephone:place.phone,latitude:place.lat,longitude:place.lng,actions:destination?{navigate:{latitude:destination.latitude,longitude:destination.longitude}}:undefined};const result=lodging?addAccommodationToRegionalItinerary(region.id,item,tripSession.anonymousTripId,localStorage,track):addEntityToRegionalItinerary(region.id,item,localStorage,track);setAddedPlace(place);setAddedEntity(result.item||item);setAddResult(result);setNotice(null)};
+  const addToItinerary=(place:NearbyPlace)=>{const lodging=isLodgingCategory(place.category),destination=navigationDestination(place),external=place.provider==='KAKAO'||place.transient,entityId=external?`provider:kakao:${place.providerPlaceId||place.id}`:place.canonicalEntityUri,item={entityId,entityUri:entityId,canonicalEntityUri:external?undefined:place.canonicalEntityUri,linkedCanonicalEntityUri:place.canonicalEntityUri,provider:place.provider||'KAKAO',providerPlaceId:place.providerPlaceId||place.id,regionId:searchRegionId||region.id,experienceRegionId:region.id,label:place.name,name:place.name,entityType:lodging?'ACCOMMODATION':place.category,category:place.category,address:place.roadAddress||place.address,telephone:place.phone,latitude:place.lat,longitude:place.lng,provenance:'KAKAO_LOCAL',resolved:true,actions:destination?{navigate:{latitude:destination.latitude,longitude:destination.longitude}}:undefined};const result=lodging?addAccommodationToRegionalItinerary(region.id,item,tripSession.anonymousTripId,localStorage,track):addEntityToRegionalItinerary(region.id,item,localStorage,track);setAddedPlace(place);setAddedEntity(result.item||item);setAddResult(result);setNotice(null)};
   const center = useMemo<[number, number]>(() => selected ? [selected.lat, selected.lng] : origin!, [selected, origin]);
   const nearbyPlaces=places.filter(place=>!distanceTrusted||place.distanceMeters==null||place.distanceMeters<=nearRadius),widerPlaces=distanceTrusted?places.filter(place=>place.distanceMeters!=null&&place.distanceMeters>nearRadius):[];
   const tourismSections=tourismResultSections(category,places);
@@ -84,7 +86,7 @@ export default function NearbyRestaurantsPage() {
 
   if(!regionalRuntime.nearbyEnabled)return <div className="nearby-discovery"><section className="card"><small className="eyebrow">주변 즐길거리 찾기</small><h1>{region.regionName} 주변 정보 준비 중</h1><p className="text-muted">현재 등록된 {region.regionName} 장소의 정확한 위치 정보를 확인하고 있습니다.</p></section></div>;
   return <div className="nearby-discovery">
-    <section className="card"><small className="eyebrow">내 주변 찾기</small><h1>{anchor?`${anchor.label} 주변 장소`:'현재 위치 주변에서 찾아드릴까요?'}</h1>{preset?.id==='nearby'&&<p className="quick-start-entry-message" role="status">{preset.entryMessage}</p>}<p className="text-muted">위치를 선택하면 현재 지역에서 확인된 장소만 실제 거리순으로 보여드립니다.</p></section>
+    <section className="card"><small className="eyebrow">내 주변 찾기</small><h1>{anchor?`${anchor.label} 주변 장소`:operationalLocation?.label?`현재 ${operationalLocation.label} 주변을 찾고 있어요`:'현재 위치 주변에서 찾아드릴까요?'}</h1>{preset?.id==='nearby'&&<p className="quick-start-entry-message" role="status">{preset.entryMessage}</p>}<p className="text-muted">{searchRegionId&&searchRegionId!==region.id?`${region.regionName} 여행 맥락은 유지하면서 현재 위치 기준으로 보여드립니다.`:'위치를 선택하면 실제 거리순으로 보여드립니다.'}</p></section>
     {configured === false && <div className="card status-warning">현재 위치를 확인하면 주변 장소와 이동 정보를 더 정확하게 안내해드릴 수 있습니다.</div>}
     <section className="card nearby-taxonomy" aria-labelledby="nearby-taxonomy-title">
       <h2 id="nearby-taxonomy-title">무엇을 찾으시나요?</h2>
@@ -94,7 +96,7 @@ export default function NearbyRestaurantsPage() {
       {NEARBY_GROUPS.filter(group=>group.id===categoryGroup).map(group=><div id={`nearby-options-${group.id}`} role="tabpanel" className="nearby-subcategories" key={group.id}>{group.options.map(item=><button key={item.id} type="button" disabled={loading} className={category===item.id?'active':''} aria-pressed={category===item.id} onClick={()=>{setCategory(item.id);resetSearch()}}><span aria-hidden="true">{category===item.id?'✓':''}</span>{item.label}</button>)}</div>)}
       {isLodgingCategory(category)&&<div className="nearby-lodging-actions"><div><strong>숙소 찾기</strong><p>주변 숙소 후보를 찾습니다. 예약 가능 여부는 숙소에 직접 확인해 주세요.</p></div>{tripSession.plannedContext?.accommodationIntents?.[0]&&<Link to={`/${region.id}/concierge`} state={{quickStartPreset:'saved-lodging'}}><span>저장된 숙소</span><b>{tripSession.plannedContext.accommodationIntents[0].label}로 돌아가기</b></Link>}</div>}
     </section>
-    {!anchor&&<LocationContextBar mode="NOW" searchTarget={nearbyLabel(category)} onConfirmed={location=>{setPlaces([]);setSelected(null);resetSearch();setSearchedAt(undefined);setOrigin([location.latitude!,location.longitude!]);setDistanceTrusted(true)}}/>}
+    {!anchor&&<LocationContextBar mode="NOW" searchTarget={nearbyLabel(category)} onConfirmed={location=>{setOperationalLocation(location);setPlaces([]);setSelected(null);resetSearch();setSearchedAt(undefined);setOrigin([location.latitude!,location.longitude!]);setDistanceTrusted(true)}}/>}
     {notice && <div className="card location-confidence-message"><p>{notice}</p></div>}
     {loading && <div className="loading" role="status">가까운 곳부터 찾아보고 있습니다.</div>}{error && <div className="card status-warning">{error}</div>}
     {!loading && !error && origin && <>
@@ -104,7 +106,7 @@ export default function NearbyRestaurantsPage() {
       </MapContainer><div className="nearby-map-legend"><span>● {anchor?.label||'현재 위치'}</span><span>● 주변 검색 결과</span><span>★ 등록 장소 연결</span></div></div>
       {selected && <section className="card nearby-detail"><div className="nearby-title-row"><div><small>{selected.categoryLabel}</small><h2>{selected.name}</h2></div>{selected.canonicalEntityUri && <span className="badge">등록 장소 연결</span>}</div>
         {distanceTrusted && selected.distanceMeters != null && <p>{anchor?`${anchor.label}에서`:'현재 위치에서'} 직선거리 약 {(selected.distanceMeters / 1000).toFixed(1)}km</p>}
-        <p>{selected.roadAddress || selected.address || '주소 확인 필요'}</p>{selected.phone && <p>전화 {selected.phone}</p>}
+        <p>{selected.roadAddress || selected.address || '주소 확인 필요'}</p>{selected.administrativeRegion&&<p>행정지역 {selected.administrativeRegion}</p>}{selected.phone && <p>전화 {selected.phone}</p>}
         <p>{selected.operatingMessage}</p>{selected.availabilityMessage && <p>{selected.availabilityMessage}</p>}
         {selected.contextualReasons.map(reason => <p className="nearby-reason" key={reason}>✓ {reason}</p>)}
         <div className="nearby-actions"><a className="btn btn-primary" href={mapLink || selected.placeUrl} target="_blank" rel="noopener noreferrer" onClick={()=>track('MAP_OPENED',tripSession.id,{category:selected.category})}>지도에서 보기</a>{selected.phone&&<a className="btn btn-text" href={`tel:${selected.phone.replace(/[^0-9+]/g,'')}`}>전화하기</a>}{navigationDestination(selected)&&<button className="btn btn-text" onClick={()=>setNavigationPlace(selected)}>길찾기</button>}<button className="btn btn-text" onClick={()=>addToItinerary(selected)}>{isLodgingCategory(selected.category)?'내 여행 숙소로 저장':'내 여행에 담기'}</button></div>

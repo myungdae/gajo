@@ -358,6 +358,10 @@ export default function ConciergePage() {
       };
       const result = await postConciergeChat({
         regionId: region.id,
+        experienceRegionId: region.id,
+        searchRegionId:
+          (loadTripSession(localStorage, region.id) || tripSession)
+            .locationContext?.now?.searchRegionId ?? null,
         turnId,
         ...(conversationAnchor?.regionId === region.id
           ? { conversationalAnchor: conversationAnchor }

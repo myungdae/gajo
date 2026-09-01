@@ -5,6 +5,13 @@ export interface PlannedPlace {
   savedPlaceId?: string;
   regionId?: string;
   resolved: boolean;
+  provider?:"KAKAO"|"REGIONAL_DATA";
+  providerPlaceId?:string;
+  address?:string;
+  latitude?:number;
+  longitude?:number;
+  category?:string;
+  provenance?:string;
 }
 export interface PlannedContext {
   duration?: "DAY" | "1N2D" | "2N3D" | "CUSTOM";
@@ -21,7 +28,7 @@ export interface PlannedContext {
 }
 export type TripLocationStatus="UNKNOWN"|"REQUESTING"|"RESOLVED"|"CONFIRMED"|"STALE"|"DENIED"|"ERROR";
 export type TripLocationSource="GPS"|"MANUAL"|"SELECTED_PLACE"|"TRIP_CONTEXT";
-export interface TripLocation {status:TripLocationStatus;source:TripLocationSource;latitude?:number;longitude?:number;accuracy?:number;label?:string;address?:string;regionMembership?:"INSIDE"|"OUTSIDE"|"UNCERTAIN";observedAt:string;confirmedAt?:string}
+export interface TripLocation {status:TripLocationStatus;source:TripLocationSource;latitude?:number;longitude?:number;accuracy?:number;label?:string;address?:string;experienceRegionId?:string;searchRegionId?:string|null;regionMembership?:"INSIDE"|"OUTSIDE"|"UNCERTAIN";observedAt:string;confirmedAt?:string}
 export const NOW_LOCATION_FRESH_MS=30*60*1000;
 export const LOCATION_SENSITIVE_FRESH_MS=5*60*1000;
 export function isFreshTripLocation(location?:TripLocation,now=Date.now(),maxAgeMs=NOW_LOCATION_FRESH_MS){const confirmed=Date.parse(location?.confirmedAt||'');return location?.status==='CONFIRMED'&&Number.isFinite(confirmed)&&now-confirmed<=maxAgeMs}

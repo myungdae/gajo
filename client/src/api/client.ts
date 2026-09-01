@@ -68,6 +68,8 @@ export interface CreateContextInput {
     sourceTurnId: string;
   };
   regionId?: string;
+  experienceRegionId?: string;
+  searchRegionId?: string | null;
   explicitJourney?: {
     requestedDestinations: NonNullable<
       ConciergeChatResponse["requestedDestinations"]
@@ -516,6 +518,8 @@ export type NearbyCategory =
   | "OTHER";
 export interface NearbyPlace {
   id: string;
+  provider: "KAKAO" | "REGIONAL_DATA";
+  providerPlaceId: string;
   name: string;
   category: NearbyCategory;
   categoryLabel: string;
@@ -540,6 +544,7 @@ export interface NearbyPlace {
   transient: boolean;
   relevanceScore: number;
   tourismTrustLevel?: "REGIONAL_VERIFIED" | "PROVIDER_CATEGORY";
+  administrativeRegion?:string;
 }
 export interface NearbyDiscoveryResponse {
   searchedAt: string;
@@ -552,6 +557,10 @@ export interface NearbyDiscoveryResponse {
   expanded: boolean;
   coverageStatus: "COMPLETE" | "PARTIAL";
   providerCalls: number;
+  experienceRegionId?:string;
+  searchRegionId?:string|null;
+  regionMembership?:"INSIDE"|"OUTSIDE"|"UNCERTAIN";
+  diagnostics?:{providerCandidates:number;regionCandidates:number;finalCandidates:number};
   total: number;
   resultStatus: "AVAILABLE" | "EMPTY";
   results: NearbyPlace[];
@@ -639,6 +648,10 @@ export async function fetchNearbyDiscovery(
     useDistance?: boolean;
     transportMode?: "car" | "foot";
     regionId?: string;
+    experienceRegionId?:string;
+    searchRegionId?:string|null;
+    coordinateSearch?:boolean;
+    regionMembership?:"INSIDE"|"OUTSIDE"|"UNCERTAIN";
     signal?: AbortSignal;
   } = {},
 ) {
@@ -651,13 +664,17 @@ export async function fetchNearbyDiscovery(
       useDistance: options.useDistance !== false,
       transportMode: options.transportMode || "foot",
       regionId: options.regionId,
+      experienceRegionId:options.experienceRegionId||options.regionId,
+      searchRegionId:options.searchRegionId,
+      coordinateSearch:options.coordinateSearch,
+      regionMembership:options.regionMembership,
   },{signal:options.signal});
   return data;
 }
 
-export interface ReverseGeocodeResult { status:"RESOLVED"|"EMPTY";label:string;address?:string;region1?:string;region2?:string;region3?:string;regionMembership?:"INSIDE"|"OUTSIDE"|"UNCERTAIN" }
+export interface ReverseGeocodeResult { status:"RESOLVED"|"EMPTY";label:string;address?:string;region1?:string;region2?:string;region3?:string;regionMembership?:"INSIDE"|"OUTSIDE"|"UNCERTAIN";detectedRegionId?:string;searchRegionId?:string }
 export async function reverseGeocodeLocation(latitude:number,longitude:number,regionId:string,accuracy?:number){const{data}=await api.post<ReverseGeocodeResult>("/nearby/reverse-geocode",{latitude,longitude,regionId,accuracy});return data}
-export async function searchLocation(query:string,regionId:string,origin?:{latitude:number;longitude:number}){const{data}=await api.post<{results:NearbyPlace[]}>("/nearby/location-search",{query,regionId,origin});return data.results}
+export async function searchLocation(query:string,experienceRegionId:string,origin?:{latitude:number;longitude:number},searchRegionId?:string|null){const{data}=await api.post<{results:NearbyPlace[]}>("/nearby/location-search",{query,regionId:experienceRegionId,experienceRegionId,searchRegionId,coordinateSearch:Boolean(origin),origin});return data.results}
 
 export interface OntologyEntityDetail {
   uri: string;
