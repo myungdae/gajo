@@ -2,9 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { archivedTripDate, archivedTripSummary, DEFAULT_ARCHIVE_COUNT } from "./archivePresentation.ts";
-import { archiveAndStartNewTrip, createTripSession, listArchivedTripSessions, saveTripSession } from "./tripSession.ts";
+import { archiveAndStartNewTrip, createTripSession, deleteAllArchivedTripSessions, deleteArchivedTripSession, listArchivedTripSessions, loadTripSession, saveTripSession } from "./tripSession.ts";
 
-const memory = () => { const data = new Map<string, string>(); return { get length() { return data.size; }, getItem: (key: string) => data.get(key) || null, setItem: (key: string, value: string) => data.set(key, value), key: (index: number) => [...data.keys()][index] || null }; };
+const memory = () => { const data = new Map<string, string>(); return { get length() { return data.size; }, getItem: (key: string) => data.get(key) || null, setItem: (key: string, value: string) => data.set(key, value), removeItem: (key: string) => data.delete(key), key: (index: number) => [...data.keys()][index] || null, data }; };
 const trip = (regionId: string, createdAt: string, updatedAt: string) => ({ ...createTripSession(regionId, new Date(createdAt)), updatedAt });
 
 test("archives are region-isolated and newest archive time sorts first", () => {
@@ -16,6 +16,8 @@ test("archives are region-isolated and newest archive time sorts first", () => {
   assert.equal(listArchivedTripSessions("hapcheon", storage as any).length, 1);
   assert.equal(listArchivedTripSessions("okcheon", storage as any).length, 0);
 });
+test("one archive deletion is owned, idempotent, and preserves active, other-region and canonical-shaped data",()=>{const storage=memory(),active=saveTripSession(createTripSession("gajo"),storage as any),old={...createTripSession("gajo"),anonymousTripId:"old",savedPlaces:[{canonicalEntityUri:"canonical:keep-reference"}]};storage.setItem("regional-concierge-trip-archive-v1:gajo:old",JSON.stringify(old));storage.setItem("regional-concierge-trip-archive-v1:hapcheon:other",JSON.stringify({...createTripSession("hapcheon"),anonymousTripId:"other"}));storage.setItem("canonical-place:one","keep");assert.equal(deleteArchivedTripSession("gajo","old",storage as any),"DELETED");assert.equal(deleteArchivedTripSession("gajo","old",storage as any),"NOT_FOUND");assert.equal(deleteArchivedTripSession("gajo",active.anonymousTripId,storage as any),"FORBIDDEN");assert.equal(loadTripSession(storage as any,"gajo")?.anonymousTripId,active.anonymousTripId);assert.ok(storage.getItem("regional-concierge-trip-archive-v1:hapcheon:other"));assert.equal(storage.getItem("canonical-place:one"),"keep")});
+test("all archive deletion keeps the current trip and leaves a stable empty list after reload",()=>{const storage=memory(),active=saveTripSession(createTripSession("gajo"),storage as any);for(const id of["one","two"])storage.setItem(`regional-concierge-trip-archive-v1:gajo:${id}`,JSON.stringify({...createTripSession("gajo"),anonymousTripId:id}));assert.deepEqual(deleteAllArchivedTripSessions("gajo",storage as any).sort(),["one","two"]);assert.equal(listArchivedTripSessions("gajo",storage as any).length,0);assert.equal(loadTripSession(storage as any,"gajo")?.anonymousTripId,active.anonymousTripId)});
 
 test("human summary distinguishes execution and replan evidence from the plan", () => {
   const session = { ...trip("gajo", "2026-08-27T00:00:00Z", "2026-08-27T01:00:00Z"), itinerary: { steps: [{ entityId: "a" }, { entityId: "b", status: "SKIPPED" }, { entityId: "c", status: "NEWLY_ADDED" }] }, savedPlaces: [{ entityId: "saved" }], execution: { statusByEntityId: { a: "COMPLETED" as const } }, replanHistory: [{ replannedAt: "2026-08-27", replacedSteps: [{ entityId: "old", status: "REPLACED_BY_REPLAN" }], newlyAddedEntityIds: ["c"] }] };

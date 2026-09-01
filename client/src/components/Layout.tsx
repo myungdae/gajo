@@ -3,7 +3,7 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useRegion } from "../RegionContext";
 import { appSurface, regionalPath } from "../regionRouting";
 import ConnectionStatus from "./ConnectionStatus";
-import { loadTripSession, tripRestorationDiagnostics } from "../tripSession";
+import { listArchivedTripSessions, loadTripSession, tripRestorationDiagnostics } from "../tripSession";
 import { itineraryItemCount } from "../tripContinuity";
 import { resetShellScroll } from "../routeScroll";
 import PublicBrand from "./PublicBrand";
@@ -59,12 +59,12 @@ export default function Layout() {
   const location=useLocation(),searchParams=new URLSearchParams(location.search),diagnosticMode=searchParams.get("trip-diagnostics")==="1",hapcheonLanding=location.pathname==='/hapcheon'&&searchParams.get('start')!=='ai',surface=appSurface(location.pathname,location.search,window.location.hostname),webShell=surface==='PLATFORM'||surface==='PUBLIC_PARTNER';
   const mainRef = useRef<HTMLElement>(null);
   const [tripCount, setTripCount] = useState(() =>
-    diagnosticMode?0:itineraryItemCount(loadTripSession(localStorage, region.id)),
+    diagnosticMode?0:itineraryItemCount(loadTripSession(localStorage, region.id)) + listArchivedTripSessions(region.id).length,
   );
   useEffect(() => {
     if(diagnosticMode)return;
     const refresh = () =>
-      setTripCount(itineraryItemCount(loadTripSession(localStorage, region.id)));
+      setTripCount(itineraryItemCount(loadTripSession(localStorage, region.id)) + listArchivedTripSessions(region.id).length);
     window.addEventListener("regional-trip-saved", refresh);
     refresh();
     return () => window.removeEventListener("regional-trip-saved", refresh);
@@ -104,7 +104,7 @@ export default function Layout() {
             <span className="nav-label">
               {item.label}
               {item.to === "/itinerary" && tripCount > 0 && (
-                <span className="my-trip-count" aria-label={`${tripCount}곳 담김`}>
+                <span className="my-trip-count" aria-label={`내 여행 ${tripCount}건`}>
                   {tripCount}
                 </span>
               )}

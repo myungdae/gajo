@@ -36,6 +36,7 @@ export function isLocationSensitiveRequest(text=""){return /(?:주변|가까운|
 export interface TripSession {
   id: string;
   anonymousTripId: string;
+  deletionToken?: string;
   regionId: string;
   mode: "PLAN" | "NOW";
   partnerEntryContext?: { partnerId:string; partnerSlug:string; partnerName:string; enteredAt:string; source:"PARTNER_QR" };
@@ -124,6 +125,7 @@ export function createTripSession(
   return {
     id,
     anonymousTripId: id,
+    deletionToken: crypto.randomUUID(),
     regionId,
     mode: "NOW",
     createdAt: iso,
@@ -268,6 +270,35 @@ export function listArchivedTripSessions(
       Date.parse(b.archivedAt || b.updatedAt) -
       Date.parse(a.archivedAt || a.updatedAt),
   );
+}
+export type ArchiveDeleteResult = "DELETED" | "NOT_FOUND" | "FORBIDDEN";
+type ArchiveStorage = Pick<Storage, "getItem" | "removeItem" | "length" | "key">;
+export function deleteArchivedTripSession(
+  regionId: string,
+  anonymousTripId: string,
+  storage: ArchiveStorage = localStorage,
+): ArchiveDeleteResult {
+  const active = loadTripSession(storage as any, regionId);
+  if (active?.anonymousTripId === anonymousTripId) return "FORBIDDEN";
+  const key = `${archivePrefix(regionId)}${anonymousTripId}`;
+  const serialized = storage.getItem(key);
+  if (!serialized) return "NOT_FOUND";
+  try {
+    const archived = JSON.parse(serialized) as TripSession;
+    if (archived.regionId !== regionId || (archived.anonymousTripId || archived.id) !== anonymousTripId)
+      return "FORBIDDEN";
+  } catch { return "FORBIDDEN"; }
+  storage.removeItem(key);
+  if (typeof window !== "undefined" && storage === localStorage)
+    window.dispatchEvent(new CustomEvent("regional-trip-saved", { detail: { regionId } }));
+  return "DELETED";
+}
+export function deleteAllArchivedTripSessions(
+  regionId: string,
+  storage: ArchiveStorage = localStorage,
+) {
+  const ids = listArchivedTripSessions(regionId, storage).map((trip) => trip.anonymousTripId || trip.id);
+  return ids.filter((id) => deleteArchivedTripSession(regionId, id, storage) === "DELETED");
 }
 export type ArchiveLifecycleClassification = "EXPLICIT_NEW_TRIP" | "UNINTENDED_NEW_SESSION" | "DUPLICATE_ARCHIVE" | "RESTORE_REPLACEMENT" | "REPLAN_FRAGMENTATION" | "EMPTY_SESSION_FRAGMENT" | "OTHER";
 export function auditArchivedTripLifecycle(

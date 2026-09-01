@@ -2,9 +2,12 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { createHash } from 'crypto';
+import { PilotEvent, PilotEventDocument } from '../schemas/pilot-event.schema';
 import { AnonymousTrip, AnonymousTripDocument } from './anonymous-trip.schema';
 const TTL_MS = 90 * 24 * 60 * 60 * 1000,
   ID =
@@ -25,6 +28,7 @@ function safe(value: any): any {
             'email',
             'phone',
             'name',
+            'deletionToken',
           ].includes(key),
       )
       .map(([key, item]) => [key, safe(item)]),
@@ -35,15 +39,18 @@ export class AnonymousTripService {
   constructor(
     @InjectModel(AnonymousTrip.name)
     private readonly model: Model<AnonymousTripDocument>,
+    @InjectModel(PilotEvent.name) private readonly events: Model<PilotEventDocument>,
   ) {}
+  private hash(token:string){if(!ID.test(token||''))throw new ForbiddenException('trip ownership required');return createHash('sha256').update(token).digest('hex')}
   private validate(id: string, regionId: string) {
     if (!ID.test(id) || !REGION.test(regionId))
       throw new BadRequestException('invalid anonymous trip identity');
   }
-  async get(id: string, regionId: string) {
+  async get(id: string, regionId: string, ownerToken: string) {
     this.validate(id, regionId);
+    const ownerTokenHash=this.hash(ownerToken);
     const row = await this.model
-      .findOne({ anonymousTripId: id, regionId })
+      .findOne({ anonymousTripId: id, regionId, ownerTokenHash })
       .lean();
     if (!row) throw new NotFoundException();
     return {
@@ -53,18 +60,18 @@ export class AnonymousTripService {
       expiresAt: row.expiresAt,
     };
   }
-  async sync(input: any) {
+  async sync(input: any, ownerToken = input?.deletionToken) {
     this.validate(input?.anonymousTripId, input?.regionId);
     if (
       input.state?.regionId !== input.regionId ||
       input.state?.anonymousTripId !== input.anonymousTripId
     )
       throw new BadRequestException('trip state ownership mismatch');
-    const expiresAt = new Date(Date.now() + TTL_MS),
+    const ownerTokenHash=this.hash(ownerToken), expiresAt = new Date(Date.now() + TTL_MS),
       state = safe(input.state);
     await this.model.updateOne(
-      { anonymousTripId: input.anonymousTripId, regionId: input.regionId },
-      { $set: { state, expiresAt } },
+      { anonymousTripId: input.anonymousTripId, regionId: input.regionId, ownerTokenHash },
+      { $set: { state, expiresAt, ownerTokenHash } },
       { upsert: true },
     );
     return {
@@ -74,4 +81,5 @@ export class AnonymousTripService {
       expiresAt,
     };
   }
+  async delete(id:string,regionId:string,ownerToken:string){this.validate(id,regionId);const ownerTokenHash=this.hash(ownerToken);const result=await this.model.deleteOne({anonymousTripId:id,regionId,ownerTokenHash});if(result.deletedCount)await this.events.deleteMany({sessionId:id,regionId});return{deleted:Boolean(result.deletedCount)}}
 }

@@ -5,6 +5,7 @@ export class AnonymousTrip {
   @Prop({ required: true, index: true }) anonymousTripId: string;
   @Prop({ required: true, index: true }) regionId: string;
   @Prop({ type: Object, required: true }) state: Record<string, unknown>;
+  @Prop({ required: true }) ownerTokenHash: string;
   @Prop({ required: true, index: true }) expiresAt: Date;
 }
 export type AnonymousTripDocument = AnonymousTrip & Document;

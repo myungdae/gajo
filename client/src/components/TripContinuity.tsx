@@ -45,6 +45,7 @@ export default function TripContinuity() {
         const response = await fetchAnonymousTrip(
           local.anonymousTripId,
           region.id,
+          local.deletionToken,
         );
         restored = reconcileTrip(local, response.state);
         source = "server";
@@ -54,6 +55,7 @@ export default function TripContinuity() {
           anonymousTripId: local.anonymousTripId,
           regionId: region.id,
           state: safeTripState(local),
+          deletionToken: local.deletionToken,
         }).catch(() => undefined);
       }
       if (!live || !itineraryItemCount(restored)) return;
@@ -83,6 +85,7 @@ export default function TripContinuity() {
           anonymousTripId: current.anonymousTripId,
           regionId: region.id,
           state: safeTripState(current),
+          deletionToken: current.deletionToken,
         }).catch(() => undefined);
     };
     window.addEventListener("regional-trip-saved", sync);

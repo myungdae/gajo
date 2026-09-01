@@ -782,16 +782,20 @@ export async function hydrateRuntimeLocation(
 export async function fetchAnonymousTrip(
   anonymousTripId: string,
   regionId: string,
+  deletionToken?: string,
 ) {
   const { data } = await api.get(
     `/trips/anonymous/${encodeURIComponent(anonymousTripId)}`,
-    { params: { regionId } },
+    { params: { regionId }, headers: deletionToken ? { "x-trip-owner-token": deletionToken } : undefined },
   );
   return data;
 }
 export async function syncAnonymousTrip(payload: any) {
-  const { data } = await api.post("/trips/anonymous/sync", payload);
+  const { data } = await api.post("/trips/anonymous/sync", payload, { headers: payload.deletionToken ? { "x-trip-owner-token": payload.deletionToken } : undefined });
   return data;
+}
+export async function deleteAnonymousTrip(anonymousTripId:string,regionId:string,deletionToken:string){
+  const {data}=await api.delete(`/trips/anonymous/${encodeURIComponent(anonymousTripId)}`,{params:{regionId},headers:{"x-trip-owner-token":deletionToken}});return data;
 }
 
 export interface PublicPartner {
