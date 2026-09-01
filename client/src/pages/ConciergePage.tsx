@@ -166,6 +166,7 @@ export default function ConciergePage() {
   const [freeTextOpen, setFreeTextOpen] = useState(
     entryState?.conversationSnapshot?.freeTextOpen ?? Boolean(entryState?.freeTextOpen),
   );
+  const [manualEntryMode,setManualEntryMode]=useState<"VOICE"|"TEXT"|null>(null);
   const [structuredDraft, setStructuredDraft] = useState<CreateContextInput>(
     () =>
       mergeTravelContext(
@@ -583,6 +584,10 @@ export default function ConciergePage() {
       } else if (!isGuideExplanation && !result.distanceInfo)
         setDiscoveryContext(undefined);
       setInput("");
+      if(tripMode==="NOW"){
+        setFreeTextOpen(false);
+        setManualEntryMode(null);
+      }
     } catch (e: any) {
       console.error("[concierge] request failed", e);
       setRequestError(true);
@@ -701,9 +706,7 @@ export default function ConciergePage() {
             <header className="journey-mode-header now">
               <small>NOW · 여행 중</small>
               <h1 aria-label={NOW_HEADING}>{NOW_HEADING_LINES.map(line=><span className="now-heading-line" key={line}>{line}</span>)}</h1>
-              <p>
-                주변 장소를 찾거나 다음 여행지를 정하고 싶다면 편하게 말씀해 주세요.
-              </p>
+              <p>지금 할 일을 선택하면 현재 위치와 여행 상황을 이어서 바로 찾아드려요.</p>
               {entryState?.entryDescription && entryState.entryMessage && (
                 <strong className="partner-entry-title">{entryState.entryMessage}</strong>
               )}
@@ -711,6 +714,15 @@ export default function ConciergePage() {
                 <p className="partner-entry-description">{entryState.entryDescription}</p>
               )}
             </header>
+          )}
+          {tripMode === "NOW" && !hasCompletedTurn && (
+            <NowImmediateActions
+              onNearby={openNearby}
+              onAsk={(prompt)=>send(prompt)}
+              onItinerary={()=>navigate(regionLink("/itinerary"))}
+              onVoice={()=>{setManualEntryMode("VOICE");setFreeTextOpen(true);requestAnimationFrame(beginVoice)}}
+              onText={()=>{setManualEntryMode("TEXT");setFreeTextOpen(true);requestAnimationFrame(()=>textInputRef.current?.focus())}}
+            />
           )}
           <GajoLiveStatus
             regionName={region.regionName}
@@ -724,9 +736,6 @@ export default function ConciergePage() {
       )}
       {tripMode === "NOW" && <LocationContextBar mode="NOW" refreshNeeded={Boolean(locationFreshnessNotice)} onConfirmed={()=>setLocationFreshnessNotice(null)} />}
       {tripMode==="NOW"&&locationFreshnessNotice&&<section className="card location-freshness-choice" role="status"><b>마지막으로 확인한 위치가 오래됐어요. 현재 위치를 다시 확인할까요?</b><p>{locationFreshnessNotice.label||"이전 확인 위치"}{locationFreshnessNotice.confirmedAt?` · ${new Date(locationFreshnessNotice.confirmedAt).toLocaleString("ko-KR")}`:""}</p><button type="button" className="btn btn-outline" onClick={()=>{const request=lastRequestRef.current;if(!request)return;allowStaleLocationOnceRef.current=true;setLocationFreshnessNotice(null);void send(request.text,request.structured,true)}}>이 위치 기준으로 검색</button></section>}
-      {tripMode === "NOW" && !hasCompletedTurn && (
-        <NowImmediateActions onSelect={(label) => send(label)} />
-      )}
       <div className="chat-window">
         {messages.map((m, i) => {
           const isCurrentAnswer =
@@ -777,7 +786,7 @@ export default function ConciergePage() {
         </div>
       )}
 
-      {!hasCompletedTurn && (
+      {!hasCompletedTurn && tripMode !== "NOW" && (
         <>
           <section
             className="natural-language-entry"
@@ -927,22 +936,17 @@ export default function ConciergePage() {
       )}
       <InstallExperience usefulResult={hasPrimaryResult} />
 
-      {(hasCompletedTurn || freeTextOpen) && (
+      {(tripMode !== "NOW" ? (hasCompletedTurn || freeTextOpen) : freeTextOpen) && (
         <div className={"concierge-input-panel concierge-unified-composer"}>
           <div className="input-panel-heading">
-            {!hasCompletedTurn && <small>말하거나 직접 입력하세요</small>}
-            <h2>
-              {hasCompletedTurn
-                ? "다른 조건도 말씀해 주세요"
-                : "직접 이야기해 보세요"}
-            </h2>
+            <h2>{manualEntryMode==="VOICE"?"직접 말하기":"직접 입력하기"}</h2>
           </div>
-          <textarea
+          {manualEntryMode!=="VOICE"&&<textarea
             ref={textInputRef}
             className={listening ? "is-voice-listening" : undefined}
             rows={5}
             aria-label={hasCompletedTurn ? "이어서 물어보기" : "여행 조건 입력"}
-            placeholder="예: 비가 와 / 배고파 / 카페 가고 싶어"
+            placeholder="필요한 내용을 입력하세요"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -951,8 +955,8 @@ export default function ConciergePage() {
                 send();
               }
             }}
-          />
-          <div className="voice-input">
+          />}
+          {manualEntryMode!=="TEXT"&&<div className="voice-input">
             <button
               ref={voiceButtonRef}
               type="button"
@@ -980,11 +984,11 @@ export default function ConciergePage() {
                 <i />
               </span>
             </button>
-          </div>
+          </div>}
           <p className="voice-helper" role="status">
             {listening
               ? "듣고 있어요. 계속 말씀하시거나 ‘말하기 끝’을 눌러 주세요."
-              : "‘비가 와’, ‘배고파’, ‘카페 가고 싶어’처럼 편하게 말씀해 주세요. 음성은 저장하지 않습니다."}
+              : manualEntryMode==="VOICE"?"버튼을 누른 뒤 말씀해 주세요. 음성은 저장하지 않습니다.":""}
           </p>
           {(!voiceSupported || voiceError) && (
             <p className="voice-error" role="alert">
@@ -994,7 +998,7 @@ export default function ConciergePage() {
           {!voiceUnderstanding&&<p className="voice-state" role="status" aria-live="polite">{voiceStateMessage(voiceState)}</p>}
           {listening&&<button type="button" className="btn btn-outline voice-cancel" onClick={()=>{cancelListening();track("VOICE_ABANDONED",tripSession.id,{during:"LISTENING"});}}>취소</button>}
           {voiceUnderstanding&&<VoiceConfirmation state={voiceState} model={voiceUnderstanding} onChange={changeVoiceSlot} onSpeakSlot={speakVoiceSlot} onCancel={dismissVoice} onConfirm={()=>send(voiceExecutionText(voiceUnderstanding))}/>}
-          <button
+          {manualEntryMode!=="VOICE"&&<button
             className="btn btn-primary btn-block concierge-submit"
             onClick={() => send()}
             disabled={loading||Boolean(voiceUnderstanding)}
@@ -1008,7 +1012,8 @@ export default function ConciergePage() {
             ) : (
               "대화로 찾기"
             )}
-          </button>
+          </button>}
+          {tripMode==="NOW"&&!hasCompletedTurn&&<button type="button" className="btn btn-outline btn-block" onClick={()=>{cancelListening();setVoiceUnderstanding(null);setVoiceState("IDLE");setManualEntryMode(null);setFreeTextOpen(false)}}>취소</button>}
           {hasCompletedTurn && (
             <button
               type="button"
@@ -1050,23 +1055,29 @@ function NowContinuationSummary({ planned }: { planned: PlannedContext }) {
 }
 
 function NowImmediateActions({
-  onSelect,
+  onNearby,onAsk,onItinerary,onVoice,onText,
 }: {
-  onSelect: (label: string) => void;
+  onNearby:(category:ConciergeChatResponse["nearbyCategory"])=>void;
+  onAsk:(prompt:string)=>void;
+  onItinerary:()=>void;
+  onVoice:()=>void;
+  onText:()=>void;
 }) {
   return (
     <section className="now-needs" aria-labelledby="now-needs-title">
-      <h2 id="now-needs-title">현재 필요한 것을 빠르게 선택하세요</h2>
-      {NOW_QUICK_ACTIONS.map((action) => (
+      <h2 id="now-needs-title">지금 무엇을 할까요?</h2>
+      <p>말하지 않아도 바로 시작할 수 있어요.</p>
+      <div className="now-primary-actions">{NOW_QUICK_ACTIONS.map((action) => (
         <button
           type="button"
-          key={action.label}
+          key={action.id}
           aria-label={action.label}
-          onClick={() => onSelect(action.prompt)}
+          onClick={() => action.kind==="NEARBY"?onNearby(action.category):action.kind==="ASK"?onAsk(action.prompt):onItinerary()}
         >
           {action.label}
         </button>
-      ))}
+      ))}</div>
+      <div className="now-secondary-actions" aria-label="직접 요청하기"><button type="button" onClick={onVoice}>직접 말하기</button><button type="button" onClick={onText}>직접 입력하기</button></div>
     </section>
   );
 }

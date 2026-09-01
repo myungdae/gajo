@@ -42,10 +42,10 @@ test("every regional Home opens the existing lodging Nearby category", () => {
   assert.match(home, /근처 숙소/); assert.match(home, /link\('\/nearby-discovery'\)/); assert.match(home, /findNearby\('LODGING'\)/);
   assert.match(nearby, /nearbyUiCategory\(routeState\?\.category\)/); assert.match(nearby, /nearbyGroupFor\(initialCategory\)\.id/);
 });
-test("NOW copy and all five existing intent actions remain wired to send", () => {
+test("NOW uses the shared action hub and direct result routes", () => {
   const concierge = source("./pages/ConciergePage.tsx"), actions = source("./nowQuickActions.ts");
-  assert.ok(actions.includes('NOW_HEADING = "무엇을 도와드릴까요?"')); assert.ok(actions.includes('["무엇을", "도와드릴까요?"]')); assert.match(concierge, /주변 장소를 찾거나 다음 여행지를 정하고 싶다면/); assert.match(concierge, /NowImmediateActions onSelect=\{\(label\) => send\(label\)\}/);
-  for (const label of ["식당을 찾고 싶어요", "잠시 쉬어갈 곳을 찾고 싶어요", "주변에 가볼 만한 곳을 찾고 싶어요", "다음 여행지를 추천해 주세요", "숙소를 찾고 싶어요"]) assert.ok(actions.includes(label));
+  assert.ok(actions.includes('NOW_HEADING = "무엇을 도와드릴까요?"')); assert.ok(actions.includes('["무엇을", "도와드릴까요?"]')); assert.match(concierge, /지금 할 일을 선택하면 현재 위치와 여행 상황을 이어서 바로 찾아드려요/); assert.match(concierge, /onNearby=\{openNearby\}/);
+  for (const label of ["식당 찾기", "카페 찾기", "관광지 찾기", "숙소 찾기", "다음 일정 추천", "일정 바꾸기"]) assert.ok(actions.includes(label));
 });
 test("partner entry copy comes from the public projection and never bypasses the public API", () => {
   const entry = source("./pages/PartnerEntryPage.tsx");

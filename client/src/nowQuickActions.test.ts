@@ -2,18 +2,19 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { NOW_QUICK_ACTIONS } from "./nowQuickActions.ts";
 import { createTripSession, sessionContext } from "./tripSession.ts";
-test("NOW exposes the five approved accessible action labels and AI prompts", () => {
+test("NOW exposes the six action-first choices", () => {
   assert.deepEqual(
     NOW_QUICK_ACTIONS.map((x) => x.label),
     [
-      "🍚 식당을 찾고 싶어요",
-      "☕ 잠시 쉬어갈 곳을 찾고 싶어요",
-      "📍 주변에 가볼 만한 곳을 찾고 싶어요",
-      "✦ 다음 여행지를 추천해 주세요",
-      "🏠 숙소를 찾고 싶어요",
+      "식당 찾기",
+      "카페 찾기",
+      "관광지 찾기",
+      "숙소 찾기",
+      "다음 일정 추천",
+      "일정 바꾸기",
     ],
   );
-  assert.equal(new Set(NOW_QUICK_ACTIONS.map((x) => x.prompt)).size, 5);
+  assert.equal(NOW_QUICK_ACTIONS.filter((x) => x.kind === "NEARBY").length, 4);
 });
 test("NOW action requests retain the active trip execution context", () => {
   const trip = {
