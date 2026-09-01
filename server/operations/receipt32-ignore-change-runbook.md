@@ -87,18 +87,18 @@ The interval after core alignment and before the new API is healthy is deliberat
 
 ## Approved Docker one-off runtime
 
-Do not run these scripts with the host Node.js and do not install host dependencies. From the fixed checkout, first verify `pwd` is exactly `/var/www/gajo`, then create the Git-ignored bind-mount directory with `install -d -m 0700 -- /var/www/gajo/server/.maintenance-private/receipt32`. Every command below creates only a disposable `api` one-off container: `--no-deps` does not start MongoDB, API or Client dependencies, and `--no-build` reuses the already selected production image.
+Do not run these scripts with the host Node.js and do not install host dependencies. From the fixed checkout, first verify `pwd` is exactly `/var/www/gajo`, then create the Git-ignored bind-mount directory with `install -d -m 0700 -- /var/www/gajo/server/.maintenance-private/receipt32`. Every command below creates only a disposable `api` one-off container. `--no-deps` does not start MongoDB, API or Client dependencies. Do not pass `--build`; `docker compose run` uses the already selected image. The installed Compose version does not support `--no-build`, so it is intentionally omitted.
 
 ```sh
 cd /var/www/gajo
 test "$(pwd -P)" = /var/www/gajo
 
-docker compose run --rm --no-deps --no-build \
+docker compose run --rm --no-deps \
   -v "$PWD/server/scripts:/app/scripts:ro" \
   -v "$PWD/server/.maintenance-private/receipt32:/app/.maintenance-private/receipt32:rw" \
   -w /app api node scripts/receipt32-capture.mjs --before
 
-docker compose run --rm --no-deps --no-build \
+docker compose run --rm --no-deps \
   -v "$PWD/server/scripts:/app/scripts:ro" \
   -v "$PWD/server/.maintenance-private/receipt32:/app/.maintenance-private/receipt32:rw" \
   -w /app api node scripts/receipt32-core-align.mjs \
@@ -106,13 +106,35 @@ docker compose run --rm --no-deps --no-build \
   --core-manifest /app/.maintenance-private/receipt32/core-align-manifest.json \
   --actor RECEIPT32_OPERATOR --reason "receipt 32 core identity dry-run"
 
-docker compose run --rm --no-deps --no-build \
+docker compose run --rm --no-deps \
   -v "$PWD/server/scripts:/app/scripts:ro" \
   -v "$PWD/server/.maintenance-private/receipt32:/app/.maintenance-private/receipt32:rw" \
   -w /app api node scripts/receipt32-restore.mjs \
   --pre-image /app/.maintenance-private/receipt32/garden-pre-image.ejson \
   --manifest /app/.maintenance-private/receipt32/garden-ignore-manifest.json \
   --check-ignore
+
+docker compose run --rm --no-deps \
+  -v "$PWD/server/scripts:/app/scripts:ro" \
+  -v "$PWD/server/.maintenance-private/receipt32:/app/.maintenance-private/receipt32:rw" \
+  -w /app api node scripts/receipt32-capture.mjs --after
+
+docker compose run --rm --no-deps \
+  -v "$PWD/server/scripts:/app/scripts:ro" \
+  -v "$PWD/server/.maintenance-private/receipt32:/app/.maintenance-private/receipt32:rw" \
+  -w /app api node scripts/receipt32-core-align.mjs \
+  --restore \
+  --core-pre-image /app/.maintenance-private/receipt32/core-pre-image.ejson \
+  --core-manifest /app/.maintenance-private/receipt32/core-align-manifest.json \
+  --actor RECEIPT32_OPERATOR --reason "receipt 32 core restore dry-run"
+
+docker compose run --rm --no-deps \
+  -v "$PWD/server/scripts:/app/scripts:ro" \
+  -v "$PWD/server/.maintenance-private/receipt32:/app/.maintenance-private/receipt32:rw" \
+  -w /app api node scripts/receipt32-restore.mjs \
+  --pre-image /app/.maintenance-private/receipt32/garden-pre-image.ejson \
+  --manifest /app/.maintenance-private/receipt32/garden-ignore-manifest.json \
+  --actor RECEIPT32_OPERATOR --reason "receipt 32 garden restore dry-run"
 ```
 
 The compose service supplies `MONGODB_URI`; never put it on the command line. The scripts accept no output directory, collection, document ID or canonical-ID option. Capture queries fixed identities and fixed collection names, verifies the known unique indexes and counts before opening output files, refuses existing files, and logs only counts, basenames and SHA-256 values. Apply and restore commands remain separately gated and are not authorized by this runbook.
