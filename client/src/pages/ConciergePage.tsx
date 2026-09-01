@@ -4,6 +4,7 @@ import {
   postConciergeChat,
   recordPartnerRecommendations,
   runDemoScenario,
+  searchLocation,
   type ConciergeChatResponse,
   type CreateContextInput,
 } from "../api/client";
@@ -64,7 +65,7 @@ import { isExplanationOnly } from "../aiResponseActions";
 import { understoodSummary } from "../understoodSummary";
 import { NOW_HEADING, NOW_HEADING_LINES, NOW_QUICK_ACTIONS } from "../nowQuickActions";
 import VoiceConfirmation from "../components/VoiceConfirmation";
-import { understandVoice, updateVoiceSlot, voiceExecutionText, voiceStateMessage, type VoiceSlotName, type VoiceUnderstanding } from "../voice/voiceUx";
+import { acceptVoiceResult, understandVoice, updateVoiceSlot, voiceConfirmationPolicy, voiceExecutionText, voiceStateMessage, type VoiceResultFingerprint, type VoiceSlotName, type VoiceUnderstanding } from "../voice/voiceUx";
 
 interface Message {
   role: "user" | "ai";
@@ -190,15 +191,25 @@ export default function ConciergePage() {
   const [voiceUnderstanding,setVoiceUnderstanding]=useState<VoiceUnderstanding|null>(null);
   const voiceSlotRef=useRef<VoiceSlotName|null>(null);
   const voiceStartedAtRef=useRef(0);
+  const lastVoiceResultRef=useRef<VoiceResultFingerprint|null>(null);
   const openNearby=(category?:ConciergeChatResponse["nearbyCategory"])=>{
     navigate(`${location.pathname}${location.search}`,{replace:true,state:{...entryState,autoSubmit:false,conversationSnapshot:{messages,currentTurn,input,freeTextOpen}}});
     queueMicrotask(()=>navigate(regionLink("/nearby-discovery"),{state:{category}}));
   };
-  const onVoiceFinal=(text:string)=>{
+  const onVoiceFinal=async(text:string)=>{
     const slot=voiceSlotRef.current;
     if(slot&&voiceUnderstanding){setVoiceUnderstanding(updateVoiceSlot(voiceUnderstanding,slot,text));voiceSlotRef.current=null;track("VOICE_PARTIAL_EDIT_COMPLETED",tripSession.id,{slot});setVoiceState("CONFIRMING");return;}
-    const stored=loadTripSession(localStorage,region.id)||tripSession,locationLabel=stored.locationContext?.now?.label||"현재 위치";
-    setVoiceUnderstanding(understandVoice(text,locationLabel));setVoiceState("CONFIRMING");
+    const gate=acceptVoiceResult(lastVoiceResultRef.current,text,Date.now(),requestInFlightRef.current);lastVoiceResultRef.current=gate.next;
+    if(!gate.accepted){track("VOICE_DUPLICATE_BLOCKED",tripSession.id,{state:voiceState,source:"FINAL_RESULT"});return}
+    const stored=loadTripSession(localStorage,region.id)||tripSession,operational=stored.locationContext?.now,locationLabel=operational?.label||"현재 위치",model=understandVoice(text,locationLabel);
+    if(model.slots.place.confidence==="HIGH")try{
+      const origin=Number.isFinite(operational?.latitude)&&Number.isFinite(operational?.longitude)?{latitude:operational!.latitude!,longitude:operational!.longitude!}:undefined,rows=await searchLocation(model.slots.place.value,region.id,origin,operational?.searchRegionId),normalize=(value:string)=>value.normalize("NFKC").replace(/\s+/g,"").toLowerCase(),exact=rows.filter(place=>normalize(place.name)===normalize(model.slots.place.value));
+      model.placeAmbiguous=exact.length>1;model.regionRelationship=exact.length?"KNOWN":"UNCLEAR";
+    }catch{model.regionRelationship="UNCLEAR"}
+    const decision=voiceConfirmationPolicy(model);
+    setVoiceUnderstanding(model);
+    if(decision.mode==="AUTO_EXECUTE"){setVoiceState("UNDERSTANDING");queueMicrotask(()=>send(voiceExecutionText(model),undefined,false,model));return}
+    setVoiceState("CONFIRMING");
   };
   const {
     listening,
@@ -277,6 +288,7 @@ export default function ConciergePage() {
     overrideText?: string,
     structured?: CreateContextInput,
     retry = false,
+    voiceModel?:VoiceUnderstanding,
   ) => {
     const text = (overrideText ?? input).trim();
     if ((!text && !structured) || requestInFlightRef.current) return;
@@ -318,7 +330,8 @@ export default function ConciergePage() {
         scrollSurface.clientHeight <
         280;
     requestInFlightRef.current = true;
-    if(voiceUnderstanding)setVoiceState("EXECUTING");
+    const activeVoice=voiceModel||voiceUnderstanding;
+    if(activeVoice)setVoiceState("EXECUTING");
     stopListening();
     setCurrentTurn(beginCurrentTurn(turnId, text));
     setRequestError(false);
@@ -489,7 +502,7 @@ export default function ConciergePage() {
         },
       ]);
       setCurrentTurn((current) => resolveCurrentTurn(current, turnId, result));
-      if(voiceUnderstanding){track("VOICE_COMPLETED",tripSession.id,{durationMs:Date.now()-voiceStartedAtRef.current});setVoiceUnderstanding(null);setVoiceState("IDLE");}
+      if(activeVoice){track("VOICE_COMPLETED",tripSession.id,{durationMs:Date.now()-voiceStartedAtRef.current,confirmation:voiceConfirmationPolicy(activeVoice).mode==="CONFIRM"});setVoiceUnderstanding(null);setVoiceState("IDLE");}
       setExcludedDiscoveryIds([]);
       const referenceEntity = result.discovery?.entities?.[0];
       const reference = referenceEntity
