@@ -1,72 +1,49 @@
 .app-shell--hapcheon-landing {
   max-width: none;
   border: 0;
-  background: #a64120;
+  background: #f6a05b;
 }
 
 .app-main--hapcheon-landing { padding: 0; }
 
 .hapcheon-landing {
   min-height: 100dvh;
-  display: grid;
-  place-items: center;
-  padding: max(20px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
-  background: radial-gradient(circle at 50% 0%, #ffe5b8 0, #f7c77c 32%, #a64120 100%);
+  position: relative;
+  overflow: hidden;
+  background: #f6a05b;
 }
 
-.hapcheon-landing-card {
-  width: min(100%, 1200px);
+.hapcheon-landing-visual {
+  position: absolute;
+  inset: 0;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, .72);
-  border-radius: clamp(20px, 3vw, 38px);
-  background: #fff8eb;
-  box-shadow: 0 24px 70px rgba(78, 28, 8, .28);
 }
 
 .hapcheon-landing-hero {
   display: block;
   width: 100%;
-  height: auto;
-  aspect-ratio: 1200 / 630;
-  object-fit: contain;
-  background: #fff8eb;
-}
-
-.hapcheon-landing-action {
-  display: grid;
-  justify-items: center;
-  gap: 10px;
-  padding: clamp(18px, 3vw, 30px);
-  text-align: center;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }
 
 .hapcheon-landing-cta {
-  min-height: 52px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 14px clamp(28px, 7vw, 52px);
+  position: absolute;
+  z-index: 1;
+  left: 4%;
+  right: 4%;
+  bottom: 10.4%;
+  height: 13.2%;
   border-radius: 999px;
-  background: #a83a17;
-  color: #fff;
-  font-size: clamp(1rem, 3.8vw, 1.2rem);
-  font-weight: 800;
-  text-decoration: none;
-  box-shadow: 0 10px 24px rgba(168, 58, 23, .26);
 }
 
-.hapcheon-landing-cta:hover { background: #872a0f; }
-.hapcheon-landing-cta:focus-visible { outline: 3px solid #176a9e; outline-offset: 4px; }
-.hapcheon-landing-action p { margin: 0; color: #6f4938; font-size: .9rem; }
+.hapcheon-landing-cta:focus-visible { outline: 4px solid #176a9e; outline-offset: -5px; }
 
-@media (max-width: 600px) {
-  .hapcheon-landing { align-content: center; padding-inline: 10px; }
-  .hapcheon-landing-card { border-radius: 22px; }
-  .hapcheon-landing-action { padding: 18px 14px 20px; }
-  .hapcheon-landing-cta { width: min(100%, 320px); }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .hapcheon-landing-cta { transition: background-color .18s ease, transform .18s ease; }
-  .hapcheon-landing-cta:hover { transform: translateY(-1px); }
+@media (min-aspect-ratio: 390 / 844) {
+  .hapcheon-landing-visual {
+    left: 50%;
+    right: auto;
+    width: calc(100dvh * 390 / 844);
+    transform: translateX(-50%);
+  }
 }
