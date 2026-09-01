@@ -10,6 +10,7 @@ import {
 import GajoLiveStatus from "../components/GajoLiveStatus";
 import LocationContextBar from "../components/LocationContextBar";
 import RecommendationItineraryItem from "../components/RecommendationItineraryItem";
+import PlaceGuidanceSummary from "../components/PlaceGuidanceSummary";
 import { getSessionLocation, locationPermissionState, mayRefreshLocationSilently, observeVisitorLocation } from "../utils/visitorLocation";
 import { useSpeechInput } from "../hooks/useSpeechInput";
 import {
@@ -1246,6 +1247,7 @@ function PlaceDiscoveryPanel({
             }
           >
             <RecommendationItineraryItem step={entity} index={index} />
+            <PlaceGuidanceSummary guidance={entity.placeGuidance} />
             {entity.reasons?.length > 0 && (
               <p className="place-discovery-reasons">
                 {entity.reasons.join(" · ")}

@@ -11,6 +11,7 @@ import { CopilotService } from '../copilot/copilot.service';
 import { DISCOVERY_CATEGORY_MATCH } from './discovery-eligibility';
 import { RegionConfigService } from '../region/region-config.service';
 import { authoritativeSafetyEvidence, safeEssentialActions, ESSENTIAL_SERVICE_TYPES } from './essential-services';
+import {selectPlaceGuidance} from '../place-guidance/place-guidance.selector';
 
 const CATEGORY_MATCH = DISCOVERY_CATEGORY_MATCH;
 
@@ -295,6 +296,7 @@ export class PlaceDiscoveryService {
             accommodationType: recordAccommodationType(record),
             areaLabel: record.areaLabel,
             description: record.description,
+            placeGuidance: selectPlaceGuidance(record,context),
             address: record.address,
             telephone: record.telephone,
             website: record.website,
@@ -395,6 +397,7 @@ export class PlaceDiscoveryService {
                 entityType: canonical.entityType,
                 category: canonical.category,
                 description: canonical.description,
+                placeGuidance: selectPlaceGuidance(canonical,{}),
                 address: canonical.address,
                 telephone: canonical.telephone,
                 website: canonical.website,

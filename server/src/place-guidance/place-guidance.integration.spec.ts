@@ -1,0 +1,15 @@
+import {PlaceDiscoveryService} from '../concierge/place-discovery.service';
+import {HAPCHEON_MASTER_DATA} from '../regions/hapcheon/master-data';
+import {selectPlaceGuidance} from './place-guidance.selector';
+
+const regional={effectiveDataset:jest.fn(async(regionId:string)=>({regionId,records:regionId==='hapcheon'?HAPCHEON_MASTER_DATA:[]}))};
+const service=new PlaceDiscoveryService(regional as any);
+const entity=(suffix:string)=>HAPCHEON_MASTER_DATA.find(item=>item.entityUri.endsWith(suffix))!;
+
+describe('receipt 35 canonical guidance fixtures',()=>{
+ it('keeps guidance in canonical data for three distinct places',()=>{for(const suffix of ['#hwangmaesanCountyPark','#haeinsa','#hapcheonVideoThemePark']){const place=entity(suffix);expect(place.description).toBeTruthy();expect(place.operationalTips?.length).toBeGreaterThan(2);expect(new Set(place.operationalTips?.map(tip=>tip.id)).size).toBe(place.operationalTips?.length)}});
+ it('selects fresh rain guidance without changing exact-place ordering',async()=>{const now=new Date().toISOString(),result:any=await service.discover('hapcheon','TOURISM_NATURE','황매산 찾아줘',{weather:'RAIN',weatherState:'RAIN',weatherObservation:{source:'OPEN_METEO',observedAt:now}});expect(result.entities[0]).toMatchObject({entityId:entity('#hwangmaesanCountyPark').entityUri,placeGuidance:{tipId:'mountain-rain',realtime:true}});expect(result.entities[0].reasons).toContain('요청한 장소명과 정확히 일치')});
+ it('selects closing-soon guidance only for the matching canonical runtime state',()=>{const video=entity('#hapcheonVideoThemePark'),garden=entity('#hapcheonGardenThemePark'),now=new Date('2026-09-01T08:30:00Z'),context={currentTime:'17:30',runtimeStates:[{entityUri:video.entityUri,operatingState:'CLOSING_SOON',closingTime:'18:00',observedAt:'2026-09-01T08:25:00Z'}]};expect(selectPlaceGuidance(video,context,now).tipId).toBe('theme-park-closing-soon');expect(selectPlaceGuidance(garden,context,now).tipId).toBeUndefined()});
+ it('keeps another region with a similar alias free of Hapcheon tips',async()=>{const other={...entity('#hapcheonVideoThemePark'),entityUri:'urn:other:video',canonicalLabelKo:'영상테마파크',alternateLabels:['영상테마파크'],operationalTips:[]},isolated=new PlaceDiscoveryService({effectiveDataset:jest.fn(async(regionId:string)=>({regionId,records:[other]}))}as any),result:any=await isolated.discover('other','TOURISM_NATURE','영상테마파크 찾아줘',{});expect(result.entities[0].placeGuidance).toMatchObject({shortDescription:other.description,realtime:false});expect(result.entities[0].placeGuidance.tipId).toBeUndefined()});
+ it('new regions gain the same behavior from data registration alone',()=>{const record={entityUri:'urn:new:place',description:'새 지역의 검증 설명',operationalTips:[{id:'new-general',trigger:{},priority:1,message:'일반 안내',provenance:{sourceType:'OFFICIAL_LOCAL_GOV',sourceName:'새 지역 공식 자료',sourceUrl:'https://new.example',verifiedAt:'2026-09-01'}}]};expect(selectPlaceGuidance(record,{})).toMatchObject({shortDescription:'새 지역의 검증 설명',tipId:'new-general',situationalMessage:'일반 안내'})});
+});

@@ -78,7 +78,7 @@ export class RuntimeContext {
   @Prop() weatherState?: string;
   @Prop() temperature?: number;
   @Prop() precipitation?: number;
-  @Prop({ type: Object }) weatherObservation?: { regionId:string;observedAt:string;source:string;locationSourceId:string };
+  @Prop({ type: Object }) weatherObservation?: { regionId:string;observedAt:string;source:string;status?:string;stale?:boolean;locationSourceId:string };
   @Prop() latitude?: number;
   @Prop() longitude?: number;
   @Prop() transportMode?: string;

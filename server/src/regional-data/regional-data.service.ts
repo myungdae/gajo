@@ -953,6 +953,7 @@ export class RegionalDataService implements OnModuleInit {
       accessibility: f.accessibility,
       walkingAccess: f.walkingAccess,
       shortDescription: f.shortDescription,
+      operationalTips: Array.isArray(f.operationalTips) ? f.operationalTips : [],
     };
   }
   private toCandidate(
@@ -1018,6 +1019,9 @@ export class RegionalDataService implements OnModuleInit {
       latitude: coordinatesSafe ? row.latitude : undefined,
       longitude: coordinatesSafe ? row.longitude : undefined,
       description: row.shortDescription ?? base?.description,
+      operationalTips: row.operationalTips?.length
+        ? row.operationalTips
+        : base?.operationalTips || [],
       source: row.source,
       lastVerifiedAt: row.lastVerifiedAt,
       actions,

@@ -33,6 +33,7 @@ export class RegionalDataRecord {
   @Prop({ type: Object }) accessibility?: unknown;
   @Prop({ type: Object }) walkingAccess?: unknown;
   @Prop() shortDescription?: string;
+  @Prop({ type: [Object], default: [] }) operationalTips?: unknown[];
   @Prop({ type: Object, required: true }) source: {
     sourceType: string;
     sourceUrl: string;
