@@ -24,6 +24,8 @@ export interface CreateContextInput {
   conversationalAnchor?: { entityId: string; regionId: string; label?: string; entityType?: string; category?: string; latitude?: number; longitude?: number; source?: 'RDM'|'SEARCH'; sourceTurnId: string; role: 'RESULT'|'SUBJECT'|'SELECTED' };
   discoveryContext?: { regionId: string; anchor: { entityId: string; label?: string; latitude?: number; longitude?: number; source?: 'RDM'|'SEARCH' }; targetCategory: 'FOOD'|'CAFE'|'LODGING'|'HOT_SPRING_WELLNESS'|'ACTIVITY'|'TOURISM_NATURE'|'CONVENIENCE'|'ESSENTIAL_SHOPPING'|'CONVENIENCE_STORE'|'MART_SUPERMARKET'|'PARKING'|'PUBLIC_TOILET'|'HEAT_SHELTER'|'GAS_STATION'|'EV_CHARGER'|'TOURIST_INFORMATION'; relation: 'NEARBY'|'REGIONAL'; currentResult?: { entityId: string; label?: string; latitude?: number; longitude?: number; source?: 'RDM'|'SEARCH' }; shownEntityIds: string[]; sourceTurnId: string };
   regionId: string;
+  experienceRegionId?: string;
+  searchRegionId?: string | null;
   explicitJourney?: { requestedDestinations: NonNullable<CreateContextInput['mustVisitPlaces']>; multiDestination: true; sourceTurnId: string };
   duration?: string;
   mustVisitPlaces?: { entityId?: string; label: string; requestedLabel?:string;resolved: boolean; requested?:boolean;source?:'RDM'|'SEARCH'|'SEMANTIC';category?:string;entityType?:string;latitude?:number;longitude?:number;verificationStatus?:string;evidence?:Record<string,unknown> }[];

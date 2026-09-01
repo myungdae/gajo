@@ -126,15 +126,17 @@ export class ConciergeService {
 
   async chat(input: CreateContextInput) {
     const regionId = requireRegionId(input.regionId, 'Concierge chat');
+    const experienceRegionId=input.experienceRegionId||regionId,explicitlyRequestedRegion=this.regionConfig?.explicitRegion?.(input.rawMessage),searchRegionId=explicitlyRequestedRegion||(input.searchRegionId===null?undefined:input.searchRegionId||regionId);
     if (isGuideExplanationQuestion(input.rawMessage) && this.guide) {
       const explanation=this.guide.approvedExplanation({question:input.rawMessage});
       if(explanation)return{intentRoute:'GUIDE_EXPLANATION',guideExplanation:explanation,recommendation:null,visitorMessage:`${explanation.answer}\n\n여행을 계속할까요?`,journeyContinuation:{prompt:'여행을 계속할까요?',preserveJourney:true}};
     }
     let route: any = routeNaturalLanguageIntent(input);
-    const exactPlaceIntent = await this.placeDiscovery?.resolveExactPlaceIntent?.(
+    let exactPlaceIntent = await this.placeDiscovery?.resolveExactPlaceIntent?.(
       regionId,
       input.rawMessage || '',
     );
+    if(!exactPlaceIntent&&searchRegionId&&searchRegionId!==regionId)exactPlaceIntent=await this.placeDiscovery?.resolveExactPlaceIntent?.(searchRegionId,input.rawMessage||'');
     if (exactPlaceIntent && exactPlaceIntent.status !== 'AMBIGUOUS')
       route = {
         intentRoute: 'PLACE_DISCOVERY',
@@ -151,7 +153,7 @@ export class ConciergeService {
         ? await this.placeDiscovery.resolveRequestedDestinations(
             regionId,
             routeDetails.explicitDestinations,
-            { latitude: input.latitude, longitude: input.longitude },
+            { latitude: input.latitude, longitude: input.longitude, searchRegionId },
           )
         : undefined;
     const structuredJourneyDestinations = input.explicitJourney
@@ -219,7 +221,7 @@ export class ConciergeService {
       };
     }
 
-    if(nearbyDiscovery.intent&&nearbyDiscovery.currentLocationIntent){const usable=input.locationStatus==='AVAILABLE'&&Number.isFinite(input.latitude)&&Number.isFinite(input.longitude)&&Number(input.locationAccuracy)<=1500;if(!usable)return{context,evidence,firedRules,recommendation:null,intentRoute:'PLACE_DISCOVERY',nearbyLocationRequired:true,nearbyCategory:nearbyDiscovery.category,visitorMessage:'현재 기준 위치를 먼저 확인해 주세요. 위치를 확인한 뒤 실제 주변 장소를 가까운 순서로 찾아드릴게요.'};if(this.nearby&&nearbyDiscovery.category!=='HEAT_SHELTER')try{const category=nearbyDiscovery.category as NearbyCategory,places=await this.nearby.search(category,input.latitude!,input.longitude!,1000,{weather:input.weather,useDistance:true,transportMode:input.transportMode==='WALK'?'foot':'car'},regionId);return{context,evidence,firedRules,recommendation:null,intentRoute:'PLACE_DISCOVERY',serverTime:{timeZone:'Asia/Seoul',observedAt:new Date().toISOString(),local:new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',dateStyle:'short',timeStyle:'short'}).format(new Date())},nearbyDiscoveryIntent:true,nearbyCategory:category,discovery:{regionId,category,relation:'NEARBY',radius:1000,resultStatus:places.length?'AVAILABLE':'EMPTY',entities:places.map(place=>({entityId:`poi:${place.id}`,regionId,programLabel:place.name,entityType:place.category,category:place.category,address:place.roadAddress||place.address,telephone:place.phone,latitude:place.lat,longitude:place.lng,distanceMeters:place.distanceMeters,reasons:place.contextualReasons,operatingState:'UNKNOWN',operatingMessage:place.operatingMessage,operationalEvidence:{source:'KAKAO_LOCAL',verificationStatus:place.masterVerificationStatus||'UNVERIFIED',tripEligible:false},actions:{...(place.phone?{call:{phone:place.phone}}:{}),...(place.placeUrl?{detail:{url:place.placeUrl}}:{}),navigate:{latitude:place.lat,longitude:place.lng,evidenceMode:'PROVIDER_COORDINATES'}}}))},visitorMessage:places.length?'현재 위치를 기준으로 실제 주변 장소를 가까운 순서로 확인했습니다. 영업 여부는 방문 전에 확인해 주세요.':'1km 안에서 확인된 장소가 없습니다. 3km 또는 5km로 범위를 넓혀 찾아볼 수 있어요.'}}catch(error){if(error instanceof NearbyServiceError)return{context,evidence,firedRules,recommendation:null,intentRoute:'PLACE_DISCOVERY',nearbyDiscoveryIntent:true,nearbyCategory:nearbyDiscovery.category,nearbyProviderStatus:error.code,visitorMessage:error.message};throw error}}
+    if(nearbyDiscovery.intent&&nearbyDiscovery.currentLocationIntent){const usable=input.locationStatus==='AVAILABLE'&&Number.isFinite(input.latitude)&&Number.isFinite(input.longitude)&&Number(input.locationAccuracy)<=1500;if(!usable)return{context,evidence,firedRules,recommendation:null,intentRoute:'PLACE_DISCOVERY',nearbyLocationRequired:true,nearbyCategory:nearbyDiscovery.category,visitorMessage:'현재 기준 위치를 먼저 확인해 주세요. 위치를 확인한 뒤 실제 주변 장소를 가까운 순서로 찾아드릴게요.'};if(this.nearby&&nearbyDiscovery.category!=='HEAT_SHELTER')try{const category=nearbyDiscovery.category as NearbyCategory,places=await this.nearby.search(category,input.latitude!,input.longitude!,1000,{weather:input.weather,useDistance:true,transportMode:input.transportMode==='WALK'?'foot':'car'},searchRegionId);return{context,evidence,firedRules,recommendation:null,intentRoute:'PLACE_DISCOVERY',experienceRegionId,searchRegionId:searchRegionId||null,serverTime:{timeZone:'Asia/Seoul',observedAt:new Date().toISOString(),local:new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',dateStyle:'short',timeStyle:'short'}).format(new Date())},nearbyDiscoveryIntent:true,nearbyCategory:category,discovery:{regionId:searchRegionId||regionId,category,relation:'NEARBY',radius:1000,resultStatus:places.length?'AVAILABLE':'EMPTY',entities:places.map(place=>({entityId:`provider:${(place.provider||'KAKAO').toLowerCase()}:${place.providerPlaceId||place.id}`,provider:place.provider||'KAKAO',providerPlaceId:place.providerPlaceId||place.id,regionId:searchRegionId||regionId,programLabel:place.name,entityType:place.category,category:place.category,address:place.roadAddress||place.address,administrativeRegion:place.administrativeRegion,telephone:place.phone,latitude:place.lat,longitude:place.lng,distanceMeters:place.distanceMeters,reasons:place.contextualReasons,operatingState:'UNKNOWN',operatingMessage:place.operatingMessage,operationalEvidence:{source:'KAKAO_LOCAL',verificationStatus:place.masterVerificationStatus||'UNVERIFIED',tripEligible:false},actions:{...(place.phone?{call:{phone:place.phone}}:{}),...(place.placeUrl?{detail:{url:place.placeUrl}}:{}),navigate:{latitude:place.lat,longitude:place.lng,evidenceMode:'PROVIDER_COORDINATES'}}}))},visitorMessage:places.length?'현재 위치를 기준으로 실제 주변 장소를 가까운 순서로 확인했습니다. 영업 여부는 방문 전에 확인해 주세요.':'1km 안에서 확인된 장소가 없습니다. 3km 또는 5km로 범위를 넓혀 찾아볼 수 있어요.'}}catch(error){if(error instanceof NearbyServiceError)return{context,evidence,firedRules,recommendation:null,intentRoute:'PLACE_DISCOVERY',nearbyDiscoveryIntent:true,nearbyCategory:nearbyDiscovery.category,nearbyProviderStatus:error.code,visitorMessage:error.message};throw error}}
 
     const semanticFollowup = (input as any).semanticContext,
       semanticQuery =
