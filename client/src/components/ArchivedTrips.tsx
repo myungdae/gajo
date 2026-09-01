@@ -19,7 +19,7 @@ export default function ArchivedTrips() {
   return (
     <section className="card archived-trips" aria-labelledby="archived-trips-title">
       <h2 id="archived-trips-title">지난 여행</h2>
-      <p>과거 여행 기록을 확인하거나 삭제할 수 있어요. 현재 여행은 바뀌지 않습니다.</p>
+      <p>과거 여행 상세는 읽기 전용으로 확인하거나 기록 전체를 삭제할 수 있어요. 현재 여행은 바뀌지 않습니다.</p>
       {!trips.length && <p className="archived-trips-empty">아직 지난 여행 기록이 없습니다.</p>}
       {(showAll ? trips : trips.slice(0, DEFAULT_ARCHIVE_COUNT)).map((trip) => {
         const { steps, saved: places, completed, skipped, replaced, newlyAdded } = archivedTripSummary(trip);
