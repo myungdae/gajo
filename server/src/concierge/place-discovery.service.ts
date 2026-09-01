@@ -12,6 +12,7 @@ import { DISCOVERY_CATEGORY_MATCH } from './discovery-eligibility';
 import { RegionConfigService } from '../region/region-config.service';
 import { authoritativeSafetyEvidence, safeEssentialActions, ESSENTIAL_SERVICE_TYPES } from './essential-services';
 import {selectPlaceGuidance} from '../place-guidance/place-guidance.selector';
+import {PlaceWeatherContextProvider} from '../context/place-weather-context.provider';
 
 const CATEGORY_MATCH = DISCOVERY_CATEGORY_MATCH;
 
@@ -23,6 +24,7 @@ export class PlaceDiscoveryService {
     @Optional() private readonly nearby?: NearbyService,
     @Optional() private readonly copilot?: CopilotService,
     @Optional() private readonly regionConfig?: RegionConfigService,
+    @Optional() private readonly placeWeather?: PlaceWeatherContextProvider,
   ) {}
 
   async discover(
@@ -219,6 +221,7 @@ export class PlaceDiscoveryService {
         })
         .catch(() => undefined);
 
+    const visibleRanked=ranked.slice(context.selectionIndex ?? 0),weatherContexts=await this.placeWeather?.contextsForRecords(regionId,visibleRanked.map(item=>item.record),context)??new Map<string,any>();
     return {
       regionId,
       category,
@@ -279,8 +282,7 @@ export class PlaceDiscoveryService {
           }
         : undefined,
       entities: this.deduplicateEntities([
-        ...ranked
-          .slice(context.selectionIndex ?? 0)
+        ...visibleRanked
           .map(({ record, matched, distanceMeters, score }, index) => {
             const actions = (ESSENTIAL_SERVICE_TYPES as readonly string[]).includes(category) ? safeEssentialActions(record,config?.bounds) : record.actions;
             return ({
@@ -296,7 +298,7 @@ export class PlaceDiscoveryService {
             accommodationType: recordAccommodationType(record),
             areaLabel: record.areaLabel,
             description: record.description,
-            placeGuidance: selectPlaceGuidance(record,context),
+            placeGuidance: selectPlaceGuidance(record,weatherContexts.get(record.entityUri)||context),
             address: record.address,
             telephone: record.telephone,
             website: record.website,
