@@ -7,7 +7,6 @@ import { listArchivedTripSessions, loadTripSession, tripRestorationDiagnostics }
 import { itineraryItemCount } from "../tripContinuity";
 import { resetShellScroll } from "../routeScroll";
 import PublicBrand from "./PublicBrand";
-import CompanionShare from "./CompanionShare";
 
 const navItems = [
   { to: "/", label: "홈", icon: "home", end: true },
@@ -57,7 +56,7 @@ function NavIcon({ name }: { name: string }) {
 
 export default function Layout() {
   const region = useRegion();
-  const location=useLocation(),searchParams=new URLSearchParams(location.search),diagnosticMode=searchParams.get("trip-diagnostics")==="1",hapcheonLanding=location.pathname==='/hapcheon'&&searchParams.get('start')!=='ai',surface=appSurface(location.pathname,location.search,window.location.hostname),webShell=surface==='PLATFORM'||surface==='PUBLIC_PARTNER';
+  const location=useLocation(),searchParams=new URLSearchParams(location.search),diagnosticMode=searchParams.get("trip-diagnostics")==="1",hapcheonLanding=location.pathname==='/hapcheon'&&searchParams.get('start')!=='ai'&&sessionStorage.getItem('hapcheon-landing-complete')!=='1',surface=appSurface(location.pathname,location.search,window.location.hostname),webShell=surface==='PLATFORM'||surface==='PUBLIC_PARTNER';
   const mainRef = useRef<HTMLElement>(null);
   const [tripCount, setTripCount] = useState(() =>
     diagnosticMode?0:itineraryItemCount(loadTripSession(localStorage, region.id)) + listArchivedTripSessions(region.id).length,
@@ -83,7 +82,6 @@ export default function Layout() {
           <h1>{region.serviceName}</h1>
           <div className="subtitle">{region.heroSubtitle}</div>
         </div>
-        <CompanionShare />
       </header>}
       <main className={`app-main${webShell?' app-main--web':''}${hapcheonLanding?' app-main--hapcheon-landing':''}`} ref={mainRef}>
         <Outlet />
@@ -96,7 +94,9 @@ export default function Layout() {
               item.to === "/"
                 ? region.id === "gajo"
                   ? "/"
-                  : `/${region.id}`
+                  : region.id === "hapcheon"
+                    ? "/hapcheon?start=ai"
+                    : `/${region.id}`
                 : regionalPath(item.to, region.id)
             }
             end={item.end}
