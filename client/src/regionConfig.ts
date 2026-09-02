@@ -40,6 +40,8 @@ export interface RegionalPlace {
   longitude?: number;
   actions?: Record<string, unknown>;
 }
+export type ShareKind = "REGIONAL_ENTRY" | "TRIP_INVITE";
+export interface RegionShareConfig { kind:"REGIONAL_ENTRY";url:string;title:string;description:string;buttonLabel:string;image:string }
 export interface RegionConfig {
   id: RegionId;
   regionName: string;
@@ -81,6 +83,7 @@ export interface RegionConfig {
   serviceAreaMessage: string;
   ontologyNamespace: string;
   dataSources: Record<string, string>;
+  share?: RegionShareConfig;
 }
 const quickIntents: QuickIntent[] = [
   {
@@ -645,6 +648,7 @@ export const HAPCHEON_CONFIG: RegionConfig = {
     nearby: "VERIFIED_ANCHOR",
     weather: "OPEN_METEO",
   },
+  share:{kind:"REGIONAL_ENTRY",url:"https://exkovia.com/hapcheon",title:"합천 여행, 같이 해요!",description:"함께 여행하며 필요한 곳을 찾고 일정을 만들어 보세요.",buttonLabel:"합천 여행도우미 시작하기",image:"https://exkovia.com/branding/hapcheon-ai-autumn-social-1200x630-v3.png"},
 };
 export const DAEJEON_JUNGGU_CONFIG: RegionConfig = {
   id: "daejeon-junggu",
@@ -765,6 +769,7 @@ export function setActiveRegionConfig(config: RegionConfig) {
 export function getRegionConfig(value?: string | null) {
   return findRegionConfig(value) || GAJO_CONFIG;
 }
+export function getRegionShareConfig(region:RegionConfig):RegionShareConfig{return region.share||{kind:"REGIONAL_ENTRY",url:`https://exkovia.com/${region.id}`,title:`${region.regionName} 여행, 같이 해요!`,description:"함께 여행하며 필요한 곳을 찾고 일정을 만들어 보세요.",buttonLabel:`${region.regionName} 여행도우미 시작하기`,image:"https://exkovia.com/branding/travel-helper-social-1200x630-v2.png"}}
 const campaigns: Record<string, QuickIntentId> = {
   "next-place": "place-now",
   "food-now": "food-now",

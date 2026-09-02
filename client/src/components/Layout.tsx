@@ -7,6 +7,7 @@ import { listArchivedTripSessions, loadTripSession, tripRestorationDiagnostics }
 import { itineraryItemCount } from "../tripContinuity";
 import { resetShellScroll } from "../routeScroll";
 import PublicBrand from "./PublicBrand";
+import CompanionShare from "./CompanionShare";
 
 const navItems = [
   { to: "/", label: "홈", icon: "home", end: true },
@@ -82,6 +83,7 @@ export default function Layout() {
           <h1>{region.serviceName}</h1>
           <div className="subtitle">{region.heroSubtitle}</div>
         </div>
+        <CompanionShare />
       </header>}
       <main className={`app-main${webShell?' app-main--web':''}${hapcheonLanding?' app-main--hapcheon-landing':''}`} ref={mainRef}>
         <Outlet />
