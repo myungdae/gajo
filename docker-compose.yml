@@ -70,6 +70,8 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile
+      args:
+        VITE_KAKAO_JAVASCRIPT_KEY: ${VITE_KAKAO_JAVASCRIPT_KEY:-}
     container_name: gajo-client
     restart: unless-stopped
     depends_on:

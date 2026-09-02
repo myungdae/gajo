@@ -4,6 +4,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
+ARG VITE_KAKAO_JAVASCRIPT_KEY=""
+ENV VITE_KAKAO_JAVASCRIPT_KEY=${VITE_KAKAO_JAVASCRIPT_KEY}
 RUN npm run build
 
 FROM nginx:1.27-alpine
