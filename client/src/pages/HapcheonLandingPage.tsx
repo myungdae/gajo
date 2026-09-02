@@ -1,17 +1,5 @@
 import { Link } from 'react-router-dom';
-
-export default function HapcheonLandingPage(){
-  return <main className="hapcheon-landing">
-    <section className="hapcheon-landing-visual" aria-labelledby="hapcheon-landing-title">
-      <h1 id="hapcheon-landing-title" className="sr-only">합천 AI 여행도우미</h1>
-      <img
-        className="hapcheon-landing-hero"
-        src="/branding/hapcheon-ai-autumn-mobile-780x1688-v3.png"
-        width="780"
-        height="1688"
-        alt="해인사와 가야산의 화려한 가을 풍경, 해인사·영상테마파크·황매산을 소개하는 합천 AI 여행도우미 관광 일러스트"
-      />
-      <Link className="hapcheon-landing-cta" to="/hapcheon?start=ai"><span className="sr-only">합천 여행 시작하기</span></Link>
-    </section>
-  </main>
-}
+import { useRegion } from '../RegionContext';
+import CompanionShare from '../components/CompanionShare';
+// Region configuration supplies landing.ctaLabel; the fallback keeps new regions usable.
+export default function HapcheonLandingPage(){const region=useRegion(),landing=region.landing;return <main className="regional-landing" style={{'--landing-background':`url(${landing?.backgroundImage})`,'--landing-accent':region.accent}as React.CSSProperties}><div className="regional-landing-shade"/><section className="regional-landing-content" aria-labelledby="regional-landing-title"><header><p>{region.regionName} 여행</p><h1 id="regional-landing-title">{landing?.title||region.heroTitle}</h1><p>{landing?.description||region.heroCopy}</p></header><div className="regional-landing-places" aria-label={`${region.regionName} 대표 장소`}>{(landing?.places||region.places.slice(0,4).map(place=>({name:place.label,description:place.description||place.category}))).map(place=><article key={place.name}><b>{place.name}</b><span>{place.description}</span></article>)}</div><div className="regional-landing-actions"><Link className="regional-landing-cta" to={`/${region.id}?start=ai`}>{landing?.ctaLabel||`${region.regionName} 여행 시작하기`} <span aria-hidden="true">›</span></Link><CompanionShare /></div><small>회원가입 없이 바로 이용할 수 있어요.</small></section></main>}

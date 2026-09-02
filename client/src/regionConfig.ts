@@ -42,6 +42,8 @@ export interface RegionalPlace {
 }
 export type ShareKind = "REGIONAL_ENTRY" | "TRIP_INVITE";
 export interface RegionShareConfig { kind:"REGIONAL_ENTRY";url:string;title:string;description:string;buttonLabel:string;image:string }
+export interface RegionLandingPlace { name:string;description:string }
+export interface RegionLandingConfig { backgroundImage:string;title:string;description:string;ctaLabel:string;places:RegionLandingPlace[] }
 export interface RegionConfig {
   id: RegionId;
   regionName: string;
@@ -84,6 +86,7 @@ export interface RegionConfig {
   ontologyNamespace: string;
   dataSources: Record<string, string>;
   share?: RegionShareConfig;
+  landing?: RegionLandingConfig;
 }
 const quickIntents: QuickIntent[] = [
   {
@@ -649,6 +652,7 @@ export const HAPCHEON_CONFIG: RegionConfig = {
     weather: "OPEN_METEO",
   },
   share:{kind:"REGIONAL_ENTRY",url:"https://exkovia.com/hapcheon",title:"합천 여행, 같이 해요!",description:"함께 여행하며 필요한 곳을 찾고 일정을 만들어 보세요.",buttonLabel:"합천 여행도우미 시작하기",image:"https://exkovia.com/branding/hapcheon-ai-autumn-social-1200x630-v3.png"},
+  landing:{backgroundImage:"/branding/hapcheon-autumn-landing-background-v1.png",title:"합천 AI 여행도우미",description:"해인사부터 황매산까지, 필요한 순간 함께 여행을 이어가세요.",ctaLabel:"합천 여행 시작하기",places:[{name:"해인사",description:"천년의 역사와 고즈넉한 사찰"},{name:"영상테마파크",description:"근현대 시간여행 공간"},{name:"황매산",description:"사계절 아름다운 자연의 풍경"},{name:"합천호",description:"푸른 호수와 드라이브 풍경"}]},
 };
 export const DAEJEON_JUNGGU_CONFIG: RegionConfig = {
   id: "daejeon-junggu",
