@@ -545,6 +545,7 @@ export interface NearbyPlace {
   relevanceScore: number;
   tourismTrustLevel?: "REGIONAL_VERIFIED" | "PROVIDER_CATEGORY";
   administrativeRegion?:string;
+  distanceBandId?:string;
 }
 export interface NearbyDiscoveryResponse {
   searchedAt: string;
@@ -561,6 +562,7 @@ export interface NearbyDiscoveryResponse {
   searchRegionId?:string|null;
   regionMembership?:"INSIDE"|"OUTSIDE"|"UNCERTAIN";
   diagnostics?:{providerCandidates:number;regionCandidates:number;finalCandidates:number};
+  distanceBands?:Array<{id:string;label:string;minExclusive:number;maxInclusive:number;resultCount:number}>;
   total: number;
   resultStatus: "AVAILABLE" | "EMPTY";
   results: NearbyPlace[];

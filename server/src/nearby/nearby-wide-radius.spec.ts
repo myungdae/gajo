@@ -50,7 +50,7 @@ describe('explicit wide nearby search', () => {
     } finally { global.fetch=originalFetch; }
   });
 
-  it('stops a dense 50km request after two center pages produce 30 valid places',async()=>{const originalFetch=global.fetch,calls:string[]=[];global.fetch=jest.fn(async(input:URL|string|Request)=>{const url=new URL(String(input)),page=Number(url.searchParams.get('page'));calls.push(url.toString());return{ok:true,json:async()=>({documents:Array.from({length:15},(_,index)=>({id:`dense-${page}-${index}`,place_name:`밀집 식당 ${page}-${index}`,category_group_code:'FD6',category_name:'음식점 > 한식',x:String(origin.lng+index*.00001),y:String(origin.lat),distance:String(index)})),meta:{is_end:false}})}as Response})as any;try{const result=await new NearbyService({get:jest.fn((key:string)=>key==='KAKAO_REST_API_KEY'?'key':undefined)}as any).searchProgressively('FOOD',origin.lat,origin.lng,{},'hapcheon',50000,'hapcheon','INSIDE');expect(result.results).toHaveLength(30);expect(result.providerCalls).toBe(2);expect(new Set(calls.map(value=>new URL(value).searchParams.get('x'))).size).toBe(1)}finally{global.fetch=originalFetch}});
+  it('does not stop a dense explicit 50km request before sampling outer centers',async()=>{const originalFetch=global.fetch,calls:string[]=[];global.fetch=jest.fn(async(input:URL|string|Request)=>{const url=new URL(String(input)),page=Number(url.searchParams.get('page'));calls.push(url.toString());return{ok:true,json:async()=>({documents:Array.from({length:15},(_,index)=>({id:`${url.searchParams.get('x')}:${url.searchParams.get('y')}-${page}-${index}`,place_name:`밀집 식당 ${page}-${index}`,category_group_code:'FD6',category_name:'음식점 > 한식',x:String(Number(url.searchParams.get('x'))+index*.00001),y:url.searchParams.get('y'),distance:String(index)})),meta:{is_end:false}})}as Response})as any;try{const result=await new NearbyService({get:jest.fn((key:string)=>key==='KAKAO_REST_API_KEY'?'key':undefined)}as any).searchProgressively('FOOD',origin.lat,origin.lng,{},'hapcheon',50000,'hapcheon','INSIDE');expect(result.results.length).toBeLessThanOrEqual(30);expect(result.providerCalls).toBe(39);expect(new Set(calls.map(value=>{const url=new URL(value);return`${url.searchParams.get('x')}:${url.searchParams.get('y')}`})).size).toBe(13)}finally{global.fetch=originalFetch}});
 
   it('expands a sparse 50km request through the required outer ring',async()=>{const service=new NearbyService({get:jest.fn(()=>undefined)}as any);let call=0;const search=jest.spyOn(service,'search').mockImplementation(async()=>call++===0?[]:[place(`outer-${call}`,offset(30000,call))]as any);const result=await service.searchProgressively('FOOD',origin.lat,origin.lng,{},'hapcheon',50000,'hapcheon','INSIDE');expect(search).toHaveBeenCalledTimes(13);expect(result.results.length).toBeGreaterThan(0);expect(result.results.length).toBeLessThan(30)});
 
@@ -62,13 +62,13 @@ describe('explicit wide nearby search', () => {
 
   it('limits simultaneous provider centers to four',async()=>{const service=new NearbyService({get:jest.fn(()=>undefined)}as any);let active=0,maxActive=0;const search=jest.spyOn(service,'search').mockImplementation(async()=>{active++;maxActive=Math.max(maxActive,active);await new Promise(resolve=>setTimeout(resolve,5));active--;return[]});await service.searchProgressively('FOOD',origin.lat,origin.lng,{},'hapcheon',50000,'hapcheon','INSIDE');expect(search).toHaveBeenCalledTimes(13);expect(WIDE_SEARCH_CONCURRENCY).toBe(4);expect(maxActive).toBe(4)});
 
-  it('uses one provider center for the supported 20km radius', async () => {
+  it('samples the outer distance band for the supported 20km radius', async () => {
     const service = new NearbyService({ get: jest.fn(() => undefined) } as any);
     const search = jest.spyOn(service, 'search').mockResolvedValue([]);
     const result = await service.searchProgressively('FOOD', origin.lat, origin.lng, {}, 'hapcheon', 20000, 'hapcheon', 'INSIDE');
-    expect(search).toHaveBeenCalledTimes(1);
+    expect(search).toHaveBeenCalledTimes(7);
     expect(search.mock.calls[0][3]).toBe(20000);
-    expect(search.mock.calls[0][8]).toBe(true);
+    expect(search.mock.calls.every(call=>call[8]===true)).toBe(true);
     expect(result.radius).toBe(20000);
   });
 
