@@ -41,7 +41,7 @@ test('the landing keeps Kakao loading and rendering behind the optional build va
 
   assert.match(landingShare, /import\.meta\.env\.VITE_KAKAO_JAVASCRIPT_KEY\?\.trim\(\)/);
   assert.match(landingShare, /if\(!kakaoKey\)return/);
-  assert.match(landingShare, /\{kakaoKey&&<button/);
+  assert.match(landingShare, /\(kakaoKey\|\|posterOverlay\)&&<button/);
   assert.match(landingShare, /Kakao\.Share\.sendDefault/);
   assert.doesNotMatch(landingShare, /KAKAO_REST_API_KEY|KAKAO_ADMIN_KEY/);
 });

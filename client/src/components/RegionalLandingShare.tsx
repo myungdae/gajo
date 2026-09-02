@@ -10,7 +10,7 @@ declare global {
 
 type KakaoState='LOADING'|'READY'|'FAILED';
 
-export default function RegionalLandingShare(){
+export default function RegionalLandingShare({posterOverlay=false}:{posterOverlay?:boolean}){
   const region=useRegion(),payload=companionSharePayload(region),kakaoKey=import.meta.env.VITE_KAKAO_JAVASCRIPT_KEY?.trim();
   const [kakaoState,setKakaoState]=useState<KakaoState>(kakaoKey?'LOADING':'FAILED');
 
@@ -45,8 +45,8 @@ export default function RegionalLandingShare(){
     }
   };
 
-  return <section className="regional-landing-share" aria-label="동행자와 공유">
+  return <section className={`regional-landing-share${posterOverlay?' regional-landing-share--poster':''}`} aria-label="동행자와 공유">
     <img className="regional-landing-qr" src={`/api/regions/${encodeURIComponent(region.id)}/entry-qr`} alt={`${region.regionName} 여행도우미 공식 접속 QR`}/>
-    {kakaoKey&&<button type="button" className="regional-landing-kakao" onClick={shareToKakao} disabled={kakaoState!=='READY'}>카카오톡으로 보내기</button>}
+    {(kakaoKey||posterOverlay)&&<button type="button" className="regional-landing-kakao" onClick={shareToKakao} disabled={!kakaoKey||kakaoState!=='READY'} aria-label={kakaoKey?'카카오톡으로 보내기':'카카오톡 공유는 현재 사용할 수 없습니다'}><span className={posterOverlay?'sr-only':undefined}>카카오톡으로 보내기</span></button>}
   </section>;
 }
