@@ -2,7 +2,7 @@
 import { BadGatewayException, BadRequestException, Body, Controller, GatewayTimeoutException, Get, Post, Query, ServiceUnavailableException,UseGuards } from '@nestjs/common';
 import { NearbyCategory, NearbyService, NearbyServiceError } from './nearby.service';
 import { PublicWriteLimit,PublicWriteRateLimitGuard } from '../partner/public-write-security';
-import { NEARBY_RADIUS_STEPS, type NearbyRadius } from './nearby-radius.policy';
+import { NEARBY_RADIUS_STEPS, SELECTABLE_NEARBY_RADII, type NearbyRadius } from './nearby-radius.policy';
 
 const CATEGORIES: NearbyCategory[] = [
   'TOURIST_ATTRACTION', 'NATURE', 'CULTURE_ART', 'EXPERIENCE', 'FESTIVAL_EXHIBITION',
@@ -60,7 +60,8 @@ export class NearbyController {
   private validateSearch(latValue: string, lngValue: string, radiusValue?: string,defaultRadius=true) {
     const lat = Number(latValue), lng = Number(lngValue), inputRadius = radiusValue ? Number(radiusValue) : defaultRadius?1000:undefined;
     if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) throw new BadRequestException('올바른 lat, lng 값이 필요합니다.');
-    if (inputRadius!=null&&!NEARBY_RADIUS_STEPS.includes(inputRadius as NearbyRadius)) throw new BadRequestException('radius는 1000, 3000, 5000, 10000 중 하나여야 합니다.');
+    const validRadii:readonly number[]=[...NEARBY_RADIUS_STEPS,...SELECTABLE_NEARBY_RADII];
+    if (inputRadius!=null&&!validRadii.includes(inputRadius)) throw new BadRequestException('radius는 1000, 3000, 5000, 10000, 20000, 30000, 40000, 50000 중 하나여야 합니다.');
     return { lat, lng, radius:inputRadius };
   }
   private rethrow(error: unknown): never {

@@ -19,8 +19,9 @@ export type NearbyCategory =
 
 const CANONICAL_PROVIDER_MAX_DRIFT_METERS = 100;
 const PROVIDER_SEARCH_MAX_CALLS = 12;
+export const WIDE_PROVIDER_SEARCH_MAX_CALLS = 39;
 const PROVIDER_SEARCH_TIME_BUDGET_MS = 10000;
-type ProviderSearchBudget = { calls:number; deadline:number; exhausted?:'CALL_LIMIT'|'TIME_LIMIT';providerCandidates:number;regionCandidates:number;finalCandidates:number };
+type ProviderSearchBudget = { calls:number; maxCalls:number; deadline:number; exhausted?:'CALL_LIMIT'|'TIME_LIMIT';providerCandidates:number;regionCandidates:number;finalCandidates:number };
 
 
 export type NearbyFailureCode = 'NOT_CONFIGURED' | 'UPSTREAM_ERROR' | 'UPSTREAM_TIMEOUT' | 'INVALID_RESPONSE'|'INVALID_REQUEST';
@@ -82,6 +83,7 @@ export interface ProgressiveNearbySearchResult {
   diagnostics:{providerCandidates:number;regionCandidates:number;finalCandidates:number};
 }
 export type RegionMembership='INSIDE'|'OUTSIDE'|'UNCERTAIN';
+export function wideSearchCenters(lat:number,lng:number,radius:30000|40000|50000){const layout=radius===30000?{count:6,ring:15000}:radius===40000?{count:8,ring:25000}:{count:12,ring:35000};return[{lat,lng},...Array.from({length:layout.count},(_,index)=>{const angle=2*Math.PI*index/layout.count,north=layout.ring*Math.cos(angle),east=layout.ring*Math.sin(angle);return{lat:lat+north/111320,lng:lng+east/(111320*Math.cos(lat*Math.PI/180))}})]}
 export function classifyRegionMembership(region:{id:string;regionName:string;bounds?:{north:number;south:number;east:number;west:number}},latitude:number,longitude:number,accuracy:number,address:{region1?:string;region2?:string;region3?:string}={}):RegionMembership{const expected=REGION_ADMINISTRATIVE_AREAS[region.id],insideBounds=Boolean(region.bounds&&latitude<=region.bounds.north&&latitude>=region.bounds.south&&longitude<=region.bounds.east&&longitude>=region.bounds.west),administrativeMatch=Boolean(expected&&(!expected.region1||address.region1?.includes(expected.region1))&&address.region2?.includes(expected.region2)&&(!expected.region3||address.region3?.includes(expected.region3)));if(administrativeMatch)return insideBounds?'INSIDE':'UNCERTAIN';if(!address.region2)return'UNCERTAIN';return accuracy>100?'UNCERTAIN':'OUTSIDE'}
 
 // eslint-disable-next-line prettier/prettier
@@ -186,14 +188,16 @@ export class NearbyService {
   status(regionId?: string) { const configured=this.isConfigured()||Boolean(regionId&&this.regionalData&&REGIONAL_CANDIDATE_DATASETS[regionId]);return { configured, state: configured ? 'READY' : 'NOT_CONFIGURED', provider: this.isConfigured()?'KAKAO_LOCAL':'REGIONAL_OPERATIONAL_DATA', timeoutMs: this.timeoutMs }; }
 
   async searchProgressively(category:NearbyCategory,lat:number,lng:number,options:NearbySearchOptions={},searchRegionId?:string,requestedRadius?:NearbyRadius,experienceRegionId?:string,regionMembership?:RegionMembership):Promise<ProgressiveNearbySearchResult>{
-    const regions=this.regions||new RegionConfigService(),region=searchRegionId?regions.get(searchRegionId):undefined,policy=nearbyRadiusPolicy(category,region),allowedRadii=allowedNearbyRadii(policy),radii=requestedRadius?[requestedRadius]:allowedRadii,budget:ProviderSearchBudget={calls:0,deadline:Date.now()+PROVIDER_SEARCH_TIME_BUDGET_MS,providerCandidates:0,regionCandidates:0,finalCandidates:0};
-    if(requestedRadius&&!allowedRadii.includes(requestedRadius))throw new NearbyServiceError('INVALID_REQUEST',`선택한 분류는 ${policy.automaticMaxRadius/1000}km까지 찾을 수 있습니다.`);
+    const regions=this.regions||new RegionConfigService(),region=searchRegionId?regions.get(searchRegionId):undefined,policy=nearbyRadiusPolicy(category,region),allowedRadii=allowedNearbyRadii(policy),radii=requestedRadius?[requestedRadius]:allowedRadii,budget:ProviderSearchBudget={calls:0,maxCalls:requestedRadius&&requestedRadius>20000?WIDE_PROVIDER_SEARCH_MAX_CALLS:PROVIDER_SEARCH_MAX_CALLS,deadline:Date.now()+PROVIDER_SEARCH_TIME_BUDGET_MS,providerCandidates:0,regionCandidates:0,finalCandidates:0};
+    if(requestedRadius===20000){const results=await this.search(category,lat,lng,requestedRadius,options,undefined,policy.minimumCandidates,budget,true);budget.finalCandidates=results.length;return{results,radius:requestedRadius,initialRadius:policy.steps[0],minimumCandidates:policy.minimumCandidates,expanded:true,coverageStatus:budget.exhausted?'PARTIAL':'COMPLETE',providerCalls:budget.calls,diagnostics:{providerCandidates:budget.providerCandidates,regionCandidates:budget.regionCandidates,finalCandidates:results.length}}}
+    if(requestedRadius&&requestedRadius>20000){const wide=await this.searchWide(category,lat,lng,requestedRadius,options,budget);budget.finalCandidates=wide.length;return{results:wide,radius:requestedRadius,initialRadius:policy.steps[0],minimumCandidates:policy.minimumCandidates,expanded:true,coverageStatus:budget.exhausted?'PARTIAL':'COMPLETE',providerCalls:budget.calls,diagnostics:{providerCandidates:budget.providerCandidates,regionCandidates:wide.length,finalCandidates:wide.length}}}
+    if(requestedRadius&&!allowedRadii.includes(requestedRadius))throw new NearbyServiceError('INVALID_REQUEST',`선택한 분류는 ${policy.automaticMaxRadius/1000}km까지 자동으로 찾을 수 있습니다.`);
     let results:NearbyPlace[]=[],radius=radii[0];
     for(const step of radii){radius=step;const nextResults=await this.search(category,lat,lng,step,options,searchRegionId,policy.minimumCandidates,budget);results=budget.exhausted?[...new Map([...results,...nextResults].map(place=>[`${place.provider}:${place.providerPlaceId}`,place])).values()].sort((a,b)=>this.compareResults(category,a,b,true)):nextResults;if(this.validCandidateCount(category,results)>=policy.minimumCandidates||budget.exhausted)break}
     budget.finalCandidates=results.length;const diagnostics={providerCandidates:budget.providerCandidates,regionCandidates:budget.regionCandidates,finalCandidates:results.length};this.logger.log(JSON.stringify({event:'NEARBY_SEARCH_SUMMARY',experienceRegionId:experienceRegionId||searchRegionId,searchRegionId:searchRegionId||'UNSUPPORTED_COORDINATE_SCOPE',regionMembership:regionMembership||'UNCERTAIN',radius,providerCandidates:diagnostics.providerCandidates,regionCandidates:diagnostics.regionCandidates,finalCandidates:diagnostics.finalCandidates,fallbackApplied:Boolean(experienceRegionId&&searchRegionId&&experienceRegionId!==searchRegionId)}));return{results,radius,initialRadius:policy.steps[0],nextRadius:budget.exhausted?undefined:nextNearbyRadius(policy,radius),minimumCandidates:policy.minimumCandidates,expanded:!requestedRadius&&radius>policy.steps[0],coverageStatus:budget.exhausted?'PARTIAL':'COMPLETE',providerCalls:budget.calls,diagnostics};
   }
 
-  async search(category: NearbyCategory, lat: number, lng: number, radius = 2000, options: NearbySearchOptions = {}, regionId?: string,minimumCandidates?:number,budget?:ProviderSearchBudget): Promise<NearbyPlace[]> {
+  async search(category: NearbyCategory, lat: number, lng: number, radius = 2000, options: NearbySearchOptions = {}, regionId?: string,minimumCandidates?:number,budget?:ProviderSearchBudget,allowAdjacent=false,widePrimaryOnly=false): Promise<NearbyPlace[]> {
     // eslint-disable-next-line prettier/prettier
     const region=regionId?(this.regions||new RegionConfigService()).get(regionId):undefined;
     const key = this.kakaoKey;
@@ -204,7 +208,7 @@ export class NearbyService {
     if (key) {
       const enough=()=>Boolean(minimumCandidates&&this.validCandidateCount(category,this.trustedResults(byId,category,regionId,region))>=minimumCandidates);
       if(!enough())for (const code of plan.codes) {await this.fetchCategory(key, code, category, lat, lng, radius, byId,enough,budget);if(enough()||budget?.exhausted)break}
-      if(!enough()&&!budget?.exhausted)for (const keyword of plan.keywords) {await this.fetchKeyword(key, keyword, category, lat, lng, radius, byId,enough,budget);if(enough()||budget?.exhausted)break}
+      if(!enough()&&!budget?.exhausted&&(!widePrimaryOnly||plan.codes.length===0))for (const keyword of plan.keywords) {await this.fetchKeyword(key, keyword, category, lat, lng, radius, byId,enough,budget);if(enough()||budget?.exhausted||widePrimaryOnly)break}
     }
     if (!tourism && regionId && this.regionalData) await this.addOperationalPlaces(byId, category, lat, lng, radius, regionId);
     if (!key && byId.size === 0) throw new NearbyServiceError('NOT_CONFIGURED', '주변 장소 검색은 현재 준비 중입니다.');
@@ -219,8 +223,10 @@ export class NearbyService {
       if (useDistance && place.distanceMeters != null && place.distanceMeters <= 1500) place.contextualReasons.push('현재 위치에서 가까운 후보입니다.');
     }
     // eslint-disable-next-line prettier/prettier
-    const regionScoped=this.regionScopedResults(byId,regionId,region);if(budget)budget.regionCandidates=Math.max(budget.regionCandidates,regionScoped.length);return regionScoped.filter(place=>this.canonicalConsistent(place)).filter(place=>this.requestedCategoryMatches(category,place.category)).sort((a,b)=>this.compareResults(category,a,b,useDistance)).slice(0,30);
+    const regionScoped=allowAdjacent?[...byId.values()]:this.regionScopedResults(byId,regionId,region);if(budget)budget.regionCandidates=Math.max(budget.regionCandidates,regionScoped.length);return regionScoped.filter(place=>this.canonicalConsistent(place)).filter(place=>this.requestedCategoryMatches(category,place.category)).sort((a,b)=>this.compareResults(category,a,b,useDistance)).slice(0,30);
   }
+
+  private async searchWide(category:NearbyCategory,lat:number,lng:number,radius:NearbyRadius,options:NearbySearchOptions,budget:ProviderSearchBudget){const points=wideSearchCenters(lat,lng,radius as 30000|40000|50000),settled=await Promise.allSettled(points.map(point=>this.search(category,point.lat,point.lng,20000,options,undefined,undefined,budget,true,true))),merged=new Map<string,NearbyPlace>();for(const result of settled)if(result.status==='fulfilled')for(const place of result.value){place.distanceMeters=this.distanceMeters(lat,lng,place.lat,place.lng);if(place.distanceMeters<=radius)merged.set(`${place.provider}:${place.providerPlaceId}`,place)}if(settled.some(result=>result.status==='rejected'))budget.exhausted||='TIME_LIMIT';return[...merged.values()].sort((a,b)=>(a.distanceMeters??Infinity)-(b.distanceMeters??Infinity)).slice(0,30)}
 
   async searchRestaurants(lat: number, lng: number, radius = 2000) { return this.search('FOOD', lat, lng, radius); }
 
@@ -238,7 +244,7 @@ export class NearbyService {
   }
 
   // eslint-disable-next-line prettier/prettier
-  async representativeAnchors(regionId:string):Promise<NearbyPlace[]>{const region=(this.regions||new RegionConfigService()).get(regionId),dataset=await this.regionalData?.effectiveDataset(regionId);return(dataset?.records||[]).filter(record=>record.runtimeDataStatus==='VERIFIED'&&record.entityType==='ATTRACTION'&&record.representativeAnchor!==false&&Number.isFinite(record.latitude)&&Number.isFinite(record.longitude)&&this.insideRegion(record.latitude!,record.longitude!,region?.bounds)).slice(0,8).map(record=>({id:`canonical:${record.entityUri}`,provider:'REGIONAL_DATA' as const,providerPlaceId:record.entityUri,name:record.canonicalLabelKo,category:'TOURIST_ATTRACTION',categoryLabel:'관광지',providerCategoryName:record.category,address:record.address||'',roadAddress:record.address,phone:record.telephone,lat:record.latitude!,lng:record.longitude!,placeUrl:record.website||'',indoorRelevance:'UNKNOWN',operatingState:'UNKNOWN',operatingMessage:'현재 운영 여부 확인 필요',contextualReasons:['검증된 지역 대표 장소입니다.'],canonicalEntityUri:record.entityUri,canonicalLabel:record.canonicalLabelKo,masterVerificationStatus:record.runtimeDataStatus,transient:false,relevanceScore:5,administrativeRegion:regionId}))}
+  async representativeAnchors(regionId:string):Promise<NearbyPlace[]>{const region=(this.regions||new RegionConfigService()).get(regionId),dataset=await this.regionalData?.effectiveDataset(regionId);return(dataset?.records||[]).filter(record=>record.runtimeDataStatus==='VERIFIED'&&record.entityType==='ATTRACTION'&&record.representativeAnchor!==false&&Number.isFinite(record.latitude)&&Number.isFinite(record.longitude)&&this.insideRegion(record.latitude!,record.longitude!,region?.bounds)).slice(0,8).map(record=>({id:`canonical:${record.entityUri}`,provider:'REGIONAL_DATA' as const,providerPlaceId:record.entityUri,name:record.canonicalLabelKo,category:'TOURIST_ATTRACTION',categoryLabel:'관광지',providerCategoryName:record.category,address:record.address||'',roadAddress:record.address,phone:record.telephone,lat:record.latitude!,lng:record.longitude!,placeUrl:record.website||'',indoorRelevance:'UNKNOWN',operatingState:'UNKNOWN',operatingMessage:'현재 운영 여부 확인 필요',contextualReasons:['검증된 지역 대표 장소입니다.'],canonicalEntityUri:record.entityUri,canonicalLabel:record.canonicalLabelKo,masterVerificationStatus:record.runtimeDataStatus,transient:false,relevanceScore:5,administrativeRegion:region.regionName}))}
 
   private normalizeSearchText(value:string){return value.replace(/\s/g,'').toLowerCase()}
   // eslint-disable-next-line prettier/prettier
@@ -263,6 +269,7 @@ export class NearbyService {
 
   private async addOperationalPlaces(byId: Map<string, NearbyPlace>, requested: NearbyCategory, lat: number, lng: number, radius: number, regionId: string) {
     const dataset = await this.regionalData!.effectiveDataset(regionId);
+    const regionName = (this.regions || new RegionConfigService()).get(regionId).regionName;
     for (const record of dataset?.records || []) {
       if (TOURISM_CATEGORIES.has(requested) && record.runtimeDataStatus !== 'VERIFIED') continue;
       if (!Number.isFinite(record.latitude) || !Number.isFinite(record.longitude)) continue;
@@ -289,7 +296,7 @@ export class NearbyService {
         operatingState: 'UNKNOWN', operatingMessage: '현재 운영 여부 확인 필요', contextualReasons: ['검증된 지역 운영 데이터입니다.'],
         canonicalEntityUri: record.entityUri, canonicalLabel: record.canonicalLabelKo,
         masterVerificationStatus: record.runtimeDataStatus, transient: false, relevanceScore: 5,
-        season: record.season, eventAvailability: record.eventAvailability, accessNotice: record.accessNotice,administrativeRegion:regionId,
+        season: record.season, eventAvailability: record.eventAvailability, accessNotice: record.accessNotice,administrativeRegion:regionName,
         ...(TOURISM_CATEGORIES.has(requested)?{tourismTrustLevel:'REGIONAL_VERIFIED' as const}:{}),
       });
       const stored=byId.get(`canonical:${record.entityUri}`);if(stored&&TOURISM_CATEGORIES.has(requested))Object.defineProperty(stored,'tourismSelectionReason',{value:'APPROVED_REGIONAL_TOURISM',enumerable:false,configurable:true});
@@ -333,7 +340,7 @@ export class NearbyService {
     return url;
   }
 
-  private reserveProviderCall(budget?:ProviderSearchBudget){if(!budget)return true;if(Date.now()>=budget.deadline){budget.exhausted='TIME_LIMIT';return false}if(budget.calls>=PROVIDER_SEARCH_MAX_CALLS){budget.exhausted='CALL_LIMIT';return false}budget.calls++;return true}
+  private reserveProviderCall(budget?:ProviderSearchBudget){if(!budget)return true;if(Date.now()>=budget.deadline){budget.exhausted='TIME_LIMIT';return false}if(budget.calls>=budget.maxCalls){budget.exhausted='CALL_LIMIT';return false}budget.calls++;return true}
   // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   private async kakaoGetWithinBudget(url:URL,key:string,budget?:ProviderSearchBudget){const remaining=budget?budget.deadline-Date.now():this.timeoutMs;if(remaining<=0){if(budget)budget.exhausted='TIME_LIMIT';return undefined}try{return await this.kakaoGet(url,key,true,Math.min(this.timeoutMs,remaining))}catch(error){if(error instanceof NearbyServiceError&&error.code==='UPSTREAM_TIMEOUT'&&budget&&Date.now()>=budget.deadline){budget.exhausted='TIME_LIMIT';return undefined}throw error}}
 

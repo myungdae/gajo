@@ -2,11 +2,12 @@ import type { NearbyCategory } from './nearby.service';
 import type { RegionConfig } from '../region/region-config.service';
 
 export const NEARBY_RADIUS_STEPS = [1000, 3000, 5000, 10000] as const;
-export type NearbyRadius = (typeof NEARBY_RADIUS_STEPS)[number];
+export const SELECTABLE_NEARBY_RADII = [10000, 20000, 30000, 40000, 50000] as const;
+export type NearbyRadius = (typeof NEARBY_RADIUS_STEPS)[number] | (typeof SELECTABLE_NEARBY_RADII)[number];
 
 export interface NearbyRadiusPolicy {
   steps: readonly NearbyRadius[];
-  automaticMaxRadius: NearbyRadius;
+  automaticMaxRadius: 1000|3000|5000|10000;
   minimumCandidates: number;
   nearRadius: NearbyRadius;
 }
