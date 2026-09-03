@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
-const output=new URL('../../docs/evidence/receipt-46/',import.meta.url);
+const activityChecks=process.argv.includes('--activity');
+const output=new URL(activityChecks?'../../docs/evidence/receipt-46-listening/':'../../docs/evidence/receipt-46/',import.meta.url);
 await mkdir(output,{recursive:true});
 const browser=await fetch('http://127.0.0.1:9226/json/version').then(r=>r.json());
 const socket=new WebSocket(browser.webSocketDebuggerUrl);
@@ -38,6 +39,7 @@ const evaluate=async expression=>{
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const until=async expression=>{for(let i=0;i<100;i++){if(await evaluate(expression))return;await sleep(80);}throw new Error('Timeout: '+expression+' '+await evaluate('document.body.innerText'));};
 await call('Page.enable');await call('Runtime.enable');
+if(activityChecks)await call('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'no-preference'}]});
 await call('Fetch.enable',{patterns:[{urlPattern:'http://127.0.0.1:5176/api/*'}]});
 await call('Network.enable');await call('Network.setBlockedURLs',{urls:['https://*']});
 await call('Page.addScriptToEvaluateOnNewDocument',{source:`
@@ -199,7 +201,31 @@ for(const locale of ['ko','en']){
   await evaluate("localStorage.clear();sessionStorage.clear()");
   await call('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<500});
   await navigate('/hapcheon/concierge?mode=now'+(locale==='en'?'&lang=en':''));
-  await openVoice();await speech(locale==='en'?'Find a quiet place with room for my family and somewhere nearby to eat after our visit.':'가족과 함께 조용히 쉴 수 있고 방문한 다음에 가까운 곳에서 식사할 수 있는 장소를 추천해 주세요.');
+  if(activityChecks){
+    await openVoice();
+    const readActivity=()=>evaluate("(()=>{const a=document.querySelector('.voice-activity'),s=a.querySelector('.voice-activity-symbol');return{phase:a.dataset.phase,text:a.textContent,live:a.getAttribute('aria-live'),atomic:a.getAttribute('aria-atomic'),animation:getComputedStyle(s,'::after').animationName,shape:getComputedStyle(a).borderRadius,color:getComputedStyle(a).backgroundColor,overflow:document.documentElement.scrollWidth>innerWidth||document.querySelector('.voice-input-panel').scrollWidth>document.querySelector('.voice-input-panel').clientWidth}})()");
+    const waiting=await readActivity();
+    assert.equal(waiting.phase,'waiting');assert.equal(waiting.animation,'none');
+    await click('.speech-session-button');
+    await until("document.querySelector('.voice-activity').dataset.phase==='listening'");
+    const listening=await readActivity();
+    assert.equal(listening.text,locale==='en'?'Listening. Please speak.':'듣고 있어요. 말씀해 주세요.');
+    assert.equal(listening.animation,'voice-listening-pulse');assert.equal(listening.live,'polite');assert.equal(listening.atomic,'true');
+    assert.notEqual(listening.shape,waiting.shape);assert.notEqual(listening.color,waiting.color);assert.equal(listening.overflow,false);
+    assert.equal(await evaluate("document.querySelector('.speech-session-button').getAttribute('aria-label')"),locale==='en'?'Stop Listening':'듣기 중지');
+    await evaluate("document.querySelector('.voice-activity').scrollIntoView({block:'start'})");await sleep(100);
+    await writeFile(new URL('active-'+locale+'-'+width+'x'+height+'.png',output),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
+    await call('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
+    const reduced=await readActivity();assert.equal(reduced.animation,'none');assert.equal(reduced.text,listening.text);
+    await call('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'no-preference'}]});
+    await evaluate("window.__speech.instances.at(-1).emit('안녕하세요 지금 테스트 중입니다')");
+    await click('.speech-session-button');
+    await until("document.querySelector('.voice-activity').dataset.phase==='complete'");
+    const complete=await readActivity();assert.equal(complete.animation,'none');assert.notEqual(complete.shape,listening.shape);assert.notEqual(complete.color,listening.color);assert.equal(complete.overflow,false);
+    assert.equal(await evaluate("document.querySelector('#voice-transcript').value"),'안녕하세요 지금 테스트 중입니다');
+    report.push({test:'listening pulse, stop to review, distinct phases, reduced motion and live announcements',locale,width,height,waiting,listening,complete,passed:true});
+    await click('.voice-confirm-cancel');
+  }  await openVoice();await speech(locale==='en'?'Find a quiet place with room for my family and somewhere nearby to eat after our visit.':'가족과 함께 조용히 쉴 수 있고 방문한 다음에 가까운 곳에서 식사할 수 있는 장소를 추천해 주세요.');
   await evaluate("document.querySelector('.voice-confirm-actions').scrollIntoView({block:'center'})");
   const layout=await evaluate(`(()=>{
     const nav=document.querySelector('.bottom-nav').getBoundingClientRect(),main=document.querySelector('.app-main').getBoundingClientRect();

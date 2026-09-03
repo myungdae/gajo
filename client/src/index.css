@@ -3620,3 +3620,67 @@ table.simple td {
   border-width: 2px;
   background: #d9f3ee;
 }
+
+/* A steady decorative pulse signals listening; it does not represent audio volume. */
+.voice-activity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  margin-bottom: 14px;
+  border: 1px dashed #64748b;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 18px;
+  line-height: 1.5;
+}
+.voice-activity strong { min-width: 0; overflow-wrap: anywhere; }
+.voice-activity-symbol {
+  display: grid;
+  place-items: center;
+  position: relative;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  background: #fff;
+}
+.voice-activity-symbol svg { width: 24px; height: 24px; }
+.voice-activity[data-phase="listening"] {
+  border: 2px solid #0f766e;
+  border-radius: 24px;
+  background: #d9f3ee;
+  color: #115e59;
+}
+.voice-activity[data-phase="listening"] .voice-activity-symbol::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  animation: voice-listening-pulse 1.6s ease-out infinite;
+  pointer-events: none;
+}
+.voice-activity[data-phase="complete"] {
+  border: 2px solid #1d4ed8;
+  border-radius: 6px;
+  background: #eff6ff;
+  color: #1e40af;
+}
+.voice-activity[data-phase="complete"] .voice-activity-symbol { border-radius: 6px; }
+@keyframes voice-listening-pulse {
+  from { transform: scale(1); opacity: .65; }
+  to { transform: scale(1.4); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .voice-activity[data-phase="listening"] .voice-activity-symbol::after {
+    animation: none;
+    transform: scale(1.16);
+    opacity: .5;
+  }
+}
+@media (max-width: 320px) {
+  .voice-activity { flex-direction: column; align-items: flex-start; padding: 10px; }
+}

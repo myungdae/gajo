@@ -1,3 +1,4 @@
+import VoiceActivity from "../components/VoiceActivity";
 import { readConversation, saveConversation } from "../conversationMemory";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -66,7 +67,7 @@ import { understoodSummary } from "../understoodSummary";
 import { NOW_HEADING, NOW_HEADING_LINES, NOW_QUICK_ACTIONS } from "../nowQuickActions";
 import VoiceConfirmation from "../components/VoiceConfirmation";
 import { acceptVoiceResult, understandVoice, type VoiceResultFingerprint, type VoiceUnderstanding } from "../voice/voiceUx";
-import { VOICE_COPY, localizedVoiceState } from "../voice/voiceCopy";
+import { VOICE_COPY } from "../voice/voiceCopy";
 import { useRegionalLanguage } from "../RegionalLanguageContext";
 
 interface Message {
@@ -989,9 +990,10 @@ function ConciergeConversation() {
             onKeyDown={(e)=>{if(e.key==="Enter"&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();send();}}}
           />}
           {manualEntryMode==="VOICE"&&<div className="voice-input-panel" onKeyDown={event=>{if(event.key==="Escape"&&!loading){event.preventDefault();dismissVoice();}}}>
+            <VoiceActivity state={voiceState} locale={language}/>
             {!voiceUnderstanding&&<button
               ref={voiceButtonRef} type="button"
-              className={`speech-session-button${listening?" is-listening":""}`}
+              className={`speech-session-button${voiceState==="LISTENING"?" is-listening":""}`}
               onClick={beginVoice} disabled={loading||voiceState==="REQUESTING_PERMISSION"||voiceState==="TRANSCRIBING"}
               aria-pressed={listening} aria-label={listening?voiceCopy.stop:voiceCopy.start}
             >
@@ -1000,8 +1002,9 @@ function ConciergeConversation() {
             </button>}
             <p className="voice-helper">{voiceCopy.privacy}</p>
             {(!voiceSupported||voiceError)&&<p className="voice-error" role="alert">{voiceError}</p>}
-            {!voiceUnderstanding&&<p className="voice-state" role="status" aria-live="polite">{localizedVoiceState(voiceState,language)}</p>}
+
             {listening&&<p className="voice-live-transcript" aria-label={voiceCopy.transcript}>{voiceDraft}</p>}
+
             {!voiceUnderstanding&&<button type="button" className="btn btn-outline voice-cancel" onClick={dismissVoice}>{voiceCopy.cancel}</button>}
             {voiceUnderstanding&&<VoiceConfirmation state={voiceState} text={voiceDraft}
               onChange={text=>{setVoiceDraft(text);track("VOICE_PARTIAL_EDIT_COMPLETED",tripSession.id,{inputMethod:"TEXT"});}}
