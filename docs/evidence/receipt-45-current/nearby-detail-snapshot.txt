@@ -1,0 +1,120 @@
+- banner:
+  - link "Your Local Travel Companion, Powered by EXKOVIA Home":
+    - /url: /hapcheon?lang=en
+    - strong: Your Local Travel Companion
+    - generic: Powered by EXKOVIA
+  - generic "Language":
+    - button "한국어"
+    - button "English" [pressed]
+- main:
+  - text: Nearby
+  - heading "Exploring places near Test Visitor Place" [level=1]
+  - paragraph: Choose a location to see places sorted by actual distance.
+  - region "What are you looking for?":
+    - heading "What are you looking for?" [level=2]
+    - tablist "Nearby categories":
+      - tab "Attractions & Experiences Sights and local experiences" [selected]:
+        - generic: Attractions & Experiences
+        - generic: Sights and local experiences
+      - tab "Food Restaurants and cafés":
+        - generic: Food
+        - generic: Restaurants and cafés
+      - tab "Accommodation Places to stay":
+        - generic: Accommodation
+        - generic: Places to stay
+      - tab "Essentials Useful places on your trip":
+        - generic: Essentials
+        - generic: Useful places on your trip
+    - tabpanel:
+      - button "Attractions" [pressed]:
+        - generic: ✓
+        - text: Attractions
+      - button "Nature"
+      - button "Culture & Arts"
+      - button "Experiences"
+      - button "Festivals & Exhibitions"
+  - text: Current Location
+  - heading "📍 Test Visitor Place" [level=2]
+  - paragraph: 테스트 주소
+  - paragraph: Last checked 11:05 PM
+  - button "Change Location"
+  - button "●":
+    - generic: ●
+  - button "★":
+    - generic: ★
+  - button "Zoom in": +
+  - button "Zoom out": −
+  - link "Leaflet":
+    - /url: https://leafletjs.com
+    - text: Leaflet
+  - text: "| © OpenStreetMap contributors"
+  - generic: ● Current Location
+  - generic: ● Nearby results
+  - generic: ★ Verified place
+  - text: Attractions
+  - heading "Test Visitor Place" [level=2]
+  - generic: Verified Place
+  - paragraph: From your current location Approximate straight-line distance 0.1km
+  - paragraph: 테스트 주소
+  - paragraph: Area 합천
+  - paragraph: Phone 000-000-0000
+  - paragraph
+  - term: Signature Menu
+  - definition: Test menu
+  - term: Price Range
+  - definition: KRW 10,000–20,000
+  - term: Payment
+  - definition: Card payment
+  - term: Parking
+  - definition: On-site parking
+  - term: Reservation
+  - definition: Call to reserve
+  - paragraph: Check current opening hours before visiting.
+  - paragraph: ✓ Verified local tourism information.
+  - link "View on Map":
+    - /url: https://example.test/place
+  - link "Call":
+    - /url: tel:0000000000
+  - button "Directions"
+  - button "Save to My Trip"
+  - region "Expand the Search Area?":
+    - heading "Expand the Search Area?" [level=2]
+    - paragraph: Search From Test Visitor Place · Selected Radius 1km
+    - group "Search Radius":
+      - button "10km"
+      - button "20km"
+      - button "30km"
+      - button "40km"
+      - button "50km"
+  - heading "Attractions Results · 1km" [level=2]
+  - status: Showing verified local attractions and nearby places.
+  - paragraph: Checked at 11:29 PM
+  - heading "Near Your Current Location" [level=3]
+  - paragraph: Nearby results with verified tourism categories, areas and coordinates.
+  - button "Test Visitor Place, Attractions, 120 meters" [active]:
+    - generic: Test Visitor Place
+    - generic: 합천 · Attractions
+    - generic: Check current opening hours before visiting.
+    - strong: 120m
+  - complementary "합천 — Explore in Depth":
+    - text: External Regional Knowledge
+    - heading "합천 — Explore in Depth" [level=2]
+    - paragraph: 합천 — Explore local attractions, history, culture, nature and nearby places on EXKO.
+    - 'link "Explore on EXKO: 합천 — Regional Guide"':
+      - /url: https://exko.kr/resource/%ED%95%A9%EC%B2%9C%EA%B5%B0
+      - text: "Explore on EXKO: 합천 — Regional Guide"
+      - generic: ↗
+- navigation:
+  - link "Home":
+    - /url: /hapcheon?start=ai&lang=en
+    - generic: Home
+  - link "Nearby":
+    - /url: /hapcheon/nearby-discovery?lang=en
+    - generic: Nearby
+  - 'link "My Trip My Trip: 2 saved"':
+    - /url: /hapcheon/itinerary?lang=en
+    - text: My Trip
+    - 'generic "My Trip: 2 saved"': "2"
+  - link "AI Travel Assistant":
+    - /url: /hapcheon/concierge?mode=now&lang=en
+    - generic: AI Travel Assistant

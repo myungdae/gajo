@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>Receipt 45 — 200% reflow test</title>
+<style>html,body{margin:0;width:390px;height:844px;overflow:hidden}iframe{border:0;width:195px;height:422px;transform:scale(2);transform-origin:0 0}</style>
+<iframe title="Visitor flow at 200% equivalent zoom" src="/hapcheon/itinerary?lang=en"></iframe>
+<pre id="measurements" style="position:absolute;left:410px;top:0;width:700px;white-space:pre-wrap"></pre>
+<script>
+const frame=document.querySelector('iframe');
+frame.addEventListener('load',()=>setTimeout(()=>{
+  const doc=frame.contentDocument,width=doc.documentElement.clientWidth;
+  const overflow=[...doc.querySelectorAll('main *,header *,nav *')].filter(e=>e.getBoundingClientRect().right>width+1||e.scrollWidth>e.clientWidth+1).map(e=>({tag:e.tagName,className:e.className,text:e.textContent.slice(0,60),right:e.getBoundingClientRect().right,client:e.clientWidth,scroll:e.scrollWidth}));
+  document.querySelector('#measurements').textContent=JSON.stringify({width,scrollWidth:doc.documentElement.scrollWidth,overflow},null,2);
+},1500));
+</script>
+<!-- Local Vite test harness only; this file is outside public/ and the production entry graph.
+     195 x 422 CSS pixels scaled to 390 x 844 exercises the 200% reflow condition. -->
+</html>

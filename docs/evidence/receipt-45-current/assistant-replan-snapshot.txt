@@ -1,0 +1,63 @@
+- banner:
+  - link "Your Local Travel Companion, Powered by EXKOVIA Home":
+    - /url: /hapcheon?lang=en
+    - strong: Your Local Travel Companion
+    - generic: Powered by EXKOVIA
+  - generic "Language":
+    - button "한국어"
+    - button "English" [pressed]
+- main:
+  - text: NOW · On Your Trip
+  - heading "How Can We Help?" [level=1]:
+    - generic: How Can We
+    - generic: Help?
+  - paragraph: Choose what you need, and we’ll use your current location and trip context.
+  - generic: Now in 합천
+  - paragraph: 11:28 PM · Weather not checked
+  - generic: Weather information for 합천 is not available yet.
+  - text: Current Location
+  - heading "📍 Test Visitor Place" [level=2]
+  - paragraph: 테스트 주소
+  - paragraph: Last checked 11:05 PM
+  - button "Change Location"
+  - generic: Choose an option below or tell me what has changed.
+  - generic: Replan my saved trip with Test Local Café
+  - generic "New AI Travel Response" [active]:
+    - generic: The revised trip connects your attraction visit with a local café. Apply this change?
+  - heading "What We Understood" [level=2]
+  - paragraph: We planned this itinerary around your travel request.
+  - heading "Recommended Itinerary Selected Stops" [level=2]
+  - text: Why This Fits
+  - paragraph: A local attraction and a nearby small business.
+  - generic: Recommended Itinerary
+  - generic: "1"
+  - button "Test Visitor Place":
+    - generic: Test Visitor Place
+    - generic: ›
+  - generic: "2"
+  - button "Test Local Café":
+    - generic: Test Local Café
+    - generic: ›
+  - button "Save This Itinerary"
+  - heading "If Conditions Change" [level=2]
+  - paragraph: If weather or conditions change, you can review the rest of your trip.
+  - button "Update for Current Conditions"
+  - generic "Demo and Test"
+  - region "Actions for This Response":
+    - button "Update Itinerary"
+    - button "Find Other Places"
+    - button "Save to My Trip"
+- navigation:
+  - link "Home":
+    - /url: /hapcheon?start=ai&lang=en
+    - generic: Home
+  - link "Nearby":
+    - /url: /hapcheon/nearby-discovery?lang=en
+    - generic: Nearby
+  - 'link "My Trip My Trip: 2 saved"':
+    - /url: /hapcheon/itinerary?lang=en
+    - text: My Trip
+    - 'generic "My Trip: 2 saved"': "2"
+  - link "AI Travel Assistant":
+    - /url: /hapcheon/concierge?mode=now&lang=en
+    - generic: AI Travel Assistant

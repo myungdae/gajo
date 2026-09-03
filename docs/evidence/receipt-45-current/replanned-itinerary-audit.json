@@ -1,0 +1,21 @@
+{
+  "korean": [
+    "Now in 합천",
+    "Weather information for 합천 is not available yet.",
+    "테스트 주소",
+    "테스트 주소",
+    "테스트 주소"
+  ],
+  "lang": "en",
+  "links": [
+    "/hapcheon?lang=en",
+    "/hapcheon/map?entityUri=urn%3Areceipt45%3Aplace&lang=en",
+    "/hapcheon?start=ai&lang=en",
+    "/hapcheon/nearby-discovery?lang=en",
+    "/hapcheon/itinerary?lang=en",
+    "/hapcheon/concierge?mode=now&lang=en"
+  ],
+  "scrollWidth": 1280,
+  "url": "http://localhost:5174/hapcheon/itinerary?lang=en",
+  "width": 1280
+}

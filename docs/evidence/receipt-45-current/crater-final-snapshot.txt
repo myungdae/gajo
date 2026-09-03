@@ -1,0 +1,41 @@
+- banner:
+  - link "Your Local Travel Companion, Powered by EXKOVIA Home":
+    - /url: /hapcheon?lang=en
+    - strong: Your Local Travel Companion
+    - generic: Powered by EXKOVIA
+  - generic "Language":
+    - button "한국어"
+    - button "English" [pressed]
+- main:
+  - article:
+    - text: Hapcheon Meteorite Impact Crater
+    - heading "A 50,000-Year-Old Meteorite Impact Basin" [level=1]
+    - paragraph: The Korea Institute of Geoscience and Mineral Resources found shock deformation in a drill core from 적중-초계분지, confirming Korea’s first identified meteorite impact crater, formed about 50,000 years ago.
+    - heading "Why Is It Special?" [level=2]
+    - paragraph: It is the only confirmed meteorite impact landform on the Korean Peninsula.
+    - heading "How Was It Formed?" [level=2]
+    - paragraph: The immense pressure of the impact altered rocks and minerals, leaving evidence preserved in the drill core.
+    - heading "Where Can I See It?" [level=2]
+    - paragraph: A viewpoint on 대암산 overlooks the broad shape of 적중-초계분지.
+    - heading "Can I Visit Now?" [level=2]
+    - paragraph: Current opening hours and trail conditions are unverified. Check official Hapcheon information before leaving.
+    - heading "How Should I Explore It?" [level=2]
+    - paragraph: Start at the visitor center, then choose the viewpoint or loop trail based on your fitness and available time.
+    - button "Visitor Center"
+    - button "Directions to 대암산"
+    - button "View the Loop Trail"
+    - button "Add to My Trip"
+- navigation:
+  - link "Home":
+    - /url: /hapcheon?start=ai&lang=en
+    - generic: Home
+  - link "Nearby":
+    - /url: /hapcheon/nearby-discovery?lang=en
+    - generic: Nearby
+  - 'link "My Trip My Trip: 2 saved"':
+    - /url: /hapcheon/itinerary?lang=en
+    - text: My Trip
+    - 'generic "My Trip: 2 saved"': "2"
+  - link "AI Travel Assistant":
+    - /url: /hapcheon/concierge?mode=now&lang=en
+    - generic: AI Travel Assistant

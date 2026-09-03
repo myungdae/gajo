@@ -3,3 +3,5 @@ dist/
 .env
 *.log
 server/.maintenance-private/
+# Local receipt-45 browser profile (preserved, never versioned).
+.tmp-chrome-45/

@@ -1,0 +1,11 @@
+[
+  {
+    "step": "07-assistant-360x800.png",
+    "width": 360,
+    "height": 800,
+    "url": "http://127.0.0.1:5174/hapcheon/concierge?mode=now&lang=en",
+    "lang": "ko",
+    "overflow": false,
+    "title": "합천 여행안내"
+  }
+]

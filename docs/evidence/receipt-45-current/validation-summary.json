@@ -1,0 +1,21 @@
+{
+  "clientAllTests": 468,
+  "clientAllPassed": 468,
+  "clientMainTests": 292,
+  "serverSuites": 101,
+  "serverTests": 905,
+  "serverPassed": 905,
+  "serverTestTimeoutMs": 30000,
+  "clientProductionBuild": "passed",
+  "serverProductionBuild": "passed",
+  "addedSkipOnlyTodoCalls": 0,
+  "diffCheck": "passed",
+  "fixtureOnly": true,
+  "productionConnections": false,
+  "viewports": [
+    "360x800",
+    "390x844",
+    "844x390",
+    "195x422 CSS frame at 2x for 390x844"
+  ]
+}

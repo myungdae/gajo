@@ -1,0 +1,11 @@
+[
+  {
+    "step": "02-nearby-360x800.png",
+    "width": 360,
+    "height": 800,
+    "url": "http://127.0.0.1:5174/hapcheon/nearby-discovery?lang=en",
+    "lang": "en",
+    "overflow": false,
+    "title": "합천 여행안내"
+  }
+]

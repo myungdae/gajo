@@ -47,9 +47,11 @@ test("brand symbol depicts a lightweight service approaching a traveler without 
 });
 
 test("mobile regional hero lifts the complete content group without region exceptions", () => {
-  const mobile = heroCss.match(/@media\(max-width:430px\)\{([^]*?)\}\n@media/)?.[1] || "";
-  assert.match(mobile, /\.home-regional-hero\{min-height:360px;align-items:flex-start\}/);
-  assert.match(mobile, /\.home-regional-hero-copy\{padding:30px 18px 24px\}/);
+  // Receipt 44 replaced the legacy hero with spotlight-card. Preserve the same
+  // complete-group positioning and touch-target requirements on the live markup.
+  const mobile = heroCss.match(/@media\(max-width:430px\)\{(\.spotlight-card\{min-height:360px[^}]+\})\}/)?.[1] || "";
+  assert.match(mobile, /\.spotlight-card\{min-height:360px;align-items:flex-start;/);
+  assert.match(mobile, /padding:30px 18px 24px/);
   assert.doesNotMatch(mobile, /hapcheon|okcheon|gajo|hostname/i);
-  assert.match(heroCss, /\.home-regional-hero-actions button\{min-height:48px/);
+  assert.match(heroCss, /\.spotlight-actions button\{min-height:48px/);
 });

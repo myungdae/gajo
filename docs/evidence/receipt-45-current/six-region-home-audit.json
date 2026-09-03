@@ -1,0 +1,80 @@
+[
+  {
+    "region": "gajo",
+    "heading": "Welcome to Gajo",
+    "korean": [],
+    "lang": "en",
+    "links": [
+      "/gajo?lang=en",
+      "/gajo/nearby-discovery?lang=en",
+      "/gajo/itinerary?lang=en",
+      "/gajo/concierge?mode=now&lang=en"
+    ],
+    "url": "http://localhost:5174/gajo?start=ai&lang=en"
+  },
+  {
+    "region": "okcheon",
+    "heading": "Welcome to Okcheon",
+    "korean": [],
+    "lang": "en",
+    "links": [
+      "/okcheon?lang=en",
+      "/okcheon/nearby-discovery?lang=en",
+      "/okcheon/itinerary?lang=en",
+      "/okcheon/concierge?mode=now&lang=en"
+    ],
+    "url": "http://localhost:5174/okcheon?start=ai&lang=en"
+  },
+  {
+    "region": "muan",
+    "heading": "Welcome to Muan",
+    "korean": [],
+    "lang": "en",
+    "links": [
+      "/muan?lang=en",
+      "/muan/nearby-discovery?lang=en",
+      "/muan/itinerary?lang=en",
+      "/muan/concierge?mode=now&lang=en"
+    ],
+    "url": "http://localhost:5174/muan?start=ai&lang=en"
+  },
+  {
+    "region": "gyeryong",
+    "heading": "Welcome to Gyeryong",
+    "korean": [],
+    "lang": "en",
+    "links": [
+      "/gyeryong?lang=en",
+      "/gyeryong/nearby-discovery?lang=en",
+      "/gyeryong/itinerary?lang=en",
+      "/gyeryong/concierge?mode=now&lang=en"
+    ],
+    "url": "http://localhost:5174/gyeryong?start=ai&lang=en"
+  },
+  {
+    "region": "hapcheon",
+    "heading": "A 50,000-Year-Old Meteorite Impact Basin",
+    "korean": [],
+    "lang": "en",
+    "links": [
+      "/hapcheon?start=ai&lang=en",
+      "/hapcheon/nearby-discovery?lang=en",
+      "/hapcheon/itinerary?lang=en",
+      "/hapcheon/concierge?mode=now&lang=en"
+    ],
+    "url": "http://localhost:5174/hapcheon?start=ai&lang=en"
+  },
+  {
+    "region": "daejeon-junggu",
+    "heading": "Welcome to Jung-gu, Daejeon",
+    "korean": [],
+    "lang": "en",
+    "links": [
+      "/daejeon-junggu?lang=en",
+      "/daejeon-junggu/nearby-discovery?lang=en",
+      "/daejeon-junggu/itinerary?lang=en",
+      "/daejeon-junggu/concierge?mode=now&lang=en"
+    ],
+    "url": "http://localhost:5174/daejeon-junggu?start=ai&lang=en"
+  }
+]

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const source = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
-const layout = source("./components/Layout.tsx"), itinerary = source("./pages/ItineraryPage.tsx"), conversation = source("./pages/ConciergePage.tsx"), guide = source("./guide-main.tsx"), css = source("./index.css");
+const layout = source("./components/Layout.tsx"), itinerary = source("./pages/ItineraryPage.tsx"), conversation = source("./pages/ConciergePage.tsx"), managedCopy = source("./managedVisitorCopy.ts"), guide = source("./guide-main.tsx"), css = source("./index.css");
 
 test("Local Concierge visitor navigation and CTAs use AI 여행도우미", () => {
   assert.match(layout, /label: "AI 여행도우미"/);
@@ -19,13 +19,14 @@ test("public Guide uses plain travel language", () => {
 test("voice guidance appears once with examples and one privacy reassurance", () => {
   assert.equal((conversation.match(/음성은 저장하지 않습니다\./g) || []).length, 1);
   assert.equal((conversation.match(/className="voice-helper"/g) || []).length, 1);
-  for (const phrase of ["비가 와", "배고파", "카페 가고 싶어"]) assert.ok(conversation.includes(phrase));
+  for (const phrase of ["Ask by Voice or Text", "Speak a Question", "Type a Question"]) assert.ok(managedCopy.includes(phrase));
   assert.doesNotMatch(conversation, /말씀하신 내용이 위 입력창에 들어갑니다/);
 });
 
 test("large shared composer has useful placeholder and mobile-safe readable help", () => {
-  assert.match(conversation, /placeholder="예: 비가 와 \/ 배고파 \/ 카페 가고 싶어"/);
-  assert.match(conversation, /useSpeechInput\(input, setInput\)/);
+  assert.match(conversation, /placeholder="필요한 내용을 입력하세요"/);
+  assert.match(managedCopy, /Tell us what you need/);
+  assert.match(conversation, /useSpeechInput\(input, setInput,onVoiceFinal,language\)/);
   assert.match(css, /\.voice-helper,[\s\S]*font-size:\s*14px/);
   assert.match(css, /@media\s*\(max-width:\s*430px\)[\s\S]*concierge-unified-composer/);
   assert.match(conversation, /내 여행으로 돌아가기/);

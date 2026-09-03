@@ -1,0 +1,11 @@
+[
+  {
+    "step": "05-map-390x844.png",
+    "width": 390,
+    "height": 844,
+    "url": "http://127.0.0.1:5174/hapcheon/map?lang=en",
+    "lang": "ko",
+    "overflow": false,
+    "title": "가조 AI 여행안내"
+  }
+]

@@ -1,0 +1,101 @@
+- banner:
+  - link "Your Local Travel Companion, Powered by EXKOVIA Home":
+    - /url: /hapcheon?lang=en
+    - strong: Your Local Travel Companion
+    - generic: Powered by EXKOVIA
+  - generic: Explore Hapcheon
+  - generic "Language":
+    - button "한국어"
+    - button "English" [pressed]
+- main:
+  - button "⋯ Manage Trip"
+  - region "Past Trips":
+    - heading "Past Trips" [level=2]
+    - paragraph: Past trips are read-only. You can review or delete them without changing your current trip.
+    - paragraph: You have no past trips yet.
+  - heading "Why This Was Recommended" [level=2]
+  - paragraph: Your saved itinerary, in visit order.
+  - heading "Travel Plan" [level=2]
+  - paragraph: A verified travel plan is currently unavailable.
+  - text: "Current plan:"
+  - heading "Test Visitor Place" [level=2]
+  - generic: "Next:"
+  - strong: Test Local Café
+  - button "View Next Stop"
+  - button "Change Itinerary"
+  - heading "Check Current Conditions" [level=2]
+  - paragraph: Use your location to find nearby places and plan manageable journeys. Your location is used only for this browser session.
+  - button "Use Current Location"
+  - generic: Now in 합천
+  - paragraph: 11:21 PM · Weather not checked
+  - generic: Weather information for 합천 is not available yet.
+  - button "Update for Current Conditions"
+  - text: Demo and Test Features
+  - paragraph: Simulate 20 mm of rain at 13:00 while preserving the first two completed stops.
+  - 'button "Demo: Heavy Rain at 13:00"'
+  - heading "Itinerary" [level=2]
+  - heading "Day 1" [level=3]
+  - generic: "1"
+  - button "Test Visitor Place" [expanded]:
+    - generic: Test Visitor Place
+    - generic: ⌃
+  - generic: Planned
+  - region "Test Visitor Place Details":
+    - text: Local Place
+    - heading "Test Visitor Place" [level=3]
+    - paragraph: Check opening hours before visiting.
+    - term: Address
+    - definition: 테스트 주소
+    - button "Mark as Visited"
+    - button "Skip This Stop"
+    - button "Change Itinerary"
+  - 'button "Edit Stop: Test Visitor Place"': ⋯
+  - generic: "2"
+  - button "Test Local Café" [expanded]:
+    - generic: Test Local Café
+    - generic: ⌃
+  - generic: Added to Revised Itinerary
+  - region "Test Local Café Details":
+    - text: Local Place
+    - heading "Test Local Café" [level=3]
+    - paragraph: Check opening hours before visiting.
+    - term: Address
+    - definition: 테스트 주소
+    - button "Mark as Visited"
+    - button "Skip This Stop"
+    - button "Change Itinerary"
+  - 'button "Edit Stop: Test Local Café"': ⋯
+  - heading "Saved Places" [level=2]
+  - paragraph: Visit only the places you want, and start directions from any stop.
+  - article:
+    - button "Test Visitor Place" [expanded]:
+      - generic: Test Visitor Place
+      - generic: ⌃
+    - region "Test Visitor Place Details":
+      - text: TOURIST_ATTRACTION
+      - heading "Test Visitor Place" [level=3]
+      - term: Address
+      - definition: 테스트 주소
+      - term: Phone
+      - definition: 000-000-0000
+      - generic "Start Directions"
+      - link "View on Map":
+        - /url: /hapcheon/map?entityUri=urn%3Areceipt45%3Aplace&lang=en
+      - generic "Nearby"
+    - generic "More Options for Test Visitor Place": ⋯
+  - button "🧭 Find Nearby Places"
+  - button "← Back to AI Travel Assistant"
+- navigation:
+  - link "Home":
+    - /url: /hapcheon?start=ai&lang=en
+    - generic: Home
+  - link "Nearby":
+    - /url: /hapcheon/nearby-discovery?lang=en
+    - generic: Nearby
+  - 'link "My Trip My Trip: 2 saved"':
+    - /url: /hapcheon/itinerary?lang=en
+    - text: My Trip
+    - 'generic "My Trip: 2 saved"': "2"
+  - link "AI Travel Assistant":
+    - /url: /hapcheon/concierge?mode=now&lang=en
+    - generic: AI Travel Assistant
