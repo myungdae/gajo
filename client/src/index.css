@@ -3585,3 +3585,17 @@ table.simple td {
     font-size: 13px;
   }
 }
+
+/* Voice review stays in normal flow above the existing bottom navigation. */
+.voice-input-panel { min-width: 0; padding: 16px; border: 1px solid #99bdb8; border-radius: 16px; background: #f5faf9; overflow-wrap: anywhere; }
+.voice-mode-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.voice-mode-actions > button { flex: 1 1 160px; min-height: 44px; white-space: normal; }
+.voice-input-panel button { min-height: 44px; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.voice-input-panel .speech-session-button { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; }
+.voice-input-panel svg { flex: 0 0 24px; }
+.voice-input-panel .voice-confirmation { margin: 12px 0 0; padding: 12px; min-width: 0; }
+.voice-input-panel textarea { box-sizing: border-box; width: 100%; min-width: 0; min-height: 112px; font: inherit; resize: vertical; }
+.voice-input-panel label { display: block; margin-block: 8px; }
+.voice-live-transcript { min-height: 24px; white-space: pre-wrap; }
+.voice-input-panel .voice-confirm-cancel { min-height: 44px; }
+.voice-input-panel :focus-visible { outline: 3px solid #0f766e; outline-offset: 3px; }

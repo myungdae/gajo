@@ -4,7 +4,6 @@ import {
   postConciergeChat,
   recordPartnerRecommendations,
   runDemoScenario,
-  searchLocation,
   type ConciergeChatResponse,
   type CreateContextInput,
 } from "../api/client";
@@ -65,7 +64,8 @@ import { isExplanationOnly } from "../aiResponseActions";
 import { understoodSummary } from "../understoodSummary";
 import { NOW_HEADING, NOW_HEADING_LINES, NOW_QUICK_ACTIONS } from "../nowQuickActions";
 import VoiceConfirmation from "../components/VoiceConfirmation";
-import { acceptVoiceResult, understandVoice, updateVoiceSlot, voiceConfirmationPolicy, voiceExecutionText, voiceStateMessage, type VoiceResultFingerprint, type VoiceSlotName, type VoiceUnderstanding } from "../voice/voiceUx";
+import { acceptVoiceResult, understandVoice, type VoiceResultFingerprint, type VoiceUnderstanding } from "../voice/voiceUx";
+import { VOICE_COPY, localizedVoiceState } from "../voice/voiceCopy";
 import { useRegionalLanguage } from "../RegionalLanguageContext";
 
 interface Message {
@@ -192,27 +192,19 @@ export default function ConciergePage() {
   } | null>(null);
   const allowStaleLocationOnceRef=useRef(false);
   const [voiceUnderstanding,setVoiceUnderstanding]=useState<VoiceUnderstanding|null>(null);
-  const voiceSlotRef=useRef<VoiceSlotName|null>(null);
+  const [voiceDraft,setVoiceDraft]=useState("");
+  const voiceCopy=VOICE_COPY[language];
   const voiceStartedAtRef=useRef(0);
   const lastVoiceResultRef=useRef<VoiceResultFingerprint|null>(null);
   const openNearby=(category?:ConciergeChatResponse["nearbyCategory"])=>{
     navigate(`${location.pathname}${location.search}`,{replace:true,state:{...entryState,autoSubmit:false,conversationSnapshot:{messages,currentTurn,input,freeTextOpen}}});
     queueMicrotask(()=>navigate(regionLink("/nearby-discovery"),{state:{category}}));
   };
-  const onVoiceFinal=async(text:string)=>{
-    const slot=voiceSlotRef.current;
-    if(slot&&voiceUnderstanding){setVoiceUnderstanding(updateVoiceSlot(voiceUnderstanding,slot,text));voiceSlotRef.current=null;track("VOICE_PARTIAL_EDIT_COMPLETED",tripSession.id,{slot});setVoiceState("CONFIRMING");return;}
-    const gate=acceptVoiceResult(lastVoiceResultRef.current,text,Date.now(),requestInFlightRef.current);lastVoiceResultRef.current=gate.next;
-    if(!gate.accepted){track("VOICE_DUPLICATE_BLOCKED",tripSession.id,{state:voiceState,source:"FINAL_RESULT"});return}
-    const stored=loadTripSession(localStorage,region.id)||tripSession,operational=stored.locationContext?.now,locationLabel=operational?.label||"현재 위치",model=understandVoice(text,locationLabel);
-    if(model.slots.place.confidence==="HIGH")try{
-      const origin=Number.isFinite(operational?.latitude)&&Number.isFinite(operational?.longitude)?{latitude:operational!.latitude!,longitude:operational!.longitude!}:undefined,rows=await searchLocation(model.slots.place.value,region.id,origin,operational?.searchRegionId),normalize=(value:string)=>value.normalize("NFKC").replace(/\s+/g,"").toLowerCase(),exact=rows.filter(place=>normalize(place.name)===normalize(model.slots.place.value));
-      model.placeAmbiguous=exact.length>1;model.regionRelationship=exact.length?"KNOWN":"UNCLEAR";
-    }catch{model.regionRelationship="UNCLEAR"}
-    const decision=voiceConfirmationPolicy(model);
-    setVoiceUnderstanding(model);
-    if(decision.mode==="AUTO_EXECUTE"){setVoiceState("UNDERSTANDING");queueMicrotask(()=>send(voiceExecutionText(model),undefined,false,model));return}
-    setVoiceState("CONFIRMING");
+  const onVoiceFinal=(text:string)=>{
+    const gate=acceptVoiceResult(lastVoiceResultRef.current,text,Date.now(),requestInFlightRef.current);
+    lastVoiceResultRef.current=gate.next;
+    if(!text.trim()||!gate.accepted||requestInFlightRef.current){track("VOICE_DUPLICATE_BLOCKED",tripSession.id,{source:"FINAL_RESULT"});return;}
+    setVoiceDraft(text);setVoiceUnderstanding(understandVoice(text));setVoiceState("CONFIRMING");
   };
   const {
     listening,
@@ -223,12 +215,15 @@ export default function ConciergePage() {
     toggleListening,
     stopListening,
     cancelListening,
-  } = useSpeechInput(input, setInput,onVoiceFinal,language);
-  const beginVoice=()=>{if(listening){stopListening();return;}if(voiceState==="REQUESTING_PERMISSION"){track("VOICE_DUPLICATE_BLOCKED",tripSession.id,{state:voiceState});return;}voiceStartedAtRef.current=Date.now();track("VOICE_STARTED",tripSession.id,{standalone:window.matchMedia?.("(display-mode: standalone)").matches||false});toggleListening();};
-  const changeVoiceSlot=(slot:VoiceSlotName,value:string)=>{if(!voiceUnderstanding)return;setVoiceUnderstanding(updateVoiceSlot(voiceUnderstanding,slot,value));track("VOICE_PARTIAL_EDIT",tripSession.id,{slot,inputMethod:"TEXT_OR_TOUCH"});};
-  const speakVoiceSlot=(slot:VoiceSlotName)=>{voiceSlotRef.current=slot;setInput("");track("VOICE_PARTIAL_EDIT",tripSession.id,{slot,inputMethod:"VOICE"});beginVoice();};
-  const dismissVoice=()=>{cancelListening();setVoiceUnderstanding(null);setVoiceState("IDLE");track("VOICE_INPUT_SWITCHED",tripSession.id,{to:"TEXT_OR_TOUCH"});textInputRef.current?.focus();};
-
+  } = useSpeechInput(voiceDraft, setVoiceDraft,onVoiceFinal,language);
+  const beginVoice=()=>{
+    if(requestInFlightRef.current||voiceState==="REQUESTING_PERMISSION"||voiceState==="TRANSCRIBING")return;
+    if(listening){stopListening();return;}
+    setVoiceUnderstanding(null);setVoiceDraft("");lastVoiceResultRef.current=null;
+    voiceStartedAtRef.current=Date.now();track("VOICE_STARTED",tripSession.id,{});
+    toggleListening();
+  };
+  const dismissVoice=()=>{cancelListening();setVoiceUnderstanding(null);setVoiceDraft("");setVoiceState("IDLE");setManualEntryMode("TEXT");track("VOICE_INPUT_SWITCHED",tripSession.id,{to:"TEXT_OR_TOUCH"});requestAnimationFrame(()=>textInputRef.current?.focus());};
   useEffect(() => {
     sessionStorage.setItem(contextSessionKey, contextSessionIdRef.current);
   }, [contextSessionKey]);
@@ -295,6 +290,8 @@ export default function ConciergePage() {
   ) => {
     const text = (overrideText ?? input).trim();
     if ((!text && !structured) || requestInFlightRef.current) return;
+    requestInFlightRef.current=true;
+    try {
     if(!retry)lastRequestRef.current={text,structured};
     if(tripMode==="NOW"&&isLocationSensitiveRequest(text)){
       const active=loadTripSession(localStorage,region.id)||tripSession,saved=active.locationContext?.now;
@@ -334,8 +331,8 @@ export default function ConciergePage() {
         280;
     requestInFlightRef.current = true;
     const activeVoice=voiceModel||voiceUnderstanding;
+    cancelListening();
     if(activeVoice)setVoiceState("EXECUTING");
-    stopListening();
     setCurrentTurn(beginCurrentTurn(turnId, text));
     setRequestError(false);
     if (!retry) {
@@ -505,7 +502,7 @@ export default function ConciergePage() {
         },
       ]);
       setCurrentTurn((current) => resolveCurrentTurn(current, turnId, result));
-      if(activeVoice){track("VOICE_COMPLETED",tripSession.id,{durationMs:Date.now()-voiceStartedAtRef.current,confirmation:voiceConfirmationPolicy(activeVoice).mode==="CONFIRM"});setVoiceUnderstanding(null);setVoiceState("IDLE");}
+      if(activeVoice){track("VOICE_COMPLETED",tripSession.id,{durationMs:Date.now()-voiceStartedAtRef.current,confirmation:true});setVoiceUnderstanding(null);setVoiceState("IDLE");}
       setExcludedDiscoveryIds([]);
       const referenceEntity = result.discovery?.entities?.[0];
       const reference = referenceEntity
@@ -597,7 +594,9 @@ export default function ConciergePage() {
     } finally {
       requestInFlightRef.current = false;
       setLoading(false);
+      if(activeVoice){setVoiceUnderstanding(null);setVoiceDraft("");setVoiceState("IDLE");}
     }
+    } finally { requestInFlightRef.current=false; }
   };
 
   useEffect(() => {
@@ -722,7 +721,7 @@ export default function ConciergePage() {
               onNearby={openNearby}
               onAsk={(prompt)=>send(prompt)}
               onItinerary={()=>navigate(regionLink("/itinerary"))}
-              onVoice={()=>{setManualEntryMode("VOICE");setFreeTextOpen(true);requestAnimationFrame(beginVoice)}}
+              onVoice={()=>{setManualEntryMode("VOICE");setFreeTextOpen(true);}}
               onText={()=>{setManualEntryMode("TEXT");setFreeTextOpen(true);requestAnimationFrame(()=>textInputRef.current?.focus())}}
             />
           )}
@@ -941,65 +940,41 @@ export default function ConciergePage() {
       {(tripMode !== "NOW" ? (hasCompletedTurn || freeTextOpen) : freeTextOpen) && (
         <div className={"concierge-input-panel concierge-unified-composer"}>
           <div className="input-panel-heading">
-            <h2>{manualEntryMode==="VOICE"?"직접 말하기":"직접 입력하기"}</h2>
+            <h2>{hasCompletedTurn ? (language==="en"?"Continue the conversation":"이어서 물어보기") : voiceCopy.start}</h2>
+          </div>
+          <div className="voice-mode-actions">
+            <button type="button" className="btn btn-outline" disabled={loading||listening} onClick={()=>{setManualEntryMode("VOICE");}}>{voiceCopy.start}</button>
+            <button type="button" className="btn btn-outline" disabled={loading} onClick={dismissVoice}>{voiceCopy.text}</button>
           </div>
           {manualEntryMode!=="VOICE"&&<textarea
             ref={textInputRef}
-            className={listening ? "is-voice-listening" : undefined}
             rows={5}
             aria-label={hasCompletedTurn ? "이어서 물어보기" : "여행 조건 입력"}
             placeholder="필요한 내용을 입력하세요"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                send();
-              }
-            }}
+            onChange={(e)=>setInput(e.target.value)}
+            onKeyDown={(e)=>{if(e.key==="Enter"&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();send();}}}
           />}
-          {manualEntryMode!=="TEXT"&&<div className="voice-input">
-            <button
-              ref={voiceButtonRef}
-              type="button"
-              className={`speech-session-button${listening ? " is-listening" : ""}`}
-              onClick={beginVoice}
-              disabled={loading}
-              aria-pressed={listening}
-              aria-label={listening ? "말하기 끝" : "한국어로 여행 조건 말하기"}
+          {manualEntryMode==="VOICE"&&<div className="voice-input-panel" onKeyDown={event=>{if(event.key==="Escape"&&!loading){event.preventDefault();dismissVoice();}}}>
+            {!voiceUnderstanding&&<button
+              ref={voiceButtonRef} type="button"
+              className={`speech-session-button${listening?" is-listening":""}`}
+              onClick={beginVoice} disabled={loading||voiceState==="REQUESTING_PERMISSION"||voiceState==="TRANSCRIBING"}
+              aria-pressed={listening} aria-label={listening?voiceCopy.stop:voiceCopy.start}
             >
-              <span className="voice-dot" aria-hidden="true">
-                ●
-              </span>
-              <strong>
-                {listening ? "듣고 있어요... · 말하기 끝" : "말하기"}
-              </strong>
-              <span
-                className={`voice-bars${listening ? " is-listening" : ""}`}
-                aria-hidden="true"
-              >
-                <i />
-                <i />
-                <i />
-                <i />
-                <i />
-                <i />
-              </span>
-            </button>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8"/></svg>
+              <strong>{listening?voiceCopy.stop:voiceCopy.start}</strong>
+            </button>}
+            <p className="voice-helper">{voiceCopy.privacy}</p>
+            {(!voiceSupported||voiceError)&&<p className="voice-error" role="alert">{voiceError}</p>}
+            {!voiceUnderstanding&&<p className="voice-state" role="status" aria-live="polite">{localizedVoiceState(voiceState,language)}</p>}
+            {listening&&<p className="voice-live-transcript" aria-label={voiceCopy.transcript}>{voiceDraft}</p>}
+            {!voiceUnderstanding&&<button type="button" className="btn btn-outline voice-cancel" onClick={dismissVoice}>{voiceCopy.cancel}</button>}
+            {voiceUnderstanding&&<VoiceConfirmation state={voiceState} text={voiceDraft}
+              onChange={text=>{setVoiceDraft(text);track("VOICE_PARTIAL_EDIT_COMPLETED",tripSession.id,{inputMethod:"TEXT"});}}
+              onSpeakAgain={beginVoice} onCancel={dismissVoice}
+              onConfirm={()=>send(voiceDraft,undefined,false,voiceUnderstanding)}/>}
           </div>}
-          <p className="voice-helper" role="status">
-            {listening
-              ? "듣고 있어요. 계속 말씀하시거나 ‘말하기 끝’을 눌러 주세요."
-              : manualEntryMode==="VOICE"?"버튼을 누른 뒤 말씀해 주세요. 음성은 저장하지 않습니다.":""}
-          </p>
-          {(!voiceSupported || voiceError) && (
-            <p className="voice-error" role="alert">
-              {voiceError}
-            </p>
-          )}
-          {!voiceUnderstanding&&<p className="voice-state" role="status" aria-live="polite">{voiceStateMessage(voiceState)}</p>}
-          {listening&&<button type="button" className="btn btn-outline voice-cancel" onClick={()=>{cancelListening();track("VOICE_ABANDONED",tripSession.id,{during:"LISTENING"});}}>취소</button>}
-          {voiceUnderstanding&&<VoiceConfirmation state={voiceState} model={voiceUnderstanding} onChange={changeVoiceSlot} onSpeakSlot={speakVoiceSlot} onCancel={dismissVoice} onConfirm={()=>send(voiceExecutionText(voiceUnderstanding))}/>}
           {manualEntryMode!=="VOICE"&&<button
             className="btn btn-primary btn-block concierge-submit"
             onClick={() => send()}
