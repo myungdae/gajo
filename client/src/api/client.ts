@@ -6,6 +6,7 @@ export const api = axios.create({
   baseURL: "/api",
   headers: { "Content-Type": "application/json" },
 });
+api.interceptors.request.use((config)=>{let locale:"ko"|"en"="ko";try{locale=localStorage.getItem("regional-home-language-v1")==="en"?"en":"ko"}catch{}config.params={...(config.params||{}),locale};if(config.data&&typeof config.data==="object"&&!Array.isArray(config.data)&&!(config.data instanceof FormData))config.data={...config.data,locale};return config});
 
 export interface CompanionInput {
   age?: number;
@@ -14,6 +15,7 @@ export interface CompanionInput {
 }
 
 export interface CreateContextInput {
+  locale?: "ko" | "en";
   turnId?: string;
   conversationalAnchor?: {
     entityId: string;
