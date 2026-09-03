@@ -74,7 +74,7 @@ export function voiceConfirmationPolicy(model:VoiceUnderstanding,options:{userRe
 }
 export function acceptVoiceResult(previous:VoiceResultFingerprint|null,text:string,now:number,inFlight:boolean):{accepted:boolean;next:VoiceResultFingerprint}{
   const fingerprint=text.trim().replace(/\s+/g," ").toLowerCase(),duplicate=previous?.fingerprint===fingerprint&&(inFlight||now-previous.at<1500);
-  return{accepted:!duplicate,next:{fingerprint,at:now}};
+  return{accepted:Boolean(fingerprint)&&!inFlight&&!duplicate,next:{fingerprint,at:now}};
 }
 
 export function voiceExecutionText(model: VoiceUnderstanding): string {

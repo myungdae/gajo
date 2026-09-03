@@ -1,3 +1,4 @@
+import { readConversation, saveConversation } from "../conversationMemory";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -76,6 +77,15 @@ interface Message {
   turnId?: string;
 }
 
+interface ConversationSnapshot {
+  messages: Message[];
+  currentTurn: CurrentTurnResult<ConciergeChatResponse> | null;
+  freeTextOpen: boolean;
+  conversationAnchor: NonNullable<CreateContextInput["conversationalAnchor"]> | null;
+  discoveryContext?: CreateContextInput["discoveryContext"];
+  explicitJourney?: ExplicitJourneyContext;
+  excludedDiscoveryIds: string[];
+}
 function summarizeResult(result: ConciergeChatResponse): string {
   const rec = result.recommendation;
   if (result.error) {
@@ -104,6 +114,12 @@ function summarizeResult(result: ConciergeChatResponse): string {
 }
 
 export default function ConciergePage() {
+  const region=useRegion(),location=useLocation();
+  const mode=(location.state as {tripMode?:string}|null)?.tripMode||new URLSearchParams(location.search).get("mode")?.toUpperCase()||"GENERIC";
+  return <ConciergeConversation key={region.id+":"+ensureTripSession(region.id).id+":"+mode}/>;
+}
+
+function ConciergeConversation() {
   const { language } = useRegionalLanguage();
   const region = useRegion();
   const regionLink = (path: string) => regionalPath(path, region.id);
@@ -118,12 +134,7 @@ export default function ConciergePage() {
     autoSubmit?: boolean;
     entryMessage?: string;
     entryDescription?: string;
-    conversationSnapshot?: {
-      messages: Message[];
-      currentTurn: CurrentTurnResult<ConciergeChatResponse> | null;
-      input: string;
-      freeTextOpen: boolean;
-    };
+    conversationSnapshot?: ConversationSnapshot;
   } | null;
   const queryMode = new URLSearchParams(location.search)
     .get("mode")
@@ -133,7 +144,8 @@ export default function ConciergePage() {
     (queryMode === "PLAN" || queryMode === "NOW" ? queryMode : "GENERIC");
   const preset = getQuickStartPreset(entryState?.quickStartPreset);
   const tripSession = ensureTripSession(region.id);
-  const [messages, setMessages] = useState<Message[]>(entryState?.conversationSnapshot?.messages || [
+  const restored=useRef(readConversation<ConversationSnapshot>(sessionStorage,region.id,tripSession.id,tripMode)).current;
+  const [messages, setMessages] = useState<Message[]>(restored?.messages || [
     {
       role: "ai",
       text:
@@ -145,18 +157,18 @@ export default function ConciergePage() {
             : "함께 오신 분, 머무는 시간, 이동 방법, 걷기 편한 정도를 알려주시면 알맞은 일정을 안내해 드릴게요.",
     },
   ]);
-  const [input, setInput] = useState(entryState?.conversationSnapshot?.input || entryState?.initialMessage || "");
+  const [input, setInput] = useState(entryState?.initialMessage || "");
   const [currentTurn, setCurrentTurn] =
-    useState<CurrentTurnResult<ConciergeChatResponse> | null>(entryState?.conversationSnapshot?.currentTurn || null);
+    useState<CurrentTurnResult<ConciergeChatResponse> | null>(restored?.currentTurn || null);
   const [conversationAnchor, setConversationAnchor] = useState<NonNullable<
     CreateContextInput["conversationalAnchor"]
-  > | null>(null);
+  > | null>(restored?.conversationAnchor || null);
   const [discoveryContext, setDiscoveryContext] =
-    useState<CreateContextInput["discoveryContext"]>();
+    useState<CreateContextInput["discoveryContext"]>(restored?.discoveryContext);
   const [explicitJourney, setExplicitJourney] =
-    useState<ExplicitJourneyContext>();
+    useState<ExplicitJourneyContext | undefined>(restored?.explicitJourney);
   const [excludedDiscoveryIds, setExcludedDiscoveryIds] = useState<string[]>(
-    [],
+    restored?.excludedDiscoveryIds || [],
   );
   const currentAnswerRef = useRef<HTMLDivElement>(null);
   const currentTurnConversationRef = useRef<HTMLDivElement>(null);
@@ -166,7 +178,7 @@ export default function ConciergePage() {
   const [requestError, setRequestError] = useState(false);
   const [locationFreshnessNotice,setLocationFreshnessNotice]=useState<{label?:string;confirmedAt?:string}|null>(null);
   const [freeTextOpen, setFreeTextOpen] = useState(
-    entryState?.conversationSnapshot?.freeTextOpen ?? Boolean(entryState?.freeTextOpen),
+    restored?.freeTextOpen ?? Boolean(entryState?.freeTextOpen),
   );
   const [manualEntryMode,setManualEntryMode]=useState<"VOICE"|"TEXT"|null>(null);
   const [structuredDraft, setStructuredDraft] = useState<CreateContextInput>(
@@ -197,8 +209,7 @@ export default function ConciergePage() {
   const voiceStartedAtRef=useRef(0);
   const lastVoiceResultRef=useRef<VoiceResultFingerprint|null>(null);
   const openNearby=(category?:ConciergeChatResponse["nearbyCategory"])=>{
-    navigate(`${location.pathname}${location.search}`,{replace:true,state:{...entryState,autoSubmit:false,conversationSnapshot:{messages,currentTurn,input,freeTextOpen}}});
-    queueMicrotask(()=>navigate(regionLink("/nearby-discovery"),{state:{category}}));
+    navigate(regionLink("/nearby-discovery"),{state:{category}});
   };
   const onVoiceFinal=(text:string)=>{
     const gate=acceptVoiceResult(lastVoiceResultRef.current,text,Date.now(),requestInFlightRef.current);
@@ -264,11 +275,12 @@ export default function ConciergePage() {
       document.removeEventListener("keydown", cancelFollowByKey);
     };
   }, []);
-  useEffect(() => {
-    setConversationAnchor(null);
-    setDiscoveryContext(undefined);
-    setExplicitJourney(undefined);
-  }, [region.id]);
+  useEffect(()=>{
+    if(loading||!messages.some(message=>message.role==="user"))return;
+    saveConversation(sessionStorage,region.id,tripSession.id,tripMode,{
+      messages,currentTurn,freeTextOpen,conversationAnchor,discoveryContext,explicitJourney,excludedDiscoveryIds,
+    } satisfies ConversationSnapshot);
+  },[messages,currentTurn,freeTextOpen,conversationAnchor,discoveryContext,explicitJourney,excludedDiscoveryIds,loading,region.id,tripSession.id,tripMode]);
   useEffect(() => {
     if (tripMode === "PLAN")
       track(
@@ -291,6 +303,7 @@ export default function ConciergePage() {
     const text = (overrideText ?? input).trim();
     if ((!text && !structured) || requestInFlightRef.current) return;
     requestInFlightRef.current=true;
+    setLoading(true);
     try {
     if(!retry)lastRequestRef.current={text,structured};
     if(tripMode==="NOW"&&isLocationSensitiveRequest(text)){
@@ -584,10 +597,11 @@ export default function ConciergePage() {
         setDiscoveryContext(undefined);
       setInput("");
       if(tripMode==="NOW"){
-        setFreeTextOpen(false);
-        setManualEntryMode(null);
+        setFreeTextOpen(true);
+        setManualEntryMode("TEXT");
       }
     } catch (e: any) {
+      if(activeVoice){setInput(text);setManualEntryMode("TEXT");}
       console.error("[concierge] request failed", e);
       setRequestError(true);
       track("RETRY_ERROR", tripSession.id, { stage: "recommendation" });
@@ -596,12 +610,12 @@ export default function ConciergePage() {
       setLoading(false);
       if(activeVoice){setVoiceUnderstanding(null);setVoiceDraft("");setVoiceState("IDLE");}
     }
-    } finally { requestInFlightRef.current=false; }
+    } finally { requestInFlightRef.current=false; setLoading(false); }
   };
 
   useEffect(() => {
     if (
-      entryState?.autoSubmit &&
+      !restored && entryState?.autoSubmit &&
       entryState.initialMessage &&
       !homeSubmittedRef.current
     ) {
@@ -1040,6 +1054,7 @@ function NowImmediateActions({
   onVoice:()=>void;
   onText:()=>void;
 }) {
+  const {language}=useRegionalLanguage();
   return (
     <section className="now-needs" aria-labelledby="now-needs-title">
       <h2 id="now-needs-title">지금 무엇을 할까요?</h2>
@@ -1054,7 +1069,7 @@ function NowImmediateActions({
           {action.label}
         </button>
       ))}</div>
-      <div className="now-secondary-actions" aria-label="직접 요청하기"><button type="button" onClick={onVoice}>직접 말하기</button><button type="button" onClick={onText}>직접 입력하기</button></div>
+      <div className="now-secondary-actions" aria-label="직접 요청하기"><button type="button" onClick={onVoice}>{VOICE_COPY[language].start}</button><button type="button" onClick={onText}>직접 입력하기</button></div>
     </section>
   );
 }
