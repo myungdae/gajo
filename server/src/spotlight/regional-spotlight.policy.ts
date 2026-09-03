@@ -1,3 +1,4 @@
 export type SpotlightCandidate={regionId:string;status:string;isPublic:boolean;displayStartsAt?:Date|string;displayEndsAt?:Date|string;isPinned?:boolean;priority?:number;lastVerifiedAt?:Date|string};
+export const isSpotlightImagePublishable=(imageUrl?:string,photoRightsStatus?:string)=>!imageUrl||photoRightsStatus==='APPROVED';
 export const isSpotlightVisible=(x:SpotlightCandidate,regionId:string,now:Date)=>x.regionId===regionId&&x.status==='PUBLISHED'&&x.isPublic&&(!x.displayStartsAt||new Date(x.displayStartsAt)<=now)&&(!x.displayEndsAt||new Date(x.displayEndsAt)>=now);
 export const selectSpotlight=(rows:SpotlightCandidate[],regionId:string,now:Date)=>rows.filter(x=>isSpotlightVisible(x,regionId,now)).sort((a,b)=>Number(Boolean(b.isPinned))-Number(Boolean(a.isPinned))+(Number(b.priority||0)-Number(a.priority||0))+(new Date(b.lastVerifiedAt||0).getTime()-new Date(a.lastVerifiedAt||0).getTime()))[0];

@@ -918,4 +918,5 @@ export async function downloadPartnerTestQr(
 export async function fetchRegionalHome(regionId:string){const{data}=await api.get(`/regional-home/${encodeURIComponent(regionId)}`);return data}
 export async function fetchRegionalSpotlights(regionId:string,token:string){const{data}=await api.get('/admin/regional-spotlights',{params:{regionId},headers:{'x-admin-token':token}});return data}
 export async function createRegionalSpotlight(payload:any,token:string){const{data}=await api.post('/admin/regional-spotlights',payload,{headers:{'x-admin-token':token}});return data}
+export async function updateRegionalSpotlight(id:string,payload:any,token:string){const{data}=await api.patch(`/admin/regional-spotlights/${encodeURIComponent(id)}`,payload,{headers:{'x-admin-token':token}});return data}
 export async function transitionRegionalSpotlight(id:string,action:'publish'|'end',token:string){const{data}=await api.post(`/admin/regional-spotlights/${encodeURIComponent(id)}/${action}`,{},{headers:{'x-admin-token':token}});return data}

@@ -494,6 +494,8 @@ export const HAPCHEON_CONFIG: RegionConfig = {
       title: "5만 년 전 운석이 만든 거대한 분지",
       titleLines: ["5만 년 전 운석이 만든", "거대한 분지"],
       description: "한반도에서 유일하게 확인된 합천운석충돌구를 만나보세요.",
+      image: "/branding/hapcheon-meteor-basin-ai-dev-v1.jpg",
+      alt: "산 위에서 내려다본 넓은 분지와 농경지의 AI 생성 개발용 이미지",
       overlay: "#294f56",
     },
     question: "합천 여행, 무엇을 도와드릴까요?",
