@@ -17,7 +17,7 @@ test("public Guide uses plain travel language", () => {
 });
 
 test("voice guidance appears once with examples and one privacy reassurance", () => {
-  assert.equal((conversation.match(/음성은 저장하지 않습니다\./g) || []).length, 1);
+  assert.equal((conversation.match(/\{voiceCopy.privacy\}/g) || []).length, 1);
   assert.equal((conversation.match(/className="voice-helper"/g) || []).length, 1);
   for (const phrase of ["Ask by Voice or Text", "Speak a Question", "Type a Question"]) assert.ok(managedCopy.includes(phrase));
   assert.doesNotMatch(conversation, /말씀하신 내용이 위 입력창에 들어갑니다/);
@@ -26,7 +26,7 @@ test("voice guidance appears once with examples and one privacy reassurance", ()
 test("large shared composer has useful placeholder and mobile-safe readable help", () => {
   assert.match(conversation, /placeholder="필요한 내용을 입력하세요"/);
   assert.match(managedCopy, /Tell us what you need/);
-  assert.match(conversation, /useSpeechInput\(input, setInput,onVoiceFinal,language\)/);
+  assert.match(conversation, /useSpeechInput\(voiceDraft, setVoiceDraft,onVoiceFinal,language\)/);
   assert.match(css, /\.voice-helper,[\s\S]*font-size:\s*14px/);
   assert.match(css, /@media\s*\(max-width:\s*430px\)[\s\S]*concierge-unified-composer/);
   assert.match(conversation, /내 여행으로 돌아가기/);

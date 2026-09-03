@@ -235,6 +235,18 @@ function ConciergeConversation() {
     toggleListening();
   };
   const dismissVoice=()=>{cancelListening();setVoiceUnderstanding(null);setVoiceDraft("");setVoiceState("IDLE");setManualEntryMode("TEXT");track("VOICE_INPUT_SWITCHED",tripSession.id,{to:"TEXT_OR_TOUCH"});requestAnimationFrame(()=>textInputRef.current?.focus());};
+  useEffect(()=>{
+    if(manualEntryMode!=="VOICE"||!freeTextOpen)return;
+    const frame=requestAnimationFrame(()=>voiceButtonRef.current?.focus());
+    return()=>cancelAnimationFrame(frame);
+  },[manualEntryMode,freeTextOpen]);
+  useEffect(()=>{
+    const escape=(event:KeyboardEvent)=>{
+      if(event.key==="Escape"&&manualEntryMode==="VOICE"&&!loading){event.preventDefault();dismissVoice();}
+    };
+    document.addEventListener("keydown",escape);
+    return()=>document.removeEventListener("keydown",escape);
+  },[manualEntryMode,loading]);
   useEffect(() => {
     sessionStorage.setItem(contextSessionKey, contextSessionIdRef.current);
   }, [contextSessionKey]);
@@ -946,7 +958,14 @@ function ConciergeConversation() {
           result={currentResult}
           turnId={currentTurn.turnId}
           excludedEntityIds={excludedDiscoveryIds}
-          onExcludedEntityIdsChange={setExcludedDiscoveryIds}
+          onExcludedEntityIdsChange={ids=>{
+            setExcludedDiscoveryIds(ids);
+            const next=currentResult.discovery?.entities.find(entity=>entity.entityId&&!ids.includes(entity.entityId));
+            if(next&&(!next.regionId||next.regionId===region.id)&&next.entityId){
+              setConversationAnchor({entityId:next.entityId,regionId:region.id,label:next.programLabel||next.facilityLabel||next.label,
+                latitude:next.latitude,longitude:next.longitude,sourceTurnId:currentTurn.turnId,role:"SELECTED"});
+            }
+          }}
         />
       )}
       <InstallExperience usefulResult={hasPrimaryResult} />
@@ -1004,7 +1023,7 @@ function ConciergeConversation() {
               "대화로 찾기"
             )}
           </button>}
-          {tripMode==="NOW"&&!hasCompletedTurn&&<button type="button" className="btn btn-outline btn-block" onClick={()=>{cancelListening();setVoiceUnderstanding(null);setVoiceState("IDLE");setManualEntryMode(null);setFreeTextOpen(false)}}>취소</button>}
+          {tripMode==="NOW"&&!hasCompletedTurn&&manualEntryMode!=="VOICE"&&<button type="button" className="btn btn-outline btn-block" onClick={()=>{cancelListening();setVoiceUnderstanding(null);setVoiceState("IDLE");setManualEntryMode(null);setFreeTextOpen(false)}}>취소</button>}
           {hasCompletedTurn && (
             <button
               type="button"

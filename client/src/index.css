@@ -3599,3 +3599,24 @@ table.simple td {
 .voice-live-transcript { min-height: 24px; white-space: pre-wrap; }
 .voice-input-panel .voice-confirm-cancel { min-height: 44px; }
 .voice-input-panel :focus-visible { outline: 3px solid #0f766e; outline-offset: 3px; }
+
+@media (max-width: 320px) {
+  .concierge-conversation .concierge-unified-composer { padding: 8px; }
+  .concierge-unified-composer .voice-input-panel { padding: 6px; }
+  .voice-input-panel .voice-confirmation { padding: 6px; }
+  .voice-input-panel .voice-confirm-actions > button { flex-basis: 100%; padding-inline: 4px; word-break: normal; overflow-wrap: normal; }
+}
+
+.voice-input-panel .speech-session-button {
+  min-height: 56px;
+  padding: 12px;
+  border: 1px solid #0f766e;
+  border-radius: 12px;
+  background: #fff;
+  color: #115e59;
+  font: inherit;
+}
+.voice-input-panel .speech-session-button.is-listening {
+  border-width: 2px;
+  background: #d9f3ee;
+}

@@ -26,6 +26,7 @@ export function useSpeechInput(_value:string,onValueChange:(value:string)=>void,
     sessionRef.current.start();
   };
   useEffect(()=>{
+    setVoiceState("IDLE");setError("");
     const leave=()=>cancelListening(),hide=()=>{if(document.hidden)leave();};
     window.addEventListener('pagehide',leave);window.addEventListener('popstate',leave);document.addEventListener('visibilitychange',hide);
     return()=>{

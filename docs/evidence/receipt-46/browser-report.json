@@ -1,0 +1,413 @@
+{
+  "syntheticSpeech": true,
+  "realMicrophone": false,
+  "checks": [
+    {
+      "test": "voice → review/edit → single send → recommendation → detail → navigation/phone/save → alternative → Nearby/back → follow-up",
+      "passed": true
+    },
+    {
+      "test": "permission denial, empty speech, error, speak again, editing, blank guard, cancel, Escape, unmount late events",
+      "passed": true
+    },
+    {
+      "test": "locale change cancels active recognition; next gesture uses en-US",
+      "passed": true
+    },
+    {
+      "region": "gajo",
+      "locale": "ko",
+      "mode": "now",
+      "passed": true
+    },
+    {
+      "region": "gajo",
+      "locale": "ko",
+      "mode": "plan",
+      "passed": true
+    },
+    {
+      "region": "gajo",
+      "locale": "en",
+      "mode": "now",
+      "passed": true
+    },
+    {
+      "region": "gajo",
+      "locale": "en",
+      "mode": "plan",
+      "passed": true
+    },
+    {
+      "region": "okcheon",
+      "locale": "ko",
+      "mode": "now",
+      "passed": true
+    },
+    {
+      "region": "okcheon",
+      "locale": "ko",
+      "mode": "plan",
+      "passed": true
+    },
+    {
+      "region": "okcheon",
+      "locale": "en",
+      "mode": "now",
+      "passed": true
+    },
+    {
+      "region": "okcheon",
+      "locale": "en",
+      "mode": "plan",
+      "passed": true
+    },
+    {
+      "region": "muan",
+      "locale": "ko",
+      "mode": "now",
+      "passed": true
+    },
+    {
+      "region": "muan",
+      "locale": "ko",
+      "mode": "plan",
+      "passed": true
+    },
+    {
+      "region": "muan",
+      "locale": "en",
+      "mode": "now",
+      "passed": true
+    },
+    {
+      "region": "muan",
+      "locale": "en",
+      "mode": "plan",
+      "passed": true
+    },
+    {
+      "region": "gyeryong",
+      "locale": "ko",
+      "mode": "now",
+      "passed": true
+    },
+    {
+      "region": "gyeryong",
+      "locale": "ko",
+      "mode": "plan",
+      "passed": true
+    },
+    {
+      "region": "gyeryong",
+      "locale": "en",
+      "mode": "now",
+      "passed": true
+    },
+    {
+      "region": "gyeryong",
+      "locale": "en",
+      "mode": "plan",
+      "passed": true
+    },
+    {
+      "region": "hapcheon",
+      "locale": "ko",
+      "mode": "now",
+      "passed": true
+    },
+    {
+      "region": "hapcheon",
+      "locale": "ko",
+      "mode": "plan",
+      "passed": true
+    },
+    {
+      "region": "hapcheon",
+      "locale": "en",
+      "mode": "now",
+      "passed": true
+    },
+    {
+      "region": "hapcheon",
+      "locale": "en",
+      "mode": "plan",
+      "passed": true
+    },
+    {
+      "region": "daejeon-junggu",
+      "locale": "ko",
+      "mode": "now",
+      "passed": true
+    },
+    {
+      "region": "daejeon-junggu",
+      "locale": "ko",
+      "mode": "plan",
+      "passed": true
+    },
+    {
+      "region": "daejeon-junggu",
+      "locale": "en",
+      "mode": "now",
+      "passed": true
+    },
+    {
+      "region": "daejeon-junggu",
+      "locale": "en",
+      "mode": "plan",
+      "passed": true
+    },
+    {
+      "test": "unsupported browser → text input",
+      "locale": "ko",
+      "passed": true
+    },
+    {
+      "test": "unsupported browser → text input",
+      "locale": "en",
+      "passed": true
+    },
+    {
+      "test": "responsive review",
+      "locale": "ko",
+      "width": 360,
+      "height": 800,
+      "overflow": false,
+      "overlap": false,
+      "targets": [
+        {
+          "text": "이대로 보내기",
+          "height": 44
+        },
+        {
+          "text": "다시 말하기",
+          "height": 44
+        },
+        {
+          "text": "취소",
+          "height": 44
+        }
+      ],
+      "focusedLabel": "voice-transcript",
+      "passed": true
+    },
+    {
+      "test": "responsive review",
+      "locale": "ko",
+      "width": 390,
+      "height": 700,
+      "overflow": false,
+      "overlap": false,
+      "targets": [
+        {
+          "text": "이대로 보내기",
+          "height": 44
+        },
+        {
+          "text": "다시 말하기",
+          "height": 44
+        },
+        {
+          "text": "취소",
+          "height": 44
+        }
+      ],
+      "focusedLabel": "voice-transcript",
+      "passed": true
+    },
+    {
+      "test": "responsive review",
+      "locale": "ko",
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "overlap": false,
+      "targets": [
+        {
+          "text": "이대로 보내기",
+          "height": 44
+        },
+        {
+          "text": "다시 말하기",
+          "height": 44
+        },
+        {
+          "text": "취소",
+          "height": 44
+        }
+      ],
+      "focusedLabel": "voice-transcript",
+      "passed": true
+    },
+    {
+      "test": "responsive review",
+      "locale": "ko",
+      "width": 844,
+      "height": 390,
+      "overflow": false,
+      "overlap": false,
+      "targets": [
+        {
+          "text": "이대로 보내기",
+          "height": 44
+        },
+        {
+          "text": "다시 말하기",
+          "height": 44
+        },
+        {
+          "text": "취소",
+          "height": 44
+        }
+      ],
+      "focusedLabel": "voice-transcript",
+      "passed": true
+    },
+    {
+      "test": "responsive review",
+      "locale": "ko",
+      "width": 195,
+      "height": 422,
+      "overflow": false,
+      "overlap": false,
+      "targets": [
+        {
+          "text": "이대로 보내기",
+          "height": 44
+        },
+        {
+          "text": "다시 말하기",
+          "height": 44
+        },
+        {
+          "text": "취소",
+          "height": 44
+        }
+      ],
+      "focusedLabel": "voice-transcript",
+      "passed": true
+    },
+    {
+      "test": "responsive review",
+      "locale": "en",
+      "width": 360,
+      "height": 800,
+      "overflow": false,
+      "overlap": false,
+      "targets": [
+        {
+          "text": "Send This Question",
+          "height": 44
+        },
+        {
+          "text": "Speak Again",
+          "height": 44
+        },
+        {
+          "text": "Cancel",
+          "height": 44
+        }
+      ],
+      "focusedLabel": "voice-transcript",
+      "passed": true
+    },
+    {
+      "test": "responsive review",
+      "locale": "en",
+      "width": 390,
+      "height": 700,
+      "overflow": false,
+      "overlap": false,
+      "targets": [
+        {
+          "text": "Send This Question",
+          "height": 44
+        },
+        {
+          "text": "Speak Again",
+          "height": 44
+        },
+        {
+          "text": "Cancel",
+          "height": 44
+        }
+      ],
+      "focusedLabel": "voice-transcript",
+      "passed": true
+    },
+    {
+      "test": "responsive review",
+      "locale": "en",
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "overlap": false,
+      "targets": [
+        {
+          "text": "Send This Question",
+          "height": 44
+        },
+        {
+          "text": "Speak Again",
+          "height": 44
+        },
+        {
+          "text": "Cancel",
+          "height": 44
+        }
+      ],
+      "focusedLabel": "voice-transcript",
+      "passed": true
+    },
+    {
+      "test": "responsive review",
+      "locale": "en",
+      "width": 844,
+      "height": 390,
+      "overflow": false,
+      "overlap": false,
+      "targets": [
+        {
+          "text": "Send This Question",
+          "height": 44
+        },
+        {
+          "text": "Speak Again",
+          "height": 44
+        },
+        {
+          "text": "Cancel",
+          "height": 44
+        }
+      ],
+      "focusedLabel": "voice-transcript",
+      "passed": true
+    },
+    {
+      "test": "responsive review",
+      "locale": "en",
+      "width": 195,
+      "height": 422,
+      "overflow": false,
+      "overlap": false,
+      "targets": [
+        {
+          "text": "Send This Question",
+          "height": 60
+        },
+        {
+          "text": "Speak Again",
+          "height": 44
+        },
+        {
+          "text": "Cancel",
+          "height": 44
+        }
+      ],
+      "focusedLabel": "voice-transcript",
+      "passed": true
+    }
+  ],
+  "chatRequests": 26
+}

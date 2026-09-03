@@ -11,7 +11,7 @@ test("AI conversation renders one shared text and voice composer", () => {
   assert.doesNotMatch(page, /"concierge-followup-composer"/);
 });
 test("typed Enter click and speech preserve the existing send and voice flows", () => {
-  assert.match(page, /e\.key === "Enter"[\s\S]*send\(\)/);
+  assert.match(page, /e\.key\s*===\s*"Enter"[\s\S]*send\(\)/);
   assert.match(page, /onClick=\{\(\) => send\(\)\}/);
   assert.match(page, /onClick=\{beginVoice\}/);
   assert.match(page, /aria-label=\{hasCompletedTurn \? "이어서 물어보기"/);
