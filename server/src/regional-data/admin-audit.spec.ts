@@ -12,7 +12,7 @@ describe('common administrator audit principal',()=>{
     process.env.ADMIN_ACTOR_ID='OPS_CONSOLE_01';
     const request={headers:{'x-admin-token':'secret-token-value'}} as any;
     expect(new AdminTokenGuard().canActivate(contextFor(request))).toBe(true);
-    expect(request.adminPrincipal).toEqual({actorId:'OPS_CONSOLE_01'});
+    expect(request.adminPrincipal).toEqual({actorId:'OPS_CONSOLE_01',allowedRegionIds:[]});
     expect(JSON.stringify(request.adminPrincipal)).not.toContain('secret-token-value');
   });
 

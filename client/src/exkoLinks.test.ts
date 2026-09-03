@@ -36,8 +36,8 @@ test('Portal keeps regional AI primary actions separate from verified EXKO links
   assert.match(component,/EXKO에서 \{name\}군 지역지식 보기/);
 });
 
-test('Hapcheon home and nearby use one safe passive external-link component',()=>{
-  assert.match(home,/ExkoRegionKnowledgeLink regionId=\{region\.id\}/);
+test('Regional Home removes the technical knowledge link while nearby keeps its safe passive link',()=>{
+  assert.doesNotMatch(home,/ExkoRegionKnowledgeLink/);
   assert.match(nearby,/ExkoRegionKnowledgeLink regionId=\{region\.id\}/);
   assert.match(component,/target="_blank"/);
   assert.match(component,/rel="noopener noreferrer"/);
