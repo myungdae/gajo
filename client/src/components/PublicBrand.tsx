@@ -5,9 +5,11 @@ type PublicBrandProps = {
   className?: string;
   compact?: boolean;
   linked?: boolean;
+  language?: "ko" | "en";
+  href?: string;
 };
 
-function BrandContent() {
+function BrandContent({language="ko"}:{language?:"ko"|"en"}) {
   return (
     <>
       <svg
@@ -20,8 +22,8 @@ function BrandContent() {
         <circle className="public-brand__traveler" cx="18.25" cy="12" r="2.4" />
       </svg>
       <span className="public-brand__wordmark">
-        <strong>찾아오는 여행도우미</strong>
-        <span className="public-brand__slogan">필요한 순간, 먼저 찾아갑니다.</span>
+        <strong>{language==='en'?'Your Local Travel Companion':'찾아오는 여행도우미'}</strong>
+        <span className="public-brand__slogan">{language==='en'?'Here when you need it.':'필요한 순간, 먼저 찾아갑니다.'}</span>
         <small>Powered by EXKOVIA</small>
       </span>
     </>
@@ -32,18 +34,20 @@ export default function PublicBrand({
   className = "",
   compact = false,
   linked = true,
+  language = "ko",
+  href = "/",
 }: PublicBrandProps) {
   const classes = `public-brand${compact ? " public-brand--compact" : ""}${className ? ` ${className}` : ""}`;
-  const label = compact
+  const label = language==='en'?'Your Local Travel Companion, Powered by EXKOVIA':compact
     ? "찾아오는 여행도우미, Powered by EXKOVIA"
     : "찾아오는 여행도우미, 필요한 순간 먼저 찾아갑니다, Powered by EXKOVIA";
   return linked ? (
-    <Link className={classes} to="/" aria-label={`${label} 홈`}>
-      <BrandContent />
+    <Link className={classes} to={href} aria-label={`${label} ${language==='en'?'Home':'홈'}`}>
+      <BrandContent language={language}/>
     </Link>
   ) : (
     <div className={classes} aria-label={label}>
-      <BrandContent />
+      <BrandContent language={language}/>
     </div>
   );
 }

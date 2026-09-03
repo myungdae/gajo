@@ -39,6 +39,7 @@ export interface TripSession {
   deletionToken?: string;
   regionId: string;
   mode: "PLAN" | "NOW";
+  language?: "ko" | "en";
   partnerEntryContext?: { partnerId:string; partnerSlug:string; partnerName:string; enteredAt:string; source:"PARTNER_QR" };
   plannedContext?: PlannedContext;
   runtimeContext?: any;
@@ -271,6 +272,7 @@ export function listArchivedTripSessions(
       Date.parse(a.archivedAt || a.updatedAt),
   );
 }
+export function setTripLanguage(regionId:string,language:"ko"|"en",storage:Pick<Storage,"getItem"|"setItem">=localStorage){const current=loadTripSession(storage,regionId)||createTripSession(regionId);return saveTripSession({...current,language},storage)}
 export type ArchiveDeleteResult = "DELETED" | "NOT_FOUND" | "FORBIDDEN";
 type ArchiveStorage = Pick<Storage, "getItem" | "removeItem" | "length" | "key">;
 export function deleteArchivedTripSession(

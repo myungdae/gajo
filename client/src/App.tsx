@@ -19,6 +19,7 @@ import { appSurface, isPlatformPreview } from './regionRouting';
 import RegionalReportPage from './pages/RegionalReportPage';
 import HapcheonLandingPage from './pages/HapcheonLandingPage';
 import MeteorCraterPage from './pages/MeteorCraterPage';
+import { RegionalLanguageProvider } from './RegionalLanguageContext';
 
 function RootEntry(){const surface=appSurface(window.location.pathname,window.location.search,window.location.hostname);return isPlatformPreview(window.location.hostname,window.location.search)?<PlatformPortalPage/>:surface==='UNSUPPORTED'?<main className="partner-flow"><h1>지원하지 않는 주소입니다</h1><p>공식 지역 서비스 주소 또는 exkovia.com에서 접속해 주세요.</p></main>:<HomePage/>}
 function HapcheonEntry(){const location=useLocation(),started=new URLSearchParams(location.search).get('start')==='ai'||sessionStorage.getItem('hapcheon-landing-complete')==='1';return started?<HomePage/>:<HapcheonLandingPage/>}
@@ -26,7 +27,7 @@ function HapcheonEntry(){const location=useLocation(),started=new URLSearchParam
 export default function App() {
   return (
     <BrowserRouter>
-      <RegionProvider><Routes>
+      <RegionProvider><RegionalLanguageProvider><Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<RootEntry />} />
           <Route path="/regions" element={<RegionSelectionPage />} />
@@ -87,7 +88,7 @@ export default function App() {
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/ontology" element={<OntologyExplorerPage />} />
         </Route>
-      </Routes></RegionProvider>
+      </Routes></RegionalLanguageProvider></RegionProvider>
     </BrowserRouter>
   );
 }

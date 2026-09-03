@@ -7,6 +7,8 @@ import { listArchivedTripSessions, loadTripSession, tripRestorationDiagnostics }
 import { itineraryItemCount } from "../tripContinuity";
 import { resetShellScroll } from "../routeScroll";
 import PublicBrand from "./PublicBrand";
+import {useRegionalLanguage} from '../RegionalLanguageContext';
+import {getRegionalHomeEnglish} from '../regionConfig';
 
 const navItems = [
   { to: "/", label: "홈", icon: "home", end: true },
@@ -56,6 +58,7 @@ function NavIcon({ name }: { name: string }) {
 
 export default function Layout() {
   const region = useRegion();
+  const {language,select,withLanguage}=useRegionalLanguage(),english=getRegionalHomeEnglish(region),navLabels=language==='en'?['Home','Nearby','My Trip','AI Travel Assistant']:navItems.map(x=>x.label);
   const location=useLocation(),searchParams=new URLSearchParams(location.search),diagnosticMode=searchParams.get("trip-diagnostics")==="1",hapcheonLanding=location.pathname==='/hapcheon'&&searchParams.get('start')!=='ai'&&sessionStorage.getItem('hapcheon-landing-complete')!=='1',surface=appSurface(location.pathname,location.search,window.location.hostname),webShell=surface==='PLATFORM'||surface==='PUBLIC_PARTNER';
   const mainRef = useRef<HTMLElement>(null);
   const [tripCount, setTripCount] = useState(() =>
@@ -77,17 +80,17 @@ export default function Layout() {
     <div className={`app-shell${webShell?' app-shell--web':''}${hapcheonLanding?' app-shell--hapcheon-landing':''}`}>
       <ConnectionStatus />
       {!webShell&&!hapcheonLanding&&<header className="app-header">
-        <PublicBrand compact />
-        <div className="app-header__region"><h1>찾아오는 여행도우미</h1><div className="subtitle">{region.regionName} · Powered by EXKOVIA</div></div>
+        <PublicBrand compact language={language} href={withLanguage(region.id==='gajo'?'/':`/${region.id}`)}/>
+        <div className="app-header__tools"><span className="app-header__region-name">{language==='en'?english.serviceName:region.serviceName}</span><div className="language-switch" aria-label={language==='en'?'Language':'언어 선택'}><button type="button" aria-pressed={language==='ko'} onClick={()=>select('ko')}>한국어</button><button type="button" aria-pressed={language==='en'} onClick={()=>select('en')}>English</button></div></div>
       </header>}
       <main className={`app-main${webShell?' app-main--web':''}${hapcheonLanding?' app-main--hapcheon-landing':''}`} ref={mainRef}>
         <Outlet />
       </main>
       {!webShell&&!hapcheonLanding&&<nav className="bottom-nav">
-        {navItems.map((item) => (
+        {navItems.map((item,index) => (
           <NavLink
             key={item.to}
-            to={
+            to={withLanguage(
               item.to === "/"
                 ? region.id === "gajo"
                   ? "/"
@@ -95,13 +98,13 @@ export default function Layout() {
                     ? "/hapcheon?start=ai"
                     : `/${region.id}`
                 : regionalPath(item.to, region.id)
-            }
+            )}
             end={item.end}
             className={({ isActive }) => (isActive ? "active" : "")}
           >
             <NavIcon name={item.icon} />
             <span className="nav-label">
-              {item.label}
+              {navLabels[index]}
               {item.to === "/itinerary" && tripCount > 0 && (
                 <span className="my-trip-count" aria-label={`내 여행 ${tripCount}건`}>
                   {tripCount}

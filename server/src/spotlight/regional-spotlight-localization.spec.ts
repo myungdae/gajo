@@ -1,0 +1,1 @@
+import{RegionalSpotlightSchema}from'./regional-spotlight.schema';describe('regional spotlight localization',()=>{it('stores reviewed bilingual copy as mixed localized values',()=>{for(const path of['title','shortDescription','statusLabel','imageAlt'])expect((RegionalSpotlightSchema.path(path)as any).instance).toBe('Mixed')})});

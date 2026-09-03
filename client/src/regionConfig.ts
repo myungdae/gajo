@@ -88,6 +88,7 @@ export interface RegionConfig {
   share?: RegionShareConfig;
   landing?: RegionLandingConfig;
 }
+export interface RegionalHomeEnglish {regionName:string;serviceName:string;heroTitle:string;heroSubtitle:string;heroCopy:string;spotlight?:{statusLabel:string;title:string;description:string;cta:string;imageAlt?:string};placeNames?:Record<string,string>}
 const quickIntents: QuickIntent[] = [
   {
     id: "first-time",
@@ -752,6 +753,15 @@ export const REGION_CONFIGS: Record<RegionId, RegionConfig> = {
   "daejeon-junggu": DAEJEON_JUNGGU_CONFIG,
 };
 export const REGION_CONFIG = GAJO_CONFIG;
+export const REGION_HOME_ENGLISH:Record<RegionId,RegionalHomeEnglish>={
+  gajo:{regionName:'Gajo',serviceName:'Explore Gajo',heroTitle:'Welcome to Gajo',heroSubtitle:'Take in Gajo at a relaxed pace today.',heroCopy:'Plan your next stop, from local food and stays to on-the-go changes.'},
+  okcheon:{regionName:'Okcheon',serviceName:'Explore Okcheon',heroTitle:'Welcome to Okcheon',heroSubtitle:'Discover the landscapes and stories of Okcheon.',heroCopy:'Plan a relaxed journey through its literary and cultural heritage.'},
+  muan:{regionName:'Muan',serviceName:'Explore Muan',heroTitle:'Welcome to Muan',heroSubtitle:'Discover Muan’s lotus ponds, wetlands, and coast.',heroCopy:'Find a comfortable route for nature, food, and family time.'},
+  gyeryong:{regionName:'Gyeryong',serviceName:'Explore Gyeryong',heroTitle:'Welcome to Gyeryong',heroSubtitle:'Explore local history, events, and family attractions.',heroCopy:'Plan your next stop with practical local information.'},
+  hapcheon:{regionName:'Hapcheon',serviceName:'Explore Hapcheon',heroTitle:'Welcome to Hapcheon',heroSubtitle:"Enjoy a relaxing journey through Hapcheon's beautiful landscapes.",heroCopy:'Explore the lake, nature, scenic drives, and family-friendly stays.',spotlight:{statusLabel:'Hapcheon Spotlight',title:'A Vast Basin Formed by a Meteorite Impact 50,000 Years Ago',description:"Discover Korea's only confirmed meteorite impact crater.",cta:'Discover the Crater',imageAlt:'Development-only AI image of a broad basin and farmland viewed from a mountain'},placeNames:{'https://hapcheon.example/ontology#hapcheonLake':'Hapcheon Lake','https://hapcheon.example/ontology#hwangmaesanCountyPark':'Hwangmaesan County Park'}},
+  'daejeon-junggu':{regionName:'Jung-gu, Daejeon',serviceName:'Explore Jung-gu',heroTitle:'Welcome to Jung-gu, Daejeon',heroSubtitle:'Discover the city’s culture, markets, and performances.',heroCopy:'Find useful local stops for an easy day in the city.'}
+};
+export const getRegionalHomeEnglish=(region:RegionConfig)=>REGION_HOME_ENGLISH[region.id];
 export const REGION_INTEREST_OPTIONS = [...GAJO_CONFIG.interests];
 export const REGION_PLACE_SUGGESTIONS = [...GAJO_CONFIG.places];
 export function findRegionConfig(value?: string | null) {
