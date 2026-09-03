@@ -61,6 +61,8 @@ export interface RegionConfig {
       image?: string;
       alt?: string;
       overlay?: string;
+      photoSource?: string;
+      photoRightsStatus?: "DEVELOPMENT_ONLY" | "APPROVED";
     };
     question: string;
     supportingCopy: string;
@@ -497,6 +499,8 @@ export const HAPCHEON_CONFIG: RegionConfig = {
       description: "한반도에서 유일하게 확인된 합천운석충돌구를 만나보세요.",
       image: "/branding/hapcheon-meteor-basin-ai-dev-v1.jpg",
       alt: "산 위에서 내려다본 넓은 분지와 농경지의 AI 생성 개발용 이미지",
+      photoSource: "AI 생성 임시 이미지 — 공식 합천 현장사진 아님",
+      photoRightsStatus: "DEVELOPMENT_ONLY",
       overlay: "#294f56",
     },
     question: "합천 여행, 무엇을 도와드릴까요?",
