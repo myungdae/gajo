@@ -1,1 +1,32 @@
-import test from'node:test';import assert from'node:assert/strict';import{REGION_CONFIGS,REGION_HOME_ENGLISH}from'./regionConfig.ts';import{HOME_COPY,localizedSpotlight}from'./regionalHomeI18n.ts';import{buildProactiveGuidance}from'./proactiveGuidance.ts';import{createTripSession,setTripLanguage}from'./tripSession.ts';test('every Regional Home has reviewed English configuration',()=>{for(const id of Object.keys(REGION_CONFIGS))assert.ok(REGION_HOME_ENGLISH[id as keyof typeof REGION_HOME_ENGLISH]?.serviceName);assert.equal(REGION_HOME_ENGLISH.hapcheon.serviceName,'Explore Hapcheon');assert.equal(HOME_COPY.en.family,'Family-Friendly Places')});test('managed English uses reviewed common fallback before Korean',()=>{const result=localizedSpotlight({title:{ko:'한국어 제목',en:''},statusLabel:{ko:'한국어 라벨'},shortDescription:{ko:'한국어 설명'},primaryAction:{label:{ko:'한국어 CTA'}}},'en',REGION_HOME_ENGLISH.hapcheon);assert.equal(result.title,'A Vast Basin Formed by a Meteorite Impact 50,000 Years Ago');assert.equal(result.primaryAction.label,'Discover the Crater')});test('English guidance is generated directly from an English template',()=>{const result=buildProactiveGuidance({label:'Hwangmaesan County Park',characteristic:'Mountain conditions can change quickly.',source:'official'},{target:{latitude:35.49,longitude:127.97,label:'Hwangmaesan County Park'},kind:'OBSERVATION',dataTime:'2026-09-03T07:20:00Z',fetchedAt:'2026-09-03T07:21:00Z',expiresAt:'2026-09-03T08:20:00Z',source:'weather',temperature:14},new Date('2026-09-03T07:30:00Z'),'en');assert.match(result.fact!,/^It is currently 14°C/);assert.match(result.basisLabel!,/^As of /);assert.equal(result.fallbackUsed,false)});test('language is retained in TripSession',()=>{const data=new Map<string,string>(),storage={getItem:(k:string)=>data.get(k)||null,setItem:(k:string,v:string)=>data.set(k,v)}as any,first=createTripSession('hapcheon');storage.setItem('regional-concierge-trip-session-v1:hapcheon',JSON.stringify(first));assert.equal(setTripLanguage('hapcheon','en',storage).language,'en')});
+import test from "node:test";
+import assert from "node:assert/strict";
+import { REGION_CONFIGS, REGION_HOME_ENGLISH } from "./regionConfig.ts";
+import { HOME_COPY, localizedSpotlight } from "./regionalHomeI18n.ts";
+import { buildProactiveGuidance } from "./proactiveGuidance.ts";
+import { createTripSession, setTripLanguage } from "./tripSession.ts";
+
+test("every Regional Home has reviewed English configuration", () => {
+  for (const id of Object.keys(REGION_CONFIGS)) assert.ok(REGION_HOME_ENGLISH[id as keyof typeof REGION_HOME_ENGLISH]?.serviceName);
+  assert.equal(REGION_HOME_ENGLISH.hapcheon.serviceName, "Explore Hapcheon");
+  assert.equal(HOME_COPY.en.family, "Family-Friendly Places");
+  assert.equal(HOME_COPY.en.guidance, "What You Need to Know Now");
+});
+
+test("managed English uses reviewed common fallback before Korean", () => {
+  const result = localizedSpotlight({ title: { ko: "한국어 제목", en: "" }, statusLabel: { ko: "한국어 라벨" }, shortDescription: { ko: "한국어 설명" }, primaryAction: { label: { ko: "한국어 CTA" } } }, "en", REGION_HOME_ENGLISH.hapcheon);
+  assert.equal(result.title, "A 50,000-Year-Old Meteorite Impact Basin");
+  assert.equal(result.primaryAction.label, "Discover the Crater");
+});
+
+test("English guidance is generated directly from an English template", () => {
+  const result = buildProactiveGuidance({ label: "Hwangmaesan County Park", characteristic: "Mountain conditions can change quickly.", source: "official" }, { target: { latitude: 35.49, longitude: 127.97, label: "Hwangmaesan County Park" }, kind: "OBSERVATION", dataTime: "2026-09-03T07:20:00Z", fetchedAt: "2026-09-03T07:21:00Z", expiresAt: "2026-09-03T08:20:00Z", source: "weather", temperature: 14 }, new Date("2026-09-03T07:30:00Z"), "en");
+  assert.match(result.fact!, /^It is currently 14°C/);
+  assert.match(result.basisLabel!, /^As of /);
+  assert.equal(result.fallbackUsed, false);
+});
+
+test("language is retained in TripSession", () => {
+  const data = new Map<string, string>(), storage = { getItem: (key: string) => data.get(key) || null, setItem: (key: string, value: string) => data.set(key, value) } as any, first = createTripSession("hapcheon");
+  storage.setItem("regional-concierge-trip-session-v1:hapcheon", JSON.stringify(first));
+  assert.equal(setTripLanguage("hapcheon", "en", storage).language, "en");
+});
