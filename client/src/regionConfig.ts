@@ -491,10 +491,9 @@ export const HAPCHEON_CONFIG: RegionConfig = {
     "호수와 자연, 드라이브와 가족 체류를 중심으로 합천 여행을 준비해 보세요.",
   home: {
     hero: {
-      title: "수려한 합천, 여행이 시작됩니다",
-      titleLines: ["수려한 합천,", "여행이 시작됩니다"],
-      description:
-        "여행 전 계획부터 현장의 맛집·숙소·길찾기, 상황이 달라진 뒤의 새 일정까지 이어드립니다.",
+      title: "5만 년 전 운석이 만든 거대한 분지",
+      titleLines: ["5만 년 전 운석이 만든", "거대한 분지"],
+      description: "한반도에서 유일하게 확인된 합천운석충돌구를 만나보세요.",
       overlay: "#294f56",
     },
     question: "합천 여행, 무엇을 도와드릴까요?",
@@ -509,7 +508,7 @@ export const HAPCHEON_CONFIG: RegionConfig = {
   },
   accent: "#496d75",
   center: { latitude: 35.55, longitude: 128.05 },
-  bounds: { north: 35.84, south: 35.45, east: 128.18, west: 127.95 },
+  bounds: { north: 35.84, south: 35.45, east: 128.32, west: 127.95 },
   map: {
     enabled: true,
     title: "합천 운영 지도",
