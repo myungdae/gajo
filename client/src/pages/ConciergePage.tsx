@@ -66,6 +66,7 @@ import { understoodSummary } from "../understoodSummary";
 import { NOW_HEADING, NOW_HEADING_LINES, NOW_QUICK_ACTIONS } from "../nowQuickActions";
 import VoiceConfirmation from "../components/VoiceConfirmation";
 import { acceptVoiceResult, understandVoice, updateVoiceSlot, voiceConfirmationPolicy, voiceExecutionText, voiceStateMessage, type VoiceResultFingerprint, type VoiceSlotName, type VoiceUnderstanding } from "../voice/voiceUx";
+import { useRegionalLanguage } from "../RegionalLanguageContext";
 
 interface Message {
   role: "user" | "ai";
@@ -103,6 +104,7 @@ function summarizeResult(result: ConciergeChatResponse): string {
 }
 
 export default function ConciergePage() {
+  const { language } = useRegionalLanguage();
   const region = useRegion();
   const regionLink = (path: string) => regionalPath(path, region.id);
   const navigate = useNavigate();
@@ -221,7 +223,7 @@ export default function ConciergePage() {
     toggleListening,
     stopListening,
     cancelListening,
-  } = useSpeechInput(input, setInput,onVoiceFinal);
+  } = useSpeechInput(input, setInput,onVoiceFinal,language);
   const beginVoice=()=>{if(listening){stopListening();return;}if(voiceState==="REQUESTING_PERMISSION"){track("VOICE_DUPLICATE_BLOCKED",tripSession.id,{state:voiceState});return;}voiceStartedAtRef.current=Date.now();track("VOICE_STARTED",tripSession.id,{standalone:window.matchMedia?.("(display-mode: standalone)").matches||false});toggleListening();};
   const changeVoiceSlot=(slot:VoiceSlotName,value:string)=>{if(!voiceUnderstanding)return;setVoiceUnderstanding(updateVoiceSlot(voiceUnderstanding,slot,value));track("VOICE_PARTIAL_EDIT",tripSession.id,{slot,inputMethod:"TEXT_OR_TOUCH"});};
   const speakVoiceSlot=(slot:VoiceSlotName)=>{voiceSlotRef.current=slot;setInput("");track("VOICE_PARTIAL_EDIT",tripSession.id,{slot,inputMethod:"VOICE"});beginVoice();};

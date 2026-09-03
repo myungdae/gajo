@@ -3,6 +3,7 @@ import { BadGatewayException, BadRequestException, Body, Controller, GatewayTime
 import { NearbyCategory, NearbyService, NearbyServiceError } from './nearby.service';
 import { PublicWriteLimit,PublicWriteRateLimitGuard } from '../partner/public-write-security';
 import { NEARBY_RADIUS_STEPS, SELECTABLE_NEARBY_RADII, type NearbyRadius } from './nearby-radius.policy';
+import { localizeVisitorPayload, normalizeVisitorLocale, type VisitorLocale } from '../i18n/visitor-locale';
 
 const CATEGORIES: NearbyCategory[] = [
   'TOURIST_ATTRACTION', 'NATURE', 'CULTURE_ART', 'EXPERIENCE', 'FESTIVAL_EXHIBITION',
@@ -22,14 +23,14 @@ export class NearbyController {
   @Post('location-search') @UseGuards(PublicWriteRateLimitGuard) @PublicWriteLimit('NEARBY_LOOKUP') async locationSearch(@Body() body:{query:string;regionId?:string;experienceRegionId?:string;searchRegionId?:string|null;coordinateSearch?:boolean;origin?:{latitude:number;longitude:number}}){const query=(body.query||'').trim();if(query.length<2||query.length>80)throw new BadRequestException('장소명은 2자 이상 80자 이하로 입력해 주세요.');this.ensureConfigured();let origin:typeof body.origin;if(body.origin){const valid=this.validateSearch(String(body.origin.latitude),String(body.origin.longitude));origin={latitude:valid.lat,longitude:valid.lng}}const searchRegionId=body.coordinateSearch?body.searchRegionId||undefined:body.searchRegionId||body.regionId;try{return{experienceRegionId:body.experienceRegionId||body.regionId,searchRegionId:searchRegionId||null,results:await this.nearby.searchByKeyword(query,searchRegionId,origin)}}catch(error){this.rethrow(error)}}
 
   @Post('discovery') @UseGuards(PublicWriteRateLimitGuard) @PublicWriteLimit('NEARBY_LOOKUP')
-  async discovery(@Body() body:{category:string;latitude:number;longitude:number;radius?:number;weather?:string;useDistance?:boolean;transportMode?:'car'|'foot';regionId?:string;experienceRegionId?:string;searchRegionId?:string|null;coordinateSearch?:boolean;regionMembership?:'INSIDE'|'OUTSIDE'|'UNCERTAIN'}) {
+  async discovery(@Body() body:{locale?:VisitorLocale;category:string;latitude:number;longitude:number;radius?:number;weather?:string;useDistance?:boolean;transportMode?:'car'|'foot';regionId?:string;experienceRegionId?:string;searchRegionId?:string|null;coordinateSearch?:boolean;regionMembership?:'INSIDE'|'OUTSIDE'|'UNCERTAIN'}) {
     const {category:categoryValue,weather,transportMode}=body,useDistanceValue=body.useDistance!==false,experienceRegionId=(body.experienceRegionId||body.regionId)?.trim(),searchRegionId=body.coordinateSearch?body.searchRegionId?.trim()||undefined:body.searchRegionId?.trim()||body.regionId?.trim();
     if (!experienceRegionId) throw new BadRequestException('experienceRegionId가 필요합니다.');
     if (!CATEGORIES.includes(categoryValue as NearbyCategory)) throw new BadRequestException('지원하지 않는 주변 장소 종류입니다.');
     const { lat, lng, radius } = this.validateSearch(String(body.latitude), String(body.longitude), body.radius==null?undefined:String(body.radius),false);
     try {
       const search = await this.nearby.searchProgressively(categoryValue as NearbyCategory, lat, lng, { weather, useDistance: useDistanceValue, transportMode: transportMode === 'car' ? 'car' : 'foot' }, searchRegionId, radius as NearbyRadius|undefined,experienceRegionId,body.regionMembership),results=search.results;
-      return { searchedAt:new Date().toISOString(),timeZone:'Asia/Seoul',distanceTrusted:useDistanceValue,experienceRegionId,searchRegionId:searchRegionId||null,regionMembership:body.regionMembership||'UNCERTAIN',category:categoryValue,radius:search.radius,initialRadius:search.initialRadius,nextRadius:search.nextRadius,minimumCandidates:search.minimumCandidates,expanded:search.expanded,coverageStatus:search.coverageStatus,providerCalls:search.providerCalls,diagnostics:search.diagnostics,distanceBands:search.distanceBands,total:results.length,resultStatus:results.length?'AVAILABLE':'EMPTY',results:results.slice(0,30) };
+      return localizeVisitorPayload({ searchedAt:new Date().toISOString(),timeZone:'Asia/Seoul',distanceTrusted:useDistanceValue,experienceRegionId,searchRegionId:searchRegionId||null,regionMembership:body.regionMembership||'UNCERTAIN',category:categoryValue,radius:search.radius,initialRadius:search.initialRadius,nextRadius:search.nextRadius,minimumCandidates:search.minimumCandidates,expanded:search.expanded,coverageStatus:search.coverageStatus,providerCalls:search.providerCalls,diagnostics:search.diagnostics,distanceBands:search.distanceBands,total:results.length,resultStatus:results.length?'AVAILABLE':'EMPTY',results:results.slice(0,30) },normalizeVisitorLocale(body.locale));
     } catch (error) { this.rethrow(error); }
   }
   @Post('restaurants') @UseGuards(PublicWriteRateLimitGuard) @PublicWriteLimit('NEARBY_LOOKUP')

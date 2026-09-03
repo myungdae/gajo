@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { RecommendationService } from './recommendation.service';
 import { RuntimeContextService } from '../context/runtime-context.service';
+import { localizeVisitorPayload, normalizeVisitorLocale } from '../i18n/visitor-locale';
 
 @Controller('api/recommendations')
 export class RecommendationController {
@@ -28,7 +29,7 @@ export class RecommendationController {
       firedRules = result.firedRules;
     }
     const recommendation = await this.recService.buildRecommendation(contextDoc);
-    return { context: contextDoc, evidence, firedRules, recommendation };
+    return localizeVisitorPayload({ context: contextDoc, evidence, firedRules, recommendation }, normalizeVisitorLocale(body.locale));
   }
 
   @Get(':recommendationNo')

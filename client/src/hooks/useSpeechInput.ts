@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { mergeCommittedSpeech, renderSpeechText } from "../utils/speechTranscript";
 import type { VoiceUxState } from "../voice/voiceUx";
 
-export function useSpeechInput(value: string, onValueChange: (value: string) => void, onFinalTranscript?: (value: string) => void) {
+export function useSpeechInput(value: string, onValueChange: (value: string) => void, onFinalTranscript?: (value: string) => void, locale: "ko" | "en" = "ko") {
   const [listening, setListening] = useState(false), [supported, setSupported] = useState(true), [error, setError] = useState("");
   const [voiceState,setVoiceStateValue]=useState<VoiceUxState>("IDLE");
   const voiceStateRef=useRef<VoiceUxState>("IDLE");
@@ -23,7 +23,7 @@ export function useSpeechInput(value: string, onValueChange: (value: string) => 
   const startInstance = (SpeechRecognition: any) => {
     if (!wantsListeningRef.current || document.hidden) return;
     const recognition = new SpeechRecognition(), finalIndexes = new Set<number>();
-    recognition.lang = "ko-KR";
+    recognition.lang = locale === "en" ? "en-US" : "ko-KR";
     recognition.interimResults = true;
     recognition.continuous = true;
     recognition.maxAlternatives = 1;
