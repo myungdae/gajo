@@ -78,10 +78,7 @@ export default function Layout() {
       <ConnectionStatus />
       {!webShell&&!hapcheonLanding&&<header className="app-header">
         <PublicBrand compact />
-        <div className="app-header__region">
-          <h1>{region.serviceName}</h1>
-          <div className="subtitle">{region.heroSubtitle}</div>
-        </div>
+        <div className="app-header__region"><h1>찾아오는 여행도우미</h1><div className="subtitle">{region.regionName} · Powered by EXKOVIA</div></div>
       </header>}
       <main className={`app-main${webShell?' app-main--web':''}${hapcheonLanding?' app-main--hapcheon-landing':''}`} ref={mainRef}>
         <Outlet />
