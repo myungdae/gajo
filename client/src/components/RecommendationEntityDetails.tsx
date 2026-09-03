@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { approximateDistance, estimatedTravelMinutes, getSessionLocation } from '../utils/visitorLocation';
 import { useRegion } from '../RegionContext';
 import type { RegionId } from '../regionConfig';
-import { regionalPath } from '../regionRouting';
+import { localizedRegionalPath as regionalPath } from '../visitorRouting';
 
 type EntityKind = 'program' | 'facility';
 

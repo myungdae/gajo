@@ -10,8 +10,7 @@ export class ConciergeController {
   @Post('chat')
   async chat(@Body() body: CreateContextInput) {
     const locale = normalizeVisitorLocale(body.locale);
-    const responseLocale = /[가-힣]/u.test(body.rawMessage || '') ? 'ko' : locale;
     const result = await this.service.chat({ ...body, locale });
-    return localizeVisitorPayload(result, responseLocale);
+    return localizeVisitorPayload(result, locale);
   }
 }

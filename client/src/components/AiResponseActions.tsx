@@ -5,7 +5,7 @@ import { buildAiResponseActionModel } from "../aiResponseActions";
 import { track } from "../analytics";
 import { addEntityToRegionalItinerary } from "../journeyExecution";
 import { useRegion } from "../RegionContext";
-import { regionalPath } from "../regionRouting";
+import { localizedRegionalPath as regionalPath } from '../visitorRouting';
 import { ensureTripSession } from "../tripSession";
 import EntityActions from "./EntityActions";
 import ItineraryAddContinuation from "./ItineraryAddContinuation";

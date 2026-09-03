@@ -23,6 +23,7 @@ import {
   operationalVerificationTasks,
 } from './operational-readiness';
 import { automaticBootstrapSeedEnabled } from '../bootstrap/startup-data-policy';
+import { validVisitorContent } from '../i18n/place-content';
 const SOURCE_TYPES = new Set([
   'OFFICIAL_LOCAL_GOV',
   'OFFICIAL_BUSINESS',
@@ -48,6 +49,7 @@ const ENTITY_TYPES = new Set([
 ]);
 const TRANSFER_FIELDS = [
   'displayName',
+  'visitorContent',
   'aliases',
   'entityType',
   'category',
@@ -773,6 +775,8 @@ export class RegionalDataService implements OnModuleInit {
         throw new BadRequestException('Malformed coordinates');
       if (this.containsExecutable(row))
         throw new BadRequestException('Executable content is not allowed');
+      if (row.visitorContent !== undefined && !validVisitorContent(row.visitorContent))
+        throw new BadRequestException('Invalid reviewed visitor content');
       if (
         trusted &&
         (row.verificationStatus !== 'VERIFIED' ||
@@ -934,8 +938,11 @@ export class RegionalDataService implements OnModuleInit {
       }));
   }
   private factFields(f: any) {
+    if (f.visitorContent !== undefined && !validVisitorContent(f.visitorContent))
+      throw new BadRequestException('Invalid reviewed visitor content');
     return {
       displayName: f.displayName,
+      visitorContent: f.visitorContent,
       aliases: Array.isArray(f.aliases) ? f.aliases : [],
       entityType: f.entityType,
       category: f.category,
@@ -1000,6 +1007,7 @@ export class RegionalDataService implements OnModuleInit {
       }),
       entityUri: row.canonicalEntityId,
       canonicalLabelKo: row.displayName,
+      visitorContent: row.visitorContent ?? base?.visitorContent,
       alternateLabels: row.aliases?.length
         ? row.aliases
         : base?.alternateLabels || [],

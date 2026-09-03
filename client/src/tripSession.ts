@@ -240,7 +240,7 @@ export function archiveAndStartNewTrip(
       `regional-concierge-trip-archive-v1:${regionId}:${current.anonymousTripId}`,
       JSON.stringify(privacySafe({ ...current, archivedAt: new Date().toISOString(), archiveReason: "EXPLICIT_NEW_TRIP" })),
     );
-  return saveTripSession(createTripSession(regionId), storage, { allowIdentityReplacement: true });
+  return saveTripSession({ ...createTripSession(regionId), language: current?.language }, storage, { allowIdentityReplacement: true });
 }
 export function hasTripEvidence(session: TripSession) {
   return Boolean(

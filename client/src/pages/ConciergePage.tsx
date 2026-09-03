@@ -42,7 +42,7 @@ import { REGION_INTEREST_OPTIONS } from "../regionConfig";
 import { track } from "../analytics";
 import { buildNowContinuation } from "../nowContinuation";
 import { useRegion } from "../RegionContext";
-import { regionalPath } from "../regionRouting";
+import { localizedRegionalPath as regionalPath } from '../visitorRouting';
 import { regionalRuntimeView } from "../regionalRuntime";
 import { SHARED_VISITOR_COPY } from "../visitorCopy";
 import InstallExperience from "../components/InstallExperience";

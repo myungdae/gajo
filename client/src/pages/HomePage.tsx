@@ -4,7 +4,7 @@ import { fetchRegionalHome, type NearbyCategory } from "../api/client";
 import { RegionalActionIcon, type RegionalHomeActionType } from "../components/RegionalActionIcon";
 import TripContinuity from "../components/TripContinuity";
 import { useRegion } from "../RegionContext";
-import { regionalPath } from "../regionRouting";
+import { localizedRegionalPath as regionalPath } from '../visitorRouting';
 import { ensureTripSession, loadTripSession } from "../tripSession";
 import { track } from "../analytics";
 import { buildProactiveGuidance } from "../proactiveGuidance";

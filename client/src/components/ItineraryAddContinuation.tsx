@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useRegion } from "../RegionContext";
-import { regionalPath } from "../regionRouting";
+import { localizedRegionalPath as regionalPath } from '../visitorRouting';
 import { recommendationItemLabel } from "../recommendationItem";
 import {
   verifiedNavigation,

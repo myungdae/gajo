@@ -1,7 +1,9 @@
+import { VISITOR_FLOW_COPY } from '../visitorFlowCopy';
 import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useRegion } from "../RegionContext";
-import { appSurface, regionalPath } from "../regionRouting";
+import { appSurface } from "../regionRouting";
+import { localizedRegionalPath as regionalPath } from '../visitorRouting';
 import ConnectionStatus from "./ConnectionStatus";
 import { listArchivedTripSessions, loadTripSession, tripRestorationDiagnostics } from "../tripSession";
 import { itineraryItemCount } from "../tripContinuity";
@@ -60,7 +62,7 @@ function NavIcon({ name }: { name: string }) {
 export default function Layout() {
   const region = useRegion();
   const {language,select,withLanguage}=useRegionalLanguage(),english=getRegionalHomeEnglish(region),navLabels=language==='en'?['Home','Nearby','My Trip','AI Travel Assistant']:navItems.map(x=>x.label);
-  const location=useLocation(),searchParams=new URLSearchParams(location.search),diagnosticMode=searchParams.get("trip-diagnostics")==="1",hapcheonLanding=location.pathname==='/hapcheon'&&searchParams.get('start')!=='ai'&&sessionStorage.getItem('hapcheon-landing-complete')!=='1',surface=appSurface(location.pathname,location.search,window.location.hostname),webShell=surface==='PLATFORM'||surface==='PUBLIC_PARTNER';
+  const location=useLocation(),searchParams=new URLSearchParams(location.search),diagnosticMode=searchParams.get("trip-diagnostics")==="1",hapcheonLanding=location.pathname==='/hapcheon'&&searchParams.get('start')!=='ai'&&sessionStorage.getItem('hapcheon-landing-complete')!=='1'&&searchParams.get('lang')!=='en',surface=appSurface(location.pathname,location.search,window.location.hostname),webShell=surface==='PLATFORM'||surface==='PUBLIC_PARTNER';
   const mainRef = useRef<HTMLElement>(null);
   const [tripCount, setTripCount] = useState(() =>
     diagnosticMode?0:itineraryItemCount(loadTripSession(localStorage, region.id)) + listArchivedTripSessions(region.id).length,
@@ -95,7 +97,7 @@ export default function Layout() {
             to={withLanguage(
               item.to === "/"
                 ? region.id === "gajo"
-                  ? "/"
+                  ? regionalPath("", region.id, true)
                   : region.id === "hapcheon"
                     ? "/hapcheon?start=ai"
                     : `/${region.id}`
@@ -108,7 +110,7 @@ export default function Layout() {
             <span className="nav-label">
               {navLabels[index]}
               {item.to === "/itinerary" && tripCount > 0 && (
-                <span className="my-trip-count" aria-label={`내 여행 ${tripCount}건`}>
+                <span className="my-trip-count" aria-label={VISITOR_FLOW_COPY.tripCount[language].replace('{count}',String(tripCount))}>
                   {tripCount}
                 </span>
               )}

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { RecommendationService } from './recommendation.service';
 import { RuntimeContextService } from '../context/runtime-context.service';
 import { localizeVisitorPayload, normalizeVisitorLocale } from '../i18n/visitor-locale';
@@ -33,12 +33,12 @@ export class RecommendationController {
   }
 
   @Get(':recommendationNo')
-  get(@Param('recommendationNo') recommendationNo: string) {
-    return this.recService.getRecommendation(recommendationNo);
+  async get(@Param('recommendationNo') recommendationNo: string, @Query('locale') locale?: string) {
+    return localizeVisitorPayload(await this.recService.getRecommendation(recommendationNo), normalizeVisitorLocale(locale));
   }
 
   @Get('itinerary/:itineraryNo')
-  getItinerary(@Param('itineraryNo') itineraryNo: string) {
-    return this.recService.getItinerary(itineraryNo);
+  async getItinerary(@Param('itineraryNo') itineraryNo: string, @Query('locale') locale?: string) {
+    return localizeVisitorPayload(await this.recService.getItinerary(itineraryNo), normalizeVisitorLocale(locale));
   }
 }

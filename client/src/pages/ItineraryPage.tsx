@@ -17,7 +17,9 @@ import MovementPlan from "../components/MovementPlan";
 import { ensureTripSession, saveTripSession } from "../tripSession";
 import { track } from "../analytics";
 import { useRegion } from "../RegionContext";
-import { regionalPath } from "../regionRouting";
+import { useRegionalLanguage } from '../RegionalLanguageContext';
+import { VISITOR_FLOW_COPY } from '../visitorFlowCopy';
+import { localizedRegionalPath as regionalPath } from '../visitorRouting';
 import { SHARED_VISITOR_COPY } from "../visitorCopy";
 import {
   liveRuntimeForRegion,
@@ -39,6 +41,7 @@ import ItineraryItemEditor from "../components/ItineraryItemEditor";
 import ArchivedTrips from "../components/ArchivedTrips";
 
 export default function ItineraryPage() {
+  const {language} = useRegionalLanguage();
   const region = useRegion();
   const [, setRevision] = useState(0);
   const tripSession = ensureTripSession(region.id);
@@ -471,7 +474,7 @@ export default function ItineraryPage() {
                     itinerarySteps.map(
                       (step: any) => Number(step.dayIndex) || 1,
                     ),
-                  ).size > 1) && <h3>{day}일차</h3>}
+                  ).size > 1) && <h3>{VISITOR_FLOW_COPY.dayNumber[language].replace('{day}',String(day))}</h3>}
                 {itinerarySteps
                   .filter((step: any) => (Number(step.dayIndex) || 1) === day)
                   .map((step: any, i: number) => (

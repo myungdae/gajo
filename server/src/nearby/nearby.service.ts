@@ -1,3 +1,4 @@
+import type { ReviewedPlaceContent } from '../i18n/place-content';
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MasterDataService } from '../master-data/master-data.service';
@@ -32,7 +33,7 @@ export class NearbyServiceError extends Error {
   constructor(public readonly code: NearbyFailureCode, message: string, public readonly upstreamStatus?: number) { super(message); }
 }
 
-export interface NearbyPlace {
+export interface NearbyPlace { visitorContent?:ReviewedPlaceContent;
   id: string;
   provider: 'KAKAO'|'REGIONAL_DATA';
   providerPlaceId: string;
@@ -264,7 +265,7 @@ export class NearbyService {
   }
 
   // eslint-disable-next-line prettier/prettier
-  async representativeAnchors(regionId:string):Promise<NearbyPlace[]>{const region=(this.regions||new RegionConfigService()).get(regionId),dataset=await this.regionalData?.effectiveDataset(regionId);return(dataset?.records||[]).filter(record=>record.runtimeDataStatus==='VERIFIED'&&record.entityType==='ATTRACTION'&&record.representativeAnchor!==false&&Number.isFinite(record.latitude)&&Number.isFinite(record.longitude)&&this.insideRegion(record.latitude!,record.longitude!,region?.bounds)).slice(0,8).map(record=>({id:`canonical:${record.entityUri}`,provider:'REGIONAL_DATA' as const,providerPlaceId:record.entityUri,name:record.canonicalLabelKo,category:'TOURIST_ATTRACTION',categoryLabel:'관광지',providerCategoryName:record.category,address:record.address||'',roadAddress:record.address,phone:record.telephone,lat:record.latitude!,lng:record.longitude!,placeUrl:record.website||'',indoorRelevance:'UNKNOWN',operatingState:'UNKNOWN',operatingMessage:'현재 운영 여부 확인 필요',contextualReasons:['검증된 지역 대표 장소입니다.'],canonicalEntityUri:record.entityUri,canonicalLabel:record.canonicalLabelKo,masterVerificationStatus:record.runtimeDataStatus,transient:false,relevanceScore:5,administrativeRegion:region.regionName}))}
+  async representativeAnchors(regionId:string):Promise<NearbyPlace[]>{const region=(this.regions||new RegionConfigService()).get(regionId),dataset=await this.regionalData?.effectiveDataset(regionId);return(dataset?.records||[]).filter(record=>record.runtimeDataStatus==='VERIFIED'&&record.entityType==='ATTRACTION'&&record.representativeAnchor!==false&&Number.isFinite(record.latitude)&&Number.isFinite(record.longitude)&&this.insideRegion(record.latitude!,record.longitude!,region?.bounds)).slice(0,8).map(record=>({id:`canonical:${record.entityUri}`,provider:'REGIONAL_DATA' as const,providerPlaceId:record.entityUri,name:record.canonicalLabelKo,visitorContent:record.visitorContent,category:'TOURIST_ATTRACTION',categoryLabel:'관광지',providerCategoryName:record.category,address:record.address||'',roadAddress:record.address,phone:record.telephone,lat:record.latitude!,lng:record.longitude!,placeUrl:record.website||'',indoorRelevance:'UNKNOWN',operatingState:'UNKNOWN',operatingMessage:'현재 운영 여부 확인 필요',contextualReasons:['검증된 지역 대표 장소입니다.'],canonicalEntityUri:record.entityUri,canonicalLabel:record.canonicalLabelKo,masterVerificationStatus:record.runtimeDataStatus,transient:false,relevanceScore:5,administrativeRegion:region.regionName}))}
 
   private normalizeSearchText(value:string){return value.replace(/\s/g,'').toLowerCase()}
   // eslint-disable-next-line prettier/prettier
@@ -309,7 +310,7 @@ export class NearbyService {
         continue;
       }
       byId.set(`canonical:${record.entityUri}`, {
-        id: `canonical:${record.entityUri}`, provider:'REGIONAL_DATA',providerPlaceId:record.entityUri,name: record.canonicalLabelKo, category, categoryLabel: LABELS[category],
+        id: `canonical:${record.entityUri}`, provider:'REGIONAL_DATA',providerPlaceId:record.entityUri,name: record.canonicalLabelKo,visitorContent:record.visitorContent, category, categoryLabel: LABELS[category],
         providerCategoryName: record.category, address: record.address || '', roadAddress: record.address,
         phone: record.telephone, lat: record.latitude!, lng: record.longitude!, distanceMeters,
         placeUrl: record.website || '', indoorRelevance: INDOOR.has(category) ? 'INDOOR' : 'UNKNOWN',

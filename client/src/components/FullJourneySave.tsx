@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useRegion } from "../RegionContext";
 import { track } from "../analytics";
-import { regionalPath } from "../regionRouting";
+import { localizedRegionalPath as regionalPath } from '../visitorRouting';
 import { saveFullJourney, type FullJourneySaveResult } from "../fullJourney";
 export default function FullJourneySave({
   itinerary,

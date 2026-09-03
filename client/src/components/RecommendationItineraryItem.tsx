@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import EntityActions from "./EntityActions";
 import { useRegion } from "../RegionContext";
-import { regionalPath } from "../regionRouting";
+import { localizedRegionalPath as regionalPath } from '../visitorRouting';
 import {
   canonicalEntityId,
   isInteractiveRecommendationItem,

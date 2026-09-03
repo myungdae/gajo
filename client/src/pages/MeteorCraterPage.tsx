@@ -1,2 +1,21 @@
-import{useNavigate}from'react-router-dom';import{useRegion}from'../RegionContext';import{regionalPath}from'../regionRouting';
-export default function MeteorCraterPage(){const region=useRegion(),navigate=useNavigate(),go=(message:string)=>navigate(regionalPath('/concierge?mode=now',region.id),{state:{tripMode:'NOW',freeTextOpen:true,initialMessage:message,autoSubmit:true}});return <article className="regional-home"><section className="spotlight-card"><div><small>합천운석충돌구 이야기</small><h1>5만 년 전 운석 충돌이 만든 거대한 분지</h1><p>한국지질자원연구원은 적중-초계분지의 시추 코어에서 충격 변형 증거를 확인해 약 5만 년 전 운석 충돌로 만들어진 한반도 최초의 운석충돌구임을 밝혔습니다.</p></div></section>{[['왜 특별한가요?','지금까지 확인된 한반도 유일 운석 충돌지형입니다.'],['어떻게 만들어졌나요?','운석 충돌의 강한 압력으로 암석과 광물이 변형됐고, 그 흔적이 시추 코어에서 확인됐습니다.'],['어디서 보면 좋은가요?','대암산 전망 지점에서 적중-초계분지의 넓은 형태를 내려다볼 수 있습니다.'],['지금 갈 수 있나요?','운영시간과 탐방로 현장 상태를 현재 확인하지 못했습니다. 출발 전 합천군 공식 안내로 확인해 주세요.'],['어떻게 둘러볼까요?','관광안내소에서 배경을 이해한 뒤 전망대나 환종주 탐방로 중 체력에 맞는 곳을 선택하세요.']].map(([h,p])=><section className="card" key={h}><h2>{h}</h2><p>{p}</p></section>)}<div className="spotlight-actions"><button onClick={()=>go('합천운석충돌구 관광안내소를 보여주세요.')}>관광안내소 보기</button><button onClick={()=>go('대암산 전망대 길찾기를 도와주세요.')}>대암산 전망대 길찾기</button><button onClick={()=>go('합천운석충돌구 환종주 탐방로를 보여주세요.')}>환종주 탐방로 보기</button><button onClick={()=>go('합천운석충돌구를 일정에 담아 주세요.')}>일정에 담기</button></div></article>}
+import { useNavigate } from 'react-router-dom';
+import { useRegion } from '../RegionContext';
+import { useRegionalLanguage } from '../RegionalLanguageContext';
+import { localizedRegionalPath } from '../visitorRouting';
+import { MANAGED_VISITOR_COPY as copy } from '../managedVisitorCopy';
+export default function MeteorCraterPage() {
+  const region = useRegion(), navigate = useNavigate(), { language } = useRegionalLanguage();
+  const text = (key: keyof typeof copy) => copy[key][language];
+  const go = (message: string) => navigate(localizedRegionalPath('/concierge?mode=now', region.id), { state: { tripMode: 'NOW', freeTextOpen: true, initialMessage: message, autoSubmit: true } });
+  const sections = [['craterSpecial', 'craterUnique'], ['craterFormation', 'craterHow'], ['craterView', 'craterWhere'], ['craterOpen', 'craterStatus'], ['craterTour', 'craterRoute']] as const;
+  return <article className="regional-home">
+    <section className="spotlight-card"><div><small>{text('craterStory')}</small><h1>{text('craterTitle')}</h1><p>{text('craterLead')}</p></div></section>
+    {sections.map(([heading, body]) => <section className="card" key={heading}><h2>{text(heading)}</h2><p>{text(body)}</p></section>)}
+    <div className="spotlight-actions">
+      <button onClick={() => go('합천운석충돌구 관광안내소를 보여주세요.')}>{text('visitorCenter')}</button>
+      <button onClick={() => go('대암산 전망대 길찾기를 도와주세요.')}>{text('observatoryDirections')}</button>
+      <button onClick={() => go('합천운석충돌구 환종주 탐방로를 보여주세요.')}>{text('trail')}</button>
+      <button onClick={() => go('합천운석충돌구를 일정에 담아 주세요.')}>{text('addItinerary')}</button>
+    </div>
+  </article>;
+}

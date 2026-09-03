@@ -2,6 +2,6 @@ import type { RegionalLanguage } from "./RegionalLanguageContext";
 export const VISITOR_COPY={common:{confirm:{ko:"확인",en:"Confirm"},cancel:{ko:"취소",en:"Cancel"},close:{ko:"닫기",en:"Close"},retry:{ko:"다시 시도",en:"Try Again"},loading:{ko:"불러오는 중",en:"Loading"}},navigation:{home:{ko:"홈",en:"Home"},nearby:{ko:"주변 찾기",en:"Nearby"},trip:{ko:"내 여행",en:"My Trip"},assistant:{ko:"AI 여행도우미",en:"AI Travel Assistant"}},landing:{english:{ko:"English",en:"English"},englishLabel:{ko:"영어로 여행 시작하기",en:"Continue in English"}}}as const;
 type Leaf={readonly ko:string;readonly en:string};
 export function visitorText(value:Leaf,locale:RegionalLanguage){return value[locale]}
-export function normalizeLocale(value:unknown):RegionalLanguage{return value==="en"?"en":"ko"}
-export function localePath(path:string,locale:RegionalLanguage){if(locale==="ko")return path;const[base,hash]=path.split("#"),[pathname,query]=base.split("?"),params=new URLSearchParams(query||"");params.set("lang","en");return `${pathname}?${params}${hash?`#${hash}`:""}`}
 export function assertCompleteVisitorDictionary(value:unknown,path="visitor"):number{if(!value||typeof value!=="object")throw new Error(`${path} is not a translation object`);if("ko"in value||"en"in value){const leaf=value as Partial<Leaf>;if(typeof leaf.ko!=="string"||!leaf.ko||typeof leaf.en!=="string"||!leaf.en)throw new Error(`${path} requires ko and en`);return 1}return Object.entries(value).reduce((count,[key,child])=>count+assertCompleteVisitorDictionary(child,`${path}.${key}`),0)}
+
+export { normalizeLocale, localePath } from './visitorLocaleContract.ts';

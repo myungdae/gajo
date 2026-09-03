@@ -291,6 +291,7 @@ export class PlaceDiscoveryService {
             order: index + 1,
             programUri: record.entityUri,
             programLabel: record.canonicalLabelKo,
+            visitorContent: record.visitorContent,
             facilityUri: record.entityUri,
             facilityLabel: record.canonicalLabelKo,
             entityType: record.entityType,

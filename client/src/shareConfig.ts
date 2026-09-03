@@ -1,8 +1,10 @@
 import { getRegionShareConfig, type RegionConfig, type ShareKind } from './regionConfig.ts';
+import { localePath, type VisitorLocale } from './visitorLocaleContract.ts';
 
 export function companionSharePayload(
   region: RegionConfig,
   kind: ShareKind = 'REGIONAL_ENTRY',
+  locale: VisitorLocale = 'ko',
 ) {
   if (kind !== 'REGIONAL_ENTRY') {
     throw new Error('TRIP_INVITE requires an opaque, expiring invite token');
@@ -10,7 +12,7 @@ export function companionSharePayload(
   const share = getRegionShareConfig(region);
   return {
     kind,
-    url: share.url,
+    url: locale === 'en' ? localePath(`${share.url}?start=ai`, locale) : share.url,
     title: share.title,
     description: share.description,
     buttonLabel: share.buttonLabel,

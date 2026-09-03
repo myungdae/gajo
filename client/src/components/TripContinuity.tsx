@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useRegion } from "../RegionContext";
 import { fetchAnonymousTrip, syncAnonymousTrip } from "../api/client";
 import { track } from "../analytics";
-import { regionalPath } from "../regionRouting";
+import { localizedRegionalPath as regionalPath } from '../visitorRouting';
 import {
   archiveAndStartNewTrip,
   loadTripSession,

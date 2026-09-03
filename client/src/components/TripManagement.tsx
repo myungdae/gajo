@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useRegion } from "../RegionContext";
 import { track } from "../analytics";
 import { clearRegionalSavedPlaces, savedPlaceItems } from "../journeyExecution";
-import { regionalPath } from "../regionRouting";
+import { localizedRegionalPath as regionalPath } from '../visitorRouting';
 import { archiveAndStartNewTrip, ensureTripSession } from "../tripSession";
 
 export default function TripManagement({ onSavedPlacesCleared }: { onSavedPlacesCleared?: (places: any[]) => void }) {

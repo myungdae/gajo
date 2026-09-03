@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
+import type { ReviewedPlaceContent } from '../i18n/place-content';
 export type LifecycleStatus =
   | 'NEW_CANDIDATE'
   | 'NEEDS_VERIFICATION'
@@ -16,6 +17,7 @@ export class RegionalDataRecord {
   @Prop({ required: true, index: true }) canonicalEntityId: string;
   @Prop({ required: true, index: true }) regionId: string;
   @Prop({ required: true }) displayName: string;
+  @Prop({ type: Object }) visitorContent?: ReviewedPlaceContent;
   @Prop({ type: [String], default: [] }) aliases: string[];
   @Prop() entityType?: string;
   @Prop() category?: string;

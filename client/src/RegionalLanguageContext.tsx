@@ -1,1 +1,36 @@
-import{createContext,useContext,useEffect,useMemo,useState,type ReactNode}from'react';import{useLocation,useNavigate}from'react-router-dom';import{useRegion}from'./RegionContext';import{loadTripSession,setTripLanguage}from'./tripSession';import{localePath,normalizeLocale}from'./visitorI18n';export type RegionalLanguage='ko'|'en';const DEVICE_KEY='regional-home-language-v1',Context=createContext<any>(undefined);const valid=(x:string|null|undefined):x is RegionalLanguage=>x==='ko'||x==='en';export function RegionalLanguageProvider({children}:{children:ReactNode}){const location=useLocation(),navigate=useNavigate(),region=useRegion(),rawUrl=new URLSearchParams(location.search).get('lang'),url=rawUrl===null?null:normalizeLocale(rawUrl),stored=()=>{try{const trip=loadTripSession(localStorage,region.id)?.language,saved=localStorage.getItem(DEVICE_KEY);return valid(trip)?trip:valid(saved)?saved:'ko'}catch{return'ko' as const}},[language,setLanguageState]=useState<RegionalLanguage>(url||stored());useEffect(()=>{if(url&&url!==language)setLanguageState(url)},[url]);useEffect(()=>{if(rawUrl&&rawUrl!==url){const params=new URLSearchParams(location.search);params.delete('lang');navigate(`${location.pathname}${params.size?`?${params}`:''}${location.hash}`,{replace:true})}},[rawUrl,url,location.pathname,location.search,location.hash]);useEffect(()=>{document.documentElement.lang=language;try{localStorage.setItem(DEVICE_KEY,language);setTripLanguage(region.id,language)}catch{}},[language,region.id]);useEffect(()=>{if(language==='en'&&!new URLSearchParams(location.search).has('lang'))navigate(localePath(`${location.pathname}${location.search}${location.hash}`,language),{replace:true})},[language,location.pathname,location.search,location.hash]);const withLanguage=(path:string)=>localePath(path,language),select=(next:RegionalLanguage)=>{setLanguageState(next);const params=new URLSearchParams(location.search);if(next==='en')params.set('lang','en');else params.delete('lang');navigate(`${location.pathname}${params.size?`?${params}`:''}${location.hash}`,{replace:true})};const value=useMemo(()=>({language,select,withLanguage}),[language,location.pathname,location.search]);return <Context.Provider value={value}>{children}</Context.Provider>}export function useRegionalLanguage(){return useContext(Context)as{language:RegionalLanguage;select:(x:RegionalLanguage)=>void;withLanguage:(x:string)=>string}}
+import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useRegion } from './RegionContext';
+import { loadTripSession, setTripLanguage } from './tripSession';
+import { localePath, resolveVisitorLocale, type VisitorLocale } from './visitorLocaleContract';
+export type RegionalLanguage = VisitorLocale;
+const DEVICE_KEY = 'regional-home-language-v1';
+type LanguageContext = { language: RegionalLanguage; select: (locale: RegionalLanguage) => void; withLanguage: (path: string) => string };
+const Context = createContext<LanguageContext | undefined>(undefined);
+export function RegionalLanguageProvider({ children }: { children: ReactNode }) {
+  const location = useLocation(), navigate = useNavigate(), region = useRegion();
+  let saved: unknown;
+  try { saved = loadTripSession(localStorage, region.id)?.language ?? localStorage.getItem(DEVICE_KEY); } catch { /* Storage is optional. */ }
+  const language = resolveVisitorLocale(location.search, saved);
+  useEffect(() => {
+    document.documentElement.lang = language;
+    try { localStorage.setItem(DEVICE_KEY, language); setTripLanguage(region.id, language); } catch { /* URL remains authoritative. */ }
+    const path = `${location.pathname}${location.search}${location.hash}`;
+    const normalized = localePath(path, language);
+    if (path !== normalized) navigate(normalized, { replace: true });
+  }, [language, region.id, location.pathname, location.search, location.hash, navigate]);
+  const value = useMemo<LanguageContext>(() => ({
+    language, withLanguage: (path) => localePath(path, language),
+    select: (next) => {
+      try { localStorage.setItem(DEVICE_KEY, next); setTripLanguage(region.id, next); } catch { /* Storage is optional. */ }
+      const params = new URLSearchParams(location.search); params.set('lang', next);
+      navigate(`${location.pathname}?${params}${location.hash}`, { replace: true });
+    },
+  }), [language, region.id, location.pathname, location.search, location.hash, navigate]);
+  return <Context.Provider value={value}>{children}</Context.Provider>;
+}
+export function useRegionalLanguage(): LanguageContext {
+  const context = useContext(Context);
+  if (!context) throw new Error('RegionalLanguageProvider is required');
+  return context;
+}

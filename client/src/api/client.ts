@@ -1,4 +1,6 @@
 import axios from "axios";
+import { currentVisitorLocale } from '../visitorRouting';
+import { visitorLocaleRequest } from './visitorLocaleRequest';
 
 // In dev, Vite proxies /api -> http://localhost:3000 (see vite.config.ts).
 // In production (Docker/nginx), nginx proxies /api/ -> the api container.
@@ -6,7 +8,7 @@ export const api = axios.create({
   baseURL: "/api",
   headers: { "Content-Type": "application/json" },
 });
-api.interceptors.request.use((config)=>{let locale:"ko"|"en"="ko";try{locale=localStorage.getItem("regional-home-language-v1")==="en"?"en":"ko"}catch{}config.params={...(config.params||{}),locale};if(config.data&&typeof config.data==="object"&&!Array.isArray(config.data)&&!(config.data instanceof FormData))config.data={...config.data,locale};return config});
+api.interceptors.request.use((config)=>visitorLocaleRequest(config,currentVisitorLocale()));
 
 export interface CompanionInput {
   age?: number;
@@ -519,6 +521,12 @@ export type NearbyCategory =
   | "ATM"
   | "OTHER";
 export interface NearbyPlace {
+  visitorContent?: {
+    officialEnglishName?: string;
+    reviewedEnglishName?: string;
+    en?: Partial<Record<'category' | 'description' | 'signatureMenu' | 'priceRange' | 'hours' | 'payment' | 'parking' | 'reservation', string>>;
+    ko?: Partial<Record<'category' | 'description' | 'signatureMenu' | 'priceRange' | 'hours' | 'payment' | 'parking' | 'reservation', string>>;
+  };
   id: string;
   provider: "KAKAO" | "REGIONAL_DATA";
   providerPlaceId: string;
