@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
-const activityChecks=process.argv.includes('--activity');
-const output=new URL(activityChecks?'../../docs/evidence/receipt-46-listening/':'../../docs/evidence/receipt-46/',import.meta.url);
+const activityChecks=true;
+const output=new URL('../../docs/evidence/receipt-46-dialog/',import.meta.url);
 await mkdir(output,{recursive:true});
 const browser=await fetch('http://127.0.0.1:9226/json/version').then(r=>r.json());
 const socket=new WebSocket(browser.webSocketDebuggerUrl);
@@ -59,9 +59,15 @@ window.webkitSpeechRecognition=undefined;
 window.__external=[];window.open=(url)=>{window.__external.push(String(url));return null;};
 `});
 async function navigate(path){await call('Page.navigate',{url:'http://127.0.0.1:5176'+path});await until("Boolean(document.querySelector('.concierge-conversation'))");}
-async function openVoice(){await evaluate("if(document.querySelector('.now-secondary-actions'))document.querySelector('.now-secondary-actions button').click();else{if(!document.querySelector('.voice-mode-actions'))document.querySelector('.natural-language-entry button').click();}");await sleep(80);await evaluate("document.querySelector('.voice-mode-actions button').click()");await until("Boolean(document.querySelector('.voice-input-panel'))");}
+async function openVoice(){
+ if(await evaluate("Boolean(document.querySelector('dialog[open]'))"))return;
+ await evaluate("if(document.querySelector('.now-secondary-actions'))document.querySelector('.now-secondary-actions button').click();else if(document.querySelector('.voice-mode-actions'))document.querySelector('.voice-mode-actions button').click();else document.querySelector('.natural-language-entry button').click()");
+ await sleep(80);
+ if(!await evaluate("Boolean(document.querySelector('dialog[open]'))"))await evaluate("document.querySelector('.voice-mode-actions button').click()");
+ await until("Boolean(document.querySelector('dialog[open]'))");
+}
 async function click(selector){await until(`Boolean(document.querySelector(${JSON.stringify(selector)}))`);await evaluate(`document.querySelector(${JSON.stringify(selector)}).focus();document.querySelector(${JSON.stringify(selector)}).click()`);await sleep(80);}
-async function speech(text){await click('.speech-session-button');await evaluate(`window.__speech.instances.at(-1).emit(${JSON.stringify(text)});window.__speech.instances.at(-1).finish()`);await until("Boolean(document.querySelector('#voice-transcript'))");}
+async function speech(text){if(!await evaluate("document.querySelector('.voice-activity')?.dataset.phase==='listening'"))await click('.speech-session-button');await evaluate(`window.__speech.instances.at(-1).emit(${JSON.stringify(text)});window.__speech.instances.at(-1).finish()`);await until("Boolean(document.querySelector('#voice-transcript'))");}
 await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
 await navigate('/hapcheon/concierge?mode=now&lang=en');
 await openVoice();
@@ -119,7 +125,6 @@ report.push({test:'voice → review/edit → single send → recommendation → 
 // Error, permission, cancellation and restart behavior in the real component.
 await openVoice();
 const baseline=chatCount();
-await click('.speech-session-button');
 await evaluate("document.querySelector('.voice-input-panel').scrollIntoView({block:'center'})");await sleep(200);
 await writeFile(new URL('listening-en.png',output),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
 await evaluate("window.__speech.instances.at(-1).fail('not-allowed')");
@@ -142,12 +147,12 @@ assert.equal(await evaluate("document.querySelector('.voice-confirm-actions .btn
 await edit('#voice-transcript','cancel this');
 await click('.voice-confirm-cancel');
 assert.equal(chatCount(),baseline);
-await openVoice();await click('.speech-session-button');
+await openVoice();
 await evaluate("window.__lateEnd=window.__speech.instances.at(-1).onend;window.__speech.instances.at(-1).emit('late canceled request')");
 await call('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
 await evaluate('window.__lateEnd()');assert.equal(chatCount(),baseline);
 assert.equal(await evaluate("Boolean(document.querySelector('#voice-transcript'))"),false);
-await openVoice();await click('.speech-session-button');
+await openVoice();
 await evaluate("window.__lateEnd=window.__speech.instances.at(-1).onend;window.__speech.instances.at(-1).emit('leave now');document.querySelector('.bottom-nav a').click()");
 await until("!document.querySelector('.concierge-conversation')");
 await evaluate('window.__lateEnd()');assert.equal(chatCount(),baseline);
@@ -155,7 +160,7 @@ report.push({test:'permission denial, empty speech, error, speak again, editing,
 
 await evaluate("localStorage.clear();sessionStorage.clear()");
 await navigate('/hapcheon/concierge?mode=now');
-await openVoice();await click('.speech-session-button');
+await openVoice();
 await evaluate("window.__lateEnd=window.__speech.instances.at(-1).onend;window.__speech.instances.at(-1).emit('언어 변경 중');[...document.querySelectorAll('.language-switch button')].find(b=>b.textContent==='English').click()");
 await until("document.documentElement.lang==='en'");
 await evaluate('window.__lateEnd()');
@@ -171,7 +176,7 @@ for(const region of ['gajo','okcheon','muan','gyeryong','hapcheon','daejeon-jung
    await evaluate("localStorage.clear();sessionStorage.clear()");
    await navigate('/'+region+'/concierge?mode='+mode+(locale==='en'?'&lang=en':''));
    await openVoice();
-   assert.equal(await evaluate('window.__speech.starts'),0,'no microphone before click');
+   assert.equal(await evaluate('window.__speech.starts'),1,'one gesture starts recognition');
    await speech(locale==='en'?'한국어로 말한 질문':'Find a quiet place');
    assert.equal(await evaluate('window.__speech.instances.at(-1).lang'),locale==='en'?'en-US':'ko-KR');
    const before=chatCount();
@@ -189,57 +194,55 @@ for(const region of ['gajo','okcheon','muan','gyeryong','hapcheon','daejeon-jung
 for(const locale of ['ko','en']){
  await evaluate("localStorage.clear();sessionStorage.clear()");
  await navigate('/hapcheon/concierge?mode=now&unsupported=1'+(locale==='en'?'&lang=en':''));
- await openVoice();await click('.speech-session-button');
+ await openVoice();
  assert.ok(await evaluate("Boolean(document.querySelector('.voice-error'))"));
- await click('.voice-mode-actions button:last-child');
+ await click('.voice-dialog-actions .btn-outline:not(.voice-cancel)');
  assert.ok(await evaluate("Boolean(document.querySelector('.concierge-unified-composer > textarea'))"));
  report.push({test:'unsupported browser → text input',locale,passed:true});
 }
-// Responsive checks include 200% equivalent CSS viewport (390×844 → 195×422).
+// All three phases share one fixed window; no document growth.
 for(const locale of ['ko','en']){
- for(const [width,height] of [[360,800],[390,700],[390,844],[844,390],[195,422]]){
+ for(const [width,height] of [[360,800],[390,700],[390,844],[844,390],[195,422],[1200,900]]){
   await evaluate("localStorage.clear();sessionStorage.clear()");
   await call('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<500});
   await navigate('/hapcheon/concierge?mode=now'+(locale==='en'?'&lang=en':''));
-  if(activityChecks){
-    await openVoice();
-    const readActivity=()=>evaluate("(()=>{const a=document.querySelector('.voice-activity'),s=a.querySelector('.voice-activity-symbol');return{phase:a.dataset.phase,text:a.textContent,live:a.getAttribute('aria-live'),atomic:a.getAttribute('aria-atomic'),animation:getComputedStyle(s,'::after').animationName,shape:getComputedStyle(a).borderRadius,color:getComputedStyle(a).backgroundColor,overflow:document.documentElement.scrollWidth>innerWidth||document.querySelector('.voice-input-panel').scrollWidth>document.querySelector('.voice-input-panel').clientWidth}})()");
-    const waiting=await readActivity();
-    assert.equal(waiting.phase,'waiting');assert.equal(waiting.animation,'none');
-    await click('.speech-session-button');
-    await until("document.querySelector('.voice-activity').dataset.phase==='listening'");
-    const listening=await readActivity();
-    assert.equal(listening.text,locale==='en'?'Listening. Please speak.':'듣고 있어요. 말씀해 주세요.');
-    assert.equal(listening.animation,'voice-listening-pulse');assert.equal(listening.live,'polite');assert.equal(listening.atomic,'true');
-    assert.notEqual(listening.shape,waiting.shape);assert.notEqual(listening.color,waiting.color);assert.equal(listening.overflow,false);
-    assert.equal(await evaluate("document.querySelector('.speech-session-button').getAttribute('aria-label')"),locale==='en'?'Stop Listening':'듣기 중지');
-    await evaluate("document.querySelector('.voice-activity').scrollIntoView({block:'start'})");await sleep(100);
-    await writeFile(new URL('active-'+locale+'-'+width+'x'+height+'.png',output),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
-    await call('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
-    const reduced=await readActivity();assert.equal(reduced.animation,'none');assert.equal(reduced.text,listening.text);
-    await call('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'no-preference'}]});
-    await evaluate("window.__speech.instances.at(-1).emit('안녕하세요 지금 테스트 중입니다')");
-    await click('.speech-session-button');
-    await until("document.querySelector('.voice-activity').dataset.phase==='complete'");
-    const complete=await readActivity();assert.equal(complete.animation,'none');assert.notEqual(complete.shape,listening.shape);assert.notEqual(complete.color,listening.color);assert.equal(complete.overflow,false);
-    assert.equal(await evaluate("document.querySelector('#voice-transcript').value"),'안녕하세요 지금 테스트 중입니다');
-    report.push({test:'listening pulse, stop to review, distinct phases, reduced motion and live announcements',locale,width,height,waiting,listening,complete,passed:true});
-    await click('.voice-confirm-cancel');
-  }  await openVoice();await speech(locale==='en'?'Find a quiet place with room for my family and somewhere nearby to eat after our visit.':'가족과 함께 조용히 쉴 수 있고 방문한 다음에 가까운 곳에서 식사할 수 있는 장소를 추천해 주세요.');
-  await evaluate("document.querySelector('.voice-confirm-actions').scrollIntoView({block:'center'})");
-  const layout=await evaluate(`(()=>{
-    const nav=document.querySelector('.bottom-nav').getBoundingClientRect(),main=document.querySelector('.app-main').getBoundingClientRect();
-    const panel=document.querySelector('.voice-input-panel');
-    return{overflow:document.documentElement.scrollWidth>innerWidth||panel.scrollWidth>panel.clientWidth,
-      overlap:main.bottom>nav.top+1,
-      targets:[...panel.querySelectorAll('button')].filter(b=>b.getClientRects().length).map(b=>({text:b.textContent.trim(),height:b.getBoundingClientRect().height})),
-      focusedLabel:document.activeElement?.id};
-  })()`);
-  assert.equal(layout.overflow,false,JSON.stringify({width,height,layout}));
-  assert.equal(layout.overlap,false,JSON.stringify({width,height,layout}));
-  assert.ok(layout.targets.every(b=>b.height>=44));
+  await sleep(250);
+  const before=await evaluate("({body:document.documentElement.scrollHeight,main:document.querySelector('.app-main').scrollHeight,scroll:document.querySelector('.app-main').scrollTop})");
+  await openVoice();
+  assert.equal(await evaluate('window.__speech.starts'),1);
+  const layout=()=>evaluate("(()=>{const d=document.querySelector('dialog[open]'),r=d.getBoundingClientRect(),n=document.querySelector('.bottom-nav')?.getBoundingClientRect(),v=visualViewport;return{dialogs:document.querySelectorAll('dialog[open]').length,cancels:[...d.querySelectorAll('button')].filter(b=>b.textContent.trim()==='Cancel'||b.textContent.trim()==='취소').length,overflow:d.scrollWidth>d.clientWidth,top:r.top,bottom:r.bottom,navTop:n?.top??innerHeight,viewportBottom:v.offsetTop+v.height,body:document.documentElement.scrollHeight,main:document.querySelector('.app-main').scrollHeight,scroll:document.querySelector('.app-main').scrollTop,targets:[...d.querySelectorAll('button')].map(b=>b.getBoundingClientRect().height),phase:d.querySelector('.voice-activity').dataset.phase,animation:getComputedStyle(d.querySelector('.voice-activity-symbol'),'::after').animationName}})()");
+  const check=async()=>{
+    const l=await layout();
+    assert.equal(l.dialogs,1);assert.equal(l.cancels,1);assert.equal(l.overflow,false);
+    assert.ok(l.bottom<=Math.min(l.navTop,l.viewportBottom)+1);assert.ok(l.top>=-1);
+    assert.equal(l.body,before.body);assert.equal(l.main,before.main);assert.equal(l.scroll,before.scroll);
+    assert.ok(l.targets.every(h=>h>=44));
+    return l;
+  };
+  const listening=await check();assert.equal(listening.animation,'voice-listening-pulse');
+  await writeFile(new URL('listening-'+locale+'-'+width+'x'+height+'.png',output),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
+  await call('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
+  assert.equal((await check()).animation,'none');
+  await call('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'no-preference'}]});
+  await evaluate("const e=window.__speech.instances.at(-1),r=()=>Object.assign([{transcript:'안녕하세요 지금 테스트 중입니다'}],{isFinal:true});e.onresult({results:[r(),r(),r()]})");
+  await click('.speech-session-button');
+  await until("Boolean(document.querySelector('#voice-transcript'))");
+  assert.equal(await evaluate("document.querySelector('#voice-transcript').value"),'안녕하세요 지금 테스트 중입니다');
+  const review=await check();assert.equal(review.animation,'none');
   await writeFile(new URL('review-'+locale+'-'+width+'x'+height+'.png',output),Buffer.from((await call('Page.captureScreenshot',{format:'png'})).data,'base64'));
-  report.push({test:'responsive review',locale,width,height,...layout,passed:true});
+  // Simulate an iOS visual viewport reduced by the keyboard while layout height stays unchanged.
+  await evaluate("window.__originalViewport=Object.getOwnPropertyDescriptor(window,'visualViewport');window.__realViewport=visualViewport;window.__keyboardViewport=Object.assign(new EventTarget(),{width:innerWidth,height:Math.min(360,innerHeight-100),offsetTop:0,offsetLeft:0});Object.defineProperty(window,'visualViewport',{configurable:true,value:window.__keyboardViewport});window.dispatchEvent(new Event('resize'))");
+  await sleep(50);
+  const keyboard=await layout();
+  assert.ok(keyboard.bottom<=keyboard.viewportBottom+1);assert.ok(keyboard.top>=-1);assert.equal(keyboard.overflow,false);assert.equal(keyboard.cancels,1);
+  await evaluate("if(window.__originalViewport)Object.defineProperty(window,'visualViewport',window.__originalViewport);else delete window.visualViewport;window.dispatchEvent(new Event('resize'))");
+  await edit('#voice-transcript',locale==='en'?'A quiet place for my family':'가족과 함께 조용히 쉴 곳을 찾아주세요');
+  await click('.voice-confirm-actions .btn-outline:not(.voice-cancel)');
+  await until("document.querySelector('.voice-activity').dataset.phase==='listening'");
+  assert.equal((await check()).cancels,1);
+  await click('.voice-cancel');
+  assert.equal(await evaluate("document.querySelectorAll('dialog[open]').length"),0);
+  report.push({test:'one gesture, compact listening/review/restart, one cancel, deduplication, stable body, keyboard bounds, reduced motion',locale,width,height,listening,review,keyboard,passed:true});
  }
 }
 await writeFile(new URL('browser-report.json',output),JSON.stringify({syntheticSpeech:true,realMicrophone:false,checks:report,chatRequests:requests.filter(r=>r.path==='/api/concierge/chat').length},null,2));

@@ -6,14 +6,14 @@ const page = source("./pages/ConciergePage.tsx"), css = source("./index.css");
 
 test("AI conversation renders one shared text and voice composer", () => {
   assert.equal((page.match(/<textarea/g) || []).length, 1);
-  assert.equal((page.match(/ref=\{voiceButtonRef\}/g) || []).length, 1);
+  assert.equal((page.match(/<VoiceInputDialog /g) || []).length, 1);
   assert.match(page, /concierge-input-panel concierge-unified-composer/);
   assert.doesNotMatch(page, /"concierge-followup-composer"/);
 });
 test("typed Enter click and speech preserve the existing send and voice flows", () => {
   assert.match(page, /e\.key\s*===\s*"Enter"[\s\S]*send\(\)/);
   assert.match(page, /onClick=\{\(\) => send\(\)\}/);
-  assert.match(page, /onClick=\{beginVoice\}/);
+  assert.match(page, /onClick=\{openVoice\}/);assert.match(page,/const openVoice=.*setVoiceOpen\(true\);beginVoice\(\)/);
   assert.match(page, /aria-label=\{hasCompletedTurn \? "이어서 물어보기"/);
   assert.match(page, /aria-label=\{hasCompletedTurn \? "질문 전송"/);
 });

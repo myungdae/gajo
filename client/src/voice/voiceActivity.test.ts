@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { VOICE_COPY, localizedVoiceState } from './voiceCopy.ts';
 const activity=readFileSync(new URL('../components/VoiceActivity.tsx',import.meta.url),'utf8');
-const page=readFileSync(new URL('../pages/ConciergePage.tsx',import.meta.url),'utf8');
+const page=readFileSync(new URL('../components/VoiceInputDialog.tsx',import.meta.url),'utf8');
 const css=readFileSync(new URL('../index.css',import.meta.url),'utf8');
 test('bilingual listening and completion announce the state, with separate stop and cancel actions',()=>{
   assert.equal(localizedVoiceState('LISTENING','ko'),'듣고 있어요. 말씀해 주세요.');

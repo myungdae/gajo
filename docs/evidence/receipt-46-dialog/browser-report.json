@@ -1,0 +1,929 @@
+{
+  "syntheticSpeech": true,
+  "realMicrophone": false,
+  "checks": [
+    {
+      "test": "voice → review/edit → single send → recommendation → detail → navigation/phone/save → alternative → Nearby/back → follow-up",
+      "passed": true
+    },
+    {
+      "test": "permission denial, empty speech, error, speak again, editing, blank guard, cancel, Escape, unmount late events",
+      "passed": true
+    },
+    {
+      "test": "locale change cancels active recognition; next gesture uses en-US",
+      "passed": true
+    },
+    {
+      "region": "gajo",
+      "locale": "ko",
+      "mode": "now",
+      "passed": true
+    },
+    {
+      "region": "gajo",
+      "locale": "ko",
+      "mode": "plan",
+      "passed": true
+    },
+    {
+      "region": "gajo",
+      "locale": "en",
+      "mode": "now",
+      "passed": true
+    },
+    {
+      "region": "gajo",
+      "locale": "en",
+      "mode": "plan",
+      "passed": true
+    },
+    {
+      "region": "okcheon",
+      "locale": "ko",
+      "mode": "now",
+      "passed": true
+    },
+    {
+      "region": "okcheon",
+      "locale": "ko",
+      "mode": "plan",
+      "passed": true
+    },
+    {
+      "region": "okcheon",
+      "locale": "en",
+      "mode": "now",
+      "passed": true
+    },
+    {
+      "region": "okcheon",
+      "locale": "en",
+      "mode": "plan",
+      "passed": true
+    },
+    {
+      "region": "muan",
+      "locale": "ko",
+      "mode": "now",
+      "passed": true
+    },
+    {
+      "region": "muan",
+      "locale": "ko",
+      "mode": "plan",
+      "passed": true
+    },
+    {
+      "region": "muan",
+      "locale": "en",
+      "mode": "now",
+      "passed": true
+    },
+    {
+      "region": "muan",
+      "locale": "en",
+      "mode": "plan",
+      "passed": true
+    },
+    {
+      "region": "gyeryong",
+      "locale": "ko",
+      "mode": "now",
+      "passed": true
+    },
+    {
+      "region": "gyeryong",
+      "locale": "ko",
+      "mode": "plan",
+      "passed": true
+    },
+    {
+      "region": "gyeryong",
+      "locale": "en",
+      "mode": "now",
+      "passed": true
+    },
+    {
+      "region": "gyeryong",
+      "locale": "en",
+      "mode": "plan",
+      "passed": true
+    },
+    {
+      "region": "hapcheon",
+      "locale": "ko",
+      "mode": "now",
+      "passed": true
+    },
+    {
+      "region": "hapcheon",
+      "locale": "ko",
+      "mode": "plan",
+      "passed": true
+    },
+    {
+      "region": "hapcheon",
+      "locale": "en",
+      "mode": "now",
+      "passed": true
+    },
+    {
+      "region": "hapcheon",
+      "locale": "en",
+      "mode": "plan",
+      "passed": true
+    },
+    {
+      "region": "daejeon-junggu",
+      "locale": "ko",
+      "mode": "now",
+      "passed": true
+    },
+    {
+      "region": "daejeon-junggu",
+      "locale": "ko",
+      "mode": "plan",
+      "passed": true
+    },
+    {
+      "region": "daejeon-junggu",
+      "locale": "en",
+      "mode": "now",
+      "passed": true
+    },
+    {
+      "region": "daejeon-junggu",
+      "locale": "en",
+      "mode": "plan",
+      "passed": true
+    },
+    {
+      "test": "unsupported browser → text input",
+      "locale": "ko",
+      "passed": true
+    },
+    {
+      "test": "unsupported browser → text input",
+      "locale": "en",
+      "passed": true
+    },
+    {
+      "test": "one gesture, compact listening/review/restart, one cancel, deduplication, stable body, keyboard bounds, reduced motion",
+      "locale": "ko",
+      "width": 360,
+      "height": 800,
+      "listening": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 580.15625,
+        "bottom": 733,
+        "navTop": 741,
+        "viewportBottom": 800,
+        "body": 800,
+        "main": 1136,
+        "scroll": 0,
+        "targets": [
+          44,
+          44
+        ],
+        "phase": "listening",
+        "animation": "voice-listening-pulse"
+      },
+      "review": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 491.84375,
+        "bottom": 733,
+        "navTop": 741,
+        "viewportBottom": 800,
+        "body": 800,
+        "main": 1136,
+        "scroll": 0,
+        "targets": [
+          54.375,
+          54.375,
+          54.375
+        ],
+        "phase": "complete",
+        "animation": "none"
+      },
+      "keyboard": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 110.84375,
+        "bottom": 352,
+        "navTop": 741,
+        "viewportBottom": 360,
+        "body": 800,
+        "main": 1136,
+        "scroll": 0,
+        "targets": [
+          54.375,
+          54.375,
+          54.375
+        ],
+        "phase": "complete",
+        "animation": "none"
+      },
+      "passed": true
+    },
+    {
+      "test": "one gesture, compact listening/review/restart, one cancel, deduplication, stable body, keyboard bounds, reduced motion",
+      "locale": "ko",
+      "width": 390,
+      "height": 700,
+      "listening": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 480.15625,
+        "bottom": 633,
+        "navTop": 641,
+        "viewportBottom": 700,
+        "body": 700,
+        "main": 1136,
+        "scroll": 0,
+        "targets": [
+          44,
+          44
+        ],
+        "phase": "listening",
+        "animation": "voice-listening-pulse"
+      },
+      "review": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 402.21875,
+        "bottom": 633,
+        "navTop": 641,
+        "viewportBottom": 700,
+        "body": 700,
+        "main": 1136,
+        "scroll": 0,
+        "targets": [
+          44,
+          44,
+          44
+        ],
+        "phase": "complete",
+        "animation": "none"
+      },
+      "keyboard": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 121.21875,
+        "bottom": 352,
+        "navTop": 641,
+        "viewportBottom": 360,
+        "body": 700,
+        "main": 1136,
+        "scroll": 0,
+        "targets": [
+          44,
+          44,
+          44
+        ],
+        "phase": "complete",
+        "animation": "none"
+      },
+      "passed": true
+    },
+    {
+      "test": "one gesture, compact listening/review/restart, one cancel, deduplication, stable body, keyboard bounds, reduced motion",
+      "locale": "ko",
+      "width": 390,
+      "height": 844,
+      "listening": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 624.15625,
+        "bottom": 777,
+        "navTop": 785,
+        "viewportBottom": 844,
+        "body": 844,
+        "main": 1136,
+        "scroll": 0,
+        "targets": [
+          44,
+          44
+        ],
+        "phase": "listening",
+        "animation": "voice-listening-pulse"
+      },
+      "review": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 546.21875,
+        "bottom": 777,
+        "navTop": 785,
+        "viewportBottom": 844,
+        "body": 844,
+        "main": 1136,
+        "scroll": 0,
+        "targets": [
+          44,
+          44,
+          44
+        ],
+        "phase": "complete",
+        "animation": "none"
+      },
+      "keyboard": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 121.21875,
+        "bottom": 352,
+        "navTop": 785,
+        "viewportBottom": 360,
+        "body": 844,
+        "main": 1136,
+        "scroll": 0,
+        "targets": [
+          44,
+          44,
+          44
+        ],
+        "phase": "complete",
+        "animation": "none"
+      },
+      "passed": true
+    },
+    {
+      "test": "one gesture, compact listening/review/restart, one cancel, deduplication, stable body, keyboard bounds, reduced motion",
+      "locale": "ko",
+      "width": 844,
+      "height": 390,
+      "listening": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 170.15625,
+        "bottom": 323,
+        "navTop": 331,
+        "viewportBottom": 390,
+        "body": 390,
+        "main": 1036,
+        "scroll": 0,
+        "targets": [
+          44,
+          44
+        ],
+        "phase": "listening",
+        "animation": "voice-listening-pulse"
+      },
+      "review": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 101,
+        "bottom": 323,
+        "navTop": 331,
+        "viewportBottom": 390,
+        "body": 390,
+        "main": 1036,
+        "scroll": 0,
+        "targets": [
+          44,
+          44,
+          44
+        ],
+        "phase": "complete",
+        "animation": "none"
+      },
+      "keyboard": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 60,
+        "bottom": 282,
+        "navTop": 331,
+        "viewportBottom": 290,
+        "body": 390,
+        "main": 1036,
+        "scroll": 0,
+        "targets": [
+          44,
+          44,
+          44
+        ],
+        "phase": "complete",
+        "animation": "none"
+      },
+      "passed": true
+    },
+    {
+      "test": "one gesture, compact listening/review/restart, one cancel, deduplication, stable body, keyboard bounds, reduced motion",
+      "locale": "ko",
+      "width": 195,
+      "height": 422,
+      "listening": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 172.75,
+        "bottom": 344,
+        "navTop": 352,
+        "viewportBottom": 422,
+        "body": 422,
+        "main": 1466,
+        "scroll": 0,
+        "targets": [
+          50.375,
+          50.375
+        ],
+        "phase": "listening",
+        "animation": "voice-listening-pulse"
+      },
+      "review": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 50.84375,
+        "bottom": 344,
+        "navTop": 352,
+        "viewportBottom": 422,
+        "body": 422,
+        "main": 1466,
+        "scroll": 0,
+        "targets": [
+          50.375,
+          50.375,
+          44
+        ],
+        "phase": "complete",
+        "animation": "none"
+      },
+      "keyboard": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 20.84375,
+        "bottom": 314,
+        "navTop": 352,
+        "viewportBottom": 322,
+        "body": 422,
+        "main": 1466,
+        "scroll": 0,
+        "targets": [
+          50.375,
+          50.375,
+          44
+        ],
+        "phase": "complete",
+        "animation": "none"
+      },
+      "passed": true
+    },
+    {
+      "test": "one gesture, compact listening/review/restart, one cancel, deduplication, stable body, keyboard bounds, reduced motion",
+      "locale": "ko",
+      "width": 1200,
+      "height": 900,
+      "listening": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 344.078125,
+        "bottom": 496.921875,
+        "navTop": 841,
+        "viewportBottom": 900,
+        "body": 900,
+        "main": 1036,
+        "scroll": 0,
+        "targets": [
+          44,
+          44
+        ],
+        "phase": "listening",
+        "animation": "voice-listening-pulse"
+      },
+      "review": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 309.5,
+        "bottom": 531.5,
+        "navTop": 841,
+        "viewportBottom": 900,
+        "body": 900,
+        "main": 1036,
+        "scroll": 0,
+        "targets": [
+          44,
+          44,
+          44
+        ],
+        "phase": "complete",
+        "animation": "none"
+      },
+      "keyboard": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 130,
+        "bottom": 352,
+        "navTop": 841,
+        "viewportBottom": 360,
+        "body": 900,
+        "main": 1036,
+        "scroll": 0,
+        "targets": [
+          44,
+          44,
+          44
+        ],
+        "phase": "complete",
+        "animation": "none"
+      },
+      "passed": true
+    },
+    {
+      "test": "one gesture, compact listening/review/restart, one cancel, deduplication, stable body, keyboard bounds, reduced motion",
+      "locale": "en",
+      "width": 360,
+      "height": 800,
+      "listening": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 557.03125,
+        "bottom": 728.71875,
+        "navTop": 736.71875,
+        "viewportBottom": 800,
+        "body": 800,
+        "main": 1236,
+        "scroll": 0,
+        "targets": [
+          44,
+          44
+        ],
+        "phase": "listening",
+        "animation": "voice-listening-pulse"
+      },
+      "review": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 487.5625,
+        "bottom": 728.71875,
+        "navTop": 736.71875,
+        "viewportBottom": 800,
+        "body": 800,
+        "main": 1236,
+        "scroll": 0,
+        "targets": [
+          54.375,
+          54.375,
+          54.375
+        ],
+        "phase": "complete",
+        "animation": "none"
+      },
+      "keyboard": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 110.84375,
+        "bottom": 352,
+        "navTop": 736.71875,
+        "viewportBottom": 360,
+        "body": 800,
+        "main": 1236,
+        "scroll": 0,
+        "targets": [
+          54.375,
+          54.375,
+          54.375
+        ],
+        "phase": "complete",
+        "animation": "none"
+      },
+      "passed": true
+    },
+    {
+      "test": "one gesture, compact listening/review/restart, one cancel, deduplication, stable body, keyboard bounds, reduced motion",
+      "locale": "en",
+      "width": 390,
+      "height": 700,
+      "listening": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 475.875,
+        "bottom": 628.71875,
+        "navTop": 636.71875,
+        "viewportBottom": 700,
+        "body": 700,
+        "main": 1211,
+        "scroll": 0,
+        "targets": [
+          44,
+          44
+        ],
+        "phase": "listening",
+        "animation": "voice-listening-pulse"
+      },
+      "review": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 387.5625,
+        "bottom": 628.71875,
+        "navTop": 636.71875,
+        "viewportBottom": 700,
+        "body": 700,
+        "main": 1211,
+        "scroll": 0,
+        "targets": [
+          54.375,
+          54.375,
+          54.375
+        ],
+        "phase": "complete",
+        "animation": "none"
+      },
+      "keyboard": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 110.84375,
+        "bottom": 352,
+        "navTop": 636.71875,
+        "viewportBottom": 360,
+        "body": 700,
+        "main": 1211,
+        "scroll": 0,
+        "targets": [
+          54.375,
+          54.375,
+          54.375
+        ],
+        "phase": "complete",
+        "animation": "none"
+      },
+      "passed": true
+    },
+    {
+      "test": "one gesture, compact listening/review/restart, one cancel, deduplication, stable body, keyboard bounds, reduced motion",
+      "locale": "en",
+      "width": 390,
+      "height": 844,
+      "listening": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 619.875,
+        "bottom": 772.71875,
+        "navTop": 780.71875,
+        "viewportBottom": 844,
+        "body": 844,
+        "main": 1211,
+        "scroll": 0,
+        "targets": [
+          44,
+          44
+        ],
+        "phase": "listening",
+        "animation": "voice-listening-pulse"
+      },
+      "review": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 531.5625,
+        "bottom": 772.71875,
+        "navTop": 780.71875,
+        "viewportBottom": 844,
+        "body": 844,
+        "main": 1211,
+        "scroll": 0,
+        "targets": [
+          54.375,
+          54.375,
+          54.375
+        ],
+        "phase": "complete",
+        "animation": "none"
+      },
+      "keyboard": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 110.84375,
+        "bottom": 352,
+        "navTop": 780.71875,
+        "viewportBottom": 360,
+        "body": 844,
+        "main": 1211,
+        "scroll": 0,
+        "targets": [
+          54.375,
+          54.375,
+          54.375
+        ],
+        "phase": "complete",
+        "animation": "none"
+      },
+      "passed": true
+    },
+    {
+      "test": "one gesture, compact listening/review/restart, one cancel, deduplication, stable body, keyboard bounds, reduced motion",
+      "locale": "en",
+      "width": 844,
+      "height": 390,
+      "listening": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 170.15625,
+        "bottom": 323,
+        "navTop": 331,
+        "viewportBottom": 390,
+        "body": 390,
+        "main": 1036,
+        "scroll": 0,
+        "targets": [
+          44,
+          44
+        ],
+        "phase": "listening",
+        "animation": "voice-listening-pulse"
+      },
+      "review": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 101,
+        "bottom": 323,
+        "navTop": 331,
+        "viewportBottom": 390,
+        "body": 390,
+        "main": 1036,
+        "scroll": 0,
+        "targets": [
+          44,
+          44,
+          44
+        ],
+        "phase": "complete",
+        "animation": "none"
+      },
+      "keyboard": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 60,
+        "bottom": 282,
+        "navTop": 331,
+        "viewportBottom": 290,
+        "body": 390,
+        "main": 1036,
+        "scroll": 0,
+        "targets": [
+          44,
+          44,
+          44
+        ],
+        "phase": "complete",
+        "animation": "none"
+      },
+      "passed": true
+    },
+    {
+      "test": "one gesture, compact listening/review/restart, one cancel, deduplication, stable body, keyboard bounds, reduced motion",
+      "locale": "en",
+      "width": 195,
+      "height": 422,
+      "listening": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 135.34375,
+        "bottom": 325.4375,
+        "navTop": 333.4375,
+        "viewportBottom": 422,
+        "body": 422,
+        "main": 1758,
+        "scroll": 0,
+        "targets": [
+          50.375,
+          50.375
+        ],
+        "phase": "listening",
+        "animation": "voice-listening-pulse"
+      },
+      "review": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 8,
+        "bottom": 325.4375,
+        "navTop": 333.4375,
+        "viewportBottom": 422,
+        "body": 422,
+        "main": 1758,
+        "scroll": 0,
+        "targets": [
+          68.5625,
+          68.5625,
+          44
+        ],
+        "phase": "complete",
+        "animation": "none"
+      },
+      "keyboard": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 8,
+        "bottom": 314,
+        "navTop": 333.4375,
+        "viewportBottom": 322,
+        "body": 422,
+        "main": 1758,
+        "scroll": 0,
+        "targets": [
+          68.5625,
+          68.5625,
+          44
+        ],
+        "phase": "complete",
+        "animation": "none"
+      },
+      "passed": true
+    },
+    {
+      "test": "one gesture, compact listening/review/restart, one cancel, deduplication, stable body, keyboard bounds, reduced motion",
+      "locale": "en",
+      "width": 1200,
+      "height": 900,
+      "listening": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 344.078125,
+        "bottom": 496.921875,
+        "navTop": 841,
+        "viewportBottom": 900,
+        "body": 900,
+        "main": 1036,
+        "scroll": 0,
+        "targets": [
+          44,
+          44
+        ],
+        "phase": "listening",
+        "animation": "voice-listening-pulse"
+      },
+      "review": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 309.5,
+        "bottom": 531.5,
+        "navTop": 841,
+        "viewportBottom": 900,
+        "body": 900,
+        "main": 1036,
+        "scroll": 0,
+        "targets": [
+          44,
+          44,
+          44
+        ],
+        "phase": "complete",
+        "animation": "none"
+      },
+      "keyboard": {
+        "dialogs": 1,
+        "cancels": 1,
+        "overflow": false,
+        "top": 130,
+        "bottom": 352,
+        "navTop": 841,
+        "viewportBottom": 360,
+        "body": 900,
+        "main": 1036,
+        "scroll": 0,
+        "targets": [
+          44,
+          44,
+          44
+        ],
+        "phase": "complete",
+        "animation": "none"
+      },
+      "passed": true
+    }
+  ],
+  "chatRequests": 26
+}

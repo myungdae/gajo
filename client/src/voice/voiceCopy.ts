@@ -3,6 +3,7 @@ export const VOICE_COPY = {
   ko: {
     start:'말로 질문하기',stop:'듣기 중지',review:'인식된 문장을 확인해 주세요',transcript:'인식된 문장 · 직접 수정할 수 있어요',
     confirm:'이대로 보내기',again:'다시 말하기',cancel:'취소',text:'글자로 입력하기',sending:'전송 중…',
+    privacyCompact:'음성은 저장하지 않으며, 확인한 문장만 전송합니다.',
     privacy:'버튼을 누르면 마이크를 사용합니다. 앱은 녹음 파일을 저장하지 않으며, 확인한 문장만 질문으로 보냅니다.',
     permission:'마이크 권한이 거부되었습니다. 브라우저의 사이트 설정에서 마이크를 허용한 뒤 다시 시도하거나 글자로 입력해 주세요.',
     unsupported:'이 브라우저에서는 음성 입력을 지원하지 않습니다. 글자로 질문을 입력해 주세요.',
@@ -13,6 +14,7 @@ export const VOICE_COPY = {
   en: {
     start:'Speak a Question',stop:'Stop Listening',review:'Review your question',transcript:'Recognized text · you can edit it',
     confirm:'Send This Question',again:'Speak Again',cancel:'Cancel',text:'Type a Question',sending:'Sending…',
+    privacyCompact:'Audio is not saved. Only the text you confirm is sent.',
     privacy:'The microphone starts when you press the button. This app does not save audio recordings. Only the text you confirm is sent as your question.',
     permission:'Microphone permission was denied. Allow microphone access in your browser’s site settings and try again, or type your question.',
     unsupported:'Voice input is not supported in this browser. Please type your question.',

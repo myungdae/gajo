@@ -17,8 +17,8 @@ test("public Guide uses plain travel language", () => {
 });
 
 test("voice guidance appears once with examples and one privacy reassurance", () => {
-  assert.equal((conversation.match(/\{voiceCopy.privacy\}/g) || []).length, 1);
-  assert.equal((conversation.match(/className="voice-helper"/g) || []).length, 1);
+  assert.equal((source("./components/VoiceInputDialog.tsx").match(/\{copy.privacyCompact\}/g) || []).length, 1);
+  assert.equal((source("./components/VoiceInputDialog.tsx").match(/className="voice-helper"/g) || []).length, 1);
   for (const phrase of ["Ask by Voice or Text", "Speak a Question", "Type a Question"]) assert.ok(managedCopy.includes(phrase));
   assert.doesNotMatch(conversation, /말씀하신 내용이 위 입력창에 들어갑니다/);
 });

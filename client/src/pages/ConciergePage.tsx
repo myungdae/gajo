@@ -1,4 +1,4 @@
-import VoiceActivity from "../components/VoiceActivity";
+import VoiceInputDialog from "../components/VoiceInputDialog";
 import { readConversation, saveConversation } from "../conversationMemory";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -65,7 +65,6 @@ import { GlossaryText } from "../components/GlossaryText";
 import { isExplanationOnly } from "../aiResponseActions";
 import { understoodSummary } from "../understoodSummary";
 import { NOW_HEADING, NOW_HEADING_LINES, NOW_QUICK_ACTIONS } from "../nowQuickActions";
-import VoiceConfirmation from "../components/VoiceConfirmation";
 import { acceptVoiceResult, understandVoice, type VoiceResultFingerprint, type VoiceUnderstanding } from "../voice/voiceUx";
 import { VOICE_COPY } from "../voice/voiceCopy";
 import { useRegionalLanguage } from "../RegionalLanguageContext";
@@ -197,7 +196,7 @@ function ConciergeConversation() {
   const liveStoryRef = useRef<HTMLDivElement>(null);
   const requestInFlightRef = useRef(false);
   const homeSubmittedRef = useRef(false);
-  const voiceButtonRef = useRef<HTMLButtonElement>(null);
+  const [voiceOpen,setVoiceOpen]=useState(false);
   const textInputRef = useRef<HTMLTextAreaElement>(null);
   const lastRequestRef = useRef<{
     text: string;
@@ -220,7 +219,6 @@ function ConciergeConversation() {
   };
   const {
     listening,
-    voiceSupported,
     voiceError,
     voiceState,
     setVoiceState,
@@ -235,19 +233,9 @@ function ConciergeConversation() {
     voiceStartedAtRef.current=Date.now();track("VOICE_STARTED",tripSession.id,{});
     toggleListening();
   };
-  const dismissVoice=()=>{cancelListening();setVoiceUnderstanding(null);setVoiceDraft("");setVoiceState("IDLE");setManualEntryMode("TEXT");track("VOICE_INPUT_SWITCHED",tripSession.id,{to:"TEXT_OR_TOUCH"});requestAnimationFrame(()=>textInputRef.current?.focus());};
-  useEffect(()=>{
-    if(manualEntryMode!=="VOICE"||!freeTextOpen)return;
-    const frame=requestAnimationFrame(()=>voiceButtonRef.current?.focus());
-    return()=>cancelAnimationFrame(frame);
-  },[manualEntryMode,freeTextOpen]);
-  useEffect(()=>{
-    const escape=(event:KeyboardEvent)=>{
-      if(event.key==="Escape"&&manualEntryMode==="VOICE"&&!loading){event.preventDefault();dismissVoice();}
-    };
-    document.addEventListener("keydown",escape);
-    return()=>document.removeEventListener("keydown",escape);
-  },[manualEntryMode,loading]);
+  const openVoice=()=>{if(requestInFlightRef.current)return;setVoiceOpen(true);beginVoice();};
+  const dismissVoice=()=>{cancelListening();setVoiceUnderstanding(null);setVoiceDraft("");setVoiceState("IDLE");setVoiceOpen(false);track("VOICE_INPUT_SWITCHED",tripSession.id,{to:"TEXT_OR_TOUCH"});};
+  const voiceToText=()=>{dismissVoice();setManualEntryMode("TEXT");setFreeTextOpen(true);requestAnimationFrame(()=>textInputRef.current?.focus());};
   useEffect(() => {
     sessionStorage.setItem(contextSessionKey, contextSessionIdRef.current);
   }, [contextSessionKey]);
@@ -621,7 +609,7 @@ function ConciergeConversation() {
     } finally {
       requestInFlightRef.current = false;
       setLoading(false);
-      if(activeVoice){setVoiceUnderstanding(null);setVoiceDraft("");setVoiceState("IDLE");}
+      if(activeVoice){setVoiceUnderstanding(null);setVoiceDraft("");setVoiceState("IDLE");setVoiceOpen(false);}
     }
     } finally { requestInFlightRef.current=false; setLoading(false); }
   };
@@ -748,7 +736,7 @@ function ConciergeConversation() {
               onNearby={openNearby}
               onAsk={(prompt)=>send(prompt)}
               onItinerary={()=>navigate(regionLink("/itinerary"))}
-              onVoice={()=>{setManualEntryMode("VOICE");setFreeTextOpen(true);}}
+              onVoice={openVoice}
               onText={()=>{setManualEntryMode("TEXT");setFreeTextOpen(true);requestAnimationFrame(()=>textInputRef.current?.focus())}}
             />
           )}
@@ -971,14 +959,19 @@ function ConciergeConversation() {
       )}
       <InstallExperience usefulResult={hasPrimaryResult} />
 
+      {voiceOpen&&<VoiceInputDialog state={voiceState} text={voiceDraft} reviewing={Boolean(voiceUnderstanding)}
+        error={voiceError} locale={language}
+        onChange={text=>{setVoiceDraft(text);track("VOICE_PARTIAL_EDIT_COMPLETED",tripSession.id,{inputMethod:"TEXT"});}}
+        onStop={stopListening} onSpeakAgain={beginVoice} onCancel={dismissVoice} onType={voiceToText}
+        onConfirm={()=>send(voiceDraft,undefined,false,voiceUnderstanding||undefined)}/>}
       {(tripMode !== "NOW" ? (hasCompletedTurn || freeTextOpen) : freeTextOpen) && (
         <div className={"concierge-input-panel concierge-unified-composer"}>
           <div className="input-panel-heading">
             <h2>{hasCompletedTurn ? (language==="en"?"Continue the conversation":"이어서 물어보기") : voiceCopy.start}</h2>
           </div>
           <div className="voice-mode-actions">
-            <button type="button" className="btn btn-outline" disabled={loading||listening} onClick={()=>{setManualEntryMode("VOICE");}}>{voiceCopy.start}</button>
-            <button type="button" className="btn btn-outline" disabled={loading} onClick={dismissVoice}>{voiceCopy.text}</button>
+            <button type="button" className="btn btn-outline" disabled={loading||listening} onClick={openVoice}>{voiceCopy.start}</button>
+            <button type="button" className="btn btn-outline" disabled={loading} onClick={voiceToText}>{voiceCopy.text}</button>
           </div>
           {manualEntryMode!=="VOICE"&&<textarea
             ref={textInputRef}
@@ -989,28 +982,6 @@ function ConciergeConversation() {
             onChange={(e)=>setInput(e.target.value)}
             onKeyDown={(e)=>{if(e.key==="Enter"&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();send();}}}
           />}
-          {manualEntryMode==="VOICE"&&<div className="voice-input-panel" onKeyDown={event=>{if(event.key==="Escape"&&!loading){event.preventDefault();dismissVoice();}}}>
-            <VoiceActivity state={voiceState} locale={language}/>
-            {!voiceUnderstanding&&<button
-              ref={voiceButtonRef} type="button"
-              className={`speech-session-button${voiceState==="LISTENING"?" is-listening":""}`}
-              onClick={beginVoice} disabled={loading||voiceState==="REQUESTING_PERMISSION"||voiceState==="TRANSCRIBING"}
-              aria-pressed={listening} aria-label={listening?voiceCopy.stop:voiceCopy.start}
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8"/></svg>
-              <strong>{listening?voiceCopy.stop:voiceCopy.start}</strong>
-            </button>}
-            <p className="voice-helper">{voiceCopy.privacy}</p>
-            {(!voiceSupported||voiceError)&&<p className="voice-error" role="alert">{voiceError}</p>}
-
-            {listening&&<p className="voice-live-transcript" aria-label={voiceCopy.transcript}>{voiceDraft}</p>}
-
-            {!voiceUnderstanding&&<button type="button" className="btn btn-outline voice-cancel" onClick={dismissVoice}>{voiceCopy.cancel}</button>}
-            {voiceUnderstanding&&<VoiceConfirmation state={voiceState} text={voiceDraft}
-              onChange={text=>{setVoiceDraft(text);track("VOICE_PARTIAL_EDIT_COMPLETED",tripSession.id,{inputMethod:"TEXT"});}}
-              onSpeakAgain={beginVoice} onCancel={dismissVoice}
-              onConfirm={()=>send(voiceDraft,undefined,false,voiceUnderstanding)}/>}
-          </div>}
           {manualEntryMode!=="VOICE"&&<button
             className="btn btn-primary btn-block concierge-submit"
             onClick={() => send()}

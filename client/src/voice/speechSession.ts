@@ -1,3 +1,4 @@
+import { mergeCommittedSpeech } from '../utils/speechTranscript.ts';
 import type { VoiceUxState } from './voiceUx.ts';
 
 // A user gesture owns one recognition instance; late events cannot revive it.
@@ -8,7 +9,7 @@ export function createSpeechSession(options: {
 }) {
   let recognition:any, ended=false, started=false, stopping=false, interim='';
   const committed=new Map<number,string>();
-  const text=()=>[...committed.values(),interim].filter(Boolean).join(' ').trim();
+  const text=()=>[...committed.values(),interim].reduce(mergeCommittedSpeech,'');
   const detach=()=>{if(recognition)recognition.onstart=recognition.onresult=recognition.onerror=recognition.onend=null;};
   const cancel=()=>{if(ended)return;ended=true;detach();try{recognition?.abort();}catch{/* Already ended. */}};
   const fail=(kind:'permission'|'empty'|'error')=>{

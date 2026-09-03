@@ -67,3 +67,17 @@ test('all voice states errors and controls have built-in bilingual copy',()=>{
   }
   assert.match(VOICE_COPY.en.permission,/site settings/);assert.match(VOICE_COPY.ko.permission,/사이트 설정/);
 });
+
+test('repeated finals at new indexes and cumulative hypotheses do not duplicate a sentence',()=>{
+  const f=fixture();f.session.start();
+  const final=(text:string)=>Object.assign([{transcript:text}],{isFinal:true});
+  f.engine.onresult({results:[final('안녕하세요 지금 테스트 중입니다'),final('안녕하세요 지금 테스트 중입니다')]});
+  f.engine.onresult({results:[final('안녕하세요 지금 테스트 중입니다'),final('안녕하세요 지금 테스트 중입니다'),final('안녕하세요 지금 테스트 중입니다 다음 질문입니다')]});
+  f.engine.onend();
+  assert.deepEqual(f.finals,['안녕하세요 지금 테스트 중입니다 다음 질문입니다']);
+});
+test('distinct final segments and intentional repetition within one transcript remain intact',()=>{
+  const f=fixture('en');f.session.start();
+  f.engine.onresult({results:[Object.assign([{transcript:'very very quiet'}],{isFinal:true}),Object.assign([{transcript:'places please'}],{isFinal:true})]});
+  f.engine.onend();assert.deepEqual(f.finals,['very very quiet places please']);
+});
