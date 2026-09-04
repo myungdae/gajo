@@ -1,3 +1,4 @@
+import ActionChannelManager from "./ActionChannelManager";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { exportRegionalData,fetchRegionalData,importRegionalData,previewRegionalDataImport,regionalDataAction } from "../api/client";
 import { reviewActionsFor } from "../regionalDataReview";
@@ -248,6 +249,7 @@ export default function RegionalDataManager({onAdminTokenChange}:{onAdminTokenCh
           </div>
         </div>
       )}
+      {selected && <ActionChannelManager key={`${selected.regionId}:${selected.canonicalEntityId}`} regionId={selected.regionId} placeKey={selected.canonicalEntityId} token={token}/> }
       {notice&&<p className="regional-action-notice" role="status">{notice}</p>}
       {error && (
         <p className="voice-error" role="alert">

@@ -1,0 +1,8 @@
+.action-channel-manager { margin-block: 20px; padding: 16px; border: 1px solid #cadbd8; border-radius: 12px; min-width: 0; }
+.action-channel-manager form { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,240px),1fr)); gap: 12px; }
+.action-channel-manager label { display: flex; flex-wrap: wrap; gap: 8px; }
+.action-channel-manager input:not([type=checkbox]), .action-channel-manager select { width: 100%; min-width: 0; min-height: 44px; }
+.action-channel-manager button, .action-channel-manager a, .verified-channel-actions button { min-height: 44px; display: inline-flex; align-items: center; white-space: normal; }
+.action-channel-manager article { padding-block: 16px; border-top: 1px solid #cadbd8; }
+.channel-controls, .channel-preview, .verified-channel-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.channel-target, .action-channel-manager p { overflow-wrap: anywhere; }
