@@ -62,7 +62,7 @@ function NavIcon({ name }: { name: string }) {
 export default function Layout() {
   const region = useRegion();
   const {language,select,withLanguage}=useRegionalLanguage(),english=getRegionalHomeEnglish(region),navLabels=language==='en'?['Home','Nearby','My Trip','AI Travel Assistant']:navItems.map(x=>x.label);
-  const location=useLocation(),searchParams=new URLSearchParams(location.search),diagnosticMode=searchParams.get("trip-diagnostics")==="1",hapcheonLanding=location.pathname==='/hapcheon'&&searchParams.get('start')!=='ai'&&sessionStorage.getItem('hapcheon-landing-complete')!=='1'&&searchParams.get('lang')!=='en',surface=appSurface(location.pathname,location.search,window.location.hostname),webShell=surface==='PLATFORM'||surface==='PUBLIC_PARTNER';
+  const location=useLocation(),searchParams=new URLSearchParams(location.search),diagnosticMode=searchParams.get("trip-diagnostics")==="1",surface=appSurface(location.pathname,location.search,window.location.hostname),webShell=surface==='PLATFORM'||surface==='PUBLIC_PARTNER';
   const mainRef = useRef<HTMLElement>(null);
   const [tripCount, setTripCount] = useState(() =>
     diagnosticMode?0:itineraryItemCount(loadTripSession(localStorage, region.id)) + listArchivedTripSessions(region.id).length,
@@ -80,17 +80,17 @@ export default function Layout() {
   }, [location.pathname, location.search,webShell]);
   if(diagnosticMode){const diagnostic=tripRestorationDiagnostics(region.id);return <main className="app-main"><section className="card" aria-label="여행 복원 진단"><h1>여행 복원 진단</h1><dl><dt>지역</dt><dd>{diagnostic.regionId}</dd><dt>활성 저장 키</dt><dd>{diagnostic.activeStorageKey}</dd><dt>localStorage</dt><dd>{diagnostic.localStorageKeyFound?'찾음':'없음'}</dd><dt>sessionStorage 보조</dt><dd>{diagnostic.sessionStorageFallbackFound?'찾음':'없음'}</dd><dt>저장값 상태</dt><dd>{diagnostic.storedValueStatus}</dd><dt>복원 출처</dt><dd>{diagnostic.restorationSource}</dd><dt>익명 ID</dt><dd>{diagnostic.anonymousTripIdHint||'없음'}</dd><dt>담아둔 곳</dt><dd>{diagnostic.savedPlaceCount}</dd><dt>일정 단계</dt><dd>{diagnostic.itineraryStepCount}</dd><dt>실행 상태</dt><dd>{diagnostic.executionStatePresent?'있음':'없음'}</dd><dt>보관 여행</dt><dd>{diagnostic.archiveCount??'확인 불가'}</dd><dt>새 세션 생성</dt><dd>{diagnostic.newSessionCreated?'예':'아니요'}</dd><dt>새 세션 생성 예정</dt><dd>{diagnostic.newSessionWouldBeCreated?'예':'아니요'}</dd><dt>복원 전 저장 발생</dt><dd>{diagnostic.persistenceOccurredBeforeRestoration?'예':'아니요'}</dd><dt>복원 전 저장 차단</dt><dd>{diagnostic.persistenceBlocked?'예':'아니요'}</dd></dl><p>이 화면은 저장소를 읽기만 하며 여행 데이터를 변경하지 않습니다.</p></section></main>}
   return (
-    <div className={`app-shell${webShell?' app-shell--web':''}${hapcheonLanding?' app-shell--hapcheon-landing':''}`}>
+    <div className={`app-shell${webShell?' app-shell--web':''}`}>
       <ManagedVisitorLocalization />
       <ConnectionStatus />
-      {!webShell&&!hapcheonLanding&&<header className="app-header">
+      {!webShell&&<header className="app-header">
         <PublicBrand compact language={language} href={withLanguage(region.id==='gajo'?'/':`/${region.id}`)}/>
         <div className="app-header__tools"><span className="app-header__region-name">{language==='en'?english.serviceName:region.serviceName}</span><div className="language-switch" aria-label={language==='en'?'Language':'언어 선택'}><button type="button" aria-pressed={language==='ko'} onClick={()=>select('ko')}>한국어</button><button type="button" aria-pressed={language==='en'} onClick={()=>select('en')}>English</button></div></div>
       </header>}
-      <main className={`app-main${webShell?' app-main--web':''}${hapcheonLanding?' app-main--hapcheon-landing':''}`} ref={mainRef}>
+      <main className={`app-main${webShell?' app-main--web':''}`} ref={mainRef}>
         <Outlet />
       </main>
-      {!webShell&&!hapcheonLanding&&<nav className="bottom-nav">
+      {!webShell&&<nav className="bottom-nav">
         {navItems.map((item,index) => (
           <NavLink
             key={item.to}
@@ -98,9 +98,7 @@ export default function Layout() {
               item.to === "/"
                 ? region.id === "gajo"
                   ? regionalPath("", region.id, true)
-                  : region.id === "hapcheon"
-                    ? "/hapcheon?start=ai"
-                    : `/${region.id}`
+                  : `/${region.id}`
                 : regionalPath(item.to, region.id)
             )}
             end={item.end}
