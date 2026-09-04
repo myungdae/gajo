@@ -3748,3 +3748,8 @@ dialog.voice-dialog .voice-dialog-actions .btn-outline { background: #fff; color
 .direct-request-choice h3 { margin: 0 0 12px; font-size: 1.05rem; line-height: 1.5; }
 .direct-request-choice[hidden] { display: none; }
 .automatic-recommendation-choice button, .direct-request-choice button { min-height: 44px; white-space: normal; overflow-wrap: anywhere; }
+.request-entry-actions, .conversation-other-request { display: flex; flex-wrap: wrap; gap: 8px; }
+.conversation-other-request { margin: 16px 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
+.conversation-other-request button { min-height: 44px; font-size: .95rem; white-space: normal; overflow-wrap: anywhere; }
+.structured-request-alternative { margin-block: 16px; }
+.structured-request-alternative > summary { min-height: 44px; padding: 12px; cursor: pointer; }

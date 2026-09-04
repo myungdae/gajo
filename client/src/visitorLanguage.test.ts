@@ -23,8 +23,11 @@ test("voice guidance appears once with examples and one privacy reassurance", ()
   assert.doesNotMatch(conversation, /말씀하신 내용이 위 입력창에 들어갑니다/);
 });
 
-test("large shared composer has useful placeholder and mobile-safe readable help", () => {
-  assert.match(conversation, /placeholder="필요한 내용을 입력하세요"/);
+test("on-demand composer has bilingual placeholder and mobile-safe readable help", () => {
+  assert.match(conversation, /placeholder=\{requestCopy.help\}/);
+  const requestCopy = source("./conversationPresentation.ts");
+  assert.match(requestCopy, /가고 싶은 곳이나 지금 필요한 것을 편하게 말씀해 주세요/);
+  assert.match(requestCopy, /Tell me where you/);
   assert.match(managedCopy, /Tell us what you need/);
   assert.match(conversation, /useSpeechInput\(voiceDraft, setVoiceDraft,onVoiceFinal,language\)/);
   assert.match(css, /\.voice-helper,[\s\S]*font-size:\s*14px/);

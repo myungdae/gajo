@@ -15,7 +15,7 @@ test("typed Enter click and speech preserve the existing send and voice flows", 
   assert.match(page, /onClick=\{\(\) => send\(\)\}/);
   assert.match(page, /onClick=\{openVoice\}/);assert.match(page,/const openVoice=.*setVoiceOpen\(true\);beginVoice\(\)/);
   assert.match(page, /aria-label=\{RECOMMENDATION_REQUEST_COPY\[language\]\.inputLabel\}/);
-  assert.match(page, /aria-label=\{hasCompletedTurn \? "질문 전송"/);
+  assert.match(page, /aria-label=\{requestCopy.send\}/);
 });
 test("composer clears only after success and retains text on failure", () => {
   assert.match(page, /await postConciergeChat[\s\S]*setInput\(""\)[\s\S]*catch/);

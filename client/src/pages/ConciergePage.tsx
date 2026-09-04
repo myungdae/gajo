@@ -1,3 +1,4 @@
+import { REQUEST_PRESENTATION_COPY, requestPresentation, shouldOfferContextRefresh } from "../conversationPresentation";
 import { RECOMMENDATION_REQUEST_COPY } from '../recommendationRequestCopy';
 import VoiceInputDialog from "../components/VoiceInputDialog";
 import { readConversation, saveConversation } from "../conversationMemory";
@@ -65,7 +66,7 @@ import {
 import { GlossaryText } from "../components/GlossaryText";
 import { isExplanationOnly } from "../aiResponseActions";
 import { understoodSummary } from "../understoodSummary";
-import { NOW_HEADING, NOW_HEADING_LINES, NOW_QUICK_ACTIONS } from "../nowQuickActions";
+import { NOW_QUICK_ACTIONS } from "../nowQuickActions";
 import { acceptVoiceResult, understandVoice, type VoiceResultFingerprint, type VoiceUnderstanding } from "../voice/voiceUx";
 import { useRegionalLanguage } from "../RegionalLanguageContext";
 
@@ -178,7 +179,7 @@ function ConciergeConversation() {
   const [requestError, setRequestError] = useState(false);
   const [locationFreshnessNotice,setLocationFreshnessNotice]=useState<{label?:string;confirmedAt?:string}|null>(null);
   const [freeTextOpen, setFreeTextOpen] = useState(
-    restored?.freeTextOpen ?? Boolean(entryState?.freeTextOpen),
+    restored?.messages.some(message=>Boolean(message.result)) ? false : restored?.freeTextOpen ?? Boolean(entryState?.freeTextOpen),
   );
   const [manualEntryMode,setManualEntryMode]=useState<"VOICE"|"TEXT"|null>(null);
   const [structuredDraft, setStructuredDraft] = useState<CreateContextInput>(
@@ -234,6 +235,7 @@ function ConciergeConversation() {
   };
   const openVoice=()=>{if(requestInFlightRef.current)return;setVoiceOpen(true);beginVoice();};
   const dismissVoice=()=>{cancelListening();setVoiceUnderstanding(null);setVoiceDraft("");setVoiceState("IDLE");setVoiceOpen(false);track("VOICE_INPUT_SWITCHED",tripSession.id,{to:"TEXT_OR_TOUCH"});};
+  const openText=()=>{setManualEntryMode("TEXT");setFreeTextOpen(true);requestAnimationFrame(()=>textInputRef.current?.focus());};
   const voiceToText=()=>{dismissVoice();setManualEntryMode("TEXT");setFreeTextOpen(true);requestAnimationFrame(()=>textInputRef.current?.focus());};
   useEffect(() => {
     sessionStorage.setItem(contextSessionKey, contextSessionIdRef.current);
@@ -344,6 +346,8 @@ function ConciergeConversation() {
         280;
     requestInFlightRef.current = true;
     const activeVoice=voiceModel||voiceUnderstanding;
+    setFreeTextOpen(false);
+    setVoiceOpen(false);
     cancelListening();
     if(activeVoice)setVoiceState("EXECUTING");
     setCurrentTurn(beginCurrentTurn(turnId, text));
@@ -596,14 +600,13 @@ function ConciergeConversation() {
       } else if (!isGuideExplanation && !result.distanceInfo)
         setDiscoveryContext(undefined);
       setInput("");
-      if(tripMode==="NOW"){
-        setFreeTextOpen(true);
-        setManualEntryMode("TEXT");
-      }
+      setFreeTextOpen(false);
+      setManualEntryMode(null);
     } catch (e: any) {
       if(activeVoice){setInput(text);setManualEntryMode("TEXT");}
       console.error("[concierge] request failed", e);
       setRequestError(true);
+      setFreeTextOpen(true);
       track("RETRY_ERROR", tripSession.id, { stage: "recommendation" });
     } finally {
       requestInFlightRef.current = false;
@@ -625,6 +628,8 @@ function ConciergeConversation() {
   }, []);
 
   const hasCompletedTurn = messages.some((message) => Boolean(message.result));
+  const requestUi=requestPresentation(hasCompletedTurn,loading,freeTextOpen,voiceOpen);
+  const requestCopy=REQUEST_PRESENTATION_COPY[language];
   const currentResult =
     currentTurn?.status === "RESOLVED" ? currentTurn.result : undefined;
   const currentIsKnowledge = isExplanationOnly(currentTurn?.requestText || "");
@@ -714,14 +719,17 @@ function ConciergeConversation() {
 
   return (
     <div className="concierge-conversation">
-      {tripMode === "PLAN" && <SavedTripEntry />}
+      {requestUi.intro&&<section className="natural-language-entry" aria-labelledby="natural-language-title">
+        <h2 id="natural-language-title">{requestCopy.title}</h2><p>{requestCopy.help}</p>
+        <div className="request-entry-actions"><button type="button" className="btn btn-primary" onClick={openVoice}>{RECOMMENDATION_REQUEST_COPY[language].voice}</button><button type="button" className="btn btn-outline" onClick={()=>{track("NATURAL_LANGUAGE_ENTRY_SELECTED",tripSession.id,{mode:tripMode});openText()}}>{RECOMMENDATION_REQUEST_COPY[language].text}</button></div>
+      </section>}
+
+      {tripMode === "PLAN" && !hasCompletedTurn && <SavedTripEntry />}
       {tripMode !== "PLAN" && (
         <div ref={liveStoryRef} className="journey-live-context">
-          {tripMode === "NOW" && (
+          {tripMode === "NOW" && !hasCompletedTurn && !loading && (
             <header className="journey-mode-header now">
               <small>NOW · 여행 중</small>
-              <h1 aria-label={NOW_HEADING}>{NOW_HEADING_LINES.map(line=><span className="now-heading-line" key={line}>{line}</span>)}</h1>
-              <p>지금 할 일을 선택하면 현재 위치와 여행 상황을 이어서 바로 찾아드려요.</p>
               {entryState?.entryDescription && entryState.entryMessage && (
                 <strong className="partner-entry-title">{entryState.entryMessage}</strong>
               )}
@@ -730,15 +738,12 @@ function ConciergeConversation() {
               )}
             </header>
           )}
-          {tripMode === "NOW" && !hasCompletedTurn && (
-            <NowImmediateActions
+          {tripMode === "NOW" && !hasCompletedTurn && !loading && !voiceOpen && (
+            <details className="structured-request-alternative"><summary>{language==="en"?"Choose a quick action":"바로 고르기"}</summary><NowImmediateActions
               onNearby={openNearby}
               onAsk={(prompt)=>send(prompt)}
               onItinerary={()=>navigate(regionLink("/itinerary"))}
-              showDirectRequest={!freeTextOpen}
-              onVoice={openVoice}
-              onText={()=>{setManualEntryMode("TEXT");setFreeTextOpen(true);requestAnimationFrame(()=>textInputRef.current?.focus())}}
-            />
+            /></details>
           )}
           <GajoLiveStatus
             regionName={region.regionName}
@@ -750,10 +755,11 @@ function ConciergeConversation() {
       {tripMode === "NOW" && tripSession.plannedContext && (
         <NowContinuationSummary planned={tripSession.plannedContext} />
       )}
-      {tripMode === "NOW" && <LocationContextBar mode="NOW" refreshNeeded={Boolean(locationFreshnessNotice)} onConfirmed={()=>setLocationFreshnessNotice(null)} />}
+      {tripMode === "NOW" && <details className="structured-request-alternative"><summary>{language==="en"?"Location settings":"위치 설정"}</summary><LocationContextBar mode="NOW" refreshNeeded={Boolean(locationFreshnessNotice)} onConfirmed={()=>setLocationFreshnessNotice(null)} /></details>}
       {tripMode==="NOW"&&locationFreshnessNotice&&<section className="card location-freshness-choice" role="status"><b>마지막으로 확인한 위치가 오래됐어요. 현재 위치를 다시 확인할까요?</b><p>{locationFreshnessNotice.label||"이전 확인 위치"}{locationFreshnessNotice.confirmedAt?` · ${new Date(locationFreshnessNotice.confirmedAt).toLocaleString("ko-KR")}`:""}</p><button type="button" className="btn btn-outline" onClick={()=>{const request=lastRequestRef.current;if(!request)return;allowStaleLocationOnceRef.current=true;setLocationFreshnessNotice(null);void send(request.text,request.structured,true)}}>이 위치 기준으로 검색</button></section>}
       <div className="chat-window">
         {messages.map((m, i) => {
+          if(i===0&&m.role==="ai"&&!m.result&&!m.turnId)return null;
           const isCurrentAnswer =
             m.role === "ai" &&
             Boolean(m.result) &&
@@ -775,9 +781,7 @@ function ConciergeConversation() {
           );
         })}
         {loading && (
-          <div className="loading">
-            말씀하신 상황에 맞는 일정을 살펴보고 있습니다...
-          </div>
+          <div className="loading" role="status">{requestCopy.processing}</div>
         )}
         <div
           ref={currentTurnConversationRef}
@@ -802,43 +806,9 @@ function ConciergeConversation() {
         </div>
       )}
 
-      {!hasCompletedTurn && tripMode !== "NOW" && (
-        <>
-          <section
-            className="natural-language-entry"
-            aria-labelledby="natural-language-title"
-          >
-            <small>AI에게 바로 물어보기</small>
-            <h2 id="natural-language-title">말하거나 입력해서 알려주세요</h2>
-            <p>“부모님과 왔는데 지금 어디 가지?”처럼 편하게 말씀하셔도 돼요.</p>
-            <button
-              type="button"
-              className="btn btn-primary btn-block"
-              aria-expanded={freeTextOpen}
-              onClick={() => {
-                const next = !freeTextOpen;
-                setFreeTextOpen(next);
-                if (next) {
-                  track("NATURAL_LANGUAGE_ENTRY_SELECTED", tripSession.id, {
-                    mode: tripMode,
-                  });
-                  requestAnimationFrame(() =>
-                    textInputRef.current?.scrollIntoView({
-                      behavior: "smooth",
-                      block: "center",
-                    }),
-                  );
-                  requestAnimationFrame(() => textInputRef.current?.focus());
-                }
-              }}
-            >
-              말하거나 입력해서 물어보기
-            </button>
-          </section>
-          <div className="planning-choice-divider">
-            <span>또는</span>
-            <strong>조건을 선택해서 일정 만들기</strong>
-          </div>
+      {!hasCompletedTurn && !loading && !voiceOpen && tripMode !== "NOW" && (
+        <details className="structured-request-alternative">
+          <summary>{language==="en"?"Choose trip preferences":"조건을 선택해서 일정 만들기"}</summary>
           {tripMode === "PLAN" ? (
             <><LocationContextBar mode="PLAN"/><PlanVisitorIntake
               loading={loading}
@@ -862,7 +832,7 @@ function ConciergeConversation() {
               onSubmit={(structured) => send("", structured)}
             />
           )}
-        </>
+        </details>
       )}
 
       {hasRecommendation && latestRecommendation && (
@@ -885,7 +855,7 @@ function ConciergeConversation() {
                   : undefined
             }
           />
-          <section className="card runtime-journey-card">
+          {shouldOfferContextRefresh(currentResult,Boolean(locationFreshnessNotice))&&<section className="card runtime-journey-card">
             <GajoLiveStatus
               actionOnly
               disabled={loading}
@@ -905,7 +875,7 @@ function ConciergeConversation() {
                 13시 강한 비 상황 재현
               </button>
             </details>
-          </section>
+          </section>}
           {loading && (
             <div className="loading">이어서 살펴보고 있습니다...</div>
           )}
@@ -953,25 +923,22 @@ function ConciergeConversation() {
       )}
       <InstallExperience usefulResult={hasPrimaryResult} />
 
-      {voiceOpen&&<VoiceInputDialog state={voiceState} text={voiceDraft} reviewing={Boolean(voiceUnderstanding)}
+      {requestUi.voice&&<VoiceInputDialog state={voiceState} text={voiceDraft} reviewing={Boolean(voiceUnderstanding)}
         error={voiceError} locale={language}
         onChange={text=>{setVoiceDraft(text);track("VOICE_PARTIAL_EDIT_COMPLETED",tripSession.id,{inputMethod:"TEXT"});}}
         onStop={stopListening} onSpeakAgain={beginVoice} onCancel={dismissVoice} onType={voiceToText}
         onConfirm={()=>send(voiceDraft,undefined,false,voiceUnderstanding||undefined)}/>}
-      {(tripMode !== "NOW" ? (hasCompletedTurn || freeTextOpen) : freeTextOpen) && (
+      {requestUi.followup&&<div className="conversation-other-request" aria-label={language==="en"?"Another request":"다른 요청"}>
+        <button type="button" className="btn btn-text" onClick={openVoice}>{requestCopy.voice}</button>
+        <button type="button" className="btn btn-text" onClick={openText}>{requestCopy.text}</button>
+      </div>}
+      {requestUi.text && (
         <div className={"concierge-input-panel concierge-unified-composer"}>
-          <div className="input-panel-heading">
-            <h2>{RECOMMENDATION_REQUEST_COPY[language].directTitle}</h2>
-          </div>
-          <div className="voice-mode-actions">
-            <button type="button" className="btn btn-outline" disabled={loading||listening} onClick={openVoice}>{RECOMMENDATION_REQUEST_COPY[language].voice}</button>
-            <button type="button" className="btn btn-outline" disabled={loading} onClick={voiceToText}>{RECOMMENDATION_REQUEST_COPY[language].text}</button>
-          </div>
           {manualEntryMode!=="VOICE"&&<textarea
             ref={textInputRef}
             rows={5}
             aria-label={RECOMMENDATION_REQUEST_COPY[language].inputLabel}
-            placeholder="필요한 내용을 입력하세요"
+            placeholder={requestCopy.help}
             value={input}
             onChange={(e)=>setInput(e.target.value)}
             onKeyDown={(e)=>{if(e.key==="Enter"&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();send();}}}
@@ -980,18 +947,18 @@ function ConciergeConversation() {
             className="btn btn-primary btn-block concierge-submit"
             onClick={() => send()}
             disabled={loading||Boolean(voiceUnderstanding)}
-            aria-label={hasCompletedTurn ? "질문 전송" : "대화로 찾기"}
+            aria-label={requestCopy.send}
           >
             {hasCompletedTurn ? (
               <>
                 <span aria-hidden="true">➤</span>
-                <span className="sr-only">전송</span>
+                <span className="sr-only">{requestCopy.send}</span>
               </>
             ) : (
-              "대화로 찾기"
+              requestCopy.send
             )}
           </button>}
-          {tripMode==="NOW"&&!hasCompletedTurn&&manualEntryMode!=="VOICE"&&<button type="button" className="btn btn-outline btn-block" onClick={()=>{cancelListening();setVoiceUnderstanding(null);setVoiceState("IDLE");setManualEntryMode(null);setFreeTextOpen(false)}}>취소</button>}
+          <button type="button" className="btn btn-outline" onClick={()=>{setManualEntryMode(null);setFreeTextOpen(false)}}>{requestCopy.cancel}</button>
           {hasCompletedTurn && (
             <button
               type="button"
@@ -1033,16 +1000,12 @@ function NowContinuationSummary({ planned }: { planned: PlannedContext }) {
 }
 
 function NowImmediateActions({
-  onNearby,onAsk,onItinerary,onVoice,onText,showDirectRequest,
+  onNearby,onAsk,onItinerary,
 }: {
   onNearby:(category:ConciergeChatResponse["nearbyCategory"])=>void;
   onAsk:(prompt:string)=>void;
   onItinerary:()=>void;
-  showDirectRequest:boolean;
-  onVoice:()=>void;
-  onText:()=>void;
 }) {
-  const {language}=useRegionalLanguage();
   return (
     <section className="now-needs" aria-labelledby="now-needs-title">
       <h2 id="now-needs-title">지금 무엇을 할까요?</h2>
@@ -1057,7 +1020,7 @@ function NowImmediateActions({
           {action.label}
         </button>
       ))}</div>
-      <section className="direct-request-choice" aria-labelledby="direct-request-title" hidden={!showDirectRequest}><h3 id="direct-request-title">{RECOMMENDATION_REQUEST_COPY[language].directTitle}</h3><div className="now-secondary-actions"><button type="button" onClick={onVoice}>{RECOMMENDATION_REQUEST_COPY[language].voice}</button><button type="button" onClick={onText}>{RECOMMENDATION_REQUEST_COPY[language].text}</button></div></section>
+
     </section>
   );
 }

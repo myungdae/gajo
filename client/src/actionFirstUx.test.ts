@@ -8,7 +8,7 @@ const actions=readFileSync(new URL("./nowQuickActions.ts",import.meta.url),"utf8
 
 test("NOW starts with one common action hub and secondary manual controls",()=>{
   for(const label of ["식당 찾기","카페 찾기","관광지 찾기","숙소 찾기","다음 일정 추천","일정 바꾸기"])assert.match(actions,new RegExp(label));
-  for(const label of ["RECOMMENDATION_REQUEST_COPY","directTitle","onVoice","onText"])assert.match(page,new RegExp(label));
+  for(const label of ["RECOMMENDATION_REQUEST_COPY","requestUi.intro","openVoice","voiceToText"])assert.match(page,new RegExp(label));
   assert.match(page,/action\.kind==="NEARBY"\?onNearby/);
   assert.match(page,/tripMode !== "NOW"/);
 });
