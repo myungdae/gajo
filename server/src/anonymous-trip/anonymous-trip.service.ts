@@ -1,6 +1,8 @@
+import { VisitorAnalyticsEvent } from '../analytics/visitor-event.schema';
 import {
   BadRequestException,
   Injectable,
+  Optional,
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
@@ -40,6 +42,7 @@ export class AnonymousTripService {
     @InjectModel(AnonymousTrip.name)
     private readonly model: Model<AnonymousTripDocument>,
     @InjectModel(PilotEvent.name) private readonly events: Model<PilotEventDocument>,
+    @Optional() @InjectModel(VisitorAnalyticsEvent.name) private readonly visitorEvents?:Model<VisitorAnalyticsEvent>,
   ) {}
   private hash(token:string){if(!ID.test(token||''))throw new ForbiddenException('trip ownership required');return createHash('sha256').update(token).digest('hex')}
   private validate(id: string, regionId: string) {
@@ -81,5 +84,5 @@ export class AnonymousTripService {
       expiresAt,
     };
   }
-  async delete(id:string,regionId:string,ownerToken:string){this.validate(id,regionId);const ownerTokenHash=this.hash(ownerToken);const result=await this.model.deleteOne({anonymousTripId:id,regionId,ownerTokenHash});if(result.deletedCount)await this.events.deleteMany({sessionId:id,regionId});return{deleted:Boolean(result.deletedCount)}}
+  async delete(id:string,regionId:string,ownerToken:string){this.validate(id,regionId);const ownerTokenHash=this.hash(ownerToken);const result=await this.model.deleteOne({anonymousTripId:id,regionId,ownerTokenHash});if(result.deletedCount){await this.events.deleteMany({sessionId:id,regionId});await this.visitorEvents?.deleteMany({anonymousTripId:id,regionId});}return{deleted:Boolean(result.deletedCount)}}
 }

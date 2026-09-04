@@ -1,3 +1,4 @@
+import { VisitorAnalyticsEvent,VisitorAnalyticsEventSchema } from '../analytics/visitor-event.schema';
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AnonymousTrip, AnonymousTripSchema } from './anonymous-trip.schema';
@@ -9,6 +10,7 @@ import { PilotEvent, PilotEventSchema } from '../schemas/pilot-event.schema';
     MongooseModule.forFeature([
       { name: AnonymousTrip.name, schema: AnonymousTripSchema },
       { name: PilotEvent.name, schema: PilotEventSchema },
+      { name: VisitorAnalyticsEvent.name, schema: VisitorAnalyticsEventSchema },
     ]),
   ],
   controllers: [AnonymousTripController],
