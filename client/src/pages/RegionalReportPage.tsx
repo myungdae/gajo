@@ -1,3 +1,4 @@
+import { VISIT_EXPLANATION, ACTION_EXPLANATION, LEGACY_NOTICE } from "../analyticsPresentation";
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -137,10 +138,9 @@ export default function RegionalReportPage() {
       </section>
     );
   const cards = [
-    ["익명 이용 세션", report.summary.anonymousSessions, "세션 수"],
-    ["AI 여행안내 시작", report.summary.aiGuideStarts, "시작 이벤트"],
-    ["추천 노출", report.summary.recommendationImpressions, "노출 횟수"],
-    ["이동 의도", report.summary.movementIntent, "연결 횟수"],
+        ["여행안내 시작", report.summary.aiGuideStarts, "시작 이벤트"],
+    ["AI 추천 표시", report.summary.recommendationImpressions, "노출 횟수"],
+    ["길찾기·이동 선택", report.summary.movementIntent, "연결 횟수"],
     ["검색 실패", report.summary.searchFailures, "검색 대체·재시도 오류"],
   ];
   return (
@@ -177,17 +177,25 @@ export default function RegionalReportPage() {
         </div>
       </header>
       {loading && <p role="status">집계 중입니다.</p>}
-      <section className="summary-grid" aria-label="요약">
+      <aside className="report-note"><strong>{LEGACY_NOTICE}</strong><p>내부 검증·관광 서비스 이용을 구분할 근거가 없는 기존 기록입니다. 신규 통계와 합산하지 않습니다.</p></aside>
+      <section className="report-usage-summary">
+        <h2>얼마나 이용했나요?</h2>
+        <div className="summary-grid"><div className="metric-card"><span>방문 세션</span><strong>{Number(report.summary.anonymousSessions).toLocaleString()}</strong><small>기존 익명 세션 집계 · 신규 30분 방문 세션과 기준이 다릅니다.</small></div><div className="metric-card"><span>익명 여행</span><strong>별도 집계 미지원</strong></div></div>
+        <p>{VISIT_EXPLANATION}</p>
+      </section>
+      <section className="report-action-summary"><h2>무엇을 했나요?</h2><p>{ACTION_EXPLANATION}</p>
+      <div className="summary-grid" aria-label="행동 횟수">
         {cards.map(([label, total, unit]) => (
           <div className="metric-card" key={String(label)}>
             <span>{label}</span>
-            <strong>{Number(total).toLocaleString()}</strong>
+            <strong>{Number(total).toLocaleString()}회</strong>
             <small>{unit}</small>
           </div>
         ))}
-      </section>
+      </div></section>
       <section>
         <h2>관심에서 실제 이용까지</h2>
+        <p className="report-note">기존 단계별 집계입니다. 같은 방문 세션의 순차 전환이나 전환율을 나타내지 않습니다. 전화·길찾기·일정 저장은 서로 병렬 행동입니다.</p>
         <div className="funnel-grid">
           {report.funnel.map((x: any, i: number) => (
             <div className="funnel-card" key={x.stage}>

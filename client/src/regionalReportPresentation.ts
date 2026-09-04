@@ -2,7 +2,7 @@ const FEATURE_LABELS: Readonly<Record<string, string>> = {
   quickIntent: "빠른 여행 목적 선택",
   freeLanguage: "자유 문장 요청",
   intentRouted: "여행 의도 분류 완료",
-  recommendation: "AI 추천 노출",
+  recommendation: "AI 추천 표시",
   map: "지도 열기",
   navigation: "길찾기 연결",
   phone: "전화 연결",

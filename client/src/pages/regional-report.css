@@ -371,3 +371,11 @@
     padding-inline: 8px;
   }
 }
+.report-usage-summary, .report-action-summary {
+  padding: 16px;
+  margin-block: 20px;
+  border: 1px solid #cadbd8;
+  border-radius: 12px;
+}
+.report-usage-summary { background: #edf7f5; }
+.report-action-summary { background: #f7f8fa; }

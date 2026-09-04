@@ -1,6 +1,18 @@
 .visitor-stats {
   min-width: 0;
 }
+.visitor-usage-summary, .visitor-action-summary, .visitor-funnel {
+  padding: 16px;
+  margin-block: 20px;
+  border: 1px solid #cadbd8;
+  border-radius: 12px;
+}
+.visitor-usage-summary { background: #edf7f5; }
+.visitor-action-summary { background: #f7f8fa; }
+.visitor-funnel { border-inline-start: 4px solid #087f79; }
+.visitor-parallel-actions { display: flex; flex-wrap: wrap; gap: 16px; padding-inline-start: 24px; }
+.visitor-parallel-actions li { flex: 1 1 160px; }
+.visitor-parallel-actions small { display: block; }
 .visitor-stats-controls {
   display: flex;
   gap: 12px;

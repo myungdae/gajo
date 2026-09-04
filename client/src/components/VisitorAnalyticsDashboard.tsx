@@ -1,3 +1,4 @@
+import { VISIT_EXPLANATION, ACTION_EXPLANATION, LEGACY_NOTICE, countLabel as number, conversionLabel, FUNNEL_LABELS } from "../analyticsPresentation";
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
 import { useRegion } from "../RegionContext";
@@ -9,11 +10,11 @@ const labels: Record<string, string> = {
   mixed: "혼합",
   unknown: "미확인",
   VERIFIED_ONSITE: "현장 확인",
-  ATTRIBUTED_ENTRY: "QR·링크 귀속",
-  GENERAL_VISIT: "일반 진입",
-  INTERNAL_TEST: "내부 검증",
+  ATTRIBUTED_ENTRY: "관광 서비스 이용 — QR・링크 귀속 유입",
+  GENERAL_VISIT: "관광 서비스 이용 — 일반 유입",
+  INTERNAL_TEST: "내부 검증 — 인증된 개발·테스트 세션",
   AUTOMATED_CHECK: "자동 점검",
-  UNKNOWN: "판별 불가",
+  UNKNOWN: "분류 미확인",
   HOME: "홈",
   NEARBY: "주변 검색",
   CONCIERGE: "AI 여행도우미",
@@ -31,8 +32,6 @@ const labels: Record<string, string> = {
 };
 const seoul = (value: string) =>
   new Date(value).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
-const number = (value: number | null | undefined) =>
-  value == null ? "소규모 보호" : value.toLocaleString();
 export default function VisitorAnalyticsDashboard({
   token,
 }: {
@@ -108,7 +107,7 @@ export default function VisitorAnalyticsDashboard({
             <thead>
               <tr>
                 <th scope="col">항목</th>
-                <th scope="col">이벤트</th>
+                <th scope="col">행동・표시 횟수</th>
                 <th scope="col">방문 세션</th>
               </tr>
             </thead>
@@ -116,7 +115,7 @@ export default function VisitorAnalyticsDashboard({
               {rows.map((row) => (
                 <tr key={row.label}>
                   <th scope="row">{labels[row.label] || row.label}</th>
-                  <td>{number(row.events)}</td>
+                  <td>{number(row.events, true)}</td>
                   <td>{number(row.visitSessions)}</td>
                 </tr>
               ))}
@@ -201,15 +200,16 @@ export default function VisitorAnalyticsDashboard({
           <p>
             <strong>
               {report.includeInternal
-                ? "내부 검증·자동 점검 포함"
+                ? "내부 검증 포함 · 자동 점검 포함"
                 : "내부 검증·자동 점검 제외"}
             </strong>{" "}
             · Asia/Seoul · {seoul(report.period.start)} ~{" "}
             {seoul(report.period.endExclusive)} (종료 제외)
           </p>
+          <p>새 통계 수집 시작일: {report.collectionStartedAt ? seoul(report.collectionStartedAt) : "아직 수집 없음"} · 마지막 갱신: {seoul(report.generatedAt)}</p>
+          <section className="visitor-usage-summary"><h3>얼마나 이용했나요?</h3>
           <dl className="visitor-stats-totals">
             {[
-              ["events", "이벤트 수"],
               ["visitSessions", "방문 세션"],
               ["anonymousTrips", "익명 여행"],
             ].map(([key, label]) => (
@@ -218,29 +218,39 @@ export default function VisitorAnalyticsDashboard({
                 <dd>{number(report.totals[key].value)}</dd>
               </div>
             ))}
-          </dl>
+          </dl><p>{VISIT_EXPLANATION}</p></section>
+          <section className="visitor-action-summary"><h3>무엇을 했나요?</h3><p>{ACTION_EXPLANATION}</p>
+            <p>전체 행동·화면 표시 횟수: <strong>{number(report.totals.events.value, true)}</strong></p>
+            {table("핵심 행동 횟수", report.events)}
+            <p>여행안내 시작·AI 추천 표시·검색 실패의 별도 집계는 신규 계약에서 지원하지 않습니다. 검색 결과 표시는 AI 추천만을 뜻하지 않습니다. 길찾기 선택은 행동별 횟수로 확인하세요.</p>
+          </section>
+          <section className="visitor-funnel" aria-label="관심에서 실제 이용까지">
+            <h3>관심에서 실제 이용까지</h3>
+            <p>같은 방문 세션 안에서 같은 검색·결과·장소를 거쳐 다음 단계로 진행한 고유 세션 수입니다. 화면 표시가 실제로 읽었음을 증명하지는 않습니다.</p>
+            <p>서비스 진입: 전체 방문 세션 {number(report.totals.visitSessions.value)} · 아래 검색 퍼널의 선행 단계로 연결한 전환율은 미지원입니다.</p>
+            <ol>{report.funnel.map((row: any, index: number) => <li key={row.label}>
+              <strong>{FUNNEL_LABELS[index] || row.label}</strong>: {number(row.visitSessions)} 방문 세션
+              <p>{index === 0 ? "기준: 검색한 고유 방문 세션 · 퍼널 시작 단계" : `기준: 앞 단계에서 진행한 고유 방문 세션 · 이전 단계 대비 ${conversionLabel(row.visitSessions, report.funnel[index - 1]?.visitSessions)}`}</p>
+            </li>)}</ol>
+            <p>AI 추천 확인은 검색 결과 확인과 별도 구분하지 않아 독립 전환율을 제공하지 않습니다.</p>
+            <ul className="visitor-parallel-actions" aria-label="병렬 행동">{["전화", "길찾기", "일정 저장"].map(label=><li key={label}>{label}<small>상세 확인 후 가능한 병렬 행동 · 개별 순차 퍼널 수·비율 분리 미지원</small></li>)}</ul>
+            <p>마지막 단계는 전화·길찾기·일정 저장 중 하나 이상을 한 고유 세션입니다. 세 행동을 차례로 완료한 수가 아니며, 행동별 이용 세션을 더해 계산하지 않습니다.</p>
+          </section>
           {table("유입 분류", report.classification)}
+          <p>관광 서비스 이용은 일반·귀속 유입을 뜻합니다. 일반 접속이나 QR 링크만으로 실제 사람·현장 존재를 증명하지 않습니다. 분류 미확인은 기본 통계에 포함되며, 내부 검증·자동 점검만 기본 제외합니다.</p>
           {table(
             "내부 검증·자동 점검 기록 (기본 집계 제외)",
             report.exclusionCounts,
           )}
           {table("사용 언어 — 세션 기준, 혼합 별도", report.languages)}
           {table("화면별 이용", report.screens)}
-          {table("행동별 이용", report.events)}
           {table("날짜별 이용", report.days)}
-          <h3>검색 → 결과 → 상세 → 행동</h3>
-          <ol>
-            {report.funnel.map((row: any) => (
-              <li key={row.label}>
-                {row.label}: {number(row.visitSessions)} 방문 세션
-              </li>
-            ))}
-          </ol>
           {table("장소별 행동", report.places)}
           <p>
             {report.onsite.label} · 예약 완료 측정은 이번 범위에 포함되지
             않습니다.
           </p>
+          <p><strong>{LEGACY_NOTICE}</strong> · {report.legacy.present ? "기존 기록 있음" : "기존 기록 없음"}. 신규 통계와 합산하거나 소급 분류하지 않습니다.</p>
           <details>
             <summary>통계 정의·제외 조건·보존 기준</summary>
             {Object.entries(report.definitions).map(([key, value]) => (
