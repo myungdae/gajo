@@ -9,11 +9,10 @@ import {
   loadTripSession,
   safeTripState,
   saveTripSession,
-  hasTripEvidence,
   tripRestorationDiagnostics,
   type TripSession,
 } from "../tripSession";
-import { itineraryItemCount, reconcileTrip } from "../tripContinuity";
+import { hasActiveItinerary, itineraryItemCount, reconcileTrip } from "../tripContinuity";
 import { journeyDayCounts } from "../fullJourney";
 import { itinerarySteps, savedPlaceItems } from "../journeyExecution";
 import { continueTripLabel, homeTripSummary } from "../homeExperience";
@@ -32,7 +31,7 @@ export default function TripContinuity({onNewTrip}:{onNewTrip?:()=>void}={}) {
     if (!home) return;
     let live = true;
     const local = loadTripSession(localStorage, region.id);
-    if (!local || !hasTripEvidence(local)) {
+    if (!hasActiveItinerary(local)) {
       setTrip(undefined);
       setVisible(false);
       return;
@@ -61,7 +60,7 @@ export default function TripContinuity({onNewTrip}:{onNewTrip?:()=>void}={}) {
           deletionToken: local.deletionToken,
         }).catch(() => undefined);
       }
-      if (!live || !itineraryItemCount(restored)) return;
+      if (!live || !hasActiveItinerary(restored)) return;
       setTrip(restored);
       setVisible(true);
       track("TRIP_RESTORED", restored.id, {

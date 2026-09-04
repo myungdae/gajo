@@ -4,7 +4,8 @@ import { fetchRegionalHome, type NearbyCategory } from "../api/client";
 import TripContinuity from "../components/TripContinuity";
 import { useRegion } from "../RegionContext";
 import { localizedRegionalPath as regionalPath } from '../visitorRouting';
-import { ensureTripSession, loadTripSession, hasTripEvidence, saveTripSession, type PlannedContext } from "../tripSession";
+import { ensureTripSession, loadTripSession, saveTripSession, type PlannedContext } from "../tripSession";
+import { hasActiveItinerary } from "../tripContinuity";
 import type{CreateContextInput}from'../api/client';
 import RuntimeJourneyEntry from '../components/RuntimeJourneyEntry';
 import RuntimeJourneyIntro from '../components/RuntimeJourneyIntro';
@@ -52,7 +53,7 @@ export default function HomePage() {
     guidanceContext = regionalHomeGuidancePlace(region, loadTripSession(localStorage, region.id), language, english),
     guidance = buildProactiveGuidance(guidanceContext, undefined, new Date(), language),
     primary = () => spotlight.primaryAction?.type === "DETAIL" && spotlight.primaryAction.target ? navigate(withLanguage(spotlight.primaryAction.target)) : ask(`${spotlight.title} 이야기를 알려주세요.`, `Tell me more about ${spotlight.title}.`),
-    activeTrip=loadTripSession(localStorage,region.id),hasActiveTrip=Boolean(activeTrip&&hasTripEvidence(activeTrip)),
+    activeTrip=loadTripSession(localStorage,region.id),hasActiveTrip=hasActiveItinerary(activeTrip),
     createJourney=(text:string,context:CreateContextInput,planned:PlannedContext)=>{const current=session();saveTripSession({...current,mode:'NOW',plannedContext:{...(current.plannedContext||{}),...planned}});track('RUNTIME_JOURNEY_REQUESTED',current.id,{mode:'NOW'});navigate(link('/concierge?mode=now'),{state:{tripMode:'NOW',initialMessage:text,quickContext:context,autoSubmit:true}})};
 
   return <div className="regional-home" lang={language} style={{ "--region-accent": region.accent } as React.CSSProperties}>
