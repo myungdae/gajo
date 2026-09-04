@@ -53,8 +53,9 @@ export class VisitorAnalyticsService {
     @InjectModel(VisitorAnalyticsMarker.name)
     private markers: Model<VisitorAnalyticsMarker>,
   ) {}
-  async record(input: unknown, marker: unknown, now = new Date()) {
+  async record(input: unknown, marker: unknown, now = new Date(), trustedBooking = false) {
     const v = validateVisitorEvent(input, now);
+    if (v.eventType.startsWith('BOOKING_') && !trustedBooking) throw new BadRequestException('Booking events require approved channel dispatch');
     if (v.placeKey) {
       const proof = verifyPlaceProof(
         v.placeProof,

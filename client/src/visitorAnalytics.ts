@@ -215,3 +215,13 @@ export function bridgeVisitorEvent(
     ...(["naver", "kakao", "tmap"].includes(provider) ? { provider } : {}),
   });
 }
+
+// Reserved for the approved channel dispatch endpoint, never the public events endpoint.
+export function bookingActionContext(regionId: string, anonymousTripId: string, placeKey: string, channelId: string) {
+  const visit = visitFor(regionId);
+  if (pagePath !== window.location.pathname || !pageViewId) { pagePath = window.location.pathname; pageViewId = uuid(); }
+  return { schemaVersion: 2, eventId: uuid(), actionId: uuid(), eventType: 'BOOKING_CLICKED', regionId, anonymousTripId,
+    visitSessionId: visit.visitSessionId, pageViewId, screen: analyticsScreen(window.location.pathname, regionId),
+    uiLocale: currentVisitorLocale(), occurredAt: new Date().toISOString(), placeKey, channelId,
+    ...(visit.entryId ? {entryId: visit.entryId} : {}) };
+}

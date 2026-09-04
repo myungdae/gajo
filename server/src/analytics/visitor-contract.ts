@@ -9,6 +9,8 @@ export const VISITOR_REGIONS = [
   'daejeon-junggu',
 ];
 export const VISITOR_EVENTS = [
+  'BOOKING_CLICKED',
+  'BOOKING_OUTBOUND_DISPATCHED',
   'PAGE_VIEWED',
   'REGION_HOME_VIEWED',
   'NEARBY_SEARCH_SUBMITTED',
@@ -57,8 +59,10 @@ export interface VisitorEventDto {
   resultCount?: number;
   entryId?: string;
   provider?: string;
+  channelId?: string;
 }
 const keys = new Set([
+  'channelId',
   'schemaVersion',
   'eventId',
   'eventType',
@@ -170,5 +174,8 @@ export function validateVisitorEvent(
     !v.actionId
   )
     return fail();
+  if (v.eventType.startsWith('BOOKING_') && (!v.placeKey || !v.actionId || !UUID.test(v.channelId || ''))) return fail();
+  if (v.channelId !== undefined && !UUID.test(v.channelId)) return fail();
+  if (v.channelId !== undefined && !v.eventType.startsWith('BOOKING_')) return fail();
   return v;
 }

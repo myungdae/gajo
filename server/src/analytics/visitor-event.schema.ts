@@ -24,6 +24,7 @@ export class VisitorAnalyticsEvent {
   @Prop() searchId?: string;
   @Prop() resultSetId?: string;
   @Prop() actionId?: string;
+  @Prop() channelId?: string;
   @Prop() placeKey?: string;
   @Prop() resultCount?: number;
   @Prop() entryId?: string;

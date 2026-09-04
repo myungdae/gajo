@@ -1,3 +1,4 @@
+import { ActionChannelModule } from './action-channels/action-channel.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -54,6 +55,7 @@ import { RegionalSpotlightModule } from './spotlight/regional-spotlight.module';
     RegionModule,
     AnalyticsModule,
     RegionalDataModule,
+    ActionChannelModule,
     AnonymousTripModule,
     PartnerModule,
     ExkoSemanticModule,

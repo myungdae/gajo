@@ -21,6 +21,8 @@ const labels: Record<string, string> = {
   MY_TRIP: "내 여행",
   MAP: "지도",
   PARTNER_ENTRY: "업체 진입",
+  BOOKING_CLICKED: "예약 버튼 선택",
+  BOOKING_OUTBOUND_DISPATCHED: "예약 페이지 이동",
   PAGE_VIEWED: "화면 조회",
   REGION_HOME_VIEWED: "지역 홈 진입",
   NEARBY_SEARCH_SUBMITTED: "검색 실행",
@@ -247,8 +249,7 @@ export default function VisitorAnalyticsDashboard({
           {table("날짜별 이용", report.days)}
           {table("장소별 행동", report.places)}
           <p>
-            {report.onsite.label} · 예약 완료 측정은 이번 범위에 포함되지
-            않습니다.
+            {report.onsite.label} · 예약 완료 측정 미지원. 예약 페이지 이동은 예약 완료가 아닙니다.
           </p>
           <p><strong>{LEGACY_NOTICE}</strong> · {report.legacy.present ? "기존 기록 있음" : "기존 기록 없음"}. 신규 통계와 합산하거나 소급 분류하지 않습니다.</p>
           <details>

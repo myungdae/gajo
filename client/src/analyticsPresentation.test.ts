@@ -40,7 +40,7 @@ test('classification defaults and collection dates remain based on server respon
   assert.match(dashboard, /report.includeInternal/);
   assert.match(dashboard, /내부 검증 포함 · 자동 점검 포함/);
   for (const label of ['관광 서비스 이용 — 일반 유입', '관광 서비스 이용 — QR・링크 귀속 유입', '분류 미확인', '인증된 개발·테스트 세션', '새 통계 수집 시작일:', 'seoul(report.collectionStartedAt)']) assert.ok(dashboard.includes(label));
-  assert.match(dashboard, /예약 완료 측정은 이번 범위에 포함되지/);
+  assert.match(dashboard, /예약 완료 측정 미지원/);
   assert.match(dashboard, /서로 다른 방문 세션 5개 미만/);
   assert.doesNotMatch(dashboard, /\/regional-report"|\.reduce\(/);
 });
