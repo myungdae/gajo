@@ -521,6 +521,7 @@ export type NearbyCategory =
   | "ATM"
   | "OTHER";
 export interface NearbyPlace {
+  analyticsProof?: string;
   visitorContent?: {
     officialEnglishName?: string;
     reviewedEnglishName?: string;

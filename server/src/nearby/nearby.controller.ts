@@ -1,3 +1,4 @@
+import { issuePlaceProof } from '../analytics/visitor-evidence';
 /* eslint-disable prettier/prettier */
 import { BadGatewayException, BadRequestException, Body, Controller, GatewayTimeoutException, Get, Post, Query, ServiceUnavailableException,UseGuards } from '@nestjs/common';
 import { NearbyCategory, NearbyService, NearbyServiceError } from './nearby.service';
@@ -30,7 +31,7 @@ export class NearbyController {
     const { lat, lng, radius } = this.validateSearch(String(body.latitude), String(body.longitude), body.radius==null?undefined:String(body.radius),false);
     try {
       const search = await this.nearby.searchProgressively(categoryValue as NearbyCategory, lat, lng, { weather, useDistance: useDistanceValue, transportMode: transportMode === 'car' ? 'car' : 'foot' }, searchRegionId, radius as NearbyRadius|undefined,experienceRegionId,body.regionMembership),results=search.results;
-      return localizeVisitorPayload({ searchedAt:new Date().toISOString(),timeZone:'Asia/Seoul',distanceTrusted:useDistanceValue,experienceRegionId,searchRegionId:searchRegionId||null,regionMembership:body.regionMembership||'UNCERTAIN',category:categoryValue,radius:search.radius,initialRadius:search.initialRadius,nextRadius:search.nextRadius,minimumCandidates:search.minimumCandidates,expanded:search.expanded,coverageStatus:search.coverageStatus,providerCalls:search.providerCalls,diagnostics:search.diagnostics,distanceBands:search.distanceBands,total:results.length,resultStatus:results.length?'AVAILABLE':'EMPTY',results:results.slice(0,30) },normalizeVisitorLocale(body.locale));
+      return localizeVisitorPayload({ searchedAt:new Date().toISOString(),timeZone:'Asia/Seoul',distanceTrusted:useDistanceValue,experienceRegionId,searchRegionId:searchRegionId||null,regionMembership:body.regionMembership||'UNCERTAIN',category:categoryValue,radius:search.radius,initialRadius:search.initialRadius,nextRadius:search.nextRadius,minimumCandidates:search.minimumCandidates,expanded:search.expanded,coverageStatus:search.coverageStatus,providerCalls:search.providerCalls,diagnostics:search.diagnostics,distanceBands:search.distanceBands,total:results.length,resultStatus:results.length?'AVAILABLE':'EMPTY',results:results.slice(0,30).map(place=>({...place,analyticsProof:issuePlaceProof(experienceRegionId,(place.provider==='KAKAO'||place.transient)?`provider:kakao:${place.providerPlaceId||place.id}`:place.canonicalEntityUri||place.id)})) },normalizeVisitorLocale(body.locale));
     } catch (error) { this.rethrow(error); }
   }
   @Post('restaurants') @UseGuards(PublicWriteRateLimitGuard) @PublicWriteLimit('NEARBY_LOOKUP')

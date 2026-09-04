@@ -1,3 +1,4 @@
+import VisitorAnalyticsObserver from './components/VisitorAnalyticsObserver';
 import { BrowserRouter, Navigate, Routes, Route, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
@@ -27,7 +28,7 @@ function HapcheonEntry(){const location=useLocation(),started=new URLSearchParam
 export default function App() {
   return (
     <BrowserRouter>
-      <RegionProvider><RegionalLanguageProvider><Routes>
+      <RegionProvider><RegionalLanguageProvider><VisitorAnalyticsObserver/><Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<RootEntry />} />
           <Route path="/regions" element={<RegionSelectionPage />} />

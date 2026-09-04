@@ -1,3 +1,4 @@
+import { bridgeVisitorEvent } from './visitorAnalytics';
 import { api } from "./api/client";
 export type PilotEventType =
   | "MY_TRIP_OPENED"
@@ -73,6 +74,7 @@ export function track(
   sessionId: string,
   metadata: Record<string, string | number | boolean | undefined> = {},
 ) {
+  bridgeVisitorEvent(eventType, activeRegionId, sessionId, metadata);
   const safe = Object.fromEntries(
     Object.entries({
       ...activeRegionMetadata,

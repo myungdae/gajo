@@ -1,3 +1,4 @@
+import { setEntry } from '../visitorAnalytics';
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { fetchPublicPartner, recordPartnerEntry, type PublicPartner } from "../api/client";
@@ -22,6 +23,7 @@ export default function PartnerEntryPage() {
           anonymousTripId: trip.anonymousTripId,
           regionId: p.regionId,
         });
+        setEntry(p.regionId, `partner:${p.partnerSlug}`);
         saveTripSession(applyPartnerEntryToTrip(trip, p, enteredAt));
         if (live) setPartner(p);
       } catch (e: any) {
