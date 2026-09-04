@@ -1,0 +1,121 @@
+{
+  "fixture": true,
+  "productionApi": false,
+  "checks": [
+    "default excludes 5 internal sessions; separates events / visit sessions / anonymous trips",
+    "authenticated inclusion toggle and Korean/English/mixed labels",
+    "custom Seoul period is sent explicitly",
+    "mobile dashboard bounds and accessible controls",
+    "denied region shows an error and no previous regional statistics",
+    "administrator views do not generate visitor telemetry"
+  ],
+  "errors": [],
+  "requests": [
+    {
+      "path": "/api/admin/dashboard",
+      "query": {}
+    },
+    {
+      "path": "/api/analytics/summary",
+      "query": {}
+    },
+    {
+      "path": "/api/admin/dashboard",
+      "query": {}
+    },
+    {
+      "path": "/api/analytics/summary",
+      "query": {}
+    },
+    {
+      "path": "/api/admin/regional-data",
+      "query": {}
+    },
+    {
+      "path": "/api/admin/regional-spotlights",
+      "query": {
+        "regionId": "hapcheon"
+      }
+    },
+    {
+      "path": "/api/admin/regional-data",
+      "query": {}
+    },
+    {
+      "path": "/api/admin/regional-spotlights",
+      "query": {
+        "regionId": "hapcheon"
+      }
+    },
+    {
+      "path": "/api/analytics/v2/report",
+      "query": {
+        "regionId": "hapcheon",
+        "period": "7d",
+        "includeInternal": "false"
+      }
+    },
+    {
+      "path": "/api/analytics/v2/report",
+      "query": {
+        "regionId": "hapcheon",
+        "period": "7d",
+        "includeInternal": "true"
+      }
+    },
+    {
+      "path": "/api/analytics/v2/report",
+      "query": {
+        "regionId": "hapcheon",
+        "period": "custom",
+        "includeInternal": "true",
+        "from": "2026-09-04",
+        "to": "2026-09-04"
+      }
+    },
+    {
+      "path": "/api/admin/dashboard",
+      "query": {}
+    },
+    {
+      "path": "/api/analytics/summary",
+      "query": {}
+    },
+    {
+      "path": "/api/admin/dashboard",
+      "query": {}
+    },
+    {
+      "path": "/api/analytics/summary",
+      "query": {}
+    },
+    {
+      "path": "/api/admin/regional-data",
+      "query": {}
+    },
+    {
+      "path": "/api/admin/regional-spotlights",
+      "query": {
+        "regionId": "muan"
+      }
+    },
+    {
+      "path": "/api/admin/regional-data",
+      "query": {}
+    },
+    {
+      "path": "/api/admin/regional-spotlights",
+      "query": {
+        "regionId": "muan"
+      }
+    },
+    {
+      "path": "/api/analytics/v2/report",
+      "query": {
+        "regionId": "muan",
+        "period": "7d",
+        "includeInternal": "false"
+      }
+    }
+  ]
+}
