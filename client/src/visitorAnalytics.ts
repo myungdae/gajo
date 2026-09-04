@@ -5,6 +5,7 @@ import {
 } from "./visitorAnalyticsSession.ts";
 import { currentVisitorLocale } from "./visitorRouting.ts";
 type EventType =
+  | "PLACE_RECOMMENDATION_SHOWN"
   | "PAGE_VIEWED"
   | "REGION_HOME_VIEWED"
   | "NEARBY_SEARCH_SUBMITTED"

@@ -9,6 +9,10 @@ export const VISITOR_REGIONS = [
   'daejeon-junggu',
 ];
 export const VISITOR_EVENTS = [
+  'PLACE_RECOMMENDATION_SHOWN',
+  'WEBSITE_OUTBOUND_DISPATCHED',
+  'NAVER_PLACE_OUTBOUND_DISPATCHED',
+  'KAKAO_PLACE_OUTBOUND_DISPATCHED',
   'BOOKING_CLICKED',
   'BOOKING_OUTBOUND_DISPATCHED',
   'PAGE_VIEWED',
@@ -176,6 +180,8 @@ export function validateVisitorEvent(
     return fail();
   if (v.eventType.startsWith('BOOKING_') && (!v.placeKey || !v.actionId || !UUID.test(v.channelId || ''))) return fail();
   if (v.channelId !== undefined && !UUID.test(v.channelId)) return fail();
-  if (v.channelId !== undefined && !v.eventType.startsWith('BOOKING_')) return fail();
+  if ((v.eventType.endsWith('_OUTBOUND_DISPATCHED') || v.eventType === 'PLACE_RECOMMENDATION_SHOWN') && !v.placeKey) return fail();
+  if (v.eventType.endsWith('_OUTBOUND_DISPATCHED') && (!v.actionId || !UUID.test(v.channelId || ''))) return fail();
+  if (v.channelId !== undefined && !v.eventType.startsWith('BOOKING_') && !v.eventType.endsWith('_OUTBOUND_DISPATCHED') && v.eventType !== 'PHONE_CLICKED') return fail();
   return v;
 }

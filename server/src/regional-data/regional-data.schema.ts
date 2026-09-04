@@ -13,6 +13,8 @@ export type VerificationStatus =
   'UNVERIFIED' | 'PARTIAL' | 'VERIFIED' | 'REVERIFY_REQUIRED';
 @Schema({ timestamps: true })
 export class RegionalDataRecord {
+  @Prop({ type: Object }) registration?: Record<string, any>;
+  @Prop({ type: [String], default: undefined }) registrationKeys?: string[];
   @Prop({ required: true, unique: true }) id: string;
   @Prop({ required: true, index: true }) canonicalEntityId: string;
   @Prop({ required: true, index: true }) regionId: string;
@@ -82,6 +84,7 @@ export class RegionalDataRecord {
 export type RegionalDataRecordDocument = RegionalDataRecord & Document;
 export const RegionalDataRecordSchema =
   SchemaFactory.createForClass(RegionalDataRecord);
+RegionalDataRecordSchema.index({registrationKeys:1},{unique:true,sparse:true});
 RegionalDataRecordSchema.index(
   { regionId: 1, canonicalEntityId: 1 },
   { unique: true },

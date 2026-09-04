@@ -13,6 +13,17 @@ export class ChannelOutboundService {
   async dispatch(regionId: string, placeKey: string, channelId: string, body: any, marker?: string, clickOnly = false) {
     if (!body || Object.keys(body).some(k => !['revision','event'].includes(k)) || !Number.isInteger(body.revision)) throw new BadRequestException('Invalid dispatch request');
     const channel = await this.channels.approved(regionId, placeKey, channelId, body.revision);
+    if (channel.kind !== 'DIRECT_BOOKING' && body.event) {
+      try {
+        const type = ({PHONE:'PHONE_CLICKED',OFFICIAL_WEBSITE:'WEBSITE_OUTBOUND_DISPATCHED',NAVER_PLACE:'NAVER_PLACE_OUTBOUND_DISPATCHED',KAKAO_PLACE:'KAKAO_PLACE_OUTBOUND_DISPATCHED'} as const)[channel.kind];
+        const supplied = body.event;
+        if (supplied.regionId !== regionId || supplied.placeKey !== channel.placeKey || supplied.channelId !== channelId || supplied.eventType !== 'BOOKING_CLICKED') throw new BadRequestException();
+        if (type && !clickOnly) {
+          const event = validateVisitorEvent({...supplied,eventType:type,eventId:bookingEventId(supplied.actionId,type)});
+          void this.analytics.record(event,marker,new Date(),true).catch(()=>undefined);
+        }
+      } catch { /* Optional telemetry never blocks an approved action. */ }
+    }
     if (channel.kind === 'DIRECT_BOOKING' && body.event) {
       // Analytics is optional. Neither invalid telemetry nor a database failure blocks a verified action.
       try {

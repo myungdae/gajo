@@ -147,7 +147,8 @@ export class RegionalDataService implements OnModuleInit {
         'verificationStatus',
       ].flatMap((key) => (filters[key] ? [[key, filters[key]]] : [])),
     );
-    return this.model.find(query).sort({ regionId: 1, displayName: 1 }).lean();
+    const rows = await this.model.find(query).sort({ regionId: 1, displayName: 1 }).lean();
+    return rows.filter(row => !row.registration);
   }
   async create(input: any) {
     if (
@@ -184,6 +185,7 @@ export class RegionalDataService implements OnModuleInit {
       regionId: input.regionId,
     });
     if (existing) {
+      if (existing.registration) throw new BadRequestException('Use the business review workflow for this place');
       if (
         existing.proposedFacts &&
         this.sameFacts(existing.proposedFacts, input.proposedFacts)
@@ -251,6 +253,7 @@ export class RegionalDataService implements OnModuleInit {
   ) {
     const row: any = await this.model.findOne({ id });
     if (!row) throw new NotFoundException();
+    if (row.registration) throw new BadRequestException('Use the business review workflow for this place');
     const facts = { ...(row.proposedFacts || {}), ...(editedFacts || {}) };
     const auditedChanges = [...(row.detectedChanges || [])];
     if (['APPROVE', 'APPLY_CHANGE', 'APPROVE_EDITED'].includes(action)) {
@@ -608,6 +611,7 @@ export class RegionalDataService implements OnModuleInit {
         canonicalEntityId: imported.canonicalEntityId,
       });
       const facts = this.importFacts(imported);
+      if (existing?.registration) throw new BadRequestException('Use the business review workflow for this place');
       const comparable = existing
         ? existing.proposedFacts && existing.lifecycleStatus !== 'ACTIVE'
           ? existing.proposedFacts

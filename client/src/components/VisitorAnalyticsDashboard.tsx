@@ -5,6 +5,10 @@ import { useRegion } from "../RegionContext";
 import { startAnalyticsTestVisit } from "../visitorAnalytics";
 import "./visitor-analytics.css";
 const labels: Record<string, string> = {
+  PLACE_RECOMMENDATION_SHOWN: "추천 표시",
+  WEBSITE_OUTBOUND_DISPATCHED: "홈페이지 이동",
+  NAVER_PLACE_OUTBOUND_DISPATCHED: "네이버 플레이스 이동",
+  KAKAO_PLACE_OUTBOUND_DISPATCHED: "카카오 플레이스 이동",
   ko: "한국어",
   en: "영어",
   mixed: "혼합",
@@ -36,8 +40,10 @@ const seoul = (value: string) =>
   new Date(value).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
 export default function VisitorAnalyticsDashboard({
   token,
+  placeNames = {},
 }: {
   token: string;
+  placeNames?: Record<string,string>;
 }) {
   const region = useRegion(),
     [period, setPeriod] = useState("7d"),
@@ -116,7 +122,7 @@ export default function VisitorAnalyticsDashboard({
             <tbody>
               {rows.map((row) => (
                 <tr key={row.label}>
-                  <th scope="row">{labels[row.label] || row.label}</th>
+                  <th scope="row">{labels[row.label] || row.label.split(' · ').map((part:string)=>placeNames[part]||labels[part]||part).join(' · ')}</th>
                   <td>{number(row.events, true)}</td>
                   <td>{number(row.visitSessions)}</td>
                 </tr>

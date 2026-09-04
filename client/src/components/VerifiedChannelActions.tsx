@@ -16,7 +16,7 @@ export default function VerifiedChannelActions({regionId,placeKey,onKinds}:{regi
     if(popup)popup.opener=null;
     try{
       const body:any={revision:channel.revision};let marker:string|null=null;
-      if(channel.kind==='DIRECT_BOOKING')try{
+      try{
         const previous=attempts.current.get(channel.channelId);
         const event=previous&&Date.now()-previous.at<5000?previous.event:bookingActionContext(regionId,ensureTripSession(regionId).id,channel.placeKey,channel.channelId);
         attempts.current.set(channel.channelId,{at:Date.now(),event});body.event=event;

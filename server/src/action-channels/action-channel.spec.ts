@@ -107,6 +107,16 @@ describe('regional manager golden scenario',()=>{
     const after=engine.suitability([{...base,actionChannels:[{kind:'DIRECT_BOOKING',published:true}],reservationUrl:fields().target,partnerPaid:true}] as any,context as any);
     expect(after[0].score).toBe(before[0].score);
   });
+  it.each([['PHONE','PHONE_CLICKED'],['OFFICIAL_WEBSITE','WEBSITE_OUTBOUND_DISPATCHED'],['NAVER_PLACE','NAVER_PLACE_OUTBOUND_DISPATCHED'],['KAKAO_PLACE','KAKAO_PLACE_OUTBOUND_DISPATCHED']])('separates %s actions from booking and deduplicates retries',async(kind,type)=>{
+    const id=randomUUID(), channels={approved:jest.fn().mockResolvedValue({channelId:id,placeKey:place,kind,target:kind==='PHONE'?'055-999-1234':'https://example.com/',revision:1})}, analytics={record:jest.fn().mockResolvedValue({accepted:true})};
+    const event={schemaVersion:2,eventId:randomUUID(),eventType:'BOOKING_CLICKED',regionId:'hapcheon',anonymousTripId:randomUUID(),visitSessionId:randomUUID(),pageViewId:randomUUID(),screen:'CONCIERGE',uiLocale:'ko',occurredAt:new Date().toISOString(),actionId:randomUUID(),channelId:id,placeKey:place};
+    const service=new ChannelOutboundService(channels as any,analytics as any);
+    await service.dispatch('hapcheon',place,id,{revision:1,event},undefined,true);expect(analytics.record).not.toHaveBeenCalled();
+    await service.dispatch('hapcheon',place,id,{revision:1,event});await service.dispatch('hapcheon',place,id,{revision:1,event});
+    expect(analytics.record.mock.calls[0][0].eventType).toBe(type);expect(analytics.record.mock.calls[0][0].eventId).toBe(analytics.record.mock.calls[1][0].eventId);
+    channels.approved.mockRejectedValue(new Error('suspended'));
+    await expect(service.dispatch('hapcheon',place,id,{revision:1,event})).rejects.toThrow();expect(analytics.record).toHaveBeenCalledTimes(2);
+  });
   it('booking events preserve internal exclusion, five-session protection and inclusion subtraction protection',()=>{
     const now=new Date(), make=(visit:string,trafficClass='GENERAL_VISIT')=>({eventType:'BOOKING_CLICKED',visitSessionId:visit,anonymousTripId:visit,receivedAt:now,occurredAt:now,trafficClass,screen:'CONCIERGE',uiLocale:'ko'});
     const publicRows=Array.from({length:5},(_,i)=>make(String(i))), rows=[...publicRows,make('internal','INTERNAL_TEST'),make('auto','AUTOMATED_CHECK')];

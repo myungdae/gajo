@@ -231,6 +231,13 @@ export function buildVisitorReport(
         .sort()
         .flatMap((place) =>
           [
+            'PLACE_RECOMMENDATION_SHOWN',
+            'PLACE_DETAIL_OPENED',
+            'WEBSITE_OUTBOUND_DISPATCHED',
+            'NAVER_PLACE_OUTBOUND_DISPATCHED',
+            'KAKAO_PLACE_OUTBOUND_DISPATCHED',
+            'BOOKING_CLICKED',
+            'BOOKING_OUTBOUND_DISPATCHED',
             'PHONE_CLICKED',
             'DIRECTIONS_CLICKED',
             'ITINERARY_SAVE_SUCCEEDED',

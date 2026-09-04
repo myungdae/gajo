@@ -55,7 +55,9 @@ export class VisitorAnalyticsService {
   ) {}
   async record(input: unknown, marker: unknown, now = new Date(), trustedBooking = false) {
     const v = validateVisitorEvent(input, now);
+    if (v.channelId && !trustedBooking) throw new BadRequestException('Channel attribution requires approved dispatch');
     if (v.eventType.startsWith('BOOKING_') && !trustedBooking) throw new BadRequestException('Booking events require approved channel dispatch');
+    if (v.eventType.endsWith('_OUTBOUND_DISPATCHED') && !trustedBooking) throw new BadRequestException('Outbound events require approved channel dispatch');
     if (v.placeKey) {
       const proof = verifyPlaceProof(
         v.placeProof,

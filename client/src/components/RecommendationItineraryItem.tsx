@@ -1,4 +1,5 @@
 import { useState } from "react";
+import RecommendationExposure from './RecommendationExposure';
 import { Link, useNavigate } from "react-router-dom";
 import EntityActions from "./EntityActions";
 import { useRegion } from "../RegionContext";
@@ -106,6 +107,7 @@ export default function RecommendationItineraryItem({
   };
   return (
     <div className={`itinerary-step${interactive ? " interactive" : ""}`}>
+      {entityId && <RecommendationExposure placeKey={entityId}/>}
       {!collection && (
         <div className="step-index">{step.order ?? index + 1}</div>
       )}
