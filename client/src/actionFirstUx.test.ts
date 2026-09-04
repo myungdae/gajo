@@ -4,13 +4,13 @@ import { readFileSync } from "node:fs";
 
 const page=readFileSync(new URL("./pages/ConciergePage.tsx",import.meta.url),"utf8");
 const confirmation=readFileSync(new URL("./components/VoiceConfirmation.tsx",import.meta.url),"utf8");
-const actions=readFileSync(new URL("./nowQuickActions.ts",import.meta.url),"utf8");
 
-test("NOW starts with one common action hub and secondary manual controls",()=>{
-  for(const label of ["식당 찾기","카페 찾기","관광지 찾기","숙소 찾기","다음 일정 추천","일정 바꾸기"])assert.match(actions,new RegExp(label));
+test("NOW starts with one common journey entry and secondary manual controls",()=>{
+  for(const label of ["밥 먹기","카페에서 쉬기","다음 장소 찾기","오늘 행사"])assert.match(readFileSync(new URL("./runtimeJourney.ts",import.meta.url),"utf8"),new RegExp(label));
   for(const label of ["RECOMMENDATION_REQUEST_COPY","requestUi.intro","openVoice","voiceToText"])assert.match(page,new RegExp(label));
-  assert.match(page,/action\.kind==="NEARBY"\?onNearby/);
-  assert.match(page,/tripMode !== "NOW"/);
+  assert.match(page,/RuntimeJourneyEntry/);
+  assert.match(page,/onDirect=\{\(\)=>setOtherRequestOpen\(true\)\}/);
+  assert.match(page,/tripMode === "PLAN" && !hasCompletedTurn/);
 });
 
 test("retired default prompts and multi-field confirmation are not rendered",()=>{

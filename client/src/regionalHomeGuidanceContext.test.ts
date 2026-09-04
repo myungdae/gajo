@@ -10,7 +10,7 @@ test("does not invent Hapcheon Lake when location and destination are absent", (
   const current = session(), context = regionalHomeGuidancePlace(REGION_CONFIGS.hapcheon, current, "en", REGION_HOME_ENGLISH.hapcheon);
   assert.equal(selectedRegionalHomePlace(REGION_CONFIGS.hapcheon, current), undefined);
   assert.doesNotMatch(JSON.stringify(context), /Hapcheon Lake/);
-  assert.match(context.characteristic, /No destination is selected/);
+  assert.match(context.characteristic, /Create a journey to see verified guidance/);
 });
 
 test("user location alone is not treated as a selected destination", () => {

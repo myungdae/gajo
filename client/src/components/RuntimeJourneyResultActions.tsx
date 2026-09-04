@@ -30,7 +30,7 @@ export default function RuntimeJourneyResultActions({ result, loading, onAdjust,
     <h2 id="runtime-start-title">{copy.startQuestion}</h2>
     <div>
       <button className="btn btn-primary" onClick={start}>{copy.start}</button>
-      <button className="btn btn-outline" aria-expanded={adjusting} onClick={() => { setAdjusting(open => !open); track("RUNTIME_JOURNEY_ADJUSTMENT_OPENED", ensureTripSession(region.id).id); }}>{copy.adjust}</button>
+      <button className="btn btn-outline" aria-expanded={adjusting} onClick={() => { if (!adjusting) track("RUNTIME_JOURNEY_ADJUSTMENT_OPENED", ensureTripSession(region.id).id); setAdjusting(open => !open); }}>{copy.adjust}</button>
       <button className="btn btn-text" onClick={onOther}>{copy.other}</button>
     </div>
     {adjusting && <div className="runtime-adjustment">
