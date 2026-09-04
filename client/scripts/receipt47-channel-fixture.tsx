@@ -1,0 +1,11 @@
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { MemoryRouter } from 'react-router-dom';
+import { RegionProvider } from '../src/RegionContext';
+import { RegionalLanguageProvider } from '../src/RegionalLanguageContext';
+import RegionalDataManager from '../src/components/RegionalDataManager';
+import VerifiedChannelActions from '../src/components/VerifiedChannelActions';
+import '../src/index.css';
+import '../src/regional-data.css';
+const en=new URLSearchParams(location.search).get('lang')==='en';
+createRoot(document.getElementById('root')!).render(<MemoryRouter initialEntries={[`/hapcheon/concierge?lang=${en?'en':'ko'}`]}><RegionProvider><RegionalLanguageProvider><main style={{padding:16,maxWidth:960,margin:'auto'}}><h1>로컬 fixture · 운영 연결 없음</h1><p>브라우저 UI 전용 메모리 API. 실제 DB·관리자 인증 검증은 Server 테스트로 별도 확인합니다.</p><RegionalDataManager/><h2>관광객 공개 버튼</h2><p>공개 후 새로고침하면 표시됩니다.</p><VerifiedChannelActions regionId="hapcheon" placeKey="https://hapcheon.example/ontology#hapcheonLakeSmilePension"/></main></RegionalLanguageProvider></RegionProvider></MemoryRouter>);

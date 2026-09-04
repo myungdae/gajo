@@ -1,0 +1,28 @@
+{
+  "regionId": "hapcheon",
+  "placeKey": "hapcheon-lake-smile-pension",
+  "channels": [
+    {
+      "kind": "DIRECT_BOOKING",
+      "labelKo": "실시간 예약하기",
+      "labelEn": "Book Now",
+      "target": "https://rev.yapen.co.kr/external?ypIdx=24507",
+      "sourceUrl": "https://www.lakesmile.com/"
+    },
+    {
+      "kind": "OFFICIAL_WEBSITE",
+      "labelKo": "공식 홈페이지",
+      "labelEn": "Official Website",
+      "target": "https://www.lakesmile.com/",
+      "sourceUrl": "https://www.lakesmile.com/"
+    },
+    {
+      "kind": "PHONE",
+      "labelKo": "전화하기",
+      "labelEn": "Call",
+      "target": "055-931-1638",
+      "sourceUrl": "https://www.lakesmile.com/"
+    }
+  ],
+  "canonicalEntityId": "https://hapcheon.example/ontology#hapcheonLakeSmilePension"
+}

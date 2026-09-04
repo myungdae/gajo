@@ -290,7 +290,7 @@ describe('regional recommendation ownership', () => {
       accommodationType: 'PENSION',
       areaLabel: '합천호 권역',
       telephone: '055-931-1638',
-      reservationUrl: 'https://rev.yapen.co.kr/',
+      reservationUrl: 'https://rev.yapen.co.kr/external?ypIdx=24507',
       latitude: 35.524485899856,
       longitude: 128.01578179029,
     });
