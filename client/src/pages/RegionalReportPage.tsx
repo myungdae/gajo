@@ -102,6 +102,7 @@ export default function RegionalReportPage() {
       <section className="report-login">
         <PublicBrand compact linked={false} />
         <h1>지원하지 않는 지역 리포트</h1>
+        <p className="notice">Legacy / unknown 집계입니다. 내부 검증·자동 점검이 분리되지 않은 기존 이벤트이며 신규 관리자 통계와 합산하지 않습니다.</p>
         <p>등록된 지역 운영 리포트 주소인지 확인해 주세요.</p>
       </section>
     );

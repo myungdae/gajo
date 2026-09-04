@@ -108,8 +108,8 @@ export class AnalyticsService {
     });
     return { accepted: true };
   }
-  async summary() {
-    const rows = await this.model.find().lean();
+  async summary(allowedRegionIds?:string[]) {
+    const rows = await this.model.find(allowedRegionIds?{regionId:{$in:allowedRegionIds}}:{}).lean();
     const count = (type: string) =>
       rows.filter((r) => r.eventType === type).length;
     const sessions = new Set(rows.map((r) => r.sessionId)).size;

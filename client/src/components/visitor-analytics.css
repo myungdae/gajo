@@ -1,0 +1,74 @@
+.visitor-stats {
+  min-width: 0;
+}
+.visitor-stats-controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: end;
+}
+.visitor-stats-controls label {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.visitor-stats-controls select,
+.visitor-stats-controls input:not([type="checkbox"]) {
+  min-height: 44px;
+  max-width: 100%;
+  font: inherit;
+}
+.visitor-stats-controls button,
+.visitor-stats summary {
+  min-height: 44px;
+}
+.visitor-stats-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+.visitor-stats-totals dd {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+.visitor-stats-table {
+  max-width: 100%;
+  overflow: auto;
+}
+.visitor-stats table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.visitor-stats th,
+.visitor-stats td {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+  overflow-wrap: anywhere;
+}
+.visitor-stats p {
+  overflow-wrap: anywhere;
+}
+.visitor-stats details {
+  margin-block: 16px;
+}
+.visitor-stats summary {
+  cursor: pointer;
+}
+
+.visitor-stats {
+  scroll-margin-top: 84px;
+}
+.visitor-stats-controls input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+.visitor-stats-controls label:has(input[type="checkbox"]) {
+  min-height: 44px;
+  display: flex;
+  flex-wrap: nowrap;
+  max-width: 100%;
+}
