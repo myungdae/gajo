@@ -22,11 +22,30 @@ test("result order puts understanding, journey and actions before optional other
 
 test("replanning is structured and free voice or text remains explicitly requested",()=>{
   const result=read("./components/RuntimeJourneyResultActions.tsx"),page=read("./pages/ConciergePage.tsx"),voice=read("./components/VoiceInputDialog.tsx");
-  for(const text of ["장소 하나 바꾸기","선택한 조건으로 다시 구성"])assert.match(result,new RegExp(text));
+  for(const text of ["추천 장소","어느 장소를 바꿀까요","다른 장소 추천","선택한 조건으로 다시 구성"])assert.match(result,new RegExp(text));
   assert.match(result,/copy\.other/);
+  assert.match(result,/setAdjusting\(false\);setCategory\(null\);onOther\(\)/);
+  assert.match(result,/category&&category!=='place'/);
   assert.match(page,/otherRequestOpen/);
   assert.match(page,/VoiceInputDialog/);
   assert.match(voice,/onConfirm/);
+});
+
+test("legacy and current recommendations require a verified step before journey actions",()=>{
+  const contract=read("./runtimeJourney.ts"),page=read("./pages/ConciergePage.tsx"),actions=read("./components/RuntimeJourneyResultActions.tsx");
+  assert.match(contract,/recommendation\?\.itinerary\?\.steps\?\?recommendation\?\.steps/);
+  assert.match(page,/journeySteps\.length>0&&<RuntimeJourneyResultActions/);
+  assert.match(page,/현재 조건에 맞는 검증된 장소를 찾지 못했습니다/);
+  assert.match(page,/runtimeJourneySteps\(result\.recommendation\)\.length/);
+  assert.match(actions,/startRuntimeJourney\(region\.id, result\.recommendation\)/);
+});
+
+test("other request and adjustment controls are mutually exclusive beside results",()=>{
+  const actions=read("./components/RuntimeJourneyResultActions.tsx"),page=read("./pages/ConciergePage.tsx");
+  assert.match(actions,/onCloseOther\(\);setAdjusting/);
+  assert.match(actions,/otherOpen&&<div className="runtime-other-request"/);
+  assert.match(page,/onVoice=\{\(\)=>\{setOtherRequestOpen\(false\);openVoice\(\)\}\}/);
+  assert.match(page,/onText=\{\(\)=>\{setOtherRequestOpen\(false\);openText\(\)\}\}/);
 });
 
 test("responsive entry uses 44px targets, dynamic viewport and reduced motion support",()=>{

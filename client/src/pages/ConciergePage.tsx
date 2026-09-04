@@ -52,6 +52,7 @@ import SavedTripEntry from "../components/SavedTripEntry";
 import AiResponseActions from "../components/AiResponseActions";
 import RuntimeJourneyEntry from '../components/RuntimeJourneyEntry';
 import RuntimeJourneyResultActions from '../components/RuntimeJourneyResultActions';
+import { runtimeJourneySteps } from '../runtimeJourney';
 import {
   beginCurrentTurn,
   isCurrentTurn,
@@ -479,11 +480,11 @@ function ConciergeConversation() {
             result.recommendation.candidateRegionIds || []
           ).join(","),
         });
-      if (result.recommendation)
+      if (runtimeJourneySteps(result.recommendation).length)
         track("RUNTIME_JOURNEY_PRESENTED", tripSession.id, { mode: tripMode });
       const partnerCandidateIds = [
         ...(result.discovery?.entities || []),
-        ...(result.recommendation?.itinerary?.steps || []),
+        ...runtimeJourneySteps(result.recommendation),
       ]
         .map(
           (item: any) => item.entityId || item.programUri || item.facilityUri,
@@ -655,6 +656,7 @@ function ConciergeConversation() {
       currentResult?.distanceInfo,
     );
   const latestRecommendation = hasRecommendation ? currentResult : undefined;
+  const journeySteps = runtimeJourneySteps(currentResult?.recommendation);
   const latestPrimaryResult = hasPrimaryResult ? currentResult : undefined;
   useEffect(() => {
     const textarea = textInputRef.current;
@@ -817,11 +819,8 @@ function ConciergeConversation() {
           )}
           <UnderstoodContext result={latestRecommendation} />
           <h1>{language==='ko'?'지금맞춤 지역여정':'Runtime-Adaptive Regional Journey'}</h1>
-          <ResultPanel
-            result={latestRecommendation}
-            onFindNearbyRestaurants={openNearby}
-          />
-          <FullJourneySave
+          {journeySteps.length?<ResultPanel result={latestRecommendation} onFindNearbyRestaurants={openNearby}/>:<section className="runtime-empty-journey" role="status"><h2>{language==='ko'?'현재 조건에 맞는 검증된 장소를 찾지 못했습니다.':'No verified places match the current conditions.'}</h2><div className="runtime-empty-actions"><button type="button" onClick={()=>setOtherRequestOpen(true)}>{language==='ko'?'조건을 조금 넓히기':'Broaden Conditions'}</button><button type="button" onClick={()=>{setCurrentTurn(null);setOtherRequestOpen(false)}}>{language==='ko'?'다른 목적 선택':'Choose Another Goal'}</button><button type="button" disabled={loading} onClick={()=>{const last=lastRequestRef.current;if(last)void send(last.text,last.structured,true)}}>{language==='ko'?'현재 조건으로 다시 찾기':'Search Again'}</button></div></section>}
+          {journeySteps.length>0&&<FullJourneySave
             itinerary={latestRecommendation.recommendation?.itinerary}
             durationLabel={
               tripSession.plannedContext?.duration === "1N2D"
@@ -830,8 +829,8 @@ function ConciergeConversation() {
                   ? "2박3일"
                   : undefined
             }
-          />
-          <RuntimeJourneyResultActions result={latestRecommendation} loading={loading} onAdjust={(text,context,planned)=>{track('RUNTIME_JOURNEY_REPLAN_REQUESTED',tripSession.id,{mode:tripMode});createRuntimeJourney(text,context,planned)}} onOther={()=>setOtherRequestOpen(true)}/>
+          />}
+          {journeySteps.length>0&&<RuntimeJourneyResultActions result={latestRecommendation} loading={loading} otherOpen={otherRequestOpen} onAdjust={(text,context,planned)=>{track('RUNTIME_JOURNEY_REPLAN_REQUESTED',tripSession.id,{mode:tripMode});createRuntimeJourney(text,context,planned)}} onReplace={(step)=>{if(requestInFlightRef.current)return;track('RUNTIME_JOURNEY_REPLAN_REQUESTED',tripSession.id,{mode:tripMode,entityId:step.entityId||step.programUri||step.facilityUri});const label=step.programLabel||step.facilityLabel||step.label||step.name;void send(language==='ko'?`${label} 단계만 다른 검증된 장소로 바꾸고 나머지 여정과 조건은 유지해 주세요.`:`Replace only the ${label} step with another verified place and keep the rest of the journey and preferences.`,structuredDraft)}} onOther={()=>setOtherRequestOpen(true)} onVoice={()=>{setOtherRequestOpen(false);openVoice()}} onText={()=>{setOtherRequestOpen(false);openText()}} onCloseOther={()=>setOtherRequestOpen(false)}/>}
           {shouldOfferContextRefresh(currentResult,Boolean(locationFreshnessNotice))&&<section className="card runtime-journey-card">
             <GajoLiveStatus
               actionOnly
@@ -906,7 +905,7 @@ function ConciergeConversation() {
         onStop={stopListening} onSpeakAgain={beginVoice} onCancel={dismissVoice} onType={voiceToText}
         onConfirm={()=>send(voiceDraft,undefined,false,voiceUnderstanding||undefined)}/>}
       {requestUi.followup&&!hasRecommendation&&<button type="button" className="btn btn-text" onClick={()=>setOtherRequestOpen(true)}>{language==='ko'?'다른 요청하기':'Make Another Request'}</button>}
-      {requestUi.followup&&otherRequestOpen&&<div className="conversation-other-request" aria-label={language==="en"?"Another request":"다른 요청"}><button type="button" className="btn btn-text" onClick={openVoice}>{language==='ko'?'말하기':'Speak'}</button><button type="button" className="btn btn-text" onClick={openText}>{language==='ko'?'글로 입력하기':'Type'}</button><button type="button" className="btn btn-text" onClick={()=>setOtherRequestOpen(false)}>{requestCopy.cancel}</button></div>}
+      {requestUi.followup&&otherRequestOpen&&!hasRecommendation&&<div className="conversation-other-request" aria-label={language==="en"?"Another request":"다른 요청"}><button type="button" className="btn btn-text" onClick={openVoice}>{language==='ko'?'말하기':'Speak'}</button><button type="button" className="btn btn-text" onClick={openText}>{language==='ko'?'글로 입력하기':'Type'}</button><button type="button" className="btn btn-text" onClick={()=>setOtherRequestOpen(false)}>{requestCopy.cancel}</button></div>}
       {requestUi.text && (
         <div className={"concierge-input-panel concierge-unified-composer"}>
           {manualEntryMode!=="VOICE"&&<textarea

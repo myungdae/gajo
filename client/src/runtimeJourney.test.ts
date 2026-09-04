@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createTripSession, saveTripSession } from "./tripSession.ts";
-import { JOURNEY_OPTIONS, RUNTIME_JOURNEY_NAME, journeyRequest, rememberRuntimeIntro, runtimeIntroSeen, startRuntimeJourney } from "./runtimeJourney.ts";
+import { JOURNEY_OPTIONS, RUNTIME_JOURNEY_NAME, journeyRequest, rememberRuntimeIntro, runtimeIntroSeen, runtimeJourneySteps, startRuntimeJourney } from "./runtimeJourney.ts";
 
 const storage = () => { const values = new Map<string,string>(); return { getItem:(key:string)=>values.get(key)||null, setItem:(key:string,value:string)=>void values.set(key,value) }; };
 
@@ -21,9 +21,18 @@ test("goal stays separate from optional companion and mobility preferences", () 
 });
 
 test("a small adjustment exposes only changed planned fields", () => {
-  const request = journeyRequest({ replacePlace:true }, "ko");
-  assert.match(request.text, /장소 하나 바꾸기/);
-  assert.deepEqual(Object.entries(request.planned).filter(([,value])=>value!==undefined), []);
+  const request = journeyRequest({ transport:"WALK" }, "ko");
+  assert.match(request.text, /도보/);
+  assert.deepEqual(Object.entries(request.planned).filter(([,value])=>value!==undefined), [["transportMode","WALK"]]);
+});
+
+test("legacy recommendation steps are normalized and empty journeys cannot start",()=>{
+  const legacy={steps:[{entityId:'place:a',regionId:'hapcheon',label:'A'}]};
+  assert.equal(runtimeJourneySteps(legacy).length,1);
+  assert.equal(runtimeJourneySteps({itinerary:{steps:[]}}).length,0);
+  const store=storage();saveTripSession(createTripSession('hapcheon'),store as any);
+  assert.equal(startRuntimeJourney('hapcheon',{itinerary:{steps:[]}},store as any),undefined);
+  assert.equal(startRuntimeJourney('hapcheon',legacy,store as any)?.execution?.currentEntityId,'place:a');
 });
 
 test("introduction is automatic once and remains explicitly reopenable", () => {
