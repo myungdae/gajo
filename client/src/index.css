@@ -3740,3 +3740,11 @@ dialog.voice-dialog .voice-dialog-actions .btn-outline { background: #fff; color
   dialog.voice-dialog .voice-activity { flex-direction: row; align-items: center; gap: 8px; font-size: 14px; }
   dialog.voice-dialog .voice-dialog-actions > button { flex-basis: 52px; padding: 6px; }
 }
+
+/* Current-context refresh and personal requests have distinct visual groups. */
+.automatic-recommendation-choice { padding: 16px; border-inline-start: 4px solid var(--color-primary, #087f79); background: #edf7f5; border-radius: 12px; }
+.automatic-recommendation-choice p { margin: 0 0 12px; line-height: 1.6; }
+.direct-request-choice { margin-top: 20px; padding-top: 16px; border-top: 1px solid #cfdedb; }
+.direct-request-choice h3 { margin: 0 0 12px; font-size: 1.05rem; line-height: 1.5; }
+.direct-request-choice[hidden] { display: none; }
+.automatic-recommendation-choice button, .direct-request-choice button { min-height: 44px; white-space: normal; overflow-wrap: anywhere; }

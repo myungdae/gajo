@@ -1,3 +1,4 @@
+import { RECOMMENDATION_REQUEST_COPY } from '../recommendationRequestCopy';
 import VoiceInputDialog from "../components/VoiceInputDialog";
 import { readConversation, saveConversation } from "../conversationMemory";
 import { useEffect, useRef, useState } from "react";
@@ -66,7 +67,6 @@ import { isExplanationOnly } from "../aiResponseActions";
 import { understoodSummary } from "../understoodSummary";
 import { NOW_HEADING, NOW_HEADING_LINES, NOW_QUICK_ACTIONS } from "../nowQuickActions";
 import { acceptVoiceResult, understandVoice, type VoiceResultFingerprint, type VoiceUnderstanding } from "../voice/voiceUx";
-import { VOICE_COPY } from "../voice/voiceCopy";
 import { useRegionalLanguage } from "../RegionalLanguageContext";
 
 interface Message {
@@ -205,7 +205,6 @@ function ConciergeConversation() {
   const allowStaleLocationOnceRef=useRef(false);
   const [voiceUnderstanding,setVoiceUnderstanding]=useState<VoiceUnderstanding|null>(null);
   const [voiceDraft,setVoiceDraft]=useState("");
-  const voiceCopy=VOICE_COPY[language];
   const voiceStartedAtRef=useRef(0);
   const lastVoiceResultRef=useRef<VoiceResultFingerprint|null>(null);
   const openNearby=(category?:ConciergeChatResponse["nearbyCategory"])=>{
@@ -736,6 +735,7 @@ function ConciergeConversation() {
               onNearby={openNearby}
               onAsk={(prompt)=>send(prompt)}
               onItinerary={()=>navigate(regionLink("/itinerary"))}
+              showDirectRequest={!freeTextOpen}
               onVoice={openVoice}
               onText={()=>{setManualEntryMode("TEXT");setFreeTextOpen(true);requestAnimationFrame(()=>textInputRef.current?.focus())}}
             />
@@ -886,20 +886,14 @@ function ConciergeConversation() {
             }
           />
           <section className="card runtime-journey-card">
-            <h2>상황이 바뀌면</h2>
-            <p>
-              날씨와 현재 상황이 달라지면 남은 일정을 다시 확인할 수 있어요.
-            </p>
-            <button
-              className="btn btn-primary btn-block"
-              onClick={() =>
-                navigate(regionLink("/itinerary"), {
-                  state: { result: latestRecommendation },
-                })
-              }
-            >
-              지금 상황에 맞게 다시 추천
-            </button>
+            <GajoLiveStatus
+              actionOnly
+              disabled={loading}
+              regionName={region.regionName}
+              regionId={region.id}
+              liveEnabled={regionalRuntimeView(region).weatherEnabled}
+              onLiveRefresh={live=>send(RECOMMENDATION_REQUEST_COPY[language].automaticRequest,{...live.context,regionId:region.id})}
+            />
             <details className="demo-tools">
               <summary>시연·테스트</summary>
               <p>발표용으로 13시 강한 비 상황을 재현합니다.</p>
@@ -967,16 +961,16 @@ function ConciergeConversation() {
       {(tripMode !== "NOW" ? (hasCompletedTurn || freeTextOpen) : freeTextOpen) && (
         <div className={"concierge-input-panel concierge-unified-composer"}>
           <div className="input-panel-heading">
-            <h2>{hasCompletedTurn ? (language==="en"?"Continue the conversation":"이어서 물어보기") : voiceCopy.start}</h2>
+            <h2>{RECOMMENDATION_REQUEST_COPY[language].directTitle}</h2>
           </div>
           <div className="voice-mode-actions">
-            <button type="button" className="btn btn-outline" disabled={loading||listening} onClick={openVoice}>{voiceCopy.start}</button>
-            <button type="button" className="btn btn-outline" disabled={loading} onClick={voiceToText}>{voiceCopy.text}</button>
+            <button type="button" className="btn btn-outline" disabled={loading||listening} onClick={openVoice}>{RECOMMENDATION_REQUEST_COPY[language].voice}</button>
+            <button type="button" className="btn btn-outline" disabled={loading} onClick={voiceToText}>{RECOMMENDATION_REQUEST_COPY[language].text}</button>
           </div>
           {manualEntryMode!=="VOICE"&&<textarea
             ref={textInputRef}
             rows={5}
-            aria-label={hasCompletedTurn ? "이어서 물어보기" : "여행 조건 입력"}
+            aria-label={RECOMMENDATION_REQUEST_COPY[language].inputLabel}
             placeholder="필요한 내용을 입력하세요"
             value={input}
             onChange={(e)=>setInput(e.target.value)}
@@ -1039,11 +1033,12 @@ function NowContinuationSummary({ planned }: { planned: PlannedContext }) {
 }
 
 function NowImmediateActions({
-  onNearby,onAsk,onItinerary,onVoice,onText,
+  onNearby,onAsk,onItinerary,onVoice,onText,showDirectRequest,
 }: {
   onNearby:(category:ConciergeChatResponse["nearbyCategory"])=>void;
   onAsk:(prompt:string)=>void;
   onItinerary:()=>void;
+  showDirectRequest:boolean;
   onVoice:()=>void;
   onText:()=>void;
 }) {
@@ -1062,7 +1057,7 @@ function NowImmediateActions({
           {action.label}
         </button>
       ))}</div>
-      <div className="now-secondary-actions" aria-label="직접 요청하기"><button type="button" onClick={onVoice}>{VOICE_COPY[language].start}</button><button type="button" onClick={onText}>직접 입력하기</button></div>
+      <section className="direct-request-choice" aria-labelledby="direct-request-title" hidden={!showDirectRequest}><h3 id="direct-request-title">{RECOMMENDATION_REQUEST_COPY[language].directTitle}</h3><div className="now-secondary-actions"><button type="button" onClick={onVoice}>{RECOMMENDATION_REQUEST_COPY[language].voice}</button><button type="button" onClick={onText}>{RECOMMENDATION_REQUEST_COPY[language].text}</button></div></section>
     </section>
   );
 }
