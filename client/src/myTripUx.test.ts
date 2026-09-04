@@ -24,7 +24,7 @@ test("automatic restore is not the only My Trip access path", () => {
   assert.match(layout, /itineraryItemCount/);
   assert.match(layout, /my-trip-count/);
   assert.match(layout, /regionalPath\(item\.to, region\.id\)/);
-  assert.match(continuity, /이어갈 여행이 있어요/);
+  assert.match(continuity, /이어갈 \$\{region\.regionName\} 여행이 있어요/);
 });
 test("post-save continuation keeps discovery in place and exposes immediate execution", () => {
   const continuation = source("./components/ItineraryAddContinuation.tsx"),

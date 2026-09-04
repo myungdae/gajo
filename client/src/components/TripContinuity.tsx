@@ -18,7 +18,8 @@ import { journeyDayCounts } from "../fullJourney";
 import { itinerarySteps, savedPlaceItems } from "../journeyExecution";
 import { continueTripLabel, homeTripSummary } from "../homeExperience";
 import { useRegionalLanguage } from "../RegionalLanguageContext";
-export default function TripContinuity() {
+import { getRegionalHomeEnglish } from "../regionConfig";
+export default function TripContinuity({onNewTrip}:{onNewTrip?:()=>void}={}) {
   const region = useRegion(),
     {language,withLanguage}=useRegionalLanguage(),
     location = useLocation(),
@@ -101,7 +102,7 @@ export default function TripContinuity() {
   return (
     <section className="home-resume-card" aria-labelledby="resume-trip-title">
       <small>{language==='en'?'My Trip':'나의 여행'}</small>
-      <h2 id="resume-trip-title">{language==='en'?'Continue Your Trip':'이어갈 여행이 있어요'}</h2>
+      <h2 id="resume-trip-title">{language==='en'?`Continue Your ${getRegionalHomeEnglish(region).regionName} Trip`:`이어갈 ${region.regionName} 여행이 있어요`}</h2>
       {language==='en'?<p>{`${fullCount||count} saved ${(fullCount||count)===1?'place':'places'}${savedCount?` · ${savedCount} additional saved`:''}`}</p>:region.id === "hapcheon" ? <><p className="home-resume-heading">{summary.heading}</p>{summary.detail&&<p>{summary.detail}</p>}</> : <p>{(trip.itinerary as any)?.savedAsFullJourney ? `${dayCount > 1 ? `${dayCount - 1}박${dayCount}일 · ` : ""}일정 ${fullCount}곳${savedCount ? ` · 담아둔 곳 ${savedCount}곳` : ""}` : `담아둔 곳 ${count}곳이 있습니다.`}</p>}
       <div className="entity-actions">
         <button
@@ -114,6 +115,10 @@ export default function TripContinuity() {
         >
           {language==='en'?'Continue Trip':continueTripLabel(trip)}
         </button>
+        <button
+          className="btn btn-outline"
+          onClick={()=>{track('RUNTIME_JOURNEY_REPLAN_REQUESTED',trip.id,{mode:'NOW'});navigate(withLanguage(regionalPath('/concierge?mode=now',region.id)),{state:{tripMode:'NOW',initialMessage:language==='en'?'Re-plan my remaining journey for my verified situation now.':'확인된 지금 상황에 맞춰 남은 여정을 다시 구성해 주세요.',autoSubmit:true}})}}
+        >{language==='en'?'Re-plan for Now':'지금 상황에 맞게 다시 짜기'}</button>
         <button
           className="btn btn-text"
           onClick={() => setConfirmingNew(true)}
@@ -130,6 +135,7 @@ export default function TripContinuity() {
               track("NEW_TRIP_STARTED", next.id);
               setConfirmingNew(false);
               setVisible(false);
+              onNewTrip?.();
             }}>{language==='en'?'Start New Trip':'새 여행 시작'}</button>
             <button className="btn btn-outline" onClick={() => setConfirmingNew(false)}>{language==='en'?'Cancel':'취소'}</button>
           </div>

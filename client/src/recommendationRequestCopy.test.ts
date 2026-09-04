@@ -17,7 +17,8 @@ test('approved Korean labels and complete English equivalents distinguish two ac
 test('all regional screens use the shared locale copy without the retired follow-up label',()=>{
   assert.equal(Object.keys(REGION_CONFIGS).length,6);
   assert.doesNotMatch(page+read('./managedVisitorCopy.ts'),/이어서 물어보기|Continue the conversation|Ask a Follow-up/);
-  assert.match(page,/requestCopy.title/);
+  assert.match(page,/RuntimeJourneyEntry/);
+  assert.doesNotMatch(page,/requestCopy.title/);
   assert.match(live,/RECOMMENDATION_REQUEST_COPY\[language\]/);
 });
 test('refresh performs current-context lookup then one existing send, without a navigation detour or new analytics',()=>{
@@ -31,8 +32,8 @@ test('refresh performs current-context lookup then one existing send, without a 
 test('direct request controls reuse voice popup and composer handlers with no duplicate headings',()=>{
   assert.match(page,/requestUi.followup/);
   assert.match(page,/requestUi.text/);
-  assert.match(page,/onClick=\{openVoice\}>\{RECOMMENDATION_REQUEST_COPY\[language\]\.voice\}/);
-  assert.match(page,/onClick=\{openText\}>\{requestCopy.text\}/);
+  assert.match(page,/onClick=\{openVoice\}>\{language==='ko'\?'말하기':'Speak'\}/);
+  assert.match(page,/onClick=\{openText\}>\{language==='ko'\?'글로 입력하기':'Type'\}/);
   assert.match(page,/onConfirm=\{\(\)=>send\(voiceDraft,undefined,false,voiceUnderstanding\|\|undefined\)\}/);
   assert.equal((page.match(/<VoiceInputDialog /g)||[]).length,1);
   const css=read('./index.css');assert.match(css,/\.automatic-recommendation-choice\s*\{/);assert.match(css,/\.direct-request-choice\s*\{/);assert.match(css,/\.direct-request-choice\[hidden\]/);

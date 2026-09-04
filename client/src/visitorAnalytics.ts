@@ -13,7 +13,12 @@ type EventType =
   | "PLACE_DETAIL_OPENED"
   | "PHONE_CLICKED"
   | "DIRECTIONS_CLICKED"
-  | "ITINERARY_SAVE_SUCCEEDED";
+  | "ITINERARY_SAVE_SUCCEEDED"
+  | "RUNTIME_JOURNEY_REQUESTED"
+  | "RUNTIME_JOURNEY_PRESENTED"
+  | "RUNTIME_JOURNEY_STARTED"
+  | "RUNTIME_JOURNEY_ADJUSTMENT_OPENED"
+  | "RUNTIME_JOURNEY_REPLAN_REQUESTED";
 type Detail = {
   searchId?: string;
   resultSetId?: string;
@@ -162,6 +167,9 @@ export function visitorTrack(
         "PHONE_CLICKED",
         "DIRECTIONS_CLICKED",
         "ITINERARY_SAVE_SUCCEEDED",
+        "RUNTIME_JOURNEY_STARTED",
+        "RUNTIME_JOURNEY_ADJUSTMENT_OPENED",
+        "RUNTIME_JOURNEY_REPLAN_REQUESTED",
       ].includes(eventType)
     )
       event.actionId ||= uuid();
@@ -203,11 +211,16 @@ export function bridgeVisitorEvent(
     NAVIGATION_HANDOFF: "DIRECTIONS_CLICKED",
     ITINERARY_ITEM_ADDED: "ITINERARY_SAVE_SUCCEEDED",
     FULL_ITINERARY_SAVED: "ITINERARY_SAVE_SUCCEEDED",
+    RUNTIME_JOURNEY_REQUESTED: "RUNTIME_JOURNEY_REQUESTED",
+    RUNTIME_JOURNEY_PRESENTED: "RUNTIME_JOURNEY_PRESENTED",
+    RUNTIME_JOURNEY_STARTED: "RUNTIME_JOURNEY_STARTED",
+    RUNTIME_JOURNEY_ADJUSTMENT_OPENED: "RUNTIME_JOURNEY_ADJUSTMENT_OPENED",
+    RUNTIME_JOURNEY_REPLAN_REQUESTED: "RUNTIME_JOURNEY_REPLAN_REQUESTED",
   };
   const event = map[type];
   if (!event) return;
   // Legacy metadata is never copied wholesale into the strict contract.
-  if (event !== "ITINERARY_SAVE_SUCCEEDED" && !metadata.entityId) return;
+  if (!["ITINERARY_SAVE_SUCCEEDED", "RUNTIME_JOURNEY_REQUESTED", "RUNTIME_JOURNEY_PRESENTED", "RUNTIME_JOURNEY_STARTED", "RUNTIME_JOURNEY_ADJUSTMENT_OPENED", "RUNTIME_JOURNEY_REPLAN_REQUESTED"].includes(event) && !metadata.entityId) return;
   const provider = String(
     metadata.provider || metadata.actionType || "",
   ).toLowerCase();

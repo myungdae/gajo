@@ -25,8 +25,6 @@ import {
   buildContextSummary,
   withRequestedDestinations,
 } from "../utils/contextSummary";
-import StructuredVisitorIntake from "../components/StructuredVisitorIntake";
-import PlanVisitorIntake from "../components/PlanVisitorIntake";
 import { getQuickStartPreset } from "../quickStartPresets";
 import {
   ensureTripSession,
@@ -52,6 +50,8 @@ import InstallExperience from "../components/InstallExperience";
 import FullJourneySave from "../components/FullJourneySave";
 import SavedTripEntry from "../components/SavedTripEntry";
 import AiResponseActions from "../components/AiResponseActions";
+import RuntimeJourneyEntry from '../components/RuntimeJourneyEntry';
+import RuntimeJourneyResultActions from '../components/RuntimeJourneyResultActions';
 import {
   beginCurrentTurn,
   isCurrentTurn,
@@ -66,7 +66,6 @@ import {
 import { GlossaryText } from "../components/GlossaryText";
 import { isExplanationOnly } from "../aiResponseActions";
 import { understoodSummary } from "../understoodSummary";
-import { NOW_QUICK_ACTIONS } from "../nowQuickActions";
 import { acceptVoiceResult, understandVoice, type VoiceResultFingerprint, type VoiceUnderstanding } from "../voice/voiceUx";
 import { useRegionalLanguage } from "../RegionalLanguageContext";
 
@@ -136,6 +135,7 @@ function ConciergeConversation() {
     entryMessage?: string;
     entryDescription?: string;
     conversationSnapshot?: ConversationSnapshot;
+    otherRequestOpen?: boolean;
   } | null;
   const queryMode = new URLSearchParams(location.search)
     .get("mode")
@@ -182,6 +182,7 @@ function ConciergeConversation() {
     restored?.messages.some(message=>Boolean(message.result)) ? false : restored?.freeTextOpen ?? Boolean(entryState?.freeTextOpen),
   );
   const [manualEntryMode,setManualEntryMode]=useState<"VOICE"|"TEXT"|null>(null);
+  const [otherRequestOpen,setOtherRequestOpen]=useState(Boolean(entryState?.otherRequestOpen));
   const [structuredDraft, setStructuredDraft] = useState<CreateContextInput>(
     () =>
       mergeTravelContext(
@@ -236,6 +237,15 @@ function ConciergeConversation() {
   const openVoice=()=>{if(requestInFlightRef.current)return;setVoiceOpen(true);beginVoice();};
   const dismissVoice=()=>{cancelListening();setVoiceUnderstanding(null);setVoiceDraft("");setVoiceState("IDLE");setVoiceOpen(false);track("VOICE_INPUT_SWITCHED",tripSession.id,{to:"TEXT_OR_TOUCH"});};
   const openText=()=>{setManualEntryMode("TEXT");setFreeTextOpen(true);requestAnimationFrame(()=>textInputRef.current?.focus());};
+  const createRuntimeJourney=(text:string,context:CreateContextInput,planned:PlannedContext)=>{
+    const current=loadTripSession(localStorage,region.id)||tripSession;
+    const changed=Object.fromEntries(Object.entries(planned).filter(([,value])=>value!==undefined));
+    saveTripSession({...current,mode:tripMode==='GENERIC'?current.mode:tripMode,plannedContext:{...(current.plannedContext||{}),...changed}});
+    setStructuredDraft(currentDraft=>mergeTravelContext(currentDraft,context));
+    setOtherRequestOpen(false);
+    track('RUNTIME_JOURNEY_REQUESTED',tripSession.id,{mode:tripMode});
+    void send(text,context);
+  };
   const voiceToText=()=>{dismissVoice();setManualEntryMode("TEXT");setFreeTextOpen(true);requestAnimationFrame(()=>textInputRef.current?.focus());};
   useEffect(() => {
     sessionStorage.setItem(contextSessionKey, contextSessionIdRef.current);
@@ -469,6 +479,8 @@ function ConciergeConversation() {
             result.recommendation.candidateRegionIds || []
           ).join(","),
         });
+      if (result.recommendation)
+        track("RUNTIME_JOURNEY_PRESENTED", tripSession.id, { mode: tripMode });
       const partnerCandidateIds = [
         ...(result.discovery?.entities || []),
         ...(result.recommendation?.itinerary?.steps || []),
@@ -719,10 +731,8 @@ function ConciergeConversation() {
 
   return (
     <div className="concierge-conversation">
-      {requestUi.intro&&<section className="natural-language-entry" aria-labelledby="natural-language-title">
-        <h2 id="natural-language-title">{requestCopy.title}</h2><p>{requestCopy.help}</p>
-        <div className="request-entry-actions"><button type="button" className="btn btn-primary" onClick={openVoice}>{RECOMMENDATION_REQUEST_COPY[language].voice}</button><button type="button" className="btn btn-outline" onClick={()=>{track("NATURAL_LANGUAGE_ENTRY_SELECTED",tripSession.id,{mode:tripMode});openText()}}>{RECOMMENDATION_REQUEST_COPY[language].text}</button></div>
-      </section>}
+      {requestUi.intro&&!otherRequestOpen&&<RuntimeJourneyEntry loading={loading} onCreate={createRuntimeJourney} onDirect={()=>setOtherRequestOpen(true)}/>}
+      {requestUi.intro&&otherRequestOpen&&<section className="runtime-other-request" aria-label={language==='ko'?'다른 요청 방식':'Another request method'}><button className="btn btn-primary" onClick={openVoice}>{language==='ko'?'말하기':'Speak'}</button><button className="btn btn-outline" onClick={openText}>{language==='ko'?'글로 입력하기':'Type'}</button><button className="btn btn-text" onClick={()=>setOtherRequestOpen(false)}>{language==='ko'?'닫기':'Close'}</button></section>}
 
       {tripMode === "PLAN" && !hasCompletedTurn && <SavedTripEntry />}
       {tripMode !== "PLAN" && (
@@ -738,13 +748,6 @@ function ConciergeConversation() {
               )}
             </header>
           )}
-          {tripMode === "NOW" && !hasCompletedTurn && !loading && !voiceOpen && (
-            <details className="structured-request-alternative"><summary>{language==="en"?"Choose a quick action":"바로 고르기"}</summary><NowImmediateActions
-              onNearby={openNearby}
-              onAsk={(prompt)=>send(prompt)}
-              onItinerary={()=>navigate(regionLink("/itinerary"))}
-            /></details>
-          )}
           <GajoLiveStatus
             regionName={region.regionName}
             regionId={region.id}
@@ -753,9 +756,10 @@ function ConciergeConversation() {
         </div>
       )}
       {tripMode === "NOW" && tripSession.plannedContext && (
-        <NowContinuationSummary planned={tripSession.plannedContext} />
+        <NowContinuationSummary planned={tripSession.plannedContext} language={language} />
       )}
       {tripMode === "NOW" && <details className="structured-request-alternative"><summary>{language==="en"?"Location settings":"위치 설정"}</summary><LocationContextBar mode="NOW" refreshNeeded={Boolean(locationFreshnessNotice)} onConfirmed={()=>setLocationFreshnessNotice(null)} /></details>}
+      {tripMode === "PLAN" && !hasCompletedTurn && <details className="structured-request-alternative"><summary>{language==="en"?"Starting point":"여행 시작 위치"}</summary><LocationContextBar mode="PLAN" /></details>}
       {tripMode==="NOW"&&locationFreshnessNotice&&<section className="card location-freshness-choice" role="status"><b>마지막으로 확인한 위치가 오래됐어요. 현재 위치를 다시 확인할까요?</b><p>{locationFreshnessNotice.label||"이전 확인 위치"}{locationFreshnessNotice.confirmedAt?` · ${new Date(locationFreshnessNotice.confirmedAt).toLocaleString("ko-KR")}`:""}</p><button type="button" className="btn btn-outline" onClick={()=>{const request=lastRequestRef.current;if(!request)return;allowStaleLocationOnceRef.current=true;setLocationFreshnessNotice(null);void send(request.text,request.structured,true)}}>이 위치 기준으로 검색</button></section>}
       <div className="chat-window">
         {messages.map((m, i) => {
@@ -806,41 +810,13 @@ function ConciergeConversation() {
         </div>
       )}
 
-      {!hasCompletedTurn && !loading && !voiceOpen && tripMode !== "NOW" && (
-        <details className="structured-request-alternative">
-          <summary>{language==="en"?"Choose trip preferences":"조건을 선택해서 일정 만들기"}</summary>
-          {tripMode === "PLAN" ? (
-            <><LocationContextBar mode="PLAN"/><PlanVisitorIntake
-              loading={loading}
-              initial={tripSession.plannedContext}
-              onSubmit={(structured, planned: PlannedContext) => {
-                saveTripSession({
-                  ...tripSession,
-                  mode: "PLAN",
-                  plannedContext: planned,
-                });
-                send("", structured);
-              }}
-            /></>
-          ) : (
-            <StructuredVisitorIntake
-              loading={loading}
-              initialValues={preset?.intakeValues}
-              initialPreferences={preset?.selectedPreferences}
-              entryMessage={preset?.entryMessage}
-              onChange={setStructuredDraft}
-              onSubmit={(structured) => send("", structured)}
-            />
-          )}
-        </details>
-      )}
-
       {hasRecommendation && latestRecommendation && (
         <div className="recommendation-journey-start">
           {tripMode === "PLAN" && tripSession.plannedContext && (
             <PlanSummary planned={tripSession.plannedContext} />
           )}
           <UnderstoodContext result={latestRecommendation} />
+          <h1>{language==='ko'?'지금맞춤 지역여정':'Runtime-Adaptive Regional Journey'}</h1>
           <ResultPanel
             result={latestRecommendation}
             onFindNearbyRestaurants={openNearby}
@@ -855,6 +831,7 @@ function ConciergeConversation() {
                   : undefined
             }
           />
+          <RuntimeJourneyResultActions result={latestRecommendation} loading={loading} onAdjust={(text,context,planned)=>{track('RUNTIME_JOURNEY_REPLAN_REQUESTED',tripSession.id,{mode:tripMode});createRuntimeJourney(text,context,planned)}} onOther={()=>setOtherRequestOpen(true)}/>
           {shouldOfferContextRefresh(currentResult,Boolean(locationFreshnessNotice))&&<section className="card runtime-journey-card">
             <GajoLiveStatus
               actionOnly
@@ -928,10 +905,8 @@ function ConciergeConversation() {
         onChange={text=>{setVoiceDraft(text);track("VOICE_PARTIAL_EDIT_COMPLETED",tripSession.id,{inputMethod:"TEXT"});}}
         onStop={stopListening} onSpeakAgain={beginVoice} onCancel={dismissVoice} onType={voiceToText}
         onConfirm={()=>send(voiceDraft,undefined,false,voiceUnderstanding||undefined)}/>}
-      {requestUi.followup&&<div className="conversation-other-request" aria-label={language==="en"?"Another request":"다른 요청"}>
-        <button type="button" className="btn btn-text" onClick={openVoice}>{requestCopy.voice}</button>
-        <button type="button" className="btn btn-text" onClick={openText}>{requestCopy.text}</button>
-      </div>}
+      {requestUi.followup&&!hasRecommendation&&<button type="button" className="btn btn-text" onClick={()=>setOtherRequestOpen(true)}>{language==='ko'?'다른 요청하기':'Make Another Request'}</button>}
+      {requestUi.followup&&otherRequestOpen&&<div className="conversation-other-request" aria-label={language==="en"?"Another request":"다른 요청"}><button type="button" className="btn btn-text" onClick={openVoice}>{language==='ko'?'말하기':'Speak'}</button><button type="button" className="btn btn-text" onClick={openText}>{language==='ko'?'글로 입력하기':'Type'}</button><button type="button" className="btn btn-text" onClick={()=>setOtherRequestOpen(false)}>{requestCopy.cancel}</button></div>}
       {requestUi.text && (
         <div className={"concierge-input-panel concierge-unified-composer"}>
           {manualEntryMode!=="VOICE"&&<textarea
@@ -981,46 +956,25 @@ function ConciergeConversation() {
  * chain). Falls back to a shortened URI (gajo:xxx / roo:xxx) when no
  * label can be found, so the chat panel never shows a bare full URI.
  */
-function NowContinuationSummary({ planned }: { planned: PlannedContext }) {
+function NowContinuationSummary({ planned, language }: { planned: PlannedContext; language:"ko"|"en" }) {
   const summary = buildNowContinuation(planned);
   if (!summary) return null;
+  const english = [
+    planned.companions?.[0]?.relationship === "parent" ? "With Parents" : planned.companions?.[0]?.relationship === "child" ? "With Children" : undefined,
+    planned.transportMode === "CAR" ? "Car" : planned.transportMode === "WALK" ? "Walking" : planned.transportMode === "PUBLIC_TRANSPORT" ? "Public Transit" : undefined,
+    planned.walkingLevel === "LOW" ? "Minimal Walking" : undefined,
+  ].filter(Boolean);
   return (
     <section
       className="plan-continuity now-continuation"
       aria-labelledby="now-continuation-title"
     >
-      <h2 id="now-continuation-title">준비해 둔 여행을 이어갈게요.</h2>
+      <h2 id="now-continuation-title">{language==="en"?"Let’s continue your saved trip.":"준비해 둔 여행을 이어갈게요."}</h2>
       {summary.circumstances.length > 0 && (
-        <p>{summary.circumstances.join(" · ")}</p>
+        <p>{language==="en"?english.join(" · "):summary.circumstances.join(" · ")}</p>
       )}
-      {summary.interests.length > 0 && <p>{summary.interests.join(" · ")}</p>}
-      <strong>달라진 점만 알려주세요.</strong>
-    </section>
-  );
-}
-
-function NowImmediateActions({
-  onNearby,onAsk,onItinerary,
-}: {
-  onNearby:(category:ConciergeChatResponse["nearbyCategory"])=>void;
-  onAsk:(prompt:string)=>void;
-  onItinerary:()=>void;
-}) {
-  return (
-    <section className="now-needs" aria-labelledby="now-needs-title">
-      <h2 id="now-needs-title">지금 무엇을 할까요?</h2>
-      <p>말하지 않아도 바로 시작할 수 있어요.</p>
-      <div className="now-primary-actions">{NOW_QUICK_ACTIONS.map((action) => (
-        <button
-          type="button"
-          key={action.id}
-          aria-label={action.label}
-          onClick={() => action.kind==="NEARBY"?onNearby(action.category):action.kind==="ASK"?onAsk(action.prompt):onItinerary()}
-        >
-          {action.label}
-        </button>
-      ))}</div>
-
+      {summary.interests.length > 0 && <p>{language==="en"?summary.interests.map(value=>({FOOD:"Eat",CAFE:"Rest at a Café",NEXT_PLACE:"Find the Next Place",EVENT_TODAY:"Events Today"} as Record<string,string>)[value]||value).join(" · "):summary.interests.join(" · ")}</p>}
+      <strong>{language==="en"?"Tell us what has changed.":"달라진 점만 알려주세요."}</strong>
     </section>
   );
 }

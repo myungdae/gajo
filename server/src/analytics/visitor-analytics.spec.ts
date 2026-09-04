@@ -99,6 +99,20 @@ describe('visitor analytics contract', () => {
     ])
       expect(() => validateVisitorEvent(event({ eventType }), now)).toThrow();
   });
+  it('keeps runtime journey stages distinct and requires action correlation for choices', () => {
+    for (const eventType of [
+      'RUNTIME_JOURNEY_REQUESTED',
+      'RUNTIME_JOURNEY_PRESENTED',
+    ]) expect(validateVisitorEvent(event({ eventType }), now).eventType).toBe(eventType);
+    for (const eventType of [
+      'RUNTIME_JOURNEY_STARTED',
+      'RUNTIME_JOURNEY_ADJUSTMENT_OPENED',
+      'RUNTIME_JOURNEY_REPLAN_REQUESTED',
+    ]) {
+      expect(() => validateVisitorEvent(event({ eventType }), now)).toThrow();
+      expect(validateVisitorEvent(event({ eventType, actionId: randomUUID() }), now).eventType).toBe(eventType);
+    }
+  });
   it('deduplicates concurrent delivery through the fixed _id and rejects changed payload reuse', async () => {
     const h = harness(),
       v = event();

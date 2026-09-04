@@ -35,6 +35,11 @@ const labels: Record<string, string> = {
   PHONE_CLICKED: "전화 클릭",
   DIRECTIONS_CLICKED: "길찾기 클릭",
   ITINERARY_SAVE_SUCCEEDED: "일정 저장 성공",
+  RUNTIME_JOURNEY_REQUESTED: "여정 요청",
+  RUNTIME_JOURNEY_PRESENTED: "여정 결과 표시",
+  RUNTIME_JOURNEY_STARTED: "여정 시작 선택",
+  RUNTIME_JOURNEY_ADJUSTMENT_OPENED: "여정 조정 열기",
+  RUNTIME_JOURNEY_REPLAN_REQUESTED: "여정 다시 구성 요청",
 };
 const seoul = (value: string) =>
   new Date(value).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });

@@ -15,8 +15,8 @@ export function regionalHomeGuidancePlace(region: RegionConfig, session: TripSes
   if (!place) return {
     label: language === "en" ? english.regionName : region.regionName,
     characteristic: language === "en"
-      ? "No destination is selected yet. Choose a destination to see location-specific guidance."
-      : "현재 선택된 목적지가 없습니다. 장소를 선택하면 목적지별 안내를 확인할 수 있습니다.",
+      ? "Create a journey to see verified guidance for each next experience."
+      : "여정을 만들면 다음 경험에 필요한 검증된 안내를 확인할 수 있습니다.",
     source: "Regional Home context",
   };
   const label = language === "en" ? english.placeNames?.[place.id] || place.label : place.label;
