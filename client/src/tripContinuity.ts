@@ -24,6 +24,10 @@ export function itineraryItemCount(s?: TripSession) {
     ? new Set([...steps(s), ...places(s)].map(id).filter(Boolean)).size
     : 0;
 }
+export function hasActiveItinerary(s?: TripSession): s is TripSession {
+  if (!s || !(s.itinerary as any)?.savedAsFullJourney) return false;
+  return new Set(steps(s).map(id).filter(Boolean)).size > 0;
+}
 export function reconcileTrip(local: TripSession, remote: TripSession) {
   if (
     local.regionId !== remote.regionId ||
