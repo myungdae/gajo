@@ -1,7 +1,7 @@
 import { REQUEST_PRESENTATION_COPY, requestPresentation, shouldOfferContextRefresh } from "../conversationPresentation";
 import { RECOMMENDATION_REQUEST_COPY } from '../recommendationRequestCopy';
 import VoiceInputDialog from "../components/VoiceInputDialog";
-import { readConversation, saveConversation } from "../conversationMemory";
+import { readConversation, saveConversation, shouldAutoSubmitEntry } from "../conversationMemory";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -631,8 +631,9 @@ function ConciergeConversation() {
 
   useEffect(() => {
     if (
-      !restored && entryState?.autoSubmit &&
+      entryState?.autoSubmit &&
       entryState.initialMessage &&
+      shouldAutoSubmitEntry(entryState.initialMessage, restored?.messages) &&
       !homeSubmittedRef.current
     ) {
       homeSubmittedRef.current = true;
@@ -818,8 +819,8 @@ function ConciergeConversation() {
             <PlanSummary planned={tripSession.plannedContext} />
           )}
           <UnderstoodContext result={latestRecommendation} />
-          <h1>{language==='ko'?'지금맞춤 지역여정':'Runtime-Adaptive Regional Journey'}</h1>
-          {journeySteps.length?<ResultPanel result={latestRecommendation} onFindNearbyRestaurants={openNearby}/>:<section className="runtime-empty-journey" role="status"><h2>{language==='ko'?'현재 조건에 맞는 검증된 장소를 찾지 못했습니다.':'No verified places match the current conditions.'}</h2><div className="runtime-empty-actions"><button type="button" onClick={()=>setOtherRequestOpen(true)}>{language==='ko'?'조건을 조금 넓히기':'Broaden Conditions'}</button><button type="button" onClick={()=>{setCurrentTurn(null);setOtherRequestOpen(false)}}>{language==='ko'?'다른 목적 선택':'Choose Another Goal'}</button><button type="button" disabled={loading} onClick={()=>{const last=lastRequestRef.current;if(last)void send(last.text,last.structured,true)}}>{language==='ko'?'현재 조건으로 다시 찾기':'Search Again'}</button></div></section>}
+          {journeySteps.length>0&&<h1>{language==='ko'?'지금맞춤 지역여정':'Runtime-Adaptive Regional Journey'}</h1>}
+          {journeySteps.length?<ResultPanel result={latestRecommendation} onFindNearbyRestaurants={openNearby}/>:<section className="runtime-empty-journey" role="status"><h2>{language==='ko'?'여정을 아직 만들지 못했어요.':'We could not create a journey yet.'}</h2><p>{language==='ko'?'현재 조건에 맞는 검증된 장소가 없습니다. 조건을 바꾸거나 다시 찾아볼 수 있어요.':'No verified places match the current conditions. Change the conditions or search again.'}</p><div className="runtime-empty-actions"><button type="button" onClick={()=>setOtherRequestOpen(true)}>{language==='ko'?'조건을 조금 넓히기':'Broaden Conditions'}</button><button type="button" onClick={()=>{setCurrentTurn(null);setOtherRequestOpen(false)}}>{language==='ko'?'다른 목적 선택':'Choose Another Goal'}</button><button type="button" disabled={loading} onClick={()=>{const last=lastRequestRef.current;if(last)void send(last.text,last.structured,true)}}>{language==='ko'?'현재 조건으로 다시 찾기':'Search Again'}</button></div></section>}
           {journeySteps.length>0&&<FullJourneySave
             itinerary={latestRecommendation.recommendation?.itinerary}
             durationLabel={
