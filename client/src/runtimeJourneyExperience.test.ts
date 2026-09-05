@@ -39,7 +39,9 @@ test("legacy and current recommendations require a verified step before journey 
   const contract=read("./runtimeJourney.ts"),page=read("./pages/ConciergePage.tsx"),actions=read("./components/RuntimeJourneyResultActions.tsx");
   assert.match(contract,/recommendation\?\.itinerary\?\.steps\?\?recommendation\?\.steps/);
   assert.match(page,/journeySteps\.length>0&&<RuntimeJourneyResultActions/);
-  assert.match(page,/현재 조건에 맞는 검증된 장소를 찾지 못했습니다/);
+  assert.match(page,/현재 조건에 맞는 검증된 장소가 없습니다/);
+  assert.match(page,/journeySteps\.length>0&&<h1>/);
+  assert.match(page,/여정을 아직 만들지 못했어요/);
   assert.match(page,/runtimeJourneySteps\(result\.recommendation\)\.length/);
   assert.match(actions,/startRuntimeJourney\(region\.id, result\.recommendation\)/);
 });
