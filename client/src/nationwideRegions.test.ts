@@ -28,7 +28,7 @@ test('Gwangju-Jeonnam transition keeps current official name and predecessor sea
 
 test('only verified existing AI and EXKO destinations are actionable', () => {
   assert.deepEqual(
-    ['hapcheon','geochang','okcheon'].map((id) => {
+    ['hapcheon','geochang','okcheon','gyeryong'].map((id) => {
       const region = findNationwideRegion(id)!;
       return [region.id, region.status, region.aiUrl, region.aiRegionId, region.exkoRegionId];
     }),
@@ -36,6 +36,7 @@ test('only verified existing AI and EXKO destinations are actionable', () => {
       ['hapcheon','AI_LIVE','/hapcheon','hapcheon','hapcheon'],
       ['geochang','FIELD_TEST','/gajo','gajo','geochang'],
       ['okcheon','FIELD_TEST','/okcheon','okcheon','okcheon'],
+      ['gyeryong','FIELD_TEST','/gyeryong','gyeryong',undefined],
     ],
   );
   assert.equal(findNationwideRegion('geochang')?.aliases?.includes('가조'), true);
@@ -45,6 +46,7 @@ test('only verified existing AI and EXKO destinations are actionable', () => {
 test('search supports top-level and child names without manufacturing routes', () => {
   assert.ok(searchNationwideRegions('합천').some((region) => region.id === 'hapcheon'));
   assert.ok(searchNationwideRegions('가조').some((region) => region.id === 'geochang'));
+  assert.ok(searchNationwideRegions('계룡').some((region) => region.id === 'gyeryong'));
   assert.ok(searchNationwideRegions('강남구').some((region) => region.name === '강남구'));
   assert.deepEqual(searchNationwideRegions('없는지역'), []);
 });
@@ -64,6 +66,7 @@ test('nationwide explorer exposes accessible selection, search, status and safe 
   for (const token of ['type="search"','aria-pressed','aria-live="polite"','아직 AI 여행안내가 제공되지 않습니다','region-explorer-primary','ExkoRegionKnowledgeLink']) assert.match(explorer, new RegExp(token));
   assert.match(explorer, /<a className="region-explorer-primary" href=\{region\.aiUrl\}>/);
   assert.match(portal, /<NationwideRegionExplorer \/>/);
+  assert.match(portal, /to: '\/gyeryong'/);
 });
 
 test('region directory deep links remain platform web routes without regional PWA', () => {
