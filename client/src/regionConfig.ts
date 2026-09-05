@@ -535,21 +535,21 @@ export const HAPCHEON_CONFIG: RegionConfig = {
   regionName: "합천",
   serviceName: "합천 여행안내",
   heroTitle: "수려한 합천에 오신 것을 환영합니다",
-  heroSubtitle: "합천호의 풍경과 함께 편안한 여행을 시작해보세요.",
+  heroSubtitle: "현장에서 함께하는 AI 여행동행자",
   heroCopy:
     "호수와 자연, 드라이브와 가족 체류를 중심으로 합천 여행을 준비해 보세요.",
   home: {
     hero: {
       title: "수려한 합천에 오신 것을 환영합니다",
       titleLines: ["수려한 합천에", "오신 것을 환영합니다"],
-      description: "필요한 순간, 먼저 찾아오는 AI 여행 동행자",
+      description: "현장에서 함께하는 AI 여행동행자",
       image: "/branding/hapcheon-meteor-basin-ai-dev-v1.jpg",
       alt: "산 위에서 바라본 합천의 넓은 산과 들 풍경을 표현한 AI 생성 개발용 이미지",
       photoSource: "AI 생성 임시 이미지 — 공식 합천 현장사진 아님",
       photoRightsStatus: "DEVELOPMENT_ONLY",
       overlay: "#294f56",
     },
-    question: "합천 여행, 무엇을 도와드릴까요?",
+    question: "지금, 무엇을 도와드릴까요?",
     supportingCopy: "말씀하시거나 편하게 입력해 주세요.",
     brandLine: "합천에 오신 것을 환영합니다",
     examples: [

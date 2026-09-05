@@ -4,6 +4,7 @@ import ActionChannelManager from "./ActionChannelManager";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { exportRegionalData,fetchRegionalData,importRegionalData,previewRegionalDataImport,regionalDataAction } from "../api/client";
 import { reviewActionsFor } from "../regionalDataReview";
+import { regionalActionError } from "../adminActionFeedback";
 const REGIONS = {
   gajo: "가조",
   okcheon: "옥천",
@@ -18,10 +19,10 @@ const VERIFICATION_LABELS:Record<string,string>={UNVERIFIED:"미검증",PARTIAL:
 const ENTITY_TYPE_LABELS:Record<string,string>={ACCOMMODATION:"숙박",PENSION:"펜션",GLAMPING:"글램핑",CAMPING:"캠핑",CAFE:"카페",RESTAURANT:"식당",ATTRACTION:"관광지",EXPERIENCE:"체험",TOURISM_NATURE:"자연 관광",TOURISM_CULTURE:"문화 관광"};
 const statusLabel=(value:string|undefined,labels:Record<string,string>)=>value?(labels[value]||value):"미정";
 const FIELD_LABELS:Record<string,string>={displayName:"이름",aliases:"별칭",entityType:"엔티티 유형",category:"카테고리",tags:"의미 태그",areaLabel:"권역",phone:"전화",address:"주소",latitude:"위도",longitude:"경도",websiteUrl:"홈페이지",reservationUrl:"예약 URL",operatingHours:"운영시간",closureDays:"휴무일",parking:"주차",accessibility:"접근성",walkingAccess:"보행 특성",shortDescription:"설명"};
-function LegacyRegionalDataManager({onAdminTokenChange}:{onAdminTokenChange?:(token:string)=>void}={}) {
+function LegacyRegionalDataManager({onAdminTokenChange,initialRegionId=""}:{onAdminTokenChange?:(token:string)=>void;initialRegionId?:string}={}) {
   const [data, setData] = useState<any>({ records: [], quality: {} }),
     [filters, setFilters] = useState({
-      regionId: "",
+      regionId: initialRegionId,
       lifecycleStatus: "",
       entityType: "",
       verificationStatus: "",
@@ -44,6 +45,12 @@ function LegacyRegionalDataManager({onAdminTokenChange}:{onAdminTokenChange?:(to
     filters.entityType,
     filters.verificationStatus,
   ]);
+  useEffect(() => {
+    setFilters(current => current.regionId === initialRegionId ? current : { ...current, regionId: initialRegionId });
+    setSelected(undefined);
+    setError("");
+    setNotice("");
+  }, [initialRegionId]);
   const types = useMemo(
     () =>
       [
@@ -70,8 +77,8 @@ function LegacyRegionalDataManager({onAdminTokenChange}:{onAdminTokenChange?:(to
       setError("");
       setNotice(action==='APPROVE'||action==='APPLY_CHANGE'||action==='APPROVE_EDITED'?`${updated.displayName}이(가) 공개 중 / 검증 완료 상태로 승인되었습니다.`:"조치가 반영되었습니다.");
       void load();
-    } catch {
-      setError("조치를 적용하지 못했습니다. 권한과 출처를 확인해 주세요.");
+    } catch (error) {
+      setError(regionalActionError(error));
     }
   };
   const q = data.quality || {};
@@ -266,4 +273,4 @@ function LegacyRegionalDataManager({onAdminTokenChange}:{onAdminTokenChange?:(to
   );
 }
 
-export default function RegionalDataManager(props:{onAdminTokenChange?:(token:string)=>void}={}) { const region=useRegion(); return region.id==='hapcheon'?<><BusinessRegistrationManager {...props}/><details><summary>기존 후보·변경 검수</summary><LegacyRegionalDataManager {...props}/></details></>:<LegacyRegionalDataManager {...props}/>; }
+export default function RegionalDataManager(props:{onAdminTokenChange?:(token:string)=>void}={}) { const region=useRegion(); return region.id==='hapcheon'?<><BusinessRegistrationManager {...props}/><details><summary>기존 후보·변경 검수</summary><LegacyRegionalDataManager {...props} initialRegionId={region.id}/></details></>:<LegacyRegionalDataManager {...props} initialRegionId={region.id}/>; }

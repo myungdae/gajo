@@ -9,7 +9,8 @@ const detail=readFileSync(new URL("./pages/MeteorCraterPage.tsx",import.meta.url
 test("Regional Home welcomes the whole region while crater detail keeps its factual headline",()=>{
   assert.equal(REGION_CONFIGS.hapcheon.home.hero?.title,"수려한 합천에 오신 것을 환영합니다");
   assert.deepEqual(REGION_CONFIGS.hapcheon.home.hero?.titleLines,["수려한 합천에","오신 것을 환영합니다"]);
-  assert.equal(REGION_CONFIGS.hapcheon.home.hero?.description,"필요한 순간, 먼저 찾아오는 AI 여행 동행자");
+  assert.equal(REGION_CONFIGS.hapcheon.home.hero?.description,"현장에서 함께하는 AI 여행동행자");
+  assert.equal(REGION_CONFIGS.hapcheon.home.question,"지금, 무엇을 도와드릴까요?");
   assert.match(detail, /<h1>\{text\('craterTitle'\)\}<\/h1>/);
   assert.equal(MANAGED_VISITOR_COPY.craterTitle.ko, korean);
   assert.doesNotMatch(detail,new RegExp(legacy));

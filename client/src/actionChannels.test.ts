@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { CHANNEL_LABELS, channelLabel, channelQuery } from './actionChannels.ts';
+import { actionChannelError, regionalActionError } from './adminActionFeedback.ts';
 const read=(path:string)=>readFileSync(new URL(path,import.meta.url),'utf8');
 const ui=read('./components/VerifiedChannelActions.tsx'),manager=read('./components/ActionChannelManager.tsx');
 test('all public kinds have bilingual labels and scope is URL encoded',()=>{
@@ -26,6 +27,22 @@ test('RDM uses existing place with authenticated headers and explicit review the
   assert.match(manager,/row.verificationStatus!=='VERIFIED'/);assert.match(manager,/관광객 화면 미리보기/);
   assert.match(manager,/rel="noopener noreferrer"/);assert.match(manager,/검수·공개 감사 이력/);
   assert.doesNotMatch(manager,/token=|BOOKING_CONFIRMED/);
+});
+test('manager can reuse an official connection as evidence and reports actionable failures',()=>{
+  const feedback=read('./adminActionFeedback.ts');
+  assert.match(manager,/이 연결 URL 자체가 공식 근거입니다/);
+  assert.match(manager,/별도 예약 페이지라면/);
+  assert.match(manager,/readOnly=\{sameAsTarget\}/);
+  for(const copy of ['이 지역을 수정할 권한이 없습니다','재검수 기한이 올바르지 않습니다','연결 URL 또는 공식 근거 URL 형식을 확인해 주세요','다른 작업에서 먼저 변경되었습니다'])assert.match(feedback,new RegExp(copy));
+});
+test('admin failures are mapped by actual HTTP cause instead of one catch-all message',()=>{
+  const failure=(status:number,message='')=>({response:{status,data:{message}}});
+  assert.match(actionChannelError(failure(403)),/권한/);
+  assert.match(actionChannelError(failure(400,'Public HTTPS URL required')),/URL 형식/);
+  assert.match(actionChannelError(failure(400,'Review due date must be within one year')),/재검수 기한/);
+  assert.match(actionChannelError(failure(409)),/최신 정보를 다시 조회/);
+  assert.match(regionalActionError(failure(403)),/권한/);
+  assert.match(regionalActionError(failure(409)),/최신 정보를 다시 조회/);
 });
 test('Golden Scenario contains only provided business channels and no generic reservation root',()=>{
   const golden=JSON.parse(read('../../docs/receipt47-2b/smile-channels.json'));
