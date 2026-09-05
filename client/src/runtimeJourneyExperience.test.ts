@@ -3,10 +3,13 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 const read=(path:string)=>readFileSync(new URL(path,import.meta.url),"utf8");
 
-test("home prioritizes active journey continuity or one integrated goal entry",()=>{
-  const home=read("./pages/HomePage.tsx"),entry=read("./components/RuntimeJourneyEntry.tsx"),contract=read("./runtimeJourney.ts");
-  assert.match(home,/hasActiveTrip\?<><TripContinuity onNewTrip=/);
+test("home distinguishes an active itinerary, saved context and a first journey",()=>{
+  const home=read("./pages/HomePage.tsx"),continuity=read("./components/TripContinuity.tsx"),entry=read("./components/RuntimeJourneyEntry.tsx"),contract=read("./runtimeJourney.ts");
+  assert.match(home,/hasTripContext&&<TripContinuity onNewTrip=/);
   assert.match(home,/hasActiveTrip=hasActiveItinerary\(activeTrip\)/);
+  assert.match(home,/hasTripContext=Boolean\(activeTrip&&hasTripEvidence\(activeTrip\)\)/);
+  assert.match(continuity,/\{active&&<button[\s\S]*TRIP_CONTINUED/);
+  assert.match(continuity,/현재 상황으로 여정 만들기/);
   assert.match(home,/RuntimeJourneyEntry/);
   assert.doesNotMatch(home,/COMPANION_FRIENDLY/);
   for(const text of ["밥 먹기","카페에서 쉬기","다음 장소 찾기","오늘 행사","내 여정 만들기"])assert.match(contract,new RegExp(text));
