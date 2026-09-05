@@ -12,6 +12,7 @@ import { DecisionPipelineService } from '../recommendation/decision-pipeline.ser
 import { DISCOVERY_CATEGORY_MATCH } from '../concierge/discovery-eligibility';
 import { Mongoose } from 'mongoose';
 import { RegionalDataRecordSchema } from './regional-data.schema';
+import { OBSERVATION_INDEX_KEY, OBSERVATION_INDEX_OPTIONS } from './candidate-observation';
 function model() {
   const rows: any[] = [];
   const document = (value: any) => ({
@@ -36,6 +37,7 @@ function model() {
   return {
     rows,
     collection: {
+      listIndexes: () => ({ toArray: async () => [{ key: OBSERVATION_INDEX_KEY, ...OBSERVATION_INDEX_OPTIONS }] }),
       async findOne(q: any) { return rows.find(row => match(row, q))?.toObject(); },
       async findOneAndUpdate(q: any, update: any) {
         const row = rows.find(row => row._id === q._id);
@@ -49,6 +51,14 @@ function model() {
     },
     find: jest.fn((q: any) => wrap(rows.filter((r) => match(r, q)))),
     findOne: jest.fn(async (q: any) => rows.find((r) => match(r, q))),
+    findOneAndUpdate: jest.fn(async (q: any, update: any, options: any) => {
+      let row = rows.find(r => match(r, q));
+      if (!row && options.upsert) { row = document(update.$setOnInsert); rows.push(row); }
+      if (!row) return null;
+      Object.assign(row, update.$max);
+      for (const [key, value] of Object.entries(update.$inc || {})) row[key] = (row[key] || 0) + Number(value);
+      return row;
+    }),
     create: jest.fn(async (v: any) => {
       const row = document(v);
       rows.push(row);
@@ -85,7 +95,7 @@ describe('RegionalDataService', () => {
     expect(db.rows).toEqual([legacy]);
     expect(db.rows[0]).not.toHaveProperty('identityCandidates');
   });
-  it('documents repeated ID-less ingestion duplication while preserving the approved canonical', async () => {
+  it('reuses repeated ID-less observations while preserving the approved canonical', async () => {
     const db = model(), service = new RegionalDataService(db as any);
     const input = { regionId: 'future-region', source, proposedFacts: { displayName: '반복 관찰 시설' } };
     const approved: any = await service.create({ ...input, canonicalEntityId: 'urn:test:repeat-approved' });
@@ -93,8 +103,9 @@ describe('RegionalDataService', () => {
     const before = db.rows[0].toObject();
     const candidates: any[] = [];
     for (let i = 0; i < 3; i++) candidates.push(await service.create(input));
-    expect(new Set(candidates.map(row => row.canonicalEntityId)).size).toBe(3);
-    expect(db.rows).toHaveLength(4);
+    expect(new Set(candidates.map(row => row.canonicalEntityId)).size).toBe(1);
+    expect(db.rows).toHaveLength(2);
+    expect(db.rows[1].seenCount).toBe(3);
     for (const row of candidates) expect(row).toMatchObject({ verificationStatus: 'UNVERIFIED', identityCandidates: [approved.canonicalEntityId] });
     expect(db.rows[0].toObject()).toEqual(before);
   });

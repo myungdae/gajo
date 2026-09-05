@@ -26,6 +26,7 @@ import {
 import { automaticBootstrapSeedEnabled } from '../bootstrap/startup-data-policy';
 import { validVisitorContent } from '../i18n/place-content';
 import { atomicIgnoreChange, prepareIgnoreChange, IgnoreChangePrecondition } from './ignore-change';
+import { candidateObservation, requireObservationIndex, upsertObservation } from './candidate-observation';
 const SOURCE_TYPES = new Set([
   'OFFICIAL_LOCAL_GOV',
   'OFFICIAL_BUSINESS',
@@ -165,6 +166,12 @@ export class RegionalDataService implements OnModuleInit {
     if (!SOURCE_TYPES.has(input.source.sourceType))
       throw new BadRequestException('Unsupported sourceType');
     const requestedCanonical = input.canonicalEntityId;
+    const observation = requestedCanonical ? undefined : candidateObservation(input);
+    if (observation) {
+      await requireObservationIndex(this.model.collection);
+      const reused = await upsertObservation(this.model, input.regionId, observation);
+      if (reused) return { ...reused.toObject(), ingestionOutcome: 'REUSED' };
+    }
     const regionalRows: any[] = requestedCanonical
       ? []
       : await this.model.find({ regionId: input.regionId }).lean();
@@ -228,7 +235,7 @@ export class RegionalDataService implements OnModuleInit {
             : 'CANDIDATE_UPDATED',
       };
     }
-    const created: any = await this.model.create({
+    const candidate: Partial<RegionalDataRecord> = {
       id: `rd-${randomUUID()}`,
       canonicalEntityId: canonical,
       regionId: input.regionId,
@@ -250,10 +257,13 @@ export class RegionalDataService implements OnModuleInit {
           source: input.source,
         },
       ],
-    });
+    };
+    const created: any = observation
+      ? await upsertObservation(this.model, input.regionId, observation, candidate)
+      : await this.model.create(candidate);
     return {
       ...created.toObject(),
-      ingestionOutcome: baseline ? 'CHANGE_DETECTED' : 'CREATED',
+      ingestionOutcome: observation && created.seenCount > 1 ? 'REUSED' : baseline ? 'CHANGE_DETECTED' : 'CREATED',
     };
   }
   async ignoreChangePreflight(id: string) {

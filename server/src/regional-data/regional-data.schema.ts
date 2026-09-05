@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import type { ReviewedPlaceContent } from '../i18n/place-content';
+import { OBSERVATION_INDEX_KEY, OBSERVATION_INDEX_OPTIONS } from './candidate-observation';
 export type LifecycleStatus =
   | 'NEW_CANDIDATE'
   | 'NEEDS_VERIFICATION'
@@ -22,6 +23,11 @@ export class RegionalDataRecord {
   @Prop({ type: Object }) visitorContent?: ReviewedPlaceContent;
   @Prop({ type: [String], default: [] }) aliases: string[];
   @Prop({ type: [String], default: [] }) identityCandidates: string[];
+  @Prop() candidateObservationKey?: string;
+  @Prop() candidateSourceKey?: string;
+  @Prop() candidateFingerprint?: string;
+  @Prop() lastSeenAt?: Date;
+  @Prop() seenCount?: number;
   @Prop() entityType?: string;
   @Prop() category?: string;
   @Prop({ type: [String], default: [] }) tags: string[];
@@ -85,6 +91,7 @@ export class RegionalDataRecord {
 export type RegionalDataRecordDocument = RegionalDataRecord & Document;
 export const RegionalDataRecordSchema =
   SchemaFactory.createForClass(RegionalDataRecord);
+RegionalDataRecordSchema.index(OBSERVATION_INDEX_KEY, OBSERVATION_INDEX_OPTIONS);
 RegionalDataRecordSchema.index({registrationKeys:1},{unique:true,sparse:true});
 RegionalDataRecordSchema.index(
   { regionId: 1, canonicalEntityId: 1 },
