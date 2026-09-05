@@ -6,6 +6,8 @@ import { OKCHEON_MASTER_DATA } from '../regions/okcheon/master-data';
 function model() {
   const rows: any[] = [];
   const document = (value: any) => ({
+    _id: value.id,
+    __v: 0,
     ...value,
     toObject() {
       const { save, toObject, markModified, ...plain } = this;
@@ -24,6 +26,18 @@ function model() {
   });
   return {
     rows,
+    collection: {
+      async findOne(q: any) { return rows.find(row => match(row, q))?.toObject(); },
+      async findOneAndUpdate(q: any, update: any) {
+        const row = rows.find(row => row._id === q._id);
+        if (!row || JSON.stringify(row.toObject()) !== JSON.stringify(q.$expr.$eq[1].$literal)) return null;
+        Object.assign(row, update.$set);
+        delete row.proposedFacts;
+        row.__v += update.$inc.__v;
+        row.auditTrail.push(update.$push.auditTrail);
+        return row.toObject();
+      },
+    },
     find: jest.fn((q: any) => wrap(rows.filter((r) => match(r, q)))),
     findOne: jest.fn(async (q: any) => rows.find((r) => match(r, q))),
     create: jest.fn(async (v: any) => {
@@ -301,8 +315,8 @@ describe('RegionalDataService', () => {
     const garden:any=await service.create({regionId:'hapcheon',canonicalEntityId:'urn:test:garden',source,proposedFacts:{displayName:'정원테마파크',aliases:['정원공원'],address:'정원로 1',...common}}),video:any=await service.create({regionId:'hapcheon',canonicalEntityId:'urn:test:video',source,proposedFacts:{displayName:'영상테마파크',aliases:['영상공원'],...common}});
     await service.action(garden.id,'APPROVE');await service.action(video.id,'APPROVE');
     await service.create({regionId:'hapcheon',canonicalEntityId:'urn:test:garden',source,proposedFacts:{displayName:'영상테마파크',aliases:['영상공원'],address:'영상로 2',...common}});
-    const current=db.rows.find(row=>row.id===garden.id).toObject(),other=JSON.stringify(db.rows.find(row=>row.id===video.id).toObject());await service.action(garden.id,'IGNORE_CHANGE');const after=db.rows.find(row=>row.id===garden.id);
-    expect(after).toMatchObject({displayName:current.displayName,aliases:current.aliases,address:current.address,lifecycleStatus:'ACTIVE',detectedChanges:[],proposedFacts:undefined});expect(after.auditTrail.at(-1).actorId).toBe('SYSTEM_INTERNAL');expect(JSON.stringify(db.rows.find(row=>row.id===video.id).toObject())).toBe(other);
+    const current=db.rows.find(row=>row.id===garden.id).toObject(),other=JSON.stringify(db.rows.find(row=>row.id===video.id).toObject());await service.action(garden.id,'IGNORE_CHANGE',undefined,undefined,await service.ignoreChangePreflight(garden.id));const after=db.rows.find(row=>row.id===garden.id);
+    expect(after).toMatchObject({displayName:current.displayName,aliases:current.aliases,address:current.address,lifecycleStatus:'ACTIVE',detectedChanges:[]});expect(after).not.toHaveProperty('proposedFacts');expect(after.auditTrail.at(-1).actorId).toBe('SYSTEM_INTERNAL');expect(JSON.stringify(db.rows.find(row=>row.id===video.id).toObject())).toBe(other);
     const resolver=new PlaceDiscoveryService(service as any);await expect(resolver.resolveExactPlaceIntent('hapcheon','정원공원 찾아줘')).resolves.toMatchObject({entityId:'urn:test:garden'});await expect(resolver.resolveExactPlaceIntent('hapcheon','영상공원 찾아줘')).resolves.toMatchObject({entityId:'urn:test:video'});
   });
   it('IGNORE_CHANGE changes only allowlisted fields and preserves both neighboring documents', async () => {
@@ -318,7 +332,7 @@ describe('RegionalDataService', () => {
       proposedFacts: { displayName: '합천 영상테마파크', aliases: ['영상테마파크'] } });
     const pre = garden.toObject(), others = neighbors.map(row => row.toObject());
     expect(pre).toMatchObject({ verificationStatus: 'VERIFIED', lifecycleStatus: 'CHANGE_DETECTED' });
-    const after = await service.action(garden.id, 'IGNORE_CHANGE', undefined, { actorId: 'RECEIPT32_TEST' });
+    const after = await service.action(garden.id, 'IGNORE_CHANGE', undefined, { actorId: 'RECEIPT32_TEST' }, await service.ignoreChangePreflight(garden.id));
     const allowlist = new Set(['lifecycleStatus', 'detectedChanges', 'proposedFacts', 'auditTrail', 'updatedAt', '__v']);
     const protectedFacts = (row: any) => Object.fromEntries(Object.entries(row).filter(([key]) => !allowlist.has(key)));
     expect(protectedFacts(after)).toEqual(protectedFacts(pre));
@@ -597,7 +611,7 @@ describe('RegionalDataService', () => {
         (x) => x.entityUri === canonical,
       )?.description,
     ).toBe(proposedFacts.shortDescription);
-    await service.action(candidate.id, 'IGNORE_CHANGE');
+    await service.action(candidate.id, 'IGNORE_CHANGE', undefined, undefined, await service.ignoreChangePreflight(candidate.id));
     expect(
       db.rows.filter(
         (x) => x.canonicalEntityId === canonical && x.regionId === 'hapcheon',

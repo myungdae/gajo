@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
   OnModuleInit,
 } from '@nestjs/common';
@@ -24,6 +25,7 @@ import {
 } from './operational-readiness';
 import { automaticBootstrapSeedEnabled } from '../bootstrap/startup-data-policy';
 import { validVisitorContent } from '../i18n/place-content';
+import { atomicIgnoreChange, prepareIgnoreChange, IgnoreChangePrecondition } from './ignore-change';
 const SOURCE_TYPES = new Set([
   'OFFICIAL_LOCAL_GOV',
   'OFFICIAL_BUSINESS',
@@ -252,12 +254,19 @@ export class RegionalDataService implements OnModuleInit {
       ingestionOutcome: baseline ? 'CHANGE_DETECTED' : 'CREATED',
     };
   }
+  async ignoreChangePreflight(id: string) {
+    return prepareIgnoreChange(this.model.collection, id);
+  }
   async action(
     id: string,
     action: string,
     editedFacts?: Record<string, unknown>,
     auditContext?: { actorId?: string; regionId?: string; action?: string },
+    precondition?: IgnoreChangePrecondition,
   ) {
+    if (action === 'IGNORE_CHANGE')
+      return atomicIgnoreChange(this.model.collection, id, auditContext?.actorId || 'SYSTEM_INTERNAL',
+        precondition!, event => Logger.log(JSON.stringify(event), 'RegionalDataAudit'));
     const row: any = await this.model.findOne({ id });
     if (!row) throw new NotFoundException();
     if (row.registration) throw new BadRequestException('Use the business review workflow for this place');
@@ -280,12 +289,6 @@ export class RegionalDataService implements OnModuleInit {
       });
     else if (action === 'REJECT') row.lifecycleStatus = 'REJECTED';
     else if (action === 'STOP') row.lifecycleStatus = 'ARCHIVED';
-    else if (action === 'IGNORE_CHANGE')
-      Object.assign(row, {
-        lifecycleStatus: 'ACTIVE',
-        detectedChanges: [],
-        proposedFacts: undefined,
-      });
     else throw new BadRequestException('Unsupported action');
     row.auditTrail.push({
       action: auditContext?.action || action,

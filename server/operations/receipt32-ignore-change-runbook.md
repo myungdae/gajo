@@ -37,11 +37,33 @@ the exact appended audit event and neighbor hashes. If recovery is approved, res
 only the three review fields through the prepared full-post-image compare-and-set,
 retaining history and appending `RESTORE_IGNORE_CHANGE`.
 
-The HTTP domain action uses `findOne` followed by document `save`; the preflight hash
-is not an atomic condition on that action. Before an operational run, approve an
-exclusive write window (or implement and review an atomic precondition). Do not treat
-a successful preflight as protection from intervening ingestion or administrator writes.
-The restore tool does have an atomic full-post-image compare-and-set.
+The HTTP domain action now requires `precondition` containing `requestId`,
+`expectedVersion`, and `expectedHash`. The authenticated read-only endpoint
+`GET /api/admin/regional-data/:id/ignore-change-preflight` captures these values.
+For the fixed maintenance target, compare its hash and version with the approved
+backup manifest before sending the action. Never silently refresh a stale precondition.
+The regular admin client obtains a preflight before posting the action; callers can
+also pass a retained precondition to retry the identical request after a lost response.
+
+The service checks the raw BSON hash and uses a single `findOneAndUpdate` filtered by
+`_id`, service ID, `__v`, `CHANGE_DETECTED`, `VERIFIED` and exact full-document equality.
+This catches concurrent added fields even when another writer did not increment `__v`.
+Zero matches returns HTTP 409; `_id` permits at most one match and no upsert or
+multi-document update is used. Success increments `__v`, removes `proposedFacts`,
+clears detected changes, returns to ACTIVE and appends one audit event containing
+request ID, actor, expected hash/version, `result=APPLIED` and `conflict=false`.
+An identical completed request returns the current document without further writes
+or duplicate audit. Reusing its request ID with another actor/hash/version conflicts.
+Success and conflicts are recorded in the structured `RegionalDataAudit` application
+log; conflicts do not alter the target's audit trail or other fields. Operational
+approval must include collection/retention of that log. The restore tool also retains
+its independent full-post-image compare-and-set and separate approval gate.
+
+Local follow-up verification: 8 isolated MongoDB atomicity tests, all 105 server
+suites / 1020 tests, all 551 Client tests, and both local builds passed. The new
+integration tests cover version changes, lifecycle changes, proposed-fact changes,
+new fields without a version bump, read-to-update races, simultaneous retries,
+zero targets, missing preconditions and actor-bound replay. No production action ran.
 
 Unknown candidates without an explicit canonical ID are no longer deduplicated using
 unapproved names. Repeated ingestion can therefore create separate review candidates;

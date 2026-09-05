@@ -428,10 +428,17 @@ export async function regionalDataAction(
   action: string,
   editedFacts: Record<string, unknown> | undefined,
   token: string,
+  precondition?: { requestId: string; expectedVersion: number; expectedHash: string },
 ) {
+  if (action === 'IGNORE_CHANGE' && !precondition) {
+    const prepared = await api.get(`/admin/regional-data/${id}/ignore-change-preflight`, {
+      headers: { "x-admin-token": token },
+    });
+    precondition = prepared.data;
+  }
   const { data } = await api.post(
     `/admin/regional-data/${id}/actions/${action}`,
-    { editedFacts },
+    { editedFacts, ...(action === 'IGNORE_CHANGE' ? { precondition } : {}) },
     { headers: { "x-admin-token": token } },
   );
   return data;

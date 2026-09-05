@@ -50,6 +50,9 @@ export class RegionalDataController {
   @Post('candidates') @UseGuards(AdminTokenGuard) create(@Body() body: any) {
     return this.service.create(body);
   }
+  @Get(':id/ignore-change-preflight') @UseGuards(AdminTokenGuard) ignoreChangePreflight(@Param('id') id: string) {
+    return this.service.ignoreChangePreflight(id);
+  }
   @Post(':id/actions/:action') @UseGuards(AdminTokenGuard) action(
     @Param('id') id: string,
     @Param('action') action: string,
@@ -58,6 +61,6 @@ export class RegionalDataController {
   ) {
     return this.service.action(id, action, body?.editedFacts, {
       actorId: request.adminPrincipal?.actorId,
-    });
+    }, body?.precondition);
   }
 }

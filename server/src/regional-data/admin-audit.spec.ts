@@ -53,7 +53,8 @@ describe('common administrator audit principal',()=>{
 
   it('passes the authenticated actor through the common action controller',async()=>{
     const action=jest.fn().mockResolvedValue({ok:true}),controller=new RegionalDataController({action} as any);
-    await controller.action('record-1','IGNORE_CHANGE',{}, {adminPrincipal:{actorId:'OPS_CONSOLE_01'}});
-    expect(action).toHaveBeenCalledWith('record-1','IGNORE_CHANGE',undefined,{actorId:'OPS_CONSOLE_01'});
+    const precondition={requestId:'request',expectedVersion:1,expectedHash:'hash'};
+    await controller.action('record-1','IGNORE_CHANGE',{precondition}, {adminPrincipal:{actorId:'OPS_CONSOLE_01'}});
+    expect(action).toHaveBeenCalledWith('record-1','IGNORE_CHANGE',undefined,{actorId:'OPS_CONSOLE_01'},precondition);
   });
 });
