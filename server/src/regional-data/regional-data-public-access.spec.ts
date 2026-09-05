@@ -48,6 +48,12 @@ describe('public versus administrator HTTP identity boundary', () => {
       .set('x-admin-token', 'public-boundary-test-token').expect(200);
     expect(response.body.records[0].proposedFacts).toEqual(row.proposedFacts);
   });
+  it('rejects an invalid token and accepts the existing administrator token for readiness', async () => {
+    await request(app.getHttpServer()).get('/api/admin/regional-data')
+      .set('x-admin-token', 'incorrect-token').expect(403);
+    await request(app.getHttpServer()).get('/api/admin/regional-data/operational-readiness?regionId=hapcheon')
+      .set('x-admin-token', 'public-boundary-test-token').expect(200);
+  });
   it.each(['/api/facilities', '/api/operational-places'])('public projection excludes unapproved identity: %s', async path => {
     const response = await request(app.getHttpServer()).get(`${path}?regionId=hapcheon`).expect(200);
     expect(response.text).not.toContain(row.displayName);

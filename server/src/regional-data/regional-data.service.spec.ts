@@ -10,6 +10,8 @@ import { MasterDataService } from '../master-data/master-data.service';
 import { RecommendationService } from '../recommendation/recommendation.service';
 import { DecisionPipelineService } from '../recommendation/decision-pipeline.service';
 import { DISCOVERY_CATEGORY_MATCH } from '../concierge/discovery-eligibility';
+import { Mongoose } from 'mongoose';
+import { RegionalDataRecordSchema } from './regional-data.schema';
 function model() {
   const rows: any[] = [];
   const document = (value: any) => ({
@@ -67,6 +69,35 @@ const source = {
   sourceUrl: 'https://official.example/place',
 };
 describe('RegionalDataService', () => {
+  it('loads legacy documents without identityCandidates or optional review fields without mutating stored data', async () => {
+    const db = model(), service = new RegionalDataService(db as any);
+    const legacy = { id: 'legacy', canonicalEntityId: 'urn:test:legacy', regionId: 'hapcheon',
+      displayName: '기존 승인 시설', source, verificationStatus: 'VERIFIED', lifecycleStatus: 'ACTIVE',
+      entityType: 'ATTRACTION', category: 'TOURISM_NATURE' };
+    db.rows.push(structuredClone(legacy));
+    const isolated = new Mongoose();
+    const hydrated = isolated.model('LegacyCompatibility', RegionalDataRecordSchema).hydrate(legacy);
+    expect(hydrated.validateSync()).toBeUndefined();
+    expect(hydrated.identityCandidates).toEqual([]);
+    expect((await service.list({ regionId: 'hapcheon' }))[0]).toEqual(legacy);
+    await expect(new PlaceDiscoveryService(service).resolveExactPlaceIntent('hapcheon', legacy.displayName))
+      .resolves.toMatchObject({ entityId: legacy.canonicalEntityId });
+    expect(db.rows).toEqual([legacy]);
+    expect(db.rows[0]).not.toHaveProperty('identityCandidates');
+  });
+  it('documents repeated ID-less ingestion duplication while preserving the approved canonical', async () => {
+    const db = model(), service = new RegionalDataService(db as any);
+    const input = { regionId: 'future-region', source, proposedFacts: { displayName: '반복 관찰 시설' } };
+    const approved: any = await service.create({ ...input, canonicalEntityId: 'urn:test:repeat-approved' });
+    await service.action(approved.id, 'APPROVE');
+    const before = db.rows[0].toObject();
+    const candidates: any[] = [];
+    for (let i = 0; i < 3; i++) candidates.push(await service.create(input));
+    expect(new Set(candidates.map(row => row.canonicalEntityId)).size).toBe(3);
+    expect(db.rows).toHaveLength(4);
+    for (const row of candidates) expect(row).toMatchObject({ verificationStatus: 'UNVERIFIED', identityCandidates: [approved.canonicalEntityId] });
+    expect(db.rows[0].toObject()).toEqual(before);
+  });
   describe.each(['gajo', 'hapcheon', 'okcheon', 'muan'])('public identity boundary: %s', (regionId) => {
     const base = REGIONAL_CANDIDATE_DATASETS[regionId].records.find(row => Object.values(DISCOVERY_CATEGORY_MATCH).some(matches => matches(row)))!;
     const proposed = { displayName: '미승인 후보명 전용', aliases: ['미승인 별칭 전용'], entityType: 'ATTRACTION', category: 'TOURISM_NATURE' };
