@@ -23,7 +23,7 @@ export default function RuntimeJourneyResultActions({ result, loading, otherOpen
   const { language } = useRegionalLanguage(), region = useRegion(), navigate = useNavigate();
   const copy = JOURNEY_COPY[language];
   const [adjusting, setAdjusting] = useState(false), [category,setCategory]=useState<"duration"|"companion"|"transport"|"walking"|"place"|null>(null), [value, setValue] = useState<JourneyPreferences>({}), [notice, setNotice] = useState("");
-  const steps=runtimeJourneySteps(result.recommendation), categories=[['duration',language==='ko'?'시간':'Time'],['companion',language==='ko'?'동행자':'Companions'],['transport',language==='ko'?'이동수단':'Transport'],['walking',language==='ko'?'걷기 정도':'Walking'],['place',language==='ko'?'추천 장소':'Recommended Place']] as const;
+  const steps=runtimeJourneySteps(result.recommendation), categories=[['duration',copy.durationQuestion],['companion',language==='ko'?'동행자':'Companions'],['transport',language==='ko'?'이동수단':'Transport'],['walking',language==='ko'?'걷기 정도':'Walking'],['place',language==='ko'?'추천 장소':'Recommended Place']] as const;
   const start = () => {
     const session = startRuntimeJourney(region.id, result.recommendation);
     if (!session) { setNotice(language === "ko" ? "시작할 수 있는 검증된 여정 단계가 없습니다." : "No verified journey step is available to start."); return; }
