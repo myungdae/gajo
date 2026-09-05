@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createTripSession, saveTripSession } from "./tripSession.ts";
-import { JOURNEY_OPTIONS, RUNTIME_JOURNEY_NAME, journeyRequest, rememberRuntimeIntro, runtimeIntroSeen, runtimeJourneySteps, startRuntimeJourney } from "./runtimeJourney.ts";
+import { JOURNEY_COPY, JOURNEY_OPTIONS, RUNTIME_JOURNEY_NAME, journeyRequest, rememberRuntimeIntro, runtimeIntroSeen, runtimeJourneySteps, startRuntimeJourney } from "./runtimeJourney.ts";
 
 const storage = () => { const values = new Map<string,string>(); return { getItem:(key:string)=>values.get(key)||null, setItem:(key:string,value:string)=>void values.set(key,value) }; };
 
@@ -9,6 +9,8 @@ test("official concept names and stable bilingual goals remain exact", () => {
   assert.deepEqual(RUNTIME_JOURNEY_NAME, { ko: "지금맞춤 지역여정", en: "Runtime-Adaptive Regional Journey" });
   assert.deepEqual(JOURNEY_OPTIONS.goal.map(row => row[0]), ["FOOD", "CAFE", "NEXT_PLACE", "EVENT_TODAY"]);
   assert.deepEqual(JOURNEY_OPTIONS.goal.map(row => row[2]), ["Eat", "Rest at a Café", "Find the Next Place", "Events Today"]);
+  assert.equal(JOURNEY_COPY.ko.durationQuestion, "오늘 여행에 사용할 수 있는 시간이 얼마나 남았나요?");
+  assert.equal(JOURNEY_COPY.en.durationQuestion, "How much time do you have for today's trip?");
 });
 
 test("goal stays separate from optional companion and mobility preferences", () => {
