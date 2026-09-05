@@ -57,7 +57,7 @@ export const VISITOR_FLOW_COPY = {
   essentialDescription: {ko:'여행 중 필요한 곳',en:'Useful places on your trip'},
   categoryTabs: {ko:'주변 찾기 대분류',en:'Nearby categories'},
   locationHelp: {ko:'현재 위치를 확인하면 주변 장소와 이동 정보를 더 정확하게 안내해드릴 수 있습니다.',en:'Confirm your location for more accurate nearby places and travel information.'},
-  staleLocation: {ko:'마지막으로 확인한 위치가 오래됐어요. 현재 위치를 다시 확인할까요?',en:'Your saved location is out of date. Would you like to check it again?'},
+  staleLocation: {ko:'위치를 확인한 지 시간이 조금 지났어요. 지금 계신 곳을 다시 확인할까요?',en:'Your saved location is out of date. Would you like to check it again?'},
   previousLocation: {ko:'이전 확인 위치:',en:'Previous location:'},
   locationDenied: {ko:'위치 권한이 거부되었습니다. 다른 장소를 기준으로 계속할 수 있어요.',en:'Location access was denied. You can continue by choosing another place.'},
   locationTimeout: {ko:'위치 확인 시간이 초과되었습니다. 다른 장소를 기준으로 계속할 수 있어요.',en:'Location lookup timed out. You can continue by choosing another place.'},

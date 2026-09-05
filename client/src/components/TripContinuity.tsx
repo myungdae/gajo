@@ -124,12 +124,12 @@ export default function TripContinuity({onNewTrip}:{onNewTrip?:()=>void}={}) {
           className="btn btn-text"
           onClick={() => setConfirmingNew(true)}
         >
-          {language==='en'?'Start a New Trip':'새 여행 만들기'}
+          {language==='en'?'Start a New Trip':'새로운 여행 시작하기'}
         </button>
       </div>
       {confirmingNew && (
         <div role="alertdialog" aria-labelledby="continuity-new-trip-title">
-          <strong id="continuity-new-trip-title">{language==='en'?'Archive this trip and start a new one?':'현재 여행은 보관하고 새 여행을 시작할까요?'}</strong>
+          <strong id="continuity-new-trip-title">{language==='en'?'Archive this trip and start a new one?':'지금 여행은 그대로 두고 새로운 여행을 시작할까요?'}</strong>
           <div className="grid-2">
             <button className="btn btn-primary" onClick={() => {
               const next = archiveAndStartNewTrip(region.id);
@@ -137,12 +137,12 @@ export default function TripContinuity({onNewTrip}:{onNewTrip?:()=>void}={}) {
               setConfirmingNew(false);
               setVisible(false);
               onNewTrip?.();
-            }}>{language==='en'?'Start New Trip':'새 여행 시작'}</button>
-            <button className="btn btn-outline" onClick={() => setConfirmingNew(false)}>{language==='en'?'Cancel':'취소'}</button>
+            }}>{language==='en'?'Start New Trip':'새로운 여행 시작'}</button>
+            <button className="btn btn-outline" onClick={() => setConfirmingNew(false)}>{language==='en'?'Cancel':'지금 여행 계속'}</button>
           </div>
         </div>
       )}
-      <p className="home-new-trip-copy">{language==='en'?'Start fresh with new companions, timing, or goals.':'새로운 동행·시간·목적으로 시작할 수도 있습니다.'}</p>
+      <p className="home-new-trip-copy">{language==='en'?'Start fresh with new companions, timing, or goals.':'함께하는 사람이나 여행 시간이 달라졌다면 새로 시작할 수 있어요.'}</p>
     </section>
   );
 }

@@ -22,7 +22,7 @@ export function regionalHomeGuidancePlace(region: RegionConfig, session: TripSes
   const label = language === "en" ? english.placeNames?.[place.id] || place.label : place.label;
   return {
     label,
-    characteristic: language === "en" ? `Verified local information is available for ${label}.` : place.description || `${label}의 현장 조건은 장소마다 다를 수 있습니다.`,
+    characteristic: language === "en" ? `Verified local information is available for ${label}.` : place.description || "확인된 장소 정보를 바탕으로 안내합니다.",
     source: place.website || "지역 검증 데이터",
   };
 }

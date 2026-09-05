@@ -12,14 +12,14 @@ test("home distinguishes an active itinerary, saved context and a first journey"
   assert.match(continuity,/현재 상황으로 여정 만들기/);
   assert.match(home,/RuntimeJourneyEntry/);
   assert.doesNotMatch(home,/COMPANION_FRIENDLY/);
-  for(const text of ["밥 먹기","카페에서 쉬기","숙소 찾기","다음 장소 찾기","오늘 행사","내 여정 만들기"])assert.match(contract,new RegExp(text));
+  for(const text of ["맛있는 곳 찾기","카페에서 쉬기","숙소 찾기","다음에 갈 곳 찾기","오늘 행사·축제 찾기","내 여정 만들기"])assert.match(contract,new RegExp(text));
   assert.match(entry,/JOURNEY_OPTIONS\.goal/);
   assert.ok(home.indexOf('className={`spotlight-card')<home.indexOf('hasTripContext&&<TripContinuity'), 'home welcome must precede saved-trip continuity');
 });
 
 test("result order puts understanding, journey and actions before optional other request",()=>{
   const page=read("./pages/ConciergePage.tsx");
-  const understood=page.indexOf("<UnderstoodContext"),title=page.indexOf("지금맞춤 지역여정",understood),result=page.indexOf("<ResultPanel",title),actions=page.indexOf("<RuntimeJourneyResultActions",result);
+  const understood=page.indexOf("<UnderstoodContext"),title=page.indexOf("RUNTIME_JOURNEY_NAME[language]",understood),result=page.indexOf("<ResultPanel",title),actions=page.indexOf("<RuntimeJourneyResultActions",result);
   assert.ok(understood>0&&title>understood&&result>title&&actions>result);
   assert.doesNotMatch(page,/NowImmediateActions/);
   assert.doesNotMatch(page,/조건을 선택해서 일정 만들기/);

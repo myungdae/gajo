@@ -6,7 +6,7 @@ const page=readFileSync(new URL("./pages/ConciergePage.tsx",import.meta.url),"ut
 const confirmation=readFileSync(new URL("./components/VoiceConfirmation.tsx",import.meta.url),"utf8");
 
 test("NOW starts with one common journey entry and secondary manual controls",()=>{
-  for(const label of ["밥 먹기","카페에서 쉬기","숙소 찾기","다음 장소 찾기","오늘 행사"])assert.match(readFileSync(new URL("./runtimeJourney.ts",import.meta.url),"utf8"),new RegExp(label));
+  for(const label of ["맛있는 곳 찾기","카페에서 쉬기","숙소 찾기","다음에 갈 곳 찾기","오늘 행사·축제 찾기"])assert.match(readFileSync(new URL("./runtimeJourney.ts",import.meta.url),"utf8"),new RegExp(label));
   for(const label of ["RECOMMENDATION_REQUEST_COPY","requestUi.intro","openVoice","voiceToText"])assert.match(page,new RegExp(label));
   assert.match(page,/RuntimeJourneyEntry/);
   assert.match(page,/onDirect=\{\(\)=>setOtherRequestOpen\(true\)\}/);

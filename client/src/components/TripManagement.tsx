@@ -25,9 +25,9 @@ export default function TripManagement({ onSavedPlacesCleared }: { onSavedPlaces
   return <section className="trip-management">
     <button type="button" className="btn btn-text trip-management-toggle" aria-expanded={open} onClick={toggle}>⋯ 여행 관리</button>
     {open && <div className="trip-management-panel">
-      {!confirming && <><button type="button" className="btn btn-outline" onClick={() => setConfirming("CLEAR")} disabled={!savedPlaceItems(session).length}>담아둔 곳 모두 비우기</button><button type="button" className="btn btn-outline" onClick={() => setConfirming("NEW")}>새 여행 시작하기</button></>}
+      {!confirming && <><button type="button" className="btn btn-outline" onClick={() => setConfirming("CLEAR")} disabled={!savedPlaceItems(session).length}>담아둔 곳 모두 비우기</button><button type="button" className="btn btn-outline" onClick={() => setConfirming("NEW")}>새로운 여행 시작하기</button></>}
       {confirming === "CLEAR" && <div role="alertdialog" aria-labelledby="clear-saved-title"><strong id="clear-saved-title">담아둔 장소를 모두 비울까요?</strong><p>저장된 전체 일정은 유지됩니다.</p><div className="grid-2"><button type="button" className="btn btn-danger" onClick={clear}>모두 비우기</button><button type="button" className="btn btn-outline" onClick={() => setConfirming(null)}>취소</button></div></div>}
-      {confirming === "NEW" && <div role="alertdialog" aria-labelledby="new-trip-title"><strong id="new-trip-title">현재 여행은 보관하고 새 여행을 시작합니다.</strong><div className="grid-2"><button type="button" className="btn btn-primary" onClick={startNew}>새 여행 시작</button><button type="button" className="btn btn-outline" onClick={() => setConfirming(null)}>취소</button></div></div>}
+      {confirming === "NEW" && <div role="alertdialog" aria-labelledby="new-trip-title"><strong id="new-trip-title">지금 여행은 그대로 두고 새로운 여행을 시작할까요?</strong><p>함께하는 사람이나 여행 시간이 달라졌다면 새로 시작할 수 있어요.</p><div className="grid-2"><button type="button" className="btn btn-primary" onClick={startNew}>새로운 여행 시작</button><button type="button" className="btn btn-outline" onClick={() => setConfirming(null)}>지금 여행 계속</button></div></div>}
     </div>}
   </section>;
 }

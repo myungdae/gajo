@@ -9,8 +9,8 @@ test("planning UI explicitly exposes saved regional trip loading and safe new-tr
   for (const copy of [
     "저장한 {region.regionName} 여행이 있습니다.",
     "내 여행 불러오기",
-    "새 일정 만들기",
-    "이전 여행은 보관됩니다",
+    "새로운 여행 시작하기",
+    "지금 여행은 그대로 보관됩니다",
   ])
     assert.ok(entry.includes(copy));
   assert.match(concierge, /tripMode\s*===\s*["']PLAN["'][\s\S]*<SavedTripEntry/);

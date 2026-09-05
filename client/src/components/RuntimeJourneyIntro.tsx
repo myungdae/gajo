@@ -21,7 +21,7 @@ export default function RuntimeJourneyIntro() {
     return () => document.removeEventListener("keydown", key);
   }, [open]);
   return <>
-    <button ref={trigger} type="button" className="runtime-intro-link" onClick={() => setOpen(true)}>ⓘ {language === "ko" ? "지금맞춤 지역여정이란?" : "About this journey"}</button>
+    <button ref={trigger} type="button" className="runtime-intro-link" onClick={() => setOpen(true)}>ⓘ {language === "ko" ? "AI가 어떻게 여행을 맞춰주나요?" : "About this journey"}</button>
     {open && <div className="runtime-intro-backdrop"><section role="dialog" aria-modal="true" aria-labelledby="runtime-intro-title" aria-describedby="runtime-intro-description" className="runtime-intro">
       <button ref={close} aria-label={language === "ko" ? "소개 닫기" : "Close introduction"} onClick={dismiss}>×</button>
       <h2 id="runtime-intro-title">{RUNTIME_JOURNEY_NAME[language]}</h2>

@@ -53,7 +53,7 @@ import AiResponseActions from "../components/AiResponseActions";
 import RuntimeJourneyEntry from '../components/RuntimeJourneyEntry';
 import RuntimeJourneyResultActions from '../components/RuntimeJourneyResultActions';
 import '../components/runtime-empty-journey.css';
-import { journeyRequest, runtimeJourneySteps } from '../runtimeJourney';
+import { journeyRequest, RUNTIME_JOURNEY_NAME, runtimeJourneySteps } from '../runtimeJourney';
 import {
   beginCurrentTurn,
   isCurrentTurn,
@@ -766,7 +766,7 @@ function ConciergeConversation() {
       )}
       {tripMode === "NOW" && <details className="structured-request-alternative"><summary>{language==="en"?"Location settings":"위치 설정"}</summary><LocationContextBar mode="NOW" refreshNeeded={Boolean(locationFreshnessNotice)} onConfirmed={()=>setLocationFreshnessNotice(null)} /></details>}
       {tripMode === "PLAN" && !hasCompletedTurn && <details className="structured-request-alternative"><summary>{language==="en"?"Starting point":"여행 시작 위치"}</summary><LocationContextBar mode="PLAN" /></details>}
-      {tripMode==="NOW"&&locationFreshnessNotice&&<section className="card location-freshness-choice" role="status"><b>마지막으로 확인한 위치가 오래됐어요. 현재 위치를 다시 확인할까요?</b><p>{locationFreshnessNotice.label||"이전 확인 위치"}{locationFreshnessNotice.confirmedAt?` · ${new Date(locationFreshnessNotice.confirmedAt).toLocaleString("ko-KR")}`:""}</p><button type="button" className="btn btn-outline" onClick={()=>{const request=lastRequestRef.current;if(!request)return;allowStaleLocationOnceRef.current=true;setLocationFreshnessNotice(null);void send(request.text,request.structured,true)}}>이 위치 기준으로 검색</button></section>}
+      {tripMode==="NOW"&&locationFreshnessNotice&&<section className="card location-freshness-choice" role="status"><b>위치를 확인한 지 시간이 조금 지났어요. 지금 계신 곳을 다시 확인할까요?</b><p>{locationFreshnessNotice.label||"이전 확인 위치"}{locationFreshnessNotice.confirmedAt?` · ${new Date(locationFreshnessNotice.confirmedAt).toLocaleString("ko-KR")}`:""}</p><button type="button" className="btn btn-outline" onClick={()=>{const request=lastRequestRef.current;if(!request)return;allowStaleLocationOnceRef.current=true;setLocationFreshnessNotice(null);void send(request.text,request.structured,true)}}>이 위치 기준으로 검색</button></section>}
       <div className="chat-window">
         {messages.map((m, i) => {
           if(i===0&&m.role==="ai"&&!m.result&&!m.turnId)return null;
@@ -822,7 +822,7 @@ function ConciergeConversation() {
             <PlanSummary planned={tripSession.plannedContext} />
           )}
           <UnderstoodContext result={latestRecommendation} />
-          {journeySteps.length>0&&<h1>{language==='ko'?'지금맞춤 지역여정':'Runtime-Adaptive Regional Journey'}</h1>}
+          {journeySteps.length>0&&<h1>{RUNTIME_JOURNEY_NAME[language]}</h1>}
           {journeySteps.length?<ResultPanel result={latestRecommendation} onFindNearbyRestaurants={openNearby}/>:<section className="runtime-empty-journey" aria-labelledby="runtime-empty-journey-title"><h2 id="runtime-empty-journey-title">{language==='ko'?'조건에 맞는 여정을 찾지 못했어요.':'We could not find a matching journey.'}</h2><p>{language==='ko'?'검증된 장소가 부족하거나 선택한 조건이 좁을 수 있어요. 목적이나 조건을 바꿔 다시 만들어 보세요.':'Verified places may be limited or the selected conditions may be too narrow. Change the goal or preferences and try again.'}</p><div className="runtime-empty-actions"><button type="button" className="runtime-empty-primary" aria-expanded={emptyJourneyEditOpen} onClick={()=>setEmptyJourneyEditOpen(open=>!open)}>{language==='ko'?'목적·조건 다시 선택':'Choose Goal and Preferences'}</button><button type="button" disabled={loading} onClick={()=>{const request=journeyRequest({goal:'ACCOMMODATION'},language);createRuntimeJourney(request.text,request.context,request.planned)}}>{language==='ko'?'숙소 찾기':'Find Lodging'}</button><button type="button" disabled={loading} onClick={()=>{const last=lastRequestRef.current;if(last)void send(last.text,last.structured,true)}}>{language==='ko'?'같은 조건으로 다시 찾기':'Retry Same Search'}</button></div>{emptyJourneyEditOpen&&<div className="runtime-empty-editor"><RuntimeJourneyEntry loading={loading} onCreate={createRuntimeJourney} onDirect={()=>{setEmptyJourneyEditOpen(false);openText()}}/></div>}</section>}
           {journeySteps.length>0&&<FullJourneySave
             itinerary={latestRecommendation.recommendation?.itinerary}
