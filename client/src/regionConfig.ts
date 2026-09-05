@@ -414,11 +414,17 @@ export const GYERYONG_CONFIG: RegionConfig = {
   id: "gyeryong",
   regionName: "계룡",
   serviceName: "계룡 여행안내",
-  heroTitle: "계룡에 오신 것을 환영합니다",
-  heroSubtitle: "오늘의 계룡을 편안하게 만나보세요.",
+  heroTitle: "국방과 자연이 만나는 계룡에 오신 것을 환영합니다",
+  heroSubtitle: "필요한 순간, 먼저 찾아오는 AI 여행 동행자",
   heroCopy:
-    "군문화와 행사, 가족 방문과 생활편의를 중심으로 계룡 일정을 준비해 보세요.",
+    "계룡의 자연과 역사, 군문화와 일상을 현재 상황에 맞춰 이어드려요.",
   home: {
+    hero: {
+      title: "국방과 자연이 만나는 계룡에 오신 것을 환영합니다",
+      titleLines: ["국방과 자연이 만나는", "계룡에 오신 것을 환영합니다"],
+      description: "필요한 순간, 먼저 찾아오는 AI 여행 동행자",
+      overlay: "#263f3c",
+    },
     question: "계룡 여행, 무엇을 도와드릴까요?",
     supportingCopy: "말씀하시거나 편하게 입력해 주세요.",
     examples: [
@@ -428,6 +434,15 @@ export const GYERYONG_CONFIG: RegionConfig = {
     ],
   },
   accent: "#455a64",
+  center: { latitude: 36.274, longitude: 127.249 },
+  bounds: { north: 36.36, south: 36.2, east: 127.3, west: 127.18 },
+  map: {
+    enabled: true,
+    title: "계룡 여행 지도",
+    description: "현재 위치에서 공개 방문 가능한 계룡의 장소를 확인해 보세요.",
+    defaultZoom: 13,
+  },
+  weather: { enabled: true },
   quickIntents,
   supportedCategories: [
     "MILITARY_CULTURE_HISTORY",
@@ -466,13 +481,44 @@ export const GYERYONG_CONFIG: RegionConfig = {
       runtimeDataStatus: "UNKNOWN",
     },
     {
-      id: "https://gyeryong.example/ontology#militaryCultureEventZone",
-      label: "계룡 군문화·행사권",
-      aliases: ["군문화 행사권", "계룡 행사권"],
-      category: "군문화·역사",
-      description:
-        "공개 행사구역과 출입 가능 여부를 별도로 확인해야 하는 지역 권역 항목입니다.",
-      runtimeDataStatus: "UNKNOWN",
+      id: "https://gyeryong.example/ontology#sagyeHistoricHouse",
+      label: "사계고택(은농재)",
+      aliases: ["사계고택", "은농재"],
+      category: "역사·문화",
+      description: "계룡시 공식 문화관광에 소개된 고택입니다. 관람 가능 시간은 방문 전에 확인해 주세요.",
+      runtimeDataStatus: "PARTIAL",
+    },
+    {
+      id: "https://gyeryong.example/ontology#hyangjeoksanHealingForest",
+      label: "향적산치유의숲",
+      aliases: ["향적산 치유의 숲", "향적산"],
+      category: "자연·산책",
+      description: "계룡시 공식 문화관광에 소개된 산림 치유·산책 장소입니다.",
+      runtimeDataStatus: "PARTIAL",
+    },
+    {
+      id: "https://gyeryong.example/ontology#ipamReservoir",
+      label: "입암저수지",
+      aliases: ["입암 저수지"],
+      category: "자연·산책",
+      description: "계룡시 공식 문화관광에 소개된 수변 경관 장소입니다.",
+      runtimeDataStatus: "PARTIAL",
+    },
+    {
+      id: "https://gyeryong.example/ontology#goemokjeongPark",
+      label: "괴목정",
+      aliases: ["괴목정 공원"],
+      category: "자연·산책",
+      description: "신도안면 용동리의 공원입니다. 주변 군사시설 출입구역과 혼동하지 않도록 현장 안내를 따라 주세요.",
+      runtimeDataStatus: "PARTIAL",
+    },
+    {
+      id: "https://gyeryong.example/ontology#militaryExperienceCenter",
+      label: "계룡시병영체험관",
+      aliases: ["병영체험관", "계룡 병영체험관"],
+      category: "군문화·가족체험",
+      description: "공개 체험시설이지만 프로그램과 관람 가능 여부는 방문 전에 확인해야 합니다.",
+      runtimeDataStatus: "PARTIAL",
     },
   ],
   serviceAreaMessage:
@@ -480,8 +526,8 @@ export const GYERYONG_CONFIG: RegionConfig = {
   ontologyNamespace: "https://gyeryong.example/ontology#",
   dataSources: {
     masterData: "gyeryong-curated-names",
-    nearby: "UNAVAILABLE",
-    weather: "UNAVAILABLE",
+    nearby: "KAKAO_LOCAL",
+    weather: "OPEN_METEO",
   },
 };
 export const HAPCHEON_CONFIG: RegionConfig = {
