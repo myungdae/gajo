@@ -48,5 +48,10 @@ export function replacementCandidate(facility:any,regionId:string){
   const entityId=facility.uri||facility.entityId,verification=facility.masterData?.verificationStatus;
   if(!entityId||!facility.label||!['VERIFIED','PARTIAL'].includes(verification))return undefined;
   const actions=facility.literalProps?.actions||{};
-  return{entityId,entityUri:entityId,programUri:entityId,facilityUri:entityId,programLabel:facility.label,facilityLabel:facility.label,label:facility.label,regionId,entityType:facility.literalProps?.category,category:facility.literalProps?.category,description:facility.comment,address:facility.literalProps?.address,telephone:facility.literalProps?.telephone,website:facility.literalProps?.website,latitude:facility.literalProps?.latitude,longitude:facility.literalProps?.longitude,actions,operationalEvidence:{source:'RDM',verificationStatus:verification,tripEligible:true,navigationAvailable:Boolean(actions.navigate)}};
+  return{entityId,entityUri:entityId,programUri:entityId,facilityUri:entityId,programLabel:facility.label,facilityLabel:facility.label,label:facility.label,regionId,entityType:facility.literalProps?.entityType||facility.literalProps?.category,category:facility.literalProps?.category,tags:Array.isArray(facility.literalProps?.tags)?facility.literalProps.tags:[],description:facility.comment,address:facility.literalProps?.address,telephone:facility.literalProps?.telephone,website:facility.literalProps?.website,accessNotice:facility.literalProps?.accessNotice,latitude:facility.literalProps?.latitude,longitude:facility.literalProps?.longitude,actions,operationalEvidence:{source:'RDM',verificationStatus:verification,tripEligible:true,navigationAvailable:Boolean(actions.navigate)}};
+}
+
+export function replacementCandidates(facilities:any[],current:any,regionId:string,currentEntityId:string){
+  const primary=String(current.category||current.entityType||'');
+  return facilities.map(facility=>replacementCandidate(facility,regionId)).filter(Boolean).filter((candidate:any)=>canonicalEntityId(candidate)!==currentEntityId&&(candidate.category===primary||candidate.entityType===primary||candidate.tags.includes(primary))).sort((a:any,b:any)=>Number(b.category===primary)-Number(a.category===primary));
 }
