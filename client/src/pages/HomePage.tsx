@@ -15,7 +15,7 @@ import { sanitizeRegionalSpotlight } from "../regionalHomeCopy";
 import { useRegionalLanguage } from "../RegionalLanguageContext";
 import { getRegionalHomeEnglish } from "../regionConfig";
 import { HOME_COPY, localizedSpotlight } from "../regionalHomeI18n";
-import { regionalHomeGuidancePlace } from "../regionalHomeGuidanceContext";
+import { regionalHomeGuidancePlace, selectedRegionalHomePlace } from "../regionalHomeGuidanceContext";
 
 export default function HomePage() {
   const navigate = useNavigate(), location = useLocation(), region = useRegion(), { language, withLanguage } = useRegionalLanguage(), english = getRegionalHomeEnglish(region), copy = HOME_COPY[language], [managed, setManaged] = useState<any>();
@@ -51,7 +51,9 @@ export default function HomePage() {
     },
     spotlight=region.id === "hapcheon"?fallback:managed?localizedSpotlight(managed,language,english):fallback,
     spotlightQuestion=region.id === "hapcheon"?(language === "en" ? "How can I help you right now?" : region.home.question):undefined,
-    guidanceContext = regionalHomeGuidancePlace(region, loadTripSession(localStorage, region.id), language, english),
+    currentTrip = loadTripSession(localStorage, region.id),
+    guidancePlace = selectedRegionalHomePlace(region, currentTrip),
+    guidanceContext = regionalHomeGuidancePlace(region, currentTrip, language, english),
     guidance = buildProactiveGuidance(guidanceContext, undefined, new Date(), language),
     primary = () => spotlight.primaryAction?.type === "JOURNEY" ? navigate(link("/concierge?mode=now"),{state:{tripMode:"NOW"}}) : spotlight.primaryAction?.type === "DETAIL" && spotlight.primaryAction.target ? navigate(withLanguage(spotlight.primaryAction.target)) : ask(`${spotlight.title} 이야기를 알려주세요.`, `Tell me more about ${spotlight.title}.`),
     activeTrip=loadTripSession(localStorage,region.id),hasActiveTrip=hasActiveItinerary(activeTrip),hasTripContext=Boolean(activeTrip&&hasTripEvidence(activeTrip)),
@@ -64,6 +66,6 @@ export default function HomePage() {
     </section>
     {hasTripContext&&<TripContinuity onNewTrip={()=>refreshTrip(value=>value+1)}/>}
     {hasActiveTrip?<RuntimeJourneyIntro/>:!hasTripContext&&<RuntimeJourneyEntry loading={false} onCreate={createJourney} onDirect={()=>navigate(link('/concierge?mode=now'),{state:{tripMode:'NOW',otherRequestOpen:true}})}/>}
-    <section className="proactive-card" aria-label={copy.guidance}><small>{copy.guidance}</small><p>{guidance.fact && `${guidance.fact} `}{guidance.context} {guidance.recommendation}</p>{guidance.basisLabel && <span>{guidance.basisLabel}</span>}</section>
+    <section className="proactive-card" aria-label={language==='ko'?'출발 전에 확인하세요':'Check Before You Leave'}><small>{language==='ko'?'출발 전에 확인하세요':'Check Before You Leave'}</small>{guidancePlace&&<h2>{guidanceContext.label}{language==='ko'?'로 가시나요?':' — ready to leave?'}</h2>}<p>{guidance.fact && `${guidance.fact} `}{guidance.context} {guidance.fallbackUsed?(guidancePlace?(language==='ko'?'목적지의 최신 날씨는 아직 확인되지 않았어요.':'The latest destination weather has not been verified yet.'):(language==='ko'?'여정을 만들면 출발 전에 필요한 정보를 확인해 드릴게요.':'Create a journey and I will check what you need before departure.')):guidance.recommendation}</p>{guidance.basisLabel && <span>{guidance.basisLabel}</span>}{guidancePlace&&<button type="button" className="btn btn-outline" onClick={()=>ask(`${guidanceContext.label}로 출발하기 전에 최신 날씨와 이용 정보를 확인해 주세요.`,`Check the latest weather and visitor information before I leave for ${guidanceContext.label}.`)}>{language==='ko'?'출발 정보 확인하기':'Check Departure Information'}</button>}</section>
   </div>;
 }

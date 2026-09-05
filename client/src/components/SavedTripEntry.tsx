@@ -38,19 +38,19 @@ export default function SavedTripEntry() {
           onClick={() => setConfirming(true)}
           disabled={starting}
         >
-          {starting ? "새 일정 준비 중…" : "새 일정 만들기"}
+          {starting ? "새로운 여행 준비 중…" : "새로운 여행 시작하기"}
         </button>
       </div>
       {confirming && (
         <div role="alertdialog" aria-labelledby="saved-entry-new-trip-title">
-          <strong id="saved-entry-new-trip-title">현재 여행은 보관하고 새 여행을 시작할까요?</strong>
+          <strong id="saved-entry-new-trip-title">지금 여행은 그대로 두고 새로운 여행을 시작할까요?</strong>
           <div className="grid-2">
-            <button type="button" className="btn btn-primary" onClick={start}>새 여행 시작</button>
-            <button type="button" className="btn btn-outline" onClick={() => setConfirming(false)}>취소</button>
+            <button type="button" className="btn btn-primary" onClick={start}>새로운 여행 시작</button>
+            <button type="button" className="btn btn-outline" onClick={() => setConfirming(false)}>지금 여행 계속</button>
           </div>
         </div>
       )}
-      <small>새 일정을 시작해도 이전 여행은 보관됩니다.</small>
+      <small>함께하는 사람이나 여행 시간이 달라졌다면 새로 시작할 수 있어요. 지금 여행은 그대로 보관됩니다.</small>
     </section>
   );
 }
