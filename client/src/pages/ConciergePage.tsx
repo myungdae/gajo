@@ -52,7 +52,8 @@ import SavedTripEntry from "../components/SavedTripEntry";
 import AiResponseActions from "../components/AiResponseActions";
 import RuntimeJourneyEntry from '../components/RuntimeJourneyEntry';
 import RuntimeJourneyResultActions from '../components/RuntimeJourneyResultActions';
-import { runtimeJourneySteps } from '../runtimeJourney';
+import '../components/runtime-empty-journey.css';
+import { journeyRequest, runtimeJourneySteps } from '../runtimeJourney';
 import {
   beginCurrentTurn,
   isCurrentTurn,
@@ -184,6 +185,7 @@ function ConciergeConversation() {
   );
   const [manualEntryMode,setManualEntryMode]=useState<"VOICE"|"TEXT"|null>(null);
   const [otherRequestOpen,setOtherRequestOpen]=useState(Boolean(entryState?.otherRequestOpen));
+  const [emptyJourneyEditOpen,setEmptyJourneyEditOpen]=useState(false);
   const [structuredDraft, setStructuredDraft] = useState<CreateContextInput>(
     () =>
       mergeTravelContext(
@@ -244,6 +246,7 @@ function ConciergeConversation() {
     saveTripSession({...current,mode:tripMode==='GENERIC'?current.mode:tripMode,plannedContext:{...(current.plannedContext||{}),...changed}});
     setStructuredDraft(currentDraft=>mergeTravelContext(currentDraft,context));
     setOtherRequestOpen(false);
+    setEmptyJourneyEditOpen(false);
     track('RUNTIME_JOURNEY_REQUESTED',tripSession.id,{mode:tripMode});
     void send(text,context);
   };
@@ -820,7 +823,7 @@ function ConciergeConversation() {
           )}
           <UnderstoodContext result={latestRecommendation} />
           {journeySteps.length>0&&<h1>{language==='ko'?'지금맞춤 지역여정':'Runtime-Adaptive Regional Journey'}</h1>}
-          {journeySteps.length?<ResultPanel result={latestRecommendation} onFindNearbyRestaurants={openNearby}/>:<section className="runtime-empty-journey" role="status"><h2>{language==='ko'?'여정을 아직 만들지 못했어요.':'We could not create a journey yet.'}</h2><p>{language==='ko'?'현재 조건에 맞는 검증된 장소가 없습니다. 조건을 바꾸거나 다시 찾아볼 수 있어요.':'No verified places match the current conditions. Change the conditions or search again.'}</p><div className="runtime-empty-actions"><button type="button" onClick={()=>setOtherRequestOpen(true)}>{language==='ko'?'조건을 조금 넓히기':'Broaden Conditions'}</button><button type="button" onClick={()=>{setCurrentTurn(null);setOtherRequestOpen(false)}}>{language==='ko'?'다른 목적 선택':'Choose Another Goal'}</button><button type="button" disabled={loading} onClick={()=>{const last=lastRequestRef.current;if(last)void send(last.text,last.structured,true)}}>{language==='ko'?'현재 조건으로 다시 찾기':'Search Again'}</button></div></section>}
+          {journeySteps.length?<ResultPanel result={latestRecommendation} onFindNearbyRestaurants={openNearby}/>:<section className="runtime-empty-journey" aria-labelledby="runtime-empty-journey-title"><h2 id="runtime-empty-journey-title">{language==='ko'?'조건에 맞는 여정을 찾지 못했어요.':'We could not find a matching journey.'}</h2><p>{language==='ko'?'검증된 장소가 부족하거나 선택한 조건이 좁을 수 있어요. 목적이나 조건을 바꿔 다시 만들어 보세요.':'Verified places may be limited or the selected conditions may be too narrow. Change the goal or preferences and try again.'}</p><div className="runtime-empty-actions"><button type="button" className="runtime-empty-primary" aria-expanded={emptyJourneyEditOpen} onClick={()=>setEmptyJourneyEditOpen(open=>!open)}>{language==='ko'?'목적·조건 다시 선택':'Choose Goal and Preferences'}</button><button type="button" disabled={loading} onClick={()=>{const request=journeyRequest({goal:'ACCOMMODATION'},language);createRuntimeJourney(request.text,request.context,request.planned)}}>{language==='ko'?'숙소 찾기':'Find Lodging'}</button><button type="button" disabled={loading} onClick={()=>{const last=lastRequestRef.current;if(last)void send(last.text,last.structured,true)}}>{language==='ko'?'같은 조건으로 다시 찾기':'Retry Same Search'}</button></div>{emptyJourneyEditOpen&&<div className="runtime-empty-editor"><RuntimeJourneyEntry loading={loading} onCreate={createRuntimeJourney} onDirect={()=>{setEmptyJourneyEditOpen(false);openText()}}/></div>}</section>}
           {journeySteps.length>0&&<FullJourneySave
             itinerary={latestRecommendation.recommendation?.itinerary}
             durationLabel={

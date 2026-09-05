@@ -1,0 +1,34 @@
+.runtime-empty-journey h2 {
+  margin-top: 0;
+}
+
+.runtime-empty-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.runtime-empty-actions button {
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #91aaa5;
+  border-radius: 10px;
+  background: #fff;
+  color: #17332d;
+  text-align: left;
+}
+
+.runtime-empty-actions .runtime-empty-primary {
+  border-color: var(--region-accent, #087f6b);
+  background: var(--region-accent, #087f6b);
+  color: #fff;
+  font-weight: 700;
+}
+
+.runtime-empty-editor {
+  margin-top: 14px;
+}
+
+.runtime-empty-editor .runtime-journey-entry {
+  background: #fff;
+}
