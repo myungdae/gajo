@@ -14,6 +14,7 @@ test("home distinguishes an active itinerary, saved context and a first journey"
   assert.doesNotMatch(home,/COMPANION_FRIENDLY/);
   for(const text of ["밥 먹기","카페에서 쉬기","다음 장소 찾기","오늘 행사","내 여정 만들기"])assert.match(contract,new RegExp(text));
   assert.match(entry,/JOURNEY_OPTIONS\.goal/);
+  assert.ok(home.indexOf('className={`spotlight-card')<home.indexOf('hasTripContext&&<TripContinuity'), 'home welcome must precede saved-trip continuity');
 });
 
 test("result order puts understanding, journey and actions before optional other request",()=>{
