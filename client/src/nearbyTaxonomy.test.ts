@@ -26,10 +26,9 @@ test('legacy route categories map compatibly without changing provider ids',()=>
   assert.equal(isFoodCategory('FOOD_JAPANESE'),true);
 });
 
-test('nearby dead ends and selected places can call the assistant with context',()=>{
+test('nearby calls the assistant only when search reaches a dead end',()=>{
   const page=readFileSync(new URL('./pages/NearbyRestaurantsPage.tsx',import.meta.url),'utf8');
-  assert.match(page,/AI 여행도우미에게 다음 행동 묻기/);
   assert.match(page,/AI 여행도우미에게 다른 선택 요청/);
-  assert.match(page,/selected\.name[\s\S]*autoSubmit:true/);
+  assert.doesNotMatch(page,/AI 여행도우미에게 다음 행동 묻기/);
   assert.match(page,/localizedRegionalPath\('\/concierge\?mode=now',region\.id\)/);
 });
