@@ -25,7 +25,7 @@ export class FacilityService {
 
   async listFacilities(regionId:string) {
     requireRegionId(regionId,'facility list');
-    if(regionId!=='gajo'){const dataset=this.regionalData?await this.regionalData.effectiveDataset(regionId):undefined;const records:any[]=dataset?.records||(regionId==='hapcheon'?[...HAPCHEON_MASTER_DATA]:[]);return records.map(place=>({uri:place.entityUri,label:place.canonicalLabelKo,comment:place.description,literalProps:{address:place.address,telephone:place.telephone,website:place.website,reservationUrl:place.reservationUrl,latitude:place.latitude,longitude:place.longitude,category:place.category,actions:place.actions},masterData:{verificationStatus:place.runtimeDataStatus,provenance:place.source,lastVerifiedAt:place.lastVerifiedAt}}))}
+    if(regionId!=='gajo'){const dataset=this.regionalData?await this.regionalData.effectiveDataset(regionId):undefined;const records:any[]=dataset?.records||(regionId==='hapcheon'?[...HAPCHEON_MASTER_DATA]:[]);return records.map(place=>({uri:place.entityUri,label:place.canonicalLabelKo,comment:place.description,literalProps:{address:place.address,telephone:place.telephone,website:place.website,reservationUrl:place.reservationUrl,latitude:place.latitude,longitude:place.longitude,category:place.category,entityType:place.entityType,tags:place.tags,accessNotice:place.accessNotice,actions:place.actions},masterData:{verificationStatus:place.runtimeDataStatus,provenance:place.source,lastVerifiedAt:place.lastVerifiedAt}}))}
     const rows=await this.facilityModel.find().sort({ label: 1 }).lean();
     return rows.map(row=>this.enrich(row));
   }
