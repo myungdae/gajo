@@ -3,6 +3,13 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PlaceDiscoveryService } from '../concierge/place-discovery.service';
 import { OKCHEON_MASTER_DATA } from '../regions/okcheon/master-data';
+import { REGIONAL_CANDIDATE_DATASETS } from '../regions/regional-candidate.registry';
+import { FacilityService } from '../facility/facility.service';
+import { FacilityController } from '../facility/facility.controller';
+import { MasterDataService } from '../master-data/master-data.service';
+import { RecommendationService } from '../recommendation/recommendation.service';
+import { DecisionPipelineService } from '../recommendation/decision-pipeline.service';
+import { DISCOVERY_CATEGORY_MATCH } from '../concierge/discovery-eligibility';
 function model() {
   const rows: any[] = [];
   const document = (value: any) => ({
@@ -60,6 +67,112 @@ const source = {
   sourceUrl: 'https://official.example/place',
 };
 describe('RegionalDataService', () => {
+  describe.each(['gajo', 'hapcheon', 'okcheon', 'muan'])('public identity boundary: %s', (regionId) => {
+    const base = REGIONAL_CANDIDATE_DATASETS[regionId].records.find(row => Object.values(DISCOVERY_CATEGORY_MATCH).some(matches => matches(row)))!;
+    const proposed = { displayName: '미승인 후보명 전용', aliases: ['미승인 별칭 전용'], entityType: 'ATTRACTION', category: 'TOURISM_NATURE' };
+    const publicViews = async (service: RegionalDataService) => {
+      const master = new MasterDataService({} as any);
+      const facilityModel = { find: () => ({ sort: () => ({ lean: async () => master.places().map(row => ({ uri: row.entityUri, label: row.canonicalLabelKo })) }) }) };
+      const api = new FacilityController(new FacilityService(facilityModel as any, {} as any, master, service));
+      const stored = { create: async (value: any) => ({ toObject: () => value }) };
+      const recommendation = new RecommendationService(stored as any, stored as any,
+        { findSuitablePrograms: () => [], findEnvironmentAffected: () => [], findRiskMitigations: () => [] } as any,
+        new DecisionPipelineService(), {} as any, master, service);
+      return [await service.effectiveDataset(regionId),
+        await new PlaceDiscoveryService(service).discover(regionId, 'TOURISM_NATURE', '관광지 추천', {}),
+        await api.listFacilities(regionId), await api.operationalPlaces(regionId),
+        await recommendation.buildRecommendation({ regionId, contextNo: 'PUBLIC_TEST', currentTime: '10:00', stayUntil: '18:00' })];
+    };
+    it('approving only coordinates preserves the baseline name across public APIs, search and recommendation while review retains proposals', async () => {
+      const db = model(), service = new RegionalDataService(db as any);
+      const row: any = await service.create({ regionId, canonicalEntityId: base.entityUri, source, proposedFacts: proposed });
+      await service.proposeOperationalEvidence(regionId, base.entityUri, 'coordinates', {
+        proposed: { latitude: 36, longitude: 128 }, source, observedAt: '2026-09-06T00:00:00Z',
+      }, 'OPS_TEST');
+      await service.decideOperationalEvidence(regionId, base.entityUri, 'coordinates', 'APPROVE', 'OPS_TEST', true);
+      const resolver = new PlaceDiscoveryService(service);
+      await expect(resolver.resolveExactPlaceIntent(regionId, proposed.displayName)).resolves.toBeUndefined();
+      await expect(resolver.resolveExactPlaceIntent(regionId, proposed.aliases[0])).resolves.toBeUndefined();
+      await expect(resolver.resolveExactPlaceIntent(regionId, base.canonicalLabelKo)).resolves.toMatchObject({ entityId: base.entityUri, label: base.canonicalLabelKo });
+      const views = JSON.stringify(await publicViews(service));
+      expect(views).not.toContain(proposed.displayName);
+      expect(views).not.toContain(proposed.aliases[0]);
+      expect((await service.list({ regionId })).find(item => item.id === row.id).proposedFacts).toEqual(proposed);
+    });
+    it('keeps a partial candidate without an approved or baseline name entirely out of public datasets', async () => {
+      const db = model(), service = new RegionalDataService(db as any);
+      const row: any = await service.create({ regionId, source, proposedFacts: proposed });
+      db.rows[0].aliases = proposed.aliases;
+      await service.proposeOperationalEvidence(regionId, row.canonicalEntityId, 'coordinates', {
+        proposed: { latitude: 36, longitude: 128 }, source, observedAt: '2026-09-06T00:00:00Z',
+      }, 'OPS_TEST');
+      await expect(service.decideOperationalEvidence(regionId, row.canonicalEntityId, 'coordinates', 'APPROVE', 'OPS_TEST', true))
+        .resolves.toMatchObject({ entity: { identityApprovalRequired: true, navigationEligible: false, proposedFacts: proposed } });
+      const views = JSON.stringify(await publicViews(service));
+      expect(views).not.toContain(row.canonicalEntityId);
+      expect(views).not.toContain(proposed.displayName);
+      expect(views).not.toContain(proposed.aliases[0]);
+      await expect(new PlaceDiscoveryService(service).resolveExactPlaceIntent(regionId, proposed.displayName)).resolves.toBeUndefined();
+    });
+    it('preserves approved current identity and resolves only the official canonical when a proposal uses its name', async () => {
+      const db = model(), service = new RegionalDataService(db as any);
+      const current: any = await service.create({ regionId, canonicalEntityId: 'urn:test:approved-current', source,
+        proposedFacts: { ...proposed, displayName: '승인된 현재명', aliases: ['승인된 현재별칭'] } });
+      await service.action(current.id, 'APPROVE');
+      await service.create({ regionId, canonicalEntityId: current.canonicalEntityId, source,
+        proposedFacts: { ...proposed, displayName: base.canonicalLabelKo } });
+      const resolver = new PlaceDiscoveryService(service);
+      await expect(resolver.resolveExactPlaceIntent(regionId, '승인된 현재명')).resolves.toMatchObject({ entityId: current.canonicalEntityId });
+      await expect(resolver.resolveExactPlaceIntent(regionId, base.canonicalLabelKo)).resolves.toMatchObject({ entityId: base.entityUri });
+      await expect(resolver.resolveExactPlaceIntent(regionId, proposed.aliases[0])).resolves.toBeUndefined();
+      expect(JSON.stringify(await publicViews(service))).not.toContain(proposed.aliases[0]);
+    });
+  });
+  it('applies the same public name boundary to a newly registered region', async () => {
+    const regionId = 'future-public-region';
+    const base = { ...REGIONAL_CANDIDATE_DATASETS.hapcheon.records[0], entityUri: 'urn:future:base', regionId,
+      canonicalLabelKo: '미래 승인 공원', alternateLabels: ['미래 승인 별칭'], entityType: 'ATTRACTION', category: 'TOURISM_NATURE' };
+    REGIONAL_CANDIDATE_DATASETS[regionId] = { ...REGIONAL_CANDIDATE_DATASETS.hapcheon, regionId, records: [base] };
+    try {
+      const db = model(), service = new RegionalDataService(db as any);
+      await service.create({ regionId, canonicalEntityId: base.entityUri, source, proposedFacts: { displayName: '미래 미승인 이름' } });
+      Object.assign(db.rows[0], { lifecycleStatus: 'ACTIVE', verificationStatus: 'PARTIAL', aliases: ['미래 미승인 별칭'],
+        fieldEvidence: { coordinates: { status: 'APPROVED' } }, latitude: 36, longitude: 128 });
+      const resolver = new PlaceDiscoveryService(service);
+      await expect(resolver.resolveExactPlaceIntent(regionId, base.canonicalLabelKo)).resolves.toMatchObject({ entityId: base.entityUri });
+      await expect(resolver.resolveExactPlaceIntent(regionId, '미래 미승인 이름')).resolves.toBeUndefined();
+      await expect(resolver.resolveExactPlaceIntent(regionId, '미래 미승인 별칭')).resolves.toBeUndefined();
+      const facilities = new FacilityService({} as any, {} as any, {} as any, service);
+      expect(JSON.stringify([await facilities.listFacilities(regionId), await facilities.operationalPlaces(regionId),
+        await resolver.discover(regionId, 'TOURISM_NATURE', '관광지 추천', {})])).not.toContain('미승인');
+    } finally { delete REGIONAL_CANDIDATE_DATASETS[regionId]; }
+  });
+  it.each(['OFFICIAL_LOCAL_GOV', 'OFFICIAL_BUSINESS', 'KTO', 'OFFICIAL_MAP_LISTING', 'OTHER_VERIFIED_SOURCE'])('treats %s observations as review suggestions, never an implicit canonical assignment', async (sourceType) => {
+    const db = model(), service = new RegionalDataService(db as any);
+    const facts = { displayName: '독립 검토 공원', address: '검토로 101', phone: '01012345678', latitude: 36, longitude: 128, entityType: 'ATTRACTION', category: 'TOURISM_NATURE' };
+    const reviewed: any = await service.create({ regionId: 'future-region', canonicalEntityId: 'urn:test:reviewed', source: { ...source, sourceType }, proposedFacts: facts });
+    await service.action(reviewed.id, 'APPROVE');
+    const before = db.rows[0].toObject();
+    for (const proposedFacts of [{ displayName: facts.displayName }, facts]) {
+      const candidate: any = await service.create({ regionId: 'future-region', source: { ...source, sourceType }, proposedFacts });
+      expect(candidate.canonicalEntityId).not.toBe(reviewed.canonicalEntityId);
+      expect(candidate.identityCandidates).toEqual([reviewed.canonicalEntityId]);
+      expect(candidate.verificationStatus).toBe('UNVERIFIED');
+      expect(db.rows[0].toObject()).toEqual(before);
+    }
+    await expect(service.create({ regionId: 'future-region', canonicalEntityId: reviewed.canonicalEntityId, source: { ...source, sourceType }, proposedFacts: facts })).resolves.toMatchObject({ canonicalEntityId: reviewed.canonicalEntityId, ingestionOutcome: 'UNCHANGED' });
+  });
+  it('refuses multiple corroborated canonicals without modifying any document', async () => {
+    const db = model(), service = new RegionalDataService(db as any);
+    const facts = { displayName: '같은 시설명', address: '동일 주소', phone: '01012345678', latitude: 36, longitude: 128, entityType: 'ATTRACTION', category: 'TOURISM_NATURE' };
+    for (const canonicalEntityId of ['urn:test:one', 'urn:test:two']) {
+      const row: any = await service.create({ regionId: 'future-region', canonicalEntityId, source, proposedFacts: facts });
+      await service.action(row.id, 'APPROVE');
+    }
+    const before = db.rows.map(row => row.toObject());
+    await expect(service.create({ regionId: 'future-region', source, proposedFacts: facts })).rejects.toThrow('AMBIGUOUS_CANONICAL_IDENTITY');
+    expect(db.rows.map(row => row.toObject())).toEqual(before);
+  });
   describe.each(['gajo', 'hapcheon', 'okcheon', 'future-region'])('common identity contract: %s', (regionId) => {
     const facts = { entityType: 'ATTRACTION', category: 'TOURISM_NATURE' };
     it.each(['NEW_CANDIDATE', 'PROPOSED', 'CHANGE_DETECTED'])('does not match unapproved %s display names or aliases', async (lifecycleStatus) => {

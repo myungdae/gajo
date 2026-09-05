@@ -186,7 +186,6 @@ export class RegionalDataService implements OnModuleInit {
       throw new BadRequestException('AMBIGUOUS_CANONICAL_IDENTITY');
     const canonical =
       requestedCanonical ||
-      matches[0]?.[0] ||
       `urn:regional-candidate:${input.regionId}:${randomUUID()}`;
     const baseline = this.baseline(input.regionId, canonical);
     const existing: any = await this.model.findOne({
@@ -236,6 +235,9 @@ export class RegionalDataService implements OnModuleInit {
       displayName: input.proposedFacts.displayName,
       entityType: input.proposedFacts.entityType,
       category: input.proposedFacts.category,
+      // Source metadata is provenance, not identity approval. Matching observations
+      // are review suggestions; only an explicit canonical ID targets an entity.
+      identityCandidates: matches.map(([id]) => id),
       source: input.source,
       proposedFacts: input.proposedFacts,
       verificationStatus: 'UNVERIFIED',
@@ -349,9 +351,12 @@ export class RegionalDataService implements OnModuleInit {
       const index = records.findIndex(
         (item) => item.entityUri === row.canonicalEntityId,
       );
+      const baseline = index >= 0 ? records[index] : undefined;
+      const identity = this.publicIdentity(baseline, row);
+      if (!identity) continue;
       const merged = this.toCandidate(
-        index >= 0 ? records[index] : undefined,
-        row,
+        baseline,
+        { ...row, ...identity },
       );
       if (index >= 0) records[index] = merged;
       else records.push(merged);
@@ -420,10 +425,16 @@ export class RegionalDataService implements OnModuleInit {
       ),
       document: any = await this.model.findOne({ regionId, canonicalEntityId }),
       row: any = document?.toObject ? document.toObject() : document;
-    if (!entity || !row) throw new NotFoundException();
+    if (!row) throw new NotFoundException();
     return {
       regionId,
-      ...entity,
+      ...(entity || {
+        canonicalEntityId: row.canonicalEntityId,
+        displayName: row.displayName,
+        identityApprovalRequired: true,
+        navigationEligible: false,
+      }),
+      proposedFacts: row.proposedFacts,
       fieldEvidence: row.fieldEvidence || {},
       auditTrail: row.auditTrail || [],
     };
@@ -971,6 +982,16 @@ export class RegionalDataService implements OnModuleInit {
       shortDescription: f.shortDescription,
       operationalTips: Array.isArray(f.operationalTips) ? f.operationalTips : [],
     };
+  }
+  private publicIdentity(base: RegionalCandidateRecord | undefined, row: any) {
+    // Partial approval (coordinates, phone, etc.) never approves a candidate name.
+    // Keep raw names/proposals on the review document, but project public identity
+    // only from approved current facts or the curated canonical baseline.
+    if (row.verificationStatus === 'VERIFIED' && row.displayName?.trim())
+      return { displayName: row.displayName, aliases: row.aliases || [], visitorContent: row.visitorContent };
+    if (base?.canonicalLabelKo?.trim())
+      return { displayName: base.canonicalLabelKo, aliases: [...(base.alternateLabels || [])], visitorContent: base.visitorContent };
+    return undefined;
   }
   private toCandidate(
     base: RegionalCandidateRecord | undefined,

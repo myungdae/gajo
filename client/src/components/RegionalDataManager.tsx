@@ -32,18 +32,23 @@ function LegacyRegionalDataManager({onAdminTokenChange,initialRegionId=""}:{onAd
       () => sessionStorage.getItem("admin-write-token") || "",
     ),
     [error, setError] = useState(""),[notice,setNotice]=useState(""),[importPackage,setImportPackage]=useState<any>(),[importPreview,setImportPreview]=useState<any>(),[trustedImport,setTrustedImport]=useState(false);
-  const reviewRef=useRef<HTMLDivElement>(null);
-  const load = () =>
-    fetchRegionalData(
+  const reviewRef=useRef<HTMLDivElement>(null), loadVersion=useRef(0);
+  const load = () => {
+    const version = ++loadVersion.current;
+    if (!token) { setData({ records: [], quality: {} }); setSelected(undefined); return Promise.resolve(); }
+    return fetchRegionalData(
       Object.fromEntries(Object.entries(filters).filter(([, v]) => v)),
+      token,
     )
-      .then(setData)
-      .catch(() => setError("지역 데이터를 불러오지 못했습니다."));
+      .then(value => { if(version===loadVersion.current){setData(value);setError('');} })
+      .catch(() => { if(version===loadVersion.current){setData({ records: [], quality: {} }); setSelected(undefined); setError("지역 데이터를 불러오지 못했습니다. 관리자 토큰을 확인해 주세요.");} });
+  };
   useEffect(() => { void load(); }, [
     filters.regionId,
     filters.lifecycleStatus,
     filters.entityType,
     filters.verificationStatus,
+    token,
   ]);
   useEffect(() => {
     setFilters(current => current.regionId === initialRegionId ? current : { ...current, regionId: initialRegionId });

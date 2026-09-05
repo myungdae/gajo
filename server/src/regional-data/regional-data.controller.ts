@@ -14,13 +14,13 @@ import { RegionalDataService } from './regional-data.service';
 @Controller('api/admin/regional-data')
 export class RegionalDataController {
   constructor(private service: RegionalDataService) {}
-  @Get() async list(@Query() query: any) {
+  @Get() @UseGuards(AdminTokenGuard) async list(@Query() query: any) {
     return {
       records: await this.service.list(query),
       quality: await this.service.quality(),
     };
   }
-  @Get('operational-readiness') operationalReadiness(
+  @Get('operational-readiness') @UseGuards(AdminTokenGuard) operationalReadiness(
     @Query('regionId') regionId: string,
   ) {
     return this.service.operationalReadiness(regionId);

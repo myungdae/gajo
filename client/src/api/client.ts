@@ -419,8 +419,8 @@ export interface NearbyRestaurantsResponse {
   results: NearbyRestaurant[];
   resultStatus: "AVAILABLE" | "EMPTY";
 }
-export async function fetchRegionalData(filters: Record<string, string> = {}) {
-  const { data } = await api.get("/admin/regional-data", { params: filters });
+export async function fetchRegionalData(filters: Record<string, string> = {}, token: string = '') {
+  const { data } = await api.get("/admin/regional-data", { params: filters, headers: { "x-admin-token": token } });
   return data;
 }
 export async function regionalDataAction(

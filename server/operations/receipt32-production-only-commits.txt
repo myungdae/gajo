@@ -1,0 +1,80 @@
+b7c76a8 Merge pull request #19 from myungdae/codex/humanize-journey-language
+d4b396e fix: make journey guidance more human
+ae8120d Merge pull request #18 from myungdae/codex/hapcheon-lodging-entry
+6185971 fix: add lodging recovery to Hapcheon journeys
+7762698 fix: improve Hapcheon field journey choices (#17)
+eba9cb1 fix: tighten regional home spotlight layout (#16)
+dd6415f fix: clarify Hapcheon admin and home UX (#15)
+bc2f160 fix: clarify Hapcheon admin and home UX
+204387b Merge pull request #14 from myungdae/fix/unusable-gps-recovery-ux
+54e6cee test: cover device-specific location recovery copy
+fc66ba4 fix: distinguish PC and mobile GPS recovery
+3be8031 test: repair location recovery test formatting
+e4aa344 test: cover unusable GPS recovery UX
+d3dce07 fix: make unusable GPS recovery actionable
+79107b5 Merge pull request #13 from myungdae/fix/pr12-gyeryong-platform-test
+079945d test: include Gyeryong in platform launch assertions
+ab2d5c1 Merge pull request #12 from myungdae/fix/gyeryong-portal-entry
+fee67c8 test: include Gyeryong in portal entrances
+652258c test: cover Gyeryong service card in Chungnam
+b8fa65b test: cover Gyeryong portal discovery
+7fc9eda fix: add Gyeryong to dedicated portal
+08204db fix: add Gyeryong portal card
+2816a97 fix: expose Gyeryong in nationwide region explorer
+1caeacd fix: recover mobile current-location search (#11)
+b8ccd79 test: cover usable low-accuracy mobile location
+eab3682 fix: recover current-location search on mobile
+1df996b feat: prepare Gyeryong field pilot (#10)
+f517e6d feat: add Gyeryong official restroom dataset
+092aed8 feat: add Gyeryong official restroom dataset
+ca40c15 feat: integrate Gyeryong public restroom data
+d81fcc8 feat: integrate Gyeryong public restroom data
+ba6cc16 feat: integrate Gyeryong public restroom data
+9373ae2 feat: integrate Gyeryong public restroom data
+9790b2d test: cover Gyeryong restroom finder handoff
+1ba184e feat: connect Gyeryong restroom finder
+0ea0ac5 feat: prepare Gyeryong field pilot
+bc7bdad feat: prepare Gyeryong field pilot
+09f7d4f feat: prepare Gyeryong field pilot
+2480639 feat: prepare Gyeryong field pilot
+c3f4273 feat: prepare Gyeryong field pilot
+7071916 feat: prepare Gyeryong field pilot
+0290901 fix: harden filmed visitor journey UX (#9)
+4f5ed15 fix: reserve AI assistance for genuine dead ends
+54afef3 fix: reserve AI assistance for genuine dead ends
+3e2e810 fix: keep the regional welcome first on Home
+d000fcc fix: keep the regional welcome first on Home
+430fa6f fix: keep the regional welcome first on Home
+e23fd67 test: cover filmed Korean context labels
+e377e5c fix: keep AI assistance reachable through visitor dead ends
+1b233e6 fix: keep AI assistance reachable through visitor dead ends
+0dda4af fix: keep AI assistance reachable through visitor dead ends
+20163e3 fix: keep AI assistance reachable through visitor dead ends
+198c1cb fix: harden filmed visitor journey UX
+e3082d7 fix: harden filmed visitor journey UX
+fa76a46 fix: harden filmed visitor journey UX
+f8b6b39 fix: harden filmed visitor journey UX
+36c54ae fix: restore contextual journey choices and Hapcheon welcome (#8)
+ab10ab6 fix: restore contextual home journey choices
+c5721bf fix: restore contextual home journey choices
+72811d2 fix: restore contextual home journey choices
+b7f4a37 fix: restore contextual home journey choices
+fb9855d fix: restore contextual home journey choices
+4775995 fix: restore contextual home journey choices
+9d6ac95 fix: restore contextual home journey choices
+a9cb39c fix: hide trip continuation without an active itinerary (#7)
+cd68455 fix: hide continuation without an active itinerary
+532248f fix: hide continuation without an active itinerary
+f314bd3 fix: hide continuation without an active itinerary
+216debf fix: hide continuation without an active itinerary
+33bc019 fix: hide continuation without an active itinerary
+ae5fb3d fix: hide continuation without an active itinerary
+b401e0f fix: open Hapcheon regional home directly (#6)
+16a6093 fix: open Hapcheon regional home directly
+9a325ef fix: open Hapcheon regional home directly
+6e8b043 fix: open Hapcheon regional home directly
+c6d5f46 fix: open Hapcheon regional home directly
+748d27d fix: localize regional manager status labels (#5)
+cc0b44d test: update localized import expectation
+1ba6e21 test: cover Korean regional manager labels
+75de905 fix: localize regional manager status labels

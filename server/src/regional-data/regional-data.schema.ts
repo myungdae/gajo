@@ -21,6 +21,7 @@ export class RegionalDataRecord {
   @Prop({ required: true }) displayName: string;
   @Prop({ type: Object }) visitorContent?: ReviewedPlaceContent;
   @Prop({ type: [String], default: [] }) aliases: string[];
+  @Prop({ type: [String], default: [] }) identityCandidates: string[];
   @Prop() entityType?: string;
   @Prop() category?: string;
   @Prop({ type: [String], default: [] }) tags: string[];
