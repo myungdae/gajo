@@ -4,8 +4,10 @@ import { fetchAdminDashboard, fetchPilotAnalytics } from '../api/client';
 import { shortUri } from '../utils/uri';
 import RegionalDataManager from '../components/RegionalDataManager';
 import SpotlightManager from '../components/SpotlightManager';
+import { useRegion } from '../RegionContext';
 
 export default function AdminPage() {
+  const region=useRegion();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [pilot,setPilot]=useState<any>(null);
@@ -22,6 +24,10 @@ export default function AdminPage() {
 
   return (
     <div>
+      <section className="card" aria-label="현재 관리 지역">
+        <h1>현재 관리 지역: {region.regionName}</h1>
+        <p>아래 데이터 검수, 연결 관리, Spotlight는 모두 {region.regionName} 기준입니다.</p>
+      </section>
       <RegionalDataManager onAdminTokenChange={setAdminToken} />
       <SpotlightManager token={adminToken} />
       <VisitorAnalyticsDashboard token={adminToken} />
