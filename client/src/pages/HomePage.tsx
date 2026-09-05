@@ -50,6 +50,7 @@ export default function HomePage() {
       primaryAction: region.id === "hapcheon" ? { label: language === "en" ? english.spotlight?.cta || "Start My Journey" : "내 여정 시작하기", type: "JOURNEY" } : undefined,
     },
     spotlight=region.id === "hapcheon"?fallback:managed?localizedSpotlight(managed,language,english):fallback,
+    spotlightQuestion=region.id === "hapcheon"?(language === "en" ? "How can I help you right now?" : region.home.question):undefined,
     guidanceContext = regionalHomeGuidancePlace(region, loadTripSession(localStorage, region.id), language, english),
     guidance = buildProactiveGuidance(guidanceContext, undefined, new Date(), language),
     primary = () => spotlight.primaryAction?.type === "JOURNEY" ? navigate(link("/concierge?mode=now"),{state:{tripMode:"NOW"}}) : spotlight.primaryAction?.type === "DETAIL" && spotlight.primaryAction.target ? navigate(withLanguage(spotlight.primaryAction.target)) : ask(`${spotlight.title} 이야기를 알려주세요.`, `Tell me more about ${spotlight.title}.`),
@@ -59,7 +60,7 @@ export default function HomePage() {
   return <div className="regional-home" lang={language} style={{ "--region-accent": region.accent } as React.CSSProperties}>
     <section className={`spotlight-card${spotlight.imageUrl ? " has-image" : ""}`} style={spotlight.imageUrl ? { backgroundImage: `linear-gradient(180deg,rgba(8,24,18,.08) 5%,rgba(8,24,18,.96) 100%),url(${spotlight.imageUrl})`, backgroundPosition: `${spotlight.imageFocusX || "center"} ${spotlight.imageFocusY || "center"}` } : {}} aria-labelledby="spotlight-title">
       {spotlight.imageUrl && <img className="sr-only" src={spotlight.imageUrl} alt={spotlight.imageAlt || ""} />}
-      <div><small>{spotlight.statusLabel}</small><h1 id="spotlight-title">{spotlight.title}</h1><p>{spotlight.shortDescription}</p><div className="spotlight-actions"><button onClick={primary}>{spotlight.primaryAction?.label || copy.story}</button>{(spotlight.secondaryAction || place?.latitude !== undefined) && <button onClick={() => findNearby("TOURIST_ATTRACTION")}>{spotlight.secondaryAction?.label || copy.nearby}</button>}</div></div>
+      <div><small>{spotlight.statusLabel}</small><h1 id="spotlight-title">{spotlight.title}</h1><p>{spotlight.shortDescription}</p>{spotlightQuestion&&<p className="spotlight-question">{spotlightQuestion}</p>}<div className="spotlight-actions"><button onClick={primary}>{spotlight.primaryAction?.label || copy.story}</button>{(spotlight.secondaryAction || place?.latitude !== undefined) && <button onClick={() => findNearby("TOURIST_ATTRACTION")}>{spotlight.secondaryAction?.label || copy.nearby}</button>}</div></div>
     </section>
     {hasTripContext&&<TripContinuity onNewTrip={()=>refreshTrip(value=>value+1)}/>}
     {hasActiveTrip?<RuntimeJourneyIntro/>:!hasTripContext&&<RuntimeJourneyEntry loading={false} onCreate={createJourney} onDirect={()=>navigate(link('/concierge?mode=now'),{state:{tripMode:'NOW',otherRequestOpen:true}})}/>}
