@@ -298,7 +298,7 @@ export class NearbyService {
       if (!this.requestedCategoryMatches(requested,category)) continue;
       const distanceMeters = this.distanceMeters(lat, lng, record.latitude!, record.longitude!);
       if (distanceMeters > radius) continue;
-      const existing = [...byId.values()].find((place) => place.canonicalEntityUri === record.entityUri || (this.distanceMeters(place.lat,place.lng,record.latitude!,record.longitude!)<=30 && Boolean(place.phone&&record.telephone&&place.phone===record.telephone)) || (TOURISM_CATEGORIES.has(requested)&&this.normalizeSearchText(place.name)===this.normalizeSearchText(record.canonicalLabelKo)&&this.distanceMeters(place.lat,place.lng,record.latitude!,record.longitude!)<=CANONICAL_PROVIDER_MAX_DRIFT_METERS));
+      const existing = [...byId.values()].find((place) => place.canonicalEntityUri === record.entityUri || (this.distanceMeters(place.lat,place.lng,record.latitude!,record.longitude!)<=30 && Boolean(place.phone&&record.telephone&&place.phone===record.telephone)) || (this.normalizeSearchText(place.name)===this.normalizeSearchText(record.canonicalLabelKo)&&this.distanceMeters(place.lat,place.lng,record.latitude!,record.longitude!)<=CANONICAL_PROVIDER_MAX_DRIFT_METERS));
       if (existing) {
         existing.canonicalEntityUri = record.entityUri;
         existing.canonicalLabel = record.canonicalLabelKo;
@@ -314,7 +314,7 @@ export class NearbyService {
         providerCategoryName: record.category, address: record.address || '', roadAddress: record.address,
         phone: record.telephone, lat: record.latitude!, lng: record.longitude!, distanceMeters,
         placeUrl: record.website || '', indoorRelevance: INDOOR.has(category) ? 'INDOOR' : 'UNKNOWN',
-        operatingState: 'UNKNOWN', operatingMessage: '현재 운영 여부 확인 필요', contextualReasons: ['검증된 지역 운영 데이터입니다.'],
+        operatingState: 'UNKNOWN', operatingMessage: record.accessNotice || '현재 운영 여부 확인 필요', contextualReasons: [record.runtimeDataStatus==='VERIFIED'?'검증된 지역 운영 데이터입니다.':'공식자료를 바탕으로 한 후보이며 최신 상태는 다시 확인해야 합니다.'],
         canonicalEntityUri: record.entityUri, canonicalLabel: record.canonicalLabelKo,
         masterVerificationStatus: record.runtimeDataStatus, transient: false, relevanceScore: 5,
         season: record.season, eventAvailability: record.eventAvailability, accessNotice: record.accessNotice,administrativeRegion:regionName,
