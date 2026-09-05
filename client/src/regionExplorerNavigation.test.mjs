@@ -143,6 +143,7 @@ test('service corsages decorate only live and field-test region cards', async ()
   for (const [parentId, expectedStatuses] of [
     ['gyeongnam', ['FIELD_TEST', 'AI_LIVE']],
     ['chungbuk', ['FIELD_TEST']],
+    ['chungnam', ['FIELD_TEST']],
     ['seoul', []],
   ]) {
     const { root } = await renderAt([`/regions/${parentId}`]);
