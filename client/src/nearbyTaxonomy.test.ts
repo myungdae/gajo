@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { isFoodCategory, isLodgingCategory, nearbyGroupFor, nearbyUiCategory, NEARBY_GROUPS } from './nearbyTaxonomy.ts';
 import { createTripSession, rememberTripAccommodation } from './tripSession.ts';
+import { readFileSync } from 'node:fs';
 
 test('nearby taxonomy exposes four approved groups without colored emoji',()=>{
   assert.deepEqual(NEARBY_GROUPS.map(group=>group.label),['관광·체험','음식','숙소','생활편의']);
@@ -23,4 +24,11 @@ test('legacy route categories map compatibly without changing provider ids',()=>
   assert.equal(nearbyGroupFor('LODGING_CAMPING_GLAMPING').id,'LODGING');
   assert.equal(isLodgingCategory('LODGING_PENSION_MINBAK'),true);
   assert.equal(isFoodCategory('FOOD_JAPANESE'),true);
+});
+
+test('nearby calls the assistant only when search reaches a dead end',()=>{
+  const page=readFileSync(new URL('./pages/NearbyRestaurantsPage.tsx',import.meta.url),'utf8');
+  assert.match(page,/AI 여행도우미에게 다른 선택 요청/);
+  assert.doesNotMatch(page,/AI 여행도우미에게 다음 행동 묻기/);
+  assert.match(page,/localizedRegionalPath\('\/concierge\?mode=now',region\.id\)/);
 });

@@ -9,3 +9,17 @@ export function readConversation<T>(storage:Storage,regionId:string,tripId:strin
 export function saveConversation<T>(storage:Storage,regionId:string,tripId:string,mode:string,value:T){
   try{storage.setItem(key(regionId,tripId,mode),JSON.stringify({regionId,tripId,mode,savedAt:Date.now(),value}));}catch{/* Conversation remains in React state. */}
 }
+
+const normalizedMessage=(value:unknown)=>String(value||'').trim().replace(/\s+/g,' ');
+
+export function shouldAutoSubmitEntry(initialMessage:string|undefined,messages:Array<{role:string;text?:string;result?:unknown}>|undefined){
+  const requested=normalizedMessage(initialMessage);
+  if(!requested)return false;
+  const history=messages||[];
+  for(let index=history.length-1;index>=0;index-=1){
+    const message=history[index];
+    if(message.role!=='user'||normalizedMessage(message.text)!==requested)continue;
+    return !history.slice(index+1).some(item=>item.role==='ai'&&Boolean(item.result));
+  }
+  return true;
+}

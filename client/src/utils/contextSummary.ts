@@ -10,7 +10,7 @@ const localName = (value: unknown) => String(value || '').split(/[\/#:]/).pop() 
 const unique = (values: Array<string | undefined>) => [...new Set(values.filter(Boolean) as string[])];
 
 function formatCompanion(item: any): string {
-  const relationship = ({ mother: '어머니', father: '아버지', parent: '부모님', spouse: '배우자', grandmother: '할머니', grandfather: '할아버지', child: '아이', family: '가족' } as Record<string, string>)[String(item?.relationship || '').toLowerCase()] || item?.relationship;
+  const relationship = ({ mother: '어머니', father: '아버지', parent: '부모님', parents: '부모님', spouse: '배우자', partner: '연인', couple: '연인', grandmother: '할머니', grandfather: '할아버지', child: '아이', children: '아이', friend: '친구', friends: '친구', family: '가족', alone: '혼자' } as Record<string, string>)[String(item?.relationship || '').toLowerCase()] || item?.relationship;
   return [item?.age ? `${item.age}세` : '', relationship].filter(Boolean).join(' ');
 }
 

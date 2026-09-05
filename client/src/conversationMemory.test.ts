@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readConversation, saveConversation } from './conversationMemory.ts';
+import { readConversation, saveConversation, shouldAutoSubmitEntry } from './conversationMemory.ts';
 import { createTripSession } from './tripSession.ts';
 import { localizedRegionalPath } from './visitorRouting.ts';
 test('confirmed conversation survives navigation for all regions and NOW/PLAN without changing TripSession',()=>{
@@ -25,4 +25,12 @@ test('expired corrupt and unavailable storage safely starts a conversation',()=>
   assert.equal(readConversation(storage,'gajo','trip','NOW'),undefined);
   assert.doesNotThrow(()=>saveConversation(storage,'gajo','trip','NOW',{}));
   assert.equal(readConversation({getItem:()=>JSON.stringify({regionId:'gajo',tripId:'trip',mode:'NOW',savedAt:0,value:{}}),setItem:()=>{}},'gajo','trip','NOW',86400001),undefined);
+});
+
+test('returning from home does not submit the same completed request again',()=>{
+  const request='앞서 선택한 여행 조건과 확인된 지금 상황으로 여정을 만들어 주세요.';
+  assert.equal(shouldAutoSubmitEntry(request,undefined),true);
+  assert.equal(shouldAutoSubmitEntry(request,[{role:'user',text:request}]),true);
+  assert.equal(shouldAutoSubmitEntry(request,[{role:'user',text:`  ${request}  `},{role:'ai',text:'완료',result:{recommendation:{}}}]),false);
+  assert.equal(shouldAutoSubmitEntry('다른 요청',[{role:'user',text:request},{role:'ai',text:'완료',result:{}}]),true);
 });
