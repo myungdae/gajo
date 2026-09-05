@@ -14,8 +14,8 @@ test("every Regional Home has reviewed English configuration", () => {
 
 test("managed English uses reviewed common fallback before Korean", () => {
   const result = localizedSpotlight({ title: { ko: "한국어 제목", en: "" }, statusLabel: { ko: "한국어 라벨" }, shortDescription: { ko: "한국어 설명" }, primaryAction: { label: { ko: "한국어 CTA" } } }, "en", REGION_HOME_ENGLISH.hapcheon);
-  assert.equal(result.title, "A 50,000-Year-Old Meteorite Impact Basin");
-  assert.equal(result.primaryAction.label, "Discover the Crater");
+  assert.equal(result.title, "Welcome to Beautiful Hapcheon");
+  assert.equal(result.primaryAction.label, "Start My Journey");
 });
 
 test("English guidance is generated directly from an English template", () => {

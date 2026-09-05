@@ -6,6 +6,7 @@ import { track } from "../analytics";
 import { localizedRegionalPath as regionalPath } from '../visitorRouting';
 import {
   archiveAndStartNewTrip,
+  hasTripEvidence,
   loadTripSession,
   safeTripState,
   saveTripSession,
@@ -31,7 +32,7 @@ export default function TripContinuity({onNewTrip}:{onNewTrip?:()=>void}={}) {
     if (!home) return;
     let live = true;
     const local = loadTripSession(localStorage, region.id);
-    if (!hasActiveItinerary(local)) {
+    if (!local || !hasTripEvidence(local)) {
       setTrip(undefined);
       setVisible(false);
       return;
@@ -60,7 +61,7 @@ export default function TripContinuity({onNewTrip}:{onNewTrip?:()=>void}={}) {
           deletionToken: local.deletionToken,
         }).catch(() => undefined);
       }
-      if (!live || !hasActiveItinerary(restored)) return;
+      if (!live || !hasTripEvidence(restored)) return;
       setTrip(restored);
       setVisible(true);
       track("TRIP_RESTORED", restored.id, {
@@ -94,17 +95,18 @@ export default function TripContinuity({onNewTrip}:{onNewTrip?:()=>void}={}) {
     return () => window.removeEventListener("regional-trip-saved", sync);
   }, [region.id]);
   if (!visible || !trip) return null;
-  const count = itineraryItemCount(trip), summary = homeTripSummary(trip);
+  const count = itineraryItemCount(trip), summary = homeTripSummary(trip), active = hasActiveItinerary(trip);
   const dayCount = journeyDayCounts(trip.itinerary).length;
   const fullCount = itinerarySteps(trip.itinerary).length,
     savedCount = savedPlaceItems(trip).length;
   return (
     <section className="home-resume-card" aria-labelledby="resume-trip-title">
       <small>{language==='en'?'My Trip':'나의 여행'}</small>
-      <h2 id="resume-trip-title">{language==='en'?`Continue Your ${getRegionalHomeEnglish(region).regionName} Trip`:`이어갈 ${region.regionName} 여행이 있어요`}</h2>
-      {language==='en'?<p>{`${fullCount||count} saved ${(fullCount||count)===1?'place':'places'}${savedCount?` · ${savedCount} additional saved`:''}`}</p>:region.id === "hapcheon" ? <><p className="home-resume-heading">{summary.heading}</p>{summary.detail&&<p>{summary.detail}</p>}</> : <p>{(trip.itinerary as any)?.savedAsFullJourney ? `${dayCount > 1 ? `${dayCount - 1}박${dayCount}일 · ` : ""}일정 ${fullCount}곳${savedCount ? ` · 담아둔 곳 ${savedCount}곳` : ""}` : `담아둔 곳 ${count}곳이 있습니다.`}</p>}
+      <h2 id="resume-trip-title">{active?(language==='en'?`Continue Your ${getRegionalHomeEnglish(region).regionName} Trip`:`이어갈 ${region.regionName} 여행이 있어요`):(language==='en'?`Start Your ${getRegionalHomeEnglish(region).regionName} Journey`:`지금의 조건으로 ${region.regionName} 여행을 시작해 볼까요?`)}</h2>
+      {active&&(language==='en'?<p>{`${fullCount||count} saved ${(fullCount||count)===1?'place':'places'}${savedCount?` · ${savedCount} additional saved`:''}`}</p>:region.id === "hapcheon" ? <><p className="home-resume-heading">{summary.heading}</p>{summary.detail&&<p>{summary.detail}</p>}</> : <p>{`${dayCount > 1 ? `${dayCount - 1}박${dayCount}일 · ` : ""}일정 ${fullCount}곳${savedCount ? ` · 담아둔 곳 ${savedCount}곳` : ""}`}</p>)}
+      {!active&&<p>{language==='en'?'Your saved preferences are ready. Create a journey for your situation now.':'앞서 선택한 여행 조건을 유지하고, 지금 상황에 맞는 여정을 만들 수 있습니다.'}</p>}
       <div className="entity-actions">
-        <button
+        {active&&<button
           className="btn btn-primary"
           onClick={() => {
             track("TRIP_CONTINUED", trip.id, { itemCount: count });
@@ -113,11 +115,11 @@ export default function TripContinuity({onNewTrip}:{onNewTrip?:()=>void}={}) {
           }}
         >
           {language==='en'?'Continue Trip':continueTripLabel(trip)}
-        </button>
+        </button>}
         <button
           className="btn btn-outline"
-          onClick={()=>{track('RUNTIME_JOURNEY_REPLAN_REQUESTED',trip.id,{mode:'NOW'});navigate(withLanguage(regionalPath('/concierge?mode=now',region.id)),{state:{tripMode:'NOW',initialMessage:language==='en'?'Re-plan my remaining journey for my verified situation now.':'확인된 지금 상황에 맞춰 남은 여정을 다시 구성해 주세요.',autoSubmit:true}})}}
-        >{language==='en'?'Re-plan for Now':'지금 상황에 맞게 다시 짜기'}</button>
+          onClick={()=>{track(active?'RUNTIME_JOURNEY_REPLAN_REQUESTED':'RUNTIME_JOURNEY_REQUESTED',trip.id,{mode:'NOW'});navigate(withLanguage(regionalPath('/concierge?mode=now',region.id)),{state:{tripMode:'NOW',initialMessage:active?(language==='en'?'Re-plan my remaining journey for my verified situation now.':'확인된 지금 상황에 맞춰 남은 여정을 다시 구성해 주세요.'):(language==='en'?'Create a journey from my saved preferences and verified situation now.':'앞서 선택한 여행 조건과 확인된 지금 상황으로 여정을 만들어 주세요.'),autoSubmit:true}})}}
+        >{active?(language==='en'?'Re-plan for Now':'지금 상황에 맞게 다시 짜기'):(language==='en'?'Create for My Situation':'현재 상황으로 여정 만들기')}</button>
         <button
           className="btn btn-text"
           onClick={() => setConfirmingNew(true)}
@@ -140,7 +142,7 @@ export default function TripContinuity({onNewTrip}:{onNewTrip?:()=>void}={}) {
           </div>
         </div>
       )}
-      <p className="home-new-trip-copy">{language==='en'?'Plan again with new companions, timing, or goals.':'새로운 동행·시간·목적으로 다시 계획합니다.'}</p>
+      <p className="home-new-trip-copy">{language==='en'?'Start fresh with new companions, timing, or goals.':'새로운 동행·시간·목적으로 시작할 수도 있습니다.'}</p>
     </section>
   );
 }
