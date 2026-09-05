@@ -477,19 +477,13 @@ export class PlaceDiscoveryService {
     if(!matches.length)return undefined;
     const longest=Math.max(...matches.map(match=>match.label.length));
     const longestMatches=matches.filter(match=>match.label.length===longest);
-    const officialMatches=longestMatches.filter(match=>match.official);
-    const preferred=officialMatches.length?officialMatches:longestMatches;
-    const entities=new Map(preferred.map(match=>[match.record.entityUri,match.record]));
+    const entities=new Map(longestMatches.map(match=>[match.record.entityUri,match.record]));
     return entities.size===1?[...entities.values()][0]:undefined;
   }
 
   private exactCanonicalMatch(records:readonly any[],requestedName:string){
     const normalized=this.normalize(requestedName);
-    const matching=(official:boolean)=>[...new Map(records.filter(record=>(official?[record.canonicalLabelKo]:record.alternateLabels||[]).some((label:string)=>this.normalize(label)===normalized)).map(record=>[record.entityUri,record])).values()];
-    const official=matching(true);
-    if(official.length===1)return{status:'RESOLVED' as const,record:official[0]};
-    if(official.length>1)return{status:'AMBIGUOUS' as const,records:official};
-    const aliases=matching(false);
+    const aliases=[...new Map(records.filter(record=>[record.canonicalLabelKo,...(record.alternateLabels||[])].some((label:string)=>this.normalize(label)===normalized)).map(record=>[record.entityUri,record])).values()];
     if(aliases.length===1)return{status:'RESOLVED' as const,record:aliases[0]};
     if(aliases.length>1)return{status:'AMBIGUOUS' as const,records:aliases};
     return undefined;

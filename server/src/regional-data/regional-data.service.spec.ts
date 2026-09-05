@@ -46,6 +46,54 @@ const source = {
   sourceUrl: 'https://official.example/place',
 };
 describe('RegionalDataService', () => {
+  describe.each(['gajo', 'hapcheon', 'okcheon', 'future-region'])('common identity contract: %s', (regionId) => {
+    const facts = { entityType: 'ATTRACTION', category: 'TOURISM_NATURE' };
+    it.each(['NEW_CANDIDATE', 'PROPOSED', 'CHANGE_DETECTED'])('does not match unapproved %s display names or aliases', async (lifecycleStatus) => {
+      const db = model(), service = new RegionalDataService(db as any);
+      const a: any = await service.create({ regionId, canonicalEntityId: 'urn:test:a', source,
+        proposedFacts: { ...facts, displayName: '미승인 공원', aliases: ['후보 공원'] } });
+      Object.assign(db.rows[0], { lifecycleStatus, aliases: ['후보 공원'] });
+      for (const displayName of ['미승인 공원', '후보 공원']) {
+        const b: any = await service.create({ regionId, source, proposedFacts: { ...facts, displayName } });
+        expect(b.canonicalEntityId).not.toBe(a.canonicalEntityId);
+      }
+    });
+    it('rejects alias collisions without writes, regardless of row order, and isolates regions', async () => {
+      const db = model(), service = new RegionalDataService(db as any);
+      for (const canonicalEntityId of ['urn:test:a', 'urn:test:b']) {
+        const row: any = await service.create({ regionId, canonicalEntityId, source,
+          proposedFacts: { ...facts, displayName: canonicalEntityId, aliases: ['공통 공원'] } });
+        await service.action(row.id, 'APPROVE');
+      }
+      for (let index = 0; index < 2; index++) {
+        const before = db.rows.map(row => row.toObject());
+        await expect(service.create({ regionId, source, proposedFacts: { ...facts, displayName: '공통 공원' } }))
+          .rejects.toThrow('AMBIGUOUS_CANONICAL_IDENTITY');
+        expect(db.rows.map(row => row.toObject())).toEqual(before);
+        db.rows.reverse();
+      }
+      const other: any = await service.create({ regionId: 'separate-region', source,
+        proposedFacts: { ...facts, displayName: '공통 공원' } });
+      expect(['urn:test:a', 'urn:test:b']).not.toContain(other.canonicalEntityId);
+    });
+    it('does not use incoming proposed aliases as identity evidence', async () => {
+      const db = model(), service = new RegionalDataService(db as any);
+      const a: any = await service.create({ regionId, canonicalEntityId: 'urn:test:a', source,
+        proposedFacts: { ...facts, displayName: '승인 공원' } });
+      await service.action(a.id, 'APPROVE');
+      const b: any = await service.create({ regionId, source,
+        proposedFacts: { ...facts, displayName: '별개 공원', aliases: ['승인 공원'] } });
+      expect(b.canonicalEntityId).not.toBe(a.canonicalEntityId);
+    });
+  });
+  it('detects collisions across the static baseline and approved database records', async () => {
+    const db = model(), service = new RegionalDataService(db as any);
+    const row: any = await service.create({ regionId: 'hapcheon', canonicalEntityId: 'urn:test:collision', source,
+      proposedFacts: { displayName: '별도 촬영공원', aliases: ['영상테마파크'], entityType: 'ATTRACTION', category: 'TOURISM_NATURE' } });
+    await service.action(row.id, 'APPROVE');
+    await expect(service.create({ regionId: 'hapcheon', source, proposedFacts: { displayName: '영상테마파크' } }))
+      .rejects.toThrow('AMBIGUOUS_CANONICAL_IDENTITY');
+  });
   it('moves Busodamak from evidence review to navigation only after explicit field approval and recomputes readiness without cross-region writes', async () => {
     const db = model(),
       service = new RegionalDataService(db as any);
@@ -256,6 +304,31 @@ describe('RegionalDataService', () => {
     const current=db.rows.find(row=>row.id===garden.id).toObject(),other=JSON.stringify(db.rows.find(row=>row.id===video.id).toObject());await service.action(garden.id,'IGNORE_CHANGE');const after=db.rows.find(row=>row.id===garden.id);
     expect(after).toMatchObject({displayName:current.displayName,aliases:current.aliases,address:current.address,lifecycleStatus:'ACTIVE',detectedChanges:[],proposedFacts:undefined});expect(after.auditTrail.at(-1).actorId).toBe('SYSTEM_INTERNAL');expect(JSON.stringify(db.rows.find(row=>row.id===video.id).toObject())).toBe(other);
     const resolver=new PlaceDiscoveryService(service as any);await expect(resolver.resolveExactPlaceIntent('hapcheon','정원공원 찾아줘')).resolves.toMatchObject({entityId:'urn:test:garden'});await expect(resolver.resolveExactPlaceIntent('hapcheon','영상공원 찾아줘')).resolves.toMatchObject({entityId:'urn:test:video'});
+  });
+  it('IGNORE_CHANGE changes only allowlisted fields and preserves both neighboring documents', async () => {
+    const db = model(), service = new RegionalDataService(db as any);
+    await service.onModuleInit();
+    const garden = db.rows.find(row => row.canonicalEntityId === 'https://hapcheon.example/ontology#hapcheonGardenThemePark');
+    const neighbors = db.rows.filter(row => [
+      'https://hapcheon.example/ontology#hapcheonVideoThemePark',
+      'https://hapcheon.example/ontology#hwangmaesanSilverGrassFestival',
+    ].includes(row.canonicalEntityId));
+    expect(neighbors).toHaveLength(2);
+    await service.create({ regionId: garden.regionId, canonicalEntityId: garden.canonicalEntityId, source,
+      proposedFacts: { displayName: '합천 영상테마파크', aliases: ['영상테마파크'] } });
+    const pre = garden.toObject(), others = neighbors.map(row => row.toObject());
+    expect(pre).toMatchObject({ verificationStatus: 'VERIFIED', lifecycleStatus: 'CHANGE_DETECTED' });
+    const after = await service.action(garden.id, 'IGNORE_CHANGE', undefined, { actorId: 'RECEIPT32_TEST' });
+    const allowlist = new Set(['lifecycleStatus', 'detectedChanges', 'proposedFacts', 'auditTrail', 'updatedAt', '__v']);
+    const protectedFacts = (row: any) => Object.fromEntries(Object.entries(row).filter(([key]) => !allowlist.has(key)));
+    expect(protectedFacts(after)).toEqual(protectedFacts(pre));
+    expect(after).toMatchObject({ canonicalEntityId: pre.canonicalEntityId, displayName: pre.displayName,
+      verificationStatus: 'VERIFIED', lifecycleStatus: 'ACTIVE', detectedChanges: [] });
+    expect(after.proposedFacts).toBeUndefined();
+    expect(after.auditTrail.slice(0, -1)).toEqual(pre.auditTrail);
+    expect(after.auditTrail).toHaveLength(pre.auditTrail.length + 1);
+    expect(after.auditTrail.at(-1)).toMatchObject({ action: 'IGNORE_CHANGE', actorId: 'RECEIPT32_TEST', changes: pre.detectedChanges });
+    expect(neighbors.map(row => row.toObject())).toEqual(others);
   });
   it('keeps unapproved candidates out, promotes explicitly approved records, and isolates regions', async () => {
     const db = model(),

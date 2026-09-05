@@ -2,6 +2,67 @@
 
 This runbook is a design and dry-run checklist. It does not authorize a production write.
 
+## Local final identity review (2026-09-06)
+
+This review runs only local tests and a local server build. No production connection,
+capture, domain action, deployment, or restore is part of it. The simulated domain
+action uses an in-memory test repository; the maintenance tests likewise use fixtures.
+
+Ingestion matches current approved facts, ignores incoming proposed aliases and
+unapproved candidate display names, and rejects multiple matching canonical IDs
+before writing. Static baseline and approved database records are evaluated together.
+Explicit canonical IDs remain scoped by region. Public exact matching treats an
+official-name/alias collision across canonical IDs as ambiguous too.
+
+### Expected dry-run comparison
+
+| Field | Pre-image | Expected after (simulation only) |
+| --- | --- | --- |
+| `_id`, `id`, `regionId`, `canonicalEntityId` | Captured identity | Identical |
+| Public display name, aliases, current facts | Captured approved facts | Identical |
+| `verificationStatus` | `VERIFIED` (required) | `VERIFIED` |
+| `lifecycleStatus` | `CHANGE_DETECTED` | `ACTIVE` |
+| `proposedFacts` | Rejected proposed facts | Absent |
+| `detectedChanges` | Reviewed changes | Empty array |
+| `auditTrail` | Existing history | History plus one `IGNORE_CHANGE` with actor/time/changes |
+| `updatedAt`, `__v` | Captured values | Persistence-managed values |
+| Video/festival/C Park full-document hashes | Captured SHA-256 | Identical |
+
+Use the capture/preflight/restore procedures below only after separate operational
+authorization. Save the target's full typed Extended JSON and manifest in the private
+directory, retain its SHA-256 and version, and record neighbor hashes. `--check-ignore`
+must report a valid no-write plan; its tests assert zero repository writes. After an
+approved action, compare protected fields outside the six-field allowlist and verify
+the exact appended audit event and neighbor hashes. If recovery is approved, restore
+only the three review fields through the prepared full-post-image compare-and-set,
+retaining history and appending `RESTORE_IGNORE_CHANGE`.
+
+The HTTP domain action uses `findOne` followed by document `save`; the preflight hash
+is not an atomic condition on that action. Before an operational run, approve an
+exclusive write window (or implement and review an atomic precondition). Do not treat
+a successful preflight as protection from intervening ingestion or administrator writes.
+The restore tool does have an atomic full-post-image compare-and-set.
+
+Unknown candidates without an explicit canonical ID are no longer deduplicated using
+unapproved names. Repeated ingestion can therefore create separate review candidates;
+upstream stable IDs or explicit review are needed for safe deduplication. Address,
+phone and coordinate matching still use approved current facts and reject multiple
+canonical matches, but a single erroneous approved fact remains a data-quality risk.
+
+### Local validation results
+
+- Focused Jest contracts (regional-data, receipt32 visibility, exact-place): 74/74 passed.
+- Receipt32 fixture capture, CLI, migration, alignment and restore tests: 36/36 passed.
+- Full server Jest: 104/104 suites, 1012/1012 tests passed with
+  `npm test -- --runInBand --testTimeout=30000`.
+- The first full run at the default 5-second limit had five timeouts in QR,
+  isolated MongoDB bootstrap and nearby concurrency tests; no test source or
+  production timeout setting was changed to obtain the successful rerun.
+- Local `npm run build` and `git diff --check` passed.
+- Common service hardcoding scan found only the pre-existing `HAPCHEON_LAKE`
+  result-reason text. No region-specific identity or resolver branch was added.
+- No production pre-image was read or created, and no production action was run.
+
 ## Fixed target
 
 - MongoDB `_id`: `6a851cbab346fbf150ee371f`

@@ -163,21 +163,28 @@ export class RegionalDataService implements OnModuleInit {
     if (!SOURCE_TYPES.has(input.source.sourceType))
       throw new BadRequestException('Unsupported sourceType');
     const requestedCanonical = input.canonicalEntityId;
-    const identityBaseline = requestedCanonical
-      ? undefined
-      : this.findEquivalentBaseline(input.regionId, input.proposedFacts);
     const regionalRows: any[] = requestedCanonical
       ? []
       : await this.model.find({ regionId: input.regionId }).lean();
-    const identityRow = requestedCanonical
-      ? undefined
-      : regionalRows.find((row) =>
-          this.sameIdentity(row, input.proposedFacts),
-        );
+    // Only approved current facts establish identity. Collect every match across
+    // both stores so storage order cannot silently resolve a collision.
+    const identities = new Map<string, any>(
+      (REGIONAL_CANDIDATE_DATASETS[input.regionId]?.records || []).map(
+        (row) => [row.entityUri, row],
+      ),
+    );
+    for (const row of regionalRows) {
+      if (row.verificationStatus === 'VERIFIED' &&
+          ['ACTIVE', 'CHANGE_DETECTED'].includes(row.lifecycleStatus))
+        identities.set(row.canonicalEntityId, row);
+    }
+    const matches = requestedCanonical ? [] : [...identities.entries()]
+      .filter(([, row]) => this.sameIdentity(row, input.proposedFacts));
+    if (matches.length > 1)
+      throw new BadRequestException('AMBIGUOUS_CANONICAL_IDENTITY');
     const canonical =
       requestedCanonical ||
-      identityBaseline?.entityUri ||
-      identityRow?.canonicalEntityId ||
+      matches[0]?.[0] ||
       `urn:regional-candidate:${input.regionId}:${randomUUID()}`;
     const baseline = this.baseline(input.regionId, canonical);
     const existing: any = await this.model.findOne({
@@ -822,11 +829,6 @@ export class RegionalDataService implements OnModuleInit {
       (x) => x.entityUri === id,
     );
   }
-  private findEquivalentBaseline(region: string, facts: any) {
-    return REGIONAL_CANDIDATE_DATASETS[region]?.records.find((row) =>
-      this.sameIdentity(row, facts),
-    );
-  }
   private sameIdentity(row: any, facts: any) {
     const normalize = (value?: unknown) =>
       typeof value === 'string'
@@ -843,7 +845,7 @@ export class RegionalDataService implements OnModuleInit {
     ]
       .map(normalize)
       .filter(Boolean);
-    const proposedNames = [facts.displayName, ...(facts.aliases || [])]
+    const proposedNames = [facts.displayName]
       .map(normalize)
       .filter(Boolean);
     if (proposedNames.some((name) => names.includes(name))) return true;

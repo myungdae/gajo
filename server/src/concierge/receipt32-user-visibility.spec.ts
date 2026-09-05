@@ -14,6 +14,9 @@ describe('receipt 32 user-visible exact attraction search', () => {
   const service = new PlaceDiscoveryService(dataset as any);
 
   it.each([
+    '합천 영상테마파크',
+    '합천영상테마파크',
+    '영상테마파크',
     '합천 영상테마파크 찾아줘',
     '합천영상테마파크 찾아줘',
     '영상테마파크 찾아줘',
@@ -42,6 +45,27 @@ describe('receipt 32 user-visible exact attraction search', () => {
     expect(result.entities[0].reasons).toContain('요청한 장소명과 정확히 일치');
     expect(result.entities[0].programLabel).not.toBe('씨파크');
     expect(result.entities[0].programLabel).not.toBe('합천 정원테마파크');
+  });
+
+  it.each([
+    ['합천 정원테마파크', 'https://hapcheon.example/ontology#hapcheonGardenThemePark'],
+    ['씨파크', 'https://hapcheon.example/ontology#cPark'],
+  ])('keeps %s as a separate canonical', async (name, entityId) => {
+    await expect(service.resolveExactPlaceIntent('hapcheon', name)).resolves.toMatchObject({ entityId });
+  });
+
+  it.each(['gajo', 'hapcheon', 'okcheon', 'future-region'])('treats alias/name collisions as ambiguous in %s', async (regionId) => {
+    const records = [
+      { entityUri: 'urn:test:a', canonicalLabelKo: '공통 공원', alternateLabels: [], category: 'TOURISM_NATURE', entityType: 'ATTRACTION' },
+      { entityUri: 'urn:test:b', canonicalLabelKo: '다른 공원', alternateLabels: ['공통 공원'], category: 'TOURISM_NATURE', entityType: 'ATTRACTION' },
+    ];
+    const resolver = new PlaceDiscoveryService({ effectiveDataset: async (region: string) => ({ records: region === regionId ? records : [] }) } as any);
+    for (let index = 0; index < 2; index++) {
+      await expect(resolver.resolveExactPlaceIntent(regionId, '공통 공원')).resolves.toMatchObject({ status: 'AMBIGUOUS' });
+      await expect(resolver.resolveReference(regionId, '공통 공원 주변 관광지')).resolves.toBeUndefined();
+      records.reverse();
+    }
+    await expect(resolver.resolveExactPlaceIntent('separate-region', '공통 공원')).resolves.toBeUndefined();
   });
 
   it('keeps an explicit nearby request as distance-based anchor discovery', async () => {

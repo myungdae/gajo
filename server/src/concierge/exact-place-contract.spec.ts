@@ -128,9 +128,9 @@ test('the active region selects its own canonical when a common alias is shared'
 });
 
 const collisionService=(records:any[])=>new PlaceDiscoveryService({effectiveDataset:jest.fn(async()=>({regionId:'region-a',records}))} as any);
-test('official names outrank aliases with the same normalized text',async()=>{
+test('official names colliding with another canonical alias are ambiguous',async()=>{
   const resolver=collisionService([{entityUri:'urn:a:alias',canonicalLabelKo:'동쪽 문화공원',alternateLabels:['중앙 공원'],entityType:'ATTRACTION',category:'TOURISM_NATURE'},{entityUri:'urn:a:official',canonicalLabelKo:'중앙공원',alternateLabels:[],entityType:'ATTRACTION',category:'TOURISM_NATURE'}]);
-  await expect(resolver.resolveExactPlaceIntent('region-a','중앙 공원 찾아줘')).resolves.toMatchObject({status:'RESOLVED',entityId:'urn:a:official'});
+  await expect(resolver.resolveExactPlaceIntent('region-a','중앙 공원 찾아줘')).resolves.toMatchObject({status:'AMBIGUOUS'});
 });
 test('colliding aliases are ambiguous instead of selecting the first canonical',async()=>{
   const resolver=collisionService(['one','two'].map(id=>({entityUri:`urn:a:${id}`,canonicalLabelKo:`${id} 문화공원`,alternateLabels:['중앙공원'],entityType:'ATTRACTION',category:'TOURISM_NATURE'})));
