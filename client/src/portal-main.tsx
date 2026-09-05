@@ -8,6 +8,7 @@ const regions = [
   { id: 'gajo', name: '거창 / 가조', shortName: '거창', tag: '산과 온천, 자연 속 쉼', use: '처음 온 가족 여행부터 지금 필요한 다음 장소까지', preview: '현재 운영 중인 지역 AI 여행안내로 연결됩니다.' },
   { id: 'hapcheon', name: '합천', shortName: '합천', tag: '호수와 산, 깊은 문화의 시간', use: '합천호·해인사 등 실제 구성된 지역 맥락으로 여행 이어가기', preview: '대표 목적지는 현재 검증된 지역 설정을 기준으로 안내합니다.' },
   { id: 'okcheon', name: '옥천', shortName: '옥천', tag: '문학과 전통문화가 흐르는 고장', use: '첫 방문부터 여행 중 달라진 상황까지 함께 판단하기', preview: '정지용 생가·문학관 등 승인된 문화 맥락을 활용합니다.' },
+  { id: 'gyeryong', name: '계룡', shortName: '계룡', tag: '군문화와 자연이 만나는 도시', use: '현장 여행부터 공중화장실 같은 생활편의까지 함께 찾기', preview: '계룡 현장 시험 지역의 검증 범위 안에서 안내합니다.' },
 ] as const;
 
 const questions = [
