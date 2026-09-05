@@ -57,12 +57,12 @@ export default function HomePage() {
     createJourney=(text:string,context:CreateContextInput,planned:PlannedContext)=>{const current=session();saveTripSession({...current,mode:'NOW',plannedContext:{...(current.plannedContext||{}),...planned}});track('RUNTIME_JOURNEY_REQUESTED',current.id,{mode:'NOW'});navigate(link('/concierge?mode=now'),{state:{tripMode:'NOW',initialMessage:text,quickContext:context,autoSubmit:true}})};
 
   return <div className="regional-home" lang={language} style={{ "--region-accent": region.accent } as React.CSSProperties}>
-    {hasTripContext&&<TripContinuity onNewTrip={()=>refreshTrip(value=>value+1)}/>}
-    {hasActiveTrip?<RuntimeJourneyIntro/>:!hasTripContext&&<RuntimeJourneyEntry loading={false} onCreate={createJourney} onDirect={()=>navigate(link('/concierge?mode=now'),{state:{tripMode:'NOW',otherRequestOpen:true}})}/>}
     <section className={`spotlight-card${spotlight.imageUrl ? " has-image" : ""}`} style={spotlight.imageUrl ? { backgroundImage: `linear-gradient(180deg,rgba(8,24,18,.08) 5%,rgba(8,24,18,.96) 100%),url(${spotlight.imageUrl})`, backgroundPosition: `${spotlight.imageFocusX || "center"} ${spotlight.imageFocusY || "center"}` } : {}} aria-labelledby="spotlight-title">
       {spotlight.imageUrl && <img className="sr-only" src={spotlight.imageUrl} alt={spotlight.imageAlt || ""} />}
       <div><small>{spotlight.statusLabel}</small><h1 id="spotlight-title">{spotlight.title}</h1><p>{spotlight.shortDescription}</p><div className="spotlight-actions"><button onClick={primary}>{spotlight.primaryAction?.label || copy.story}</button>{(spotlight.secondaryAction || place?.latitude !== undefined) && <button onClick={() => findNearby("TOURIST_ATTRACTION")}>{spotlight.secondaryAction?.label || copy.nearby}</button>}</div></div>
     </section>
+    {hasTripContext&&<TripContinuity onNewTrip={()=>refreshTrip(value=>value+1)}/>}
+    {hasActiveTrip?<RuntimeJourneyIntro/>:!hasTripContext&&<RuntimeJourneyEntry loading={false} onCreate={createJourney} onDirect={()=>navigate(link('/concierge?mode=now'),{state:{tripMode:'NOW',otherRequestOpen:true}})}/>}
     <section className="proactive-card" aria-label={copy.guidance}><small>{copy.guidance}</small><p>{guidance.fact && `${guidance.fact} `}{guidance.context} {guidance.recommendation}</p>{guidance.basisLabel && <span>{guidance.basisLabel}</span>}</section>
   </div>;
 }
