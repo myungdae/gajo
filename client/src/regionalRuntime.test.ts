@@ -45,13 +45,14 @@ test("Gajo keeps its verified map weather and nearby runtime capabilities", () =
     GAJO_CONFIG.center!.longitude,
   ]);
 });
-test("Gyeryong map weather and nearby remain unavailable without cross-region fallback", () => {
+test("Gyeryong enables only its own field-test map weather and nearby runtime", () => {
   const view = regionalRuntimeView(GYERYONG_CONFIG);
-  assert.equal(view.mapEnabled, false);
-  assert.equal(view.weatherEnabled, false);
-  assert.equal(view.nearbyEnabled, false);
-  assert.equal(view.mapCenter, undefined);
-  assert.match(view.mapTitle, /계룡/);
+  assert.equal(view.mapEnabled, true);
+  assert.equal(view.weatherEnabled, true);
+  assert.equal(view.nearbyEnabled, true);
+  assert.deepEqual(view.mapCenter, [36.274, 127.249]);
+  assert.equal(view.mapTitle, "계룡 여행 지도");
+  assert.doesNotMatch(JSON.stringify(view), /가조|합천|옥천|무안/);
 });
 test("Hapcheon map weather and anchor nearby use only configured operational bounds", () => {
   const view = regionalRuntimeView(HAPCHEON_CONFIG);
