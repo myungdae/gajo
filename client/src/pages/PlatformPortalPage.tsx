@@ -17,6 +17,7 @@ const regions = [
   { name: '합천 AI', detail: '합천의 여행 계획부터 현장 길찾기까지', status: '운영 중', to: '/hapcheon', cta: '합천 AI 시작하기', exkoRegionId:'hapcheon' },
   { name: '거창 AI', detail: '거창 가조 실증 지역에서 AI 여행안내를 이용해 보세요.', status: '현장 시험 중', to: '/gajo', cta: '거창 AI 시작하기', exkoRegionId:'geochang' },
   { name: '옥천 AI', detail: '옥천의 문학·문화·자연 여행을 AI와 준비해 보세요.', status: '현장 시험 중', to: '/okcheon', cta: '옥천 AI 시작하기', exkoRegionId:'okcheon' },
+  { name: '계룡 AI', detail: '계룡의 군문화·자연·생활편의를 현장에서 이용해 보세요.', status: '현장 시험 중', to: '/gyeryong', cta: '계룡 AI 시작하기', exkoRegionId:'gyeryong' },
 ];
 
 const entrances = [
