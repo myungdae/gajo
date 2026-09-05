@@ -488,17 +488,17 @@ export const HAPCHEON_CONFIG: RegionConfig = {
   id: "hapcheon",
   regionName: "합천",
   serviceName: "합천 여행안내",
-  heroTitle: "합천에 오신 것을 환영합니다",
+  heroTitle: "수려한 합천에 오신 것을 환영합니다",
   heroSubtitle: "합천호의 풍경과 함께 편안한 여행을 시작해보세요.",
   heroCopy:
     "호수와 자연, 드라이브와 가족 체류를 중심으로 합천 여행을 준비해 보세요.",
   home: {
     hero: {
-      title: "5만 년 전 운석 충돌이 만든 거대한 분지",
-      titleLines: ["5만 년 전 운석 충돌이 만든", "거대한 분지"],
-      description: "한반도에서 유일하게 확인된 합천운석충돌구를 만나보세요.",
+      title: "수려한 합천에 오신 것을 환영합니다",
+      titleLines: ["수려한 합천에", "오신 것을 환영합니다"],
+      description: "필요한 순간, 먼저 찾아오는 AI 여행 동행자",
       image: "/branding/hapcheon-meteor-basin-ai-dev-v1.jpg",
-      alt: "산 위에서 내려다본 넓은 분지와 농경지의 AI 생성 개발용 이미지",
+      alt: "산 위에서 바라본 합천의 넓은 산과 들 풍경을 표현한 AI 생성 개발용 이미지",
       photoSource: "AI 생성 임시 이미지 — 공식 합천 현장사진 아님",
       photoRightsStatus: "DEVELOPMENT_ONLY",
       overlay: "#294f56",
@@ -762,7 +762,7 @@ export const REGION_HOME_ENGLISH:Record<RegionId,RegionalHomeEnglish>={
   okcheon:{regionName:'Okcheon',serviceName:'Explore Okcheon',heroTitle:'Welcome to Okcheon',heroSubtitle:'Discover the landscapes and stories of Okcheon.',heroCopy:'Plan a relaxed journey through its literary and cultural heritage.'},
   muan:{regionName:'Muan',serviceName:'Explore Muan',heroTitle:'Welcome to Muan',heroSubtitle:'Discover Muan’s lotus ponds, wetlands, and coast.',heroCopy:'Find a comfortable route for nature, food, and family time.'},
   gyeryong:{regionName:'Gyeryong',serviceName:'Explore Gyeryong',heroTitle:'Welcome to Gyeryong',heroSubtitle:'Explore local history, events, and family attractions.',heroCopy:'Plan your next stop with practical local information.'},
-  hapcheon:{regionName:'Hapcheon',serviceName:'Explore Hapcheon',heroTitle:'Welcome to Hapcheon',heroSubtitle:"Enjoy a relaxing journey through Hapcheon's beautiful landscapes.",heroCopy:'Explore the lake, nature, scenic drives, and family-friendly stays.',spotlight:{statusLabel:'Hapcheon Spotlight',title:'A 50,000-Year-Old Meteorite Impact Basin',description:"Discover Korea's only confirmed meteorite impact crater.",cta:'Discover the Crater',imageAlt:'Development-only AI image of a broad basin and farmland viewed from a mountain'},placeNames:{'https://hapcheon.example/ontology#hapcheonLake':'Hapcheon Lake','https://hapcheon.example/ontology#hwangmaesanCountyPark':'Hwangmaesan County Park'}},
+  hapcheon:{regionName:'Hapcheon',serviceName:'Explore Hapcheon',heroTitle:'Welcome to Beautiful Hapcheon',heroSubtitle:"Enjoy a relaxing journey through Hapcheon's beautiful landscapes.",heroCopy:'Explore the lake, nature, scenic drives, and family-friendly stays.',spotlight:{statusLabel:'Welcome to Hapcheon',title:'Welcome to Beautiful Hapcheon',description:'Your AI travel companion, here before you need it.',cta:'Start My Journey',imageAlt:'A panoramic view of the mountains and fields of Hapcheon'},placeNames:{'https://hapcheon.example/ontology#hapcheonLake':'Hapcheon Lake','https://hapcheon.example/ontology#hwangmaesanCountyPark':'Hwangmaesan County Park'}},
   'daejeon-junggu':{regionName:'Jung-gu, Daejeon',serviceName:'Explore Jung-gu',heroTitle:'Welcome to Jung-gu, Daejeon',heroSubtitle:'Discover the city’s culture, markets, and performances.',heroCopy:'Find useful local stops for an easy day in the city.'}
 };
 export const getRegionalHomeEnglish=(region:RegionConfig)=>REGION_HOME_ENGLISH[region.id];
