@@ -250,4 +250,4 @@ function LegacyRegionalDataManager({adminToken:token,initialRegionId=""}:{adminT
   );
 }
 
-export default function RegionalDataManager(props:{adminToken:string}) { const region=useRegion(); return <><LocationReviewManager regionId={region.id} adminToken={props.adminToken}/><BusinessRegistrationManager {...props}/><details><summary>기존 후보·변경 검수</summary><LegacyRegionalDataManager {...props} initialRegionId={region.id}/></details></>; }
+export default function RegionalDataManager(props:{adminToken:string}) { const region=useRegion(); return <><LocationReviewManager regionId={region.id} copilotToken={props.adminToken}/><BusinessRegistrationManager {...props}/><details><summary>기존 후보·변경 검수</summary><LegacyRegionalDataManager {...props} initialRegionId={region.id}/></details></>; }
