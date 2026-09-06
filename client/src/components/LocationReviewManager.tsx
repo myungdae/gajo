@@ -240,6 +240,12 @@ export default function LocationReviewManager({
               {row.mapVisible ? "지도 공개 중" : "지도 미노출"}
             </span>
             {!row.mapVisible && <p>{row.mapHiddenReason}</p>}
+            {row.needsLocationReview && (
+              <p>
+                지도에 표시하려면 위치 확인이 필요합니다. 등록된 검색·상세·전화
+                기능은 계속 이용할 수 있습니다.
+              </p>
+            )}
             <span>
               좌표 상태:{" "}
               {locationStatusLabels[
@@ -493,6 +499,19 @@ export default function LocationReviewManager({
           {(pending || selected.canRestore) && (
             <fieldset disabled={!writable}>
               <legend>검토 결정</legend>
+              {pending && (
+                <p>
+                  승인하면 검토한 위치가 공개 지도·거리 계산·길찾기에
+                  반영됩니다. 별도의 공개 제한이 있는 장소는 그 검토도
+                  필요합니다. 이름·별칭·장소 식별자·주소·전화는 바뀌지 않습니다.
+                  반려하면 기존 공개 위치가 유지됩니다.
+                </p>
+              )}
+              <p>
+                되돌리기는 이 장소의 이전 좌표만 복원합니다. 승인 후 다른 수정이
+                생기면 복원할 수 없으며 새 위치 검토가 필요합니다. 검토 이력은
+                남고 다른 장소는 바뀌지 않습니다.
+              </p>
               <label>
                 검토 사유
                 <textarea
@@ -541,6 +560,12 @@ export default function LocationReviewManager({
                 </button>
               )}
             </fieldset>
+          )}
+          {selected.restoreBlocked && (
+            <p role="status">
+              승인 이후 다른 수정이 있어 이전 좌표로 바로 되돌릴 수 없습니다.
+              현재 내용을 확인한 뒤 새 위치 검토를 요청해 주세요.
+            </p>
           )}
         </section>
       )}

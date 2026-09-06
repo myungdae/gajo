@@ -11,12 +11,14 @@ import { RegionalDataService } from './regional-data.service';
 import { RegionConfigService } from '../region/region-config.service';
 import {
   approvedLocationUsable,
+  canRestoreLocation,
   currentLocation,
   LocationActor,
   locationHash,
   locationProposal,
   locationReason,
   locationScope,
+  locationSnapshot,
   locationWarnings,
   stableLocationHash,
   validLocation,
@@ -44,6 +46,25 @@ export class LocationReviewService {
   private async peers(regionId: string) {
     return this.model.collection.find({ regionId }).toArray();
   }
+  private warningPeers(rows: any[], publicRows: any[]) {
+    const result = rows.map((r) => ({
+      ...r,
+      approvedLocation: locationSnapshot(
+        r,
+        publicRows.find((p) => p.entityUri === r.canonicalEntityId),
+      ),
+    }));
+    for (const place of publicRows)
+      if (!rows.some((r) => r.canonicalEntityId === place.entityUri)) {
+        const row = {
+          id: place.entityUri,
+          canonicalEntityId: place.entityUri,
+          displayName: place.canonicalLabelKo,
+        };
+        result.push({ ...row, approvedLocation: locationSnapshot(row, place) });
+      }
+    return result;
+  }
   private async view(
     row: any,
     actor: LocationActor,
@@ -55,6 +76,7 @@ export class LocationReviewService {
       [];
     const place = publicRows.find((p) => p.entityUri === row.canonicalEntityId);
     const visible = Boolean(place?.actions?.navigate);
+    const snapshot = locationSnapshot(row, place);
     return {
       id: row.id,
       canonicalEntityId: row.canonicalEntityId,
@@ -63,9 +85,11 @@ export class LocationReviewService {
       publicDisplayName: place?.canonicalLabelKo || null,
       address: row.address,
       phone: row.phone,
-      current: currentLocation(row),
+      current: currentLocation({ approvedLocation: snapshot }),
       mapVisible: visible,
-      needsLocationReview: !approvedLocationUsable(row),
+      needsLocationReview: !approvedLocationUsable({
+        approvedLocation: snapshot,
+      }),
       mapHiddenReason: visible
         ? null
         : !place
@@ -73,15 +97,10 @@ export class LocationReviewService {
           : !approvedLocationUsable(row)
             ? '주소와 전화번호는 등록되어 있지만 위치가 확인되지 않아 지도와 가까운 곳 찾기에는 나오지 않습니다.'
             : '공개 안전 검토 또는 장소 공개 상태를 확인해 주세요.',
-      coordinateEvidence: row.approvedLocation ||
-        row.fieldEvidence?.coordinates || {
-          verificationStatus: approvedLocationUsable(row)
-            ? 'LEGACY_APPROVED'
-            : 'UNVERIFIED',
-          source: row.source,
-        },
+      coordinateEvidence: snapshot,
       proposal: row.locationReview || null,
-      canRestore: Boolean(row.locationRollback),
+      canRestore: canRestoreLocation(row),
+      restoreBlocked: Boolean(row.locationRollback) && !canRestoreLocation(row),
       canWrite: actor.canWrite,
       lastModifiedBy: row.auditTrail?.at(-1)?.actorId || null,
       lastModifiedAt: row.updatedAt || null,
@@ -95,10 +114,13 @@ export class LocationReviewService {
       },
       warnings: row.locationReview
         ? locationWarnings(
-            row,
+            { ...row, approvedLocation: snapshot },
             row.locationReview,
             this.regions.get(row.regionId),
-            context?.peers || (await this.peers(row.regionId)),
+            this.warningPeers(
+              context?.peers || (await this.peers(row.regionId)),
+              publicRows,
+            ),
           )
         : null,
     };
@@ -107,12 +129,20 @@ export class LocationReviewService {
     locationScope(actor, regionId);
     this.regions.get(regionId);
     const rows = await this.peers(regionId);
-    const filtered = missingOnly
-      ? rows.filter((r) => !approvedLocationUsable(r))
-      : rows;
     const publicRows = [
       ...((await this.regional.effectiveDataset(regionId))?.records || []),
     ];
+    const filtered = missingOnly
+      ? rows.filter(
+          (r) =>
+            !approvedLocationUsable({
+              approvedLocation: locationSnapshot(
+                r,
+                publicRows.find((p) => p.entityUri === r.canonicalEntityId),
+              ),
+            }),
+        )
+      : rows;
     return {
       records: await Promise.all(
         filtered.map((r) => this.view(r, actor, { publicRows, peers: rows })),
@@ -127,14 +157,23 @@ export class LocationReviewService {
     locationScope(actor, regionId, true);
     const row = await this.row(regionId, id),
       proposal = locationProposal(raw, actor.actorId, new Date().toISOString());
+    const detail = await this.view(row, actor);
+    const publicRows =
+      (await this.regional.effectiveDataset(regionId))?.records || [];
     return {
       proposal,
-      current: currentLocation(row),
+      current: detail.current,
       warnings: locationWarnings(
-        row,
+        {
+          ...row,
+          approvedLocation: locationSnapshot(
+            row,
+            publicRows.find((p) => p.entityUri === row.canonicalEntityId),
+          ),
+        },
         proposal,
         this.regions.get(regionId),
-        await this.peers(regionId),
+        this.warningPeers(await this.peers(regionId), publicRows),
       ),
     };
   }
@@ -267,27 +306,19 @@ export class LocationReviewService {
         );
       // Freeze the existing public location on first enrollment. Legacy edits of
       // flat coordinate fields cannot publish a pending managed proposal.
-      if (row.approvedLocation === undefined)
-        fields.approvedLocation = approvedLocationUsable(row)
-          ? {
-              ...currentLocation(row),
-              verificationStatus: 'APPROVED',
-              sourceType: row.source?.sourceType || 'OTHER_VERIFIED_SOURCE',
-              sourceReference: row.source?.sourceUrl || '기존 승인 기록',
-              legacy: true,
-            }
-          : { verificationStatus: 'UNVERIFIED' };
+      if (row.approvedLocation === undefined) {
+        const publicRows =
+          (await this.regional.effectiveDataset(regionId))?.records || [];
+        fields.approvedLocation = locationSnapshot(
+          row,
+          publicRows.find((p) => p.entityUri === row.canonicalEntityId),
+        );
+      }
     } else {
       reason = locationReason(body.reason);
       if (action === 'RESTORE') {
-        const rollback = row.locationRollback,
-          withoutRollback = { ...row };
-        delete withoutRollback.locationRollback;
-        if (
-          !rollback ||
-          row.__v !== rollback.approvedVersion ||
-          stableLocationHash(withoutRollback) !== rollback.postHash
-        )
+        const rollback = row.locationRollback;
+        if (!canRestoreLocation(row))
           throw new ConflictException(
             '승인 이후 변경되어 자동 복원할 수 없습니다. 새 위치 검토를 요청해 주세요.',
           );
@@ -313,11 +344,13 @@ export class LocationReviewService {
           reviewedAt: at,
         };
         if (action === 'APPROVE') {
+          const publicRows =
+            (await this.regional.effectiveDataset(regionId))?.records || [];
           const warnings = locationWarnings(
             row,
             row.locationReview,
             this.regions.get(regionId),
-            await this.peers(regionId),
+            this.warningPeers(await this.peers(regionId), publicRows),
           );
           if (warnings.approvalBlocked)
             throw new BadRequestException(
@@ -350,7 +383,15 @@ export class LocationReviewService {
       locationRequestId: p.requestId,
       fingerprint,
       canonicalEntityId: row.canonicalEntityId,
-      before: currentLocation(row) || null,
+      before:
+        currentLocation(
+          action === 'PROPOSE'
+            ? {
+                approvedLocation:
+                  fields.approvedLocation || row.approvedLocation,
+              }
+            : row,
+        ) || null,
       after: currentLocation(resulting) || null,
       reviewedLocation: fields.locationReview,
     };

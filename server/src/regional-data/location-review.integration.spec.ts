@@ -115,6 +115,41 @@ describe('receipt 34 isolated MongoDB atomic location contract', () => {
       after.auditTrail.filter((e) => e.action === 'LOCATION_APPROVE'),
     ).toHaveLength(1);
   });
+  it.each([
+    ['APPROVE', 'REJECT'],
+    ['REJECT', 'APPROVE'],
+  ])(
+    'concurrent %s / %s decisions admit one winner and retain the losing proposal evidence',
+    async (first, second) => {
+      await propose();
+      const request = await body({
+        reason: '동시 검토 결정 확인',
+        reviewConfirmed: true,
+      });
+      const results = await Promise.allSettled(
+        [first, second].map((action) =>
+          service.action(actor, 'hapcheon', 'target', action, {
+            ...request,
+            precondition: { ...request.precondition, requestId: randomUUID() },
+          }),
+        ),
+      );
+      expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+      const failed: any = results.find((r) => r.status === 'rejected');
+      expect(failed.reason.getStatus()).toBe(409);
+      const row = await collection.findOne({ id: 'target' });
+      expect(row.__v).toBe(2);
+      expect(row.auditTrail).toHaveLength(2);
+      expect(row.locationReview).toMatchObject({
+        ...proposal,
+        proposedBy: actor.actorId,
+      });
+      expect(row.locationReview.proposedAt).toBe(row.auditTrail[0].at);
+      if (row.locationReview.verificationStatus === 'REJECTED')
+        expect(row.latitude).toBeUndefined();
+      else expect(row.latitude).toBe(proposal.latitude);
+    },
+  );
   it.each(['APPROVE', 'RESTORE'])(
     'whole-document equality prevents a no-version race in %s',
     async (action) => {

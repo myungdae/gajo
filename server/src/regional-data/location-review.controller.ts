@@ -21,7 +21,9 @@ function copilot(req: any, region: string, write = false): LocationActor {
   return {
     actorId: `COPILOT:${req.copilotUser.sub}`,
     allowedRegionIds: [region],
-    canWrite: req.copilotUser.role !== 'VIEWER',
+    canWrite: ['REGIONAL_MANAGER', 'PLATFORM_ADMIN'].includes(
+      req.copilotUser.role,
+    ),
   };
 }
 @Controller('api/admin/locations')

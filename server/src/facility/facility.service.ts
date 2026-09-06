@@ -55,7 +55,7 @@ export class FacilityService {
   }
 
   async getFacility(uri: string) {
-    const managed = await this.regionalData?.locationPublicOverride?.(uri);
+    const managed = await this.regionalData?.publicPlaceByCanonical?.(uri);
     const row=await this.facilityModel.findOne({ uri }).lean();
     if (managed) {
       const place = managed.place;

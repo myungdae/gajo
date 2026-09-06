@@ -75,6 +75,12 @@ function button(text) {
   );
 }
 async function click(text) {
+  // Wait for the observable control, including a lazy map's Suspense commit.
+  for (let n = 0; !button(text) && n < 100; n++) {
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+  }
   const node = button(text);
   assert(node, text);
   assert(!node.disabled, `${text} disabled`);
@@ -146,6 +152,11 @@ test("manager pin/candidate remain local until reviewed, explicit approval uses 
     );
     await settle();
     assert.match(document.body.textContent, /위치가 확인되지 않아/);
+    assert.match(
+      document.body.textContent,
+      /지도에 표시하려면 위치 확인이 필요합니다/,
+    );
+    assert.match(document.body.textContent, /검색·상세·전화 기능은 계속 이용/);
     await click("위치정보 보완");
     await settle();
     await click("fixture 지도 핀 이동");
@@ -158,6 +169,14 @@ test("manager pin/candidate remain local until reviewed, explicit approval uses 
     assert.equal(current.mapVisible, false);
     assert.match(document.body.textContent, /검토 대기/);
     assert.equal(button("승인").disabled, true);
+    assert.match(
+      document.body.textContent,
+      /승인하면 검토한 위치가 공개 지도·거리 계산·길찾기에 반영/,
+    );
+    assert.match(
+      document.body.textContent,
+      /승인 후 다른 수정이 생기면 복원할 수 없/,
+    );
     await edit("검토 사유", "출처와 지도 검토 완료");
     await edit(" 지도·출처", true);
     await click("승인");

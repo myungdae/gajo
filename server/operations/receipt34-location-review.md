@@ -1,5 +1,7 @@
 # 접수번호 34 — 장소 위치정보 검토
 
+후속 엄격 검토·수정 사항과 상세 호환 규칙은 [receipt34-strict-review.md](receipt34-strict-review.md)를 따른다. 이 기능은 검증된 현장정보를 공급하는 Regional Data Manager 기반 기능이다. 상황에 따른 REPLAN 선제 노출과 ACTION 연결은 접수번호 33의 별도 완료 기준이다.
+
 기준 main: `5a5c214267944789b9207913c1aab9b700d105a4`. 구현 브랜치: `codex/receipt34-location-review`.
 이 작업은 코드·격리 fixture 검증만 수행한다. 운영 데이터 변경, 재시드, 신규 장소 생성, Git push 및 운영 배포는 수행하지 않는다.
 

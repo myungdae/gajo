@@ -12,12 +12,17 @@ import { CopilotAuthService } from '../copilot/copilot-auth';
 import { RegionalDataService } from './regional-data.service';
 import { RegionConfigService } from '../region/region-config.service';
 import { FacilityService } from '../facility/facility.service';
+import { FacilityController } from '../facility/facility.controller';
 import { PlaceDiscoveryService } from '../concierge/place-discovery.service';
+import { REGIONAL_CANDIDATE_DATASETS } from '../regions/regional-candidate.registry';
+import { MasterDataService } from '../master-data/master-data.service';
 import {
   currentLocation,
   locationHash,
   locationProposal,
   validLocation,
+  approvedLocationUsable,
+  locationWarnings,
 } from './location-review.policy';
 
 const { ObjectId, EJSON, serialize, deserialize } = mongo.BSON;
@@ -129,7 +134,10 @@ function fixture(regionId = 'hapcheon') {
   const regional = new RegionalDataService(model),
     service = new LocationReviewService(model, regional, regions);
   const facility = new FacilityService(
-    { find: () => ({ sort: () => ({ lean: async () => [] }) }), findOne: () => ({ lean: async () => null }) } as any,
+    {
+      find: () => ({ sort: () => ({ lean: async () => [] }) }),
+      findOne: () => ({ lean: async () => null }),
+    } as any,
     {} as any,
     { mapEligiblePlaces: () => [], place: () => undefined } as any,
     regional,
@@ -258,7 +266,9 @@ describe('receipt 34 location contracts', () => {
         latitude: f.proposal.latitude,
         longitude: f.proposal.longitude,
       });
-      expect((await f.facility.getFacility(id)).literalProps.actions.navigate).toEqual(candidate.actions.navigate);
+      expect(
+        (await f.facility.getFacility(id)).literalProps.actions.navigate,
+      ).toEqual(candidate.actions.navigate);
       expect(candidate.canonicalLabelKo).toBe('유성가든식당');
       expect(f.target.proposedFacts.displayName).toBe('유성가든');
       expect(f.target.canonicalEntityId).toBe(id);
@@ -573,6 +583,279 @@ describe('receipt 34 location contracts', () => {
   });
 });
 
+describe('receipt 34 strict compatibility review', () => {
+  it('deduplicates the same proposal request, blocks a new request while pending, and allows a new reviewed cycle', async () => {
+    const f = fixture(),
+      body = await f.body({ proposal: f.proposal });
+    await f.service.action(f.actor, f.regionId, f.target.id, 'PROPOSE', body);
+    const at = f.target.locationReview.proposedAt;
+    await f.service.action(f.actor, f.regionId, f.target.id, 'PROPOSE', body);
+    expect(f.writes).toBe(1);
+    expect(f.target.locationReview.proposedAt).toBe(at);
+    await expect(f.propose()).rejects.toThrow();
+    expect(f.writes).toBe(1);
+    await f.act('REJECT', { reason: '추가 확인이 필요한 위치' });
+    await f.propose();
+    expect(f.writes).toBe(3);
+    expect(f.target.locationReview.verificationStatus).toBe('PROPOSED');
+    expect(
+      f.rows.filter((r) => r.canonicalEntityId === f.target.canonicalEntityId),
+    ).toHaveLength(1);
+  });
+  it.each(['gajo', 'hapcheon', 'okcheon'])(
+    'first review keeps curated public coordinates separate from unverified stored facts in %s',
+    async (regionId) => {
+      const f = fixture(regionId),
+        baseline = REGIONAL_CANDIDATE_DATASETS[regionId].records.find((p) =>
+          validLocation(p.actions?.navigate),
+        )!;
+      Object.assign(f.target, {
+        canonicalEntityId: baseline.entityUri,
+        verificationStatus: 'PARTIAL',
+        aliases: ['미승인 별칭'],
+        displayName: '미승인 대표명',
+      });
+      const read = async () =>
+        (await f.regional.effectiveDataset(regionId)).records.find(
+          (p) => p.entityUri === baseline.entityUri,
+        );
+      const before = await read();
+      expect(before.actions.navigate).toEqual(baseline.actions.navigate);
+      await f.propose();
+      expect(f.target.approvedLocation.compatibilityRule).toBe(
+        'CURATED_PUBLIC_LOCATION',
+      );
+      expect((await read()).actions.navigate).toEqual(before.actions.navigate);
+      await f.act('REJECT', { reason: '기존 공인 위치 유지' });
+      expect((await read()).actions.navigate).toEqual(before.actions.navigate);
+      expect((await read()).canonicalLabelKo).toBe(baseline.canonicalLabelKo);
+      expect((await read()).alternateLabels).not.toContain('미승인 별칭');
+      await f.propose();
+      await f.approve();
+      expect((await read()).canonicalLabelKo).toBe(baseline.canonicalLabelKo);
+      expect((await read()).alternateLabels).not.toContain('미승인 별칭');
+      expect(f.target.canonicalEntityId).toBe(baseline.entityUri);
+      await f.act('RESTORE', { reason: '이전 공인 위치 복원' });
+      expect((await read()).actions.navigate).toEqual(before.actions.navigate);
+    },
+  );
+  it('warns about a curated neighbor even when it has no mutable review document', async () => {
+    const f = fixture(),
+      baseline = REGIONAL_CANDIDATE_DATASETS.hapcheon.records.find((p) =>
+        validLocation(p.actions?.navigate),
+      )!;
+    const result = await f.service.preview(f.actor, f.regionId, f.target.id, {
+      ...f.proposal,
+      ...(baseline.actions.navigate as any),
+    });
+    expect(
+      result.warnings.duplicates.some(
+        (p) => p.canonicalEntityId === baseline.entityUri,
+      ),
+    ).toBe(true);
+    expect(f.writes).toBe(0);
+  });
+  it('uses explicit historical approval, never bare coordinates or pending evidence', () => {
+    const pair = { latitude: 35.5, longitude: 128 };
+    for (const verificationStatus of ['UNVERIFIED', 'PARTIAL', undefined]) {
+      expect(approvedLocationUsable({ ...pair, verificationStatus })).toBe(
+        false,
+      );
+      expect(
+        approvedLocationUsable({
+          ...pair,
+          verificationStatus,
+          fieldEvidence: {
+            coordinates: { status: 'PROPOSED', proposed: pair },
+          },
+        }),
+      ).toBe(false);
+    }
+    expect(
+      approvedLocationUsable({ ...pair, verificationStatus: 'VERIFIED' }),
+    ).toBe(true);
+    expect(
+      approvedLocationUsable({
+        ...pair,
+        verificationStatus: 'PARTIAL',
+        fieldEvidence: { coordinates: { status: 'APPROVED' } },
+      }),
+    ).toBe(true);
+    expect(
+      approvedLocationUsable({
+        ...pair,
+        verificationStatus: 'VERIFIED',
+        approvedLocation: { verificationStatus: 'UNVERIFIED' },
+      }),
+    ).toBe(false);
+  });
+  it('preserves coordinate-specific provenance and does not replace it with general place provenance', async () => {
+    const f = fixture();
+    Object.assign(f.target, f.proposal, { verificationStatus: 'PARTIAL' });
+    f.target.fieldEvidence = {
+      coordinates: {
+        status: 'APPROVED',
+        proposed: {
+          latitude: f.proposal.latitude,
+          longitude: f.proposal.longitude,
+        },
+        source: {
+          sourceType: 'FIELD_SURVEY',
+          sourceUrl: 'https://example.invalid/coordinate-evidence',
+        },
+        observedAt: '2026-09-01',
+      },
+    };
+    const evidence = clone(f.target.fieldEvidence.coordinates);
+    await f.propose();
+    expect(f.target.approvedLocation.sourceReference).toBe(
+      evidence.source.sourceUrl,
+    );
+    expect(f.target.approvedLocation.legacyEvidence).toEqual(evidence);
+    expect(f.target.approvedLocation.compatibilityRule).toBe(
+      'APPROVED_COORDINATE_FIELD',
+    );
+  });
+  it.each(['gajo', 'hapcheon', 'okcheon'])(
+    'retains every curated map identity before adoption, during proposals and after rejection in %s',
+    async (regionId) => {
+      const f = fixture(regionId),
+        base = REGIONAL_CANDIDATE_DATASETS[regionId];
+      f.rows.splice(0);
+      const master = new MasterDataService({} as any);
+      const facility = new FacilityService(
+        {
+          find: () => ({ sort: () => ({ lean: async () => [] }) }),
+          findOne: () => ({ lean: async () => null }),
+        } as any,
+        {} as any,
+        master,
+        f.regional,
+      );
+      const map = async () =>
+        (await facility.operationalPlaces(regionId))
+          .map((p) => ({
+            uri: p.uri,
+            latitude: p.latitude,
+            longitude: p.longitude,
+          }))
+          .sort((a, b) => a.uri.localeCompare(b.uri));
+      const baseline = await map();
+      expect(baseline.length).toBeGreaterThan(0);
+      // In-memory representation of the existing bootstrap contract, no reseed/DB writes.
+      for (const [index, p] of base.records.entries())
+        f.rows.push(
+          clone({
+            _id: new ObjectId(),
+            id: `compat-${index}`,
+            regionId,
+            canonicalEntityId: p.entityUri,
+            displayName: p.canonicalLabelKo,
+            aliases: [...p.alternateLabels],
+            latitude: p.latitude,
+            longitude: p.longitude,
+            address: p.address,
+            phone: p.telephone,
+            category: p.category,
+            source: p.source,
+            verificationStatus:
+              p.runtimeDataStatus === 'VERIFIED' ? 'VERIFIED' : 'UNVERIFIED',
+            lifecycleStatus: 'ACTIVE',
+            __v: 0,
+            updatedAt: new Date('2026-09-01'),
+            auditTrail: [],
+          }),
+        );
+      const rowsBefore = f.rows.map(locationHash);
+      expect(await map()).toEqual(baseline);
+      await f.service.list(f.actor, regionId);
+      expect(f.rows.map(locationHash)).toEqual(rowsBefore);
+      for (const existing of baseline) {
+        const row = f.rows.find((r) => r.canonicalEntityId === existing.uri);
+        const detail = await f.service.detail(f.actor, regionId, row.id);
+        expect(detail.needsLocationReview).toBe(false);
+        const proposal = {
+          ...f.proposal,
+          latitude: existing.latitude + 0.001,
+          longitude: existing.longitude,
+          normalizedAddress: row.address || 'fixture 주소 확인',
+        };
+        await f.service.action(f.actor, regionId, row.id, 'PROPOSE', {
+          proposal,
+          precondition: { ...detail.precondition, requestId: randomUUID() },
+        });
+        expect(await map()).toEqual(baseline);
+        expect(
+          (await facility.getFacility(existing.uri)).literalProps.actions
+            .navigate,
+        ).toEqual({
+          latitude: existing.latitude,
+          longitude: existing.longitude,
+        });
+        const pending = await f.service.detail(f.actor, regionId, row.id);
+        await f.service.action(f.actor, regionId, row.id, 'REJECT', {
+          reason: '기존 위치 유지 검토',
+          precondition: { ...pending.precondition, requestId: randomUUID() },
+        });
+        expect(await map()).toEqual(baseline);
+      }
+      expect(f.rows).toHaveLength(base.records.length);
+      console.log(
+        `R34 compatibility ${regionId}: ${baseline.length} -> ${(await map()).length}`,
+      );
+    },
+  );
+  it.each([
+    {},
+    { north: 36 },
+    { north: 35, south: 36, east: 129, west: 127 },
+    { north: 91, south: 33, east: 129, west: 127 },
+  ])('blocks malformed regional bounds %j', (bounds) => {
+    expect(
+      locationWarnings(
+        {},
+        { latitude: 35.5, longitude: 128 },
+        { bounds } as any,
+        [],
+      ).approvalBlocked,
+    ).toBe(true);
+  });
+  it('reports stale restoration as unavailable and retains complete decision audit', async () => {
+    const f = fixture();
+    await f.propose();
+    const proposed = clone(f.target.locationReview);
+    await f.approve();
+    expect((await f.detail()).canRestore).toBe(true);
+    await f.act('RESTORE', { reason: '오승인 확인 후 원복' });
+    await f.propose();
+    await f.act('REJECT', { reason: '근거 부족으로 반려' });
+    for (const action of ['APPROVE', 'RESTORE', 'REJECT']) {
+      const event = f.target.auditTrail.find(
+        (e) => e.action === `LOCATION_${action}`,
+      );
+      expect(event.actorId).toBe(f.actor.actorId);
+      expect(event.reason.length).toBeGreaterThanOrEqual(5);
+      expect(event.locationRequestId).toMatch(/^[\da-f-]{36}$/);
+      expect(Number.isFinite(Date.parse(event.at))).toBe(true);
+      expect(event).toHaveProperty('before');
+      expect(event).toHaveProperty('after');
+      expect(event.reviewedLocation).toMatchObject({
+        latitude: proposed.latitude,
+        longitude: proposed.longitude,
+        sourceReference: proposed.sourceReference,
+        proposedBy: proposed.proposedBy,
+        reason: proposed.reason,
+      });
+    }
+    const g = fixture();
+    await g.propose();
+    await g.approve();
+    g.target.phone = 'other change';
+    expect((await g.detail()).canRestore).toBe(false);
+    expect((await g.detail()).restoreBlocked).toBe(true);
+  });
+});
+
 describe('location HTTP authentication and region scope', () => {
   let app: any, f: any;
   const saved = {
@@ -594,9 +877,11 @@ describe('location HTTP authentication and region scope', () => {
       controllers: [
         AdminLocationReviewController,
         CopilotLocationReviewController,
+        FacilityController,
       ],
       providers: [
         { provide: LocationReviewService, useValue: f.service },
+        { provide: FacilityService, useValue: f.facility },
         { provide: CopilotAuthService, useValue: new CopilotAuthService() },
       ],
     }).compile();
@@ -618,6 +903,39 @@ describe('location HTTP authentication and region scope', () => {
     await request(app.getHttpServer())
       .get('/api/admin/locations?regionId=hapcheon')
       .expect(403);
+    for (const mode of ['APPROVE', 'REJECT', 'RESTORE']) {
+      await request(app.getHttpServer())
+        .post(
+          `/api/admin/locations/${f.target.id}/actions/${mode}?regionId=hapcheon`,
+        )
+        .set('x-admin-token', 'wrong')
+        .send({})
+        .expect(403);
+      await request(app.getHttpServer())
+        .post(
+          `/api/copilot/locations/${f.target.id}/actions/${mode}?regionId=hapcheon`,
+        )
+        .set('Authorization', 'Bearer invalid')
+        .send({})
+        .expect(401);
+      await request(app.getHttpServer())
+        .post(
+          `/api/copilot/locations/${f.target.id}/actions/${mode}?regionId=hapcheon`,
+        )
+        .set(
+          'Authorization',
+          `Bearer ${bearer('REGIONAL_MANAGER', ['okcheon'])}`,
+        )
+        .send({})
+        .expect(403);
+      await request(app.getHttpServer())
+        .post(
+          `/api/copilot/locations/${f.target.id}/actions/${mode}?regionId=hapcheon`,
+        )
+        .set('Authorization', `Bearer ${bearer('VIEWER', ['hapcheon'])}`)
+        .send({})
+        .expect(403);
+    }
     await request(app.getHttpServer())
       .get('/api/copilot/locations?regionId=hapcheon')
       .expect(401);
@@ -668,5 +986,68 @@ describe('location HTTP authentication and region scope', () => {
       .set('x-admin-token', 'fixture-admin')
       .expect(200);
     expect(f.writes).toBe(0);
+  });
+  it('public HTTP detail/call survive all states and scoped manager approval alone changes map inclusion', async () => {
+    const server = app.getHttpServer(),
+      canonical = f.target.canonicalEntityId;
+    const read = async (mapped: boolean) => {
+      const detail = await request(server)
+        .get(`/api/facilities/${encodeURIComponent(canonical)}`)
+        .expect(200);
+      expect(detail.body.uri).toBe(canonical);
+      expect(detail.body.label).toBe('유성가든식당');
+      expect(detail.body.literalProps.telephone).toBe('055-933-7055');
+      expect(Boolean(detail.body.literalProps.actions.navigate)).toBe(mapped);
+      const list = await request(server)
+        .get('/api/facilities?regionId=hapcheon')
+        .expect(200);
+      expect(list.body.filter((p) => p.uri === canonical)).toHaveLength(1);
+      const map = await request(server)
+        .get('/api/operational-places?regionId=hapcheon')
+        .expect(200);
+      expect(map.body.filter((p) => p.uri === canonical)).toHaveLength(
+        mapped ? 1 : 0,
+      );
+      for (const response of [detail, list, map]) {
+        expect(JSON.stringify(response.body)).not.toMatch(
+          /locationReview|proposedBy|locationRollback|locationRequestId/,
+        );
+      }
+      const search = new PlaceDiscoveryService(f.regional);
+      const result = await search.discover('hapcheon', 'FOOD', '유성가든식당', {
+        latitude: f.proposal.latitude + 0.001,
+        longitude: f.proposal.longitude,
+      });
+      const found = result.entities.find((e) => e.entityId === canonical);
+      expect(found).toBeDefined();
+      expect(found.distanceMeters !== undefined).toBe(mapped);
+      return map.body.length;
+    };
+    const before = await read(false);
+    await f.propose();
+    expect(await read(false)).toBe(before);
+    const approval = await f.body({
+      reason: '담당 지역 위치 최종 검토',
+      reviewConfirmed: true,
+    });
+    await request(server)
+      .post(
+        `/api/copilot/locations/${f.target.id}/actions/APPROVE?regionId=hapcheon`,
+      )
+      .set(
+        'Authorization',
+        `Bearer ${bearer('REGIONAL_MANAGER', ['hapcheon'])}`,
+      )
+      .send(approval)
+      .expect(201);
+    expect(await read(true)).toBe(before + 1);
+    await f.act('RESTORE', { reason: '위치 오승인 확인 후 복원' });
+    expect(await read(false)).toBe(before);
+    await f.propose();
+    await f.act('REJECT', { reason: '근거 부족으로 위치 반려' });
+    expect(await read(false)).toBe(before);
+    expect(
+      f.rows.filter((r) => r.canonicalEntityId === canonical),
+    ).toHaveLength(1);
   });
 });

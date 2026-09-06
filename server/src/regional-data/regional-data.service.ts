@@ -435,12 +435,12 @@ export class RegionalDataService implements OnModuleInit {
       place: records.find(p => p.entityUri === r.canonicalEntityId),
     }));
   }
-  async locationPublicOverride(canonicalEntityId: string) {
+  async publicPlaceByCanonical(canonicalEntityId: string) {
     const rows: any[] = await this.model.find({ canonicalEntityId }).lean();
-    const managed = rows.filter(r => r.locationReview || r.approvedLocation);
-    if (!managed.length) return undefined;
+    // The public detail endpoint must work before the first location proposal too.
+    if (!rows.length) return undefined;
     if (rows.length !== 1) return { place: undefined };
-    const records = (await this.effectiveDataset(managed[0].regionId))?.records || [];
+    const records = (await this.effectiveDataset(rows[0].regionId))?.records || [];
     return { place: records.find(p => p.entityUri === canonicalEntityId) };
   }
   async operationalReadiness(regionId: string) {

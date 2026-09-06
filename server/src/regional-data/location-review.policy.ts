@@ -62,12 +62,52 @@ export function currentLocation(row: any) {
     : undefined;
 }
 export function approvedLocationUsable(row: any) {
+  // Historical RDM contract: an approved coordinate field or VERIFIED current
+  // facts, never a bare numeric pair, establish approval. Curated baselines keep
+  // their own provenance contract and are handled through their public projection.
   return (
     Boolean(currentLocation(row)) &&
     (row.approvedLocation !== undefined
       ? row.approvedLocation?.verificationStatus === 'APPROVED'
       : row.verificationStatus === 'VERIFIED' ||
         row.fieldEvidence?.coordinates?.status === 'APPROVED')
+  );
+}
+export function locationSnapshot(row: any, publicPlace?: any): any {
+  if (row.approvedLocation !== undefined) return row.approvedLocation;
+  const field = row.fieldEvidence?.coordinates;
+  const currentApproved = approvedLocationUsable(row);
+  const curated =
+    publicPlace?.entityUri === row.canonicalEntityId &&
+    validLocation(publicPlace?.actions?.navigate);
+  if (!currentApproved && !curated) return { verificationStatus: 'UNVERIFIED' };
+  const source = currentApproved
+    ? field?.status === 'APPROVED'
+      ? field.source
+      : row.source
+    : publicPlace.coordinateSource || publicPlace.source;
+  return {
+    ...(currentApproved ? currentLocation(row) : publicPlace.actions.navigate),
+    verificationStatus: 'APPROVED',
+    legacy: true,
+    compatibilityRule: currentApproved
+      ? field?.status === 'APPROVED'
+        ? 'APPROVED_COORDINATE_FIELD'
+        : 'VERIFIED_CURRENT_FACTS'
+      : 'CURATED_PUBLIC_LOCATION',
+    sourceType: source?.sourceType || null,
+    sourceReference: source?.sourceUrl || null,
+    legacyEvidence:
+      currentApproved && field?.status === 'APPROVED' ? field : source || null,
+  };
+}
+export function canRestoreLocation(row: any) {
+  const withoutRollback = { ...row };
+  delete withoutRollback.locationRollback;
+  return Boolean(
+    row.locationRollback &&
+    row.__v === row.locationRollback.approvedVersion &&
+    stableLocationHash(withoutRollback) === row.locationRollback.postHash,
   );
 }
 function requiredText(value: unknown, name: string, min = 1, max = 500) {
@@ -138,9 +178,21 @@ export function locationWarnings(
   others: any[],
 ) {
   const bounds = config.bounds;
-  const boundaryKnown = bounds && Object.values(bounds).every(Number.isFinite);
+  const boundaryKnown = Boolean(
+    bounds &&
+    [bounds.north, bounds.south, bounds.east, bounds.west].every(
+      Number.isFinite,
+    ) &&
+    bounds.north > bounds.south &&
+    bounds.east > bounds.west &&
+    bounds.north <= 90 &&
+    bounds.south >= -90 &&
+    bounds.east <= 180 &&
+    bounds.west >= -180,
+  );
   const outside =
     validLocation(candidate) &&
+    bounds &&
     boundaryKnown &&
     (candidate.latitude > bounds.north ||
       candidate.latitude < bounds.south ||
