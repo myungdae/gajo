@@ -2,6 +2,10 @@
 
 This runbook is a design and dry-run checklist. It does not authorize a production write.
 
+For the already-deployed receipt 32 close stage, use the single-script commands in
+[receipt32-close-ops-runbook.md](receipt32-close-ops-runbook.md). They replace the
+long inline preparation function and do not repeat the historical core alignment.
+
 ## Local final identity review (2026-09-06)
 
 This review runs only local tests and a local server build. No production connection,
