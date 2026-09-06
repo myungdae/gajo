@@ -58,9 +58,7 @@ export class AdminTokenGuard implements CanActivate {
     const authorization = String(request.headers.authorization || '');
     const bearer = authorization.startsWith('Bearer ')
       ? authorization.slice(7)
-      : legacy && legacy !== configured
-        ? legacy
-        : '';
+      : '';
     if (!bearer) throw new ForbiddenException('Invalid admin token');
 
     const secret = process.env.COPILOT_JWT_SECRET;
