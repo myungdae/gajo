@@ -8,7 +8,18 @@ export const api = axios.create({
   baseURL: "/api",
   headers: { "Content-Type": "application/json" },
 });
-api.interceptors.request.use((config)=>visitorLocaleRequest(config,currentVisitorLocale()));
+api.interceptors.request.use((config) => {
+  const sessionToken =
+    typeof sessionStorage === 'undefined'
+      ? ''
+      : sessionStorage.getItem('copilot-access-token') || '';
+  const suppliedAdminToken = String(config.headers?.['x-admin-token'] || '');
+  if (sessionToken && suppliedAdminToken === sessionToken) {
+    delete config.headers['x-admin-token'];
+    config.headers.Authorization = `Bearer ${sessionToken}`;
+  }
+  return visitorLocaleRequest(config, currentVisitorLocale());
+});
 
 export interface CompanionInput {
   age?: number;
