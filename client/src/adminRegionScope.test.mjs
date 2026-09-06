@@ -122,8 +122,58 @@ for (const entry of ['/admin', '/hapcheon/admin'])
       const passwordInput = document.querySelector('input[name="password"]');
       assert(usernameInput, 'username input');
       assert(passwordInput, 'password input');
-      assert.equal(usernameInput.autocomplete || usernameInput.getAttribute('autocomplete'), 'username');
-      assert.equal(passwordInput.autocomplete || passwordInput.getAttribute('autocomplete'), 'current-password');
+      const usernameProps = usernameInput[Object.keys(usernameInput).find((key) => key.startsWith('__reactProps
+      await change('input[name="username"]', 'manager');
+      await change('input[name="password"]', 'secret');
+      const form = document.querySelector('form');
+      const props = form[Object.keys(form).find((key) => key.startsWith('__reactProps$'))];
+      await act(async () => props.onSubmit({ preventDefault() {} }));
+      await settle();
+
+      assert.equal(values.get('copilot-access-token'), 'fixture-jwt');
+      assert.equal(values.has('admin-write-token'), false);
+      if (entry === '/admin') await change('select[aria-label="관리 지역"]', 'hapcheon');
+      assert.match(document.body.textContent, /현재 관리 지역: 합천/);
+      assert.match(document.body.textContent, /합천 업소 관리/);
+
+      await change('select[aria-label="관리 지역"]', 'gyeryong');
+      assert.equal(router.state.location.pathname, '/admin');
+      assert.equal(new URLSearchParams(router.state.location.search).get('regionId'), 'gyeryong');
+      assert.match(document.body.textContent, /현재 관리 지역: 계룡/);
+      assert(calls.filter((call) => call.region).every((call) => call.region === 'hapcheon' || call.region === 'gyeryong'));
+    } finally {
+      await act(async () => root.unmount());
+      router.dispose();
+    }
+  });
+))];
+      const passwordProps = passwordInput[Object.keys(passwordInput).find((key) => key.startsWith('__reactProps
+      await change('input[name="username"]', 'manager');
+      await change('input[name="password"]', 'secret');
+      const form = document.querySelector('form');
+      const props = form[Object.keys(form).find((key) => key.startsWith('__reactProps$'))];
+      await act(async () => props.onSubmit({ preventDefault() {} }));
+      await settle();
+
+      assert.equal(values.get('copilot-access-token'), 'fixture-jwt');
+      assert.equal(values.has('admin-write-token'), false);
+      if (entry === '/admin') await change('select[aria-label="관리 지역"]', 'hapcheon');
+      assert.match(document.body.textContent, /현재 관리 지역: 합천/);
+      assert.match(document.body.textContent, /합천 업소 관리/);
+
+      await change('select[aria-label="관리 지역"]', 'gyeryong');
+      assert.equal(router.state.location.pathname, '/admin');
+      assert.equal(new URLSearchParams(router.state.location.search).get('regionId'), 'gyeryong');
+      assert.match(document.body.textContent, /현재 관리 지역: 계룡/);
+      assert(calls.filter((call) => call.region).every((call) => call.region === 'hapcheon' || call.region === 'gyeryong'));
+    } finally {
+      await act(async () => root.unmount());
+      router.dispose();
+    }
+  });
+))];
+      assert.equal(usernameProps.autoComplete, 'username');
+      assert.equal(passwordProps.autoComplete, 'current-password');
       await change('input[name="username"]', 'manager');
       await change('input[name="password"]', 'secret');
       const form = document.querySelector('form');
