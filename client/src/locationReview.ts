@@ -72,16 +72,22 @@ export async function locationRequest(
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       signal: AbortSignal.timeout(15000),
     },
-  );
+  ).catch(() => { throw new Error("서버에 연결하지 못했습니다. 네트워크를 확인한 뒤 다시 시도해 주세요."); });
   if (!response.ok)
     throw new Error(
       response.status === 409
         ? "다른 변경과 충돌했습니다. 새로 불러온 내용을 검토해 주세요."
-        : response.status === 401 || response.status === 403
-          ? "이 지역의 관리자 권한을 확인해 주세요."
+        : response.status === 401
+          ? "로그인 인증이 만료되었거나 유효하지 않습니다 (401). 다시 로그인해 주세요."
+          : response.status === 403
+            ? "이 지역의 위치정보 관리 권한이 없습니다 (403). 담당 지역과 계정 권한을 확인해 주세요."
           : "요청을 처리하지 못했습니다. 좌표·출처·지역 경계와 검토 상태를 확인해 주세요.",
     );
-  return response.json();
+  try {
+    return await response.json();
+  } catch {
+    throw new Error("서버 응답을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+  }
 }
 export const locationStatusLabels: Record<string, string> = {
   PROPOSED: "검토 대기",

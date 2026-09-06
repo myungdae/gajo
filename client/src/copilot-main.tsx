@@ -34,6 +34,7 @@ function App() {
             JSON.stringify(value.principal),
           );
           setToken(value.accessToken);
+          window.dispatchEvent(new Event("copilot-session-change"));
           setPrincipal(value.principal);
         }}
       />
@@ -45,6 +46,7 @@ function App() {
         sessionStorage.removeItem("copilot-access-token");
         sessionStorage.removeItem("copilot-principal");
         setToken(null);
+        window.dispatchEvent(new Event("copilot-session-change"));
         setPrincipal(null);
       }}
     />

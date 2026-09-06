@@ -12,7 +12,7 @@ const {default: AdminPage} = await vite.ssrLoadModule('/src/pages/AdminPage.tsx'
 const {RegionProvider} = await vite.ssrLoadModule('/src/RegionContext.tsx');
 const {api} = await vite.ssrLoadModule('/src/api/client.ts');
 const {window,document}=parseHTML('<html><body><div id="root"></div></body></html>');
-const values=new Map([['admin-write-token','fixture-token']]);
+const values=new Map([['copilot-access-token','fixture-jwt']]);
 const storage={getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k)};
 Object.assign(window,{location:{hostname:'localhost',pathname:'/gajo/admin',search:'',href:'http://localhost/gajo/admin'},matchMedia:()=>({matches:false,addEventListener(){},removeEventListener(){}})});
 window.HTMLElement.prototype.scrollIntoView=()=>{};
@@ -39,6 +39,8 @@ for(const width of [1440,390])test(`one URL scope for full administrator layout 
     return{data,status:200,statusText:'OK',headers:{},config};
   };
   globalThis.fetch=async(url,init)=>{
+    assert.equal(init.headers.Authorization,'Bearer fixture-jwt');
+    assert.equal(init.headers['x-admin-token'],undefined);
     const parsed=new URL(url,'http://localhost');const region=parsed.searchParams.get('regionId');calls.push({path:parsed.pathname,region,method:init?.method||'GET'});
     if(parsed.pathname.includes('/locations/location-gajo'))return new Promise(resolve=>{resolveOld=resolve;});
     return{ok:true,json:async()=>parsed.pathname.includes('/locations/location-')?place(region):{records:[place(region)]}};
@@ -49,6 +51,8 @@ for(const width of [1440,390])test(`one URL scope for full administrator layout 
   try{
     await act(async()=>root.render(React.createElement(RouterProvider,{router})));await settle();
     assert.match(document.body.textContent,/현재 관리 지역: 가조/);
+    assert(!document.body.textContent.includes('위치정보 관리자 토큰'));
+    assert(calls.some(c=>c.path==='/api/copilot/locations'));
     assert.equal(document.querySelectorAll('select[aria-label="지역"]').length,0);
     await click('위치정보 보완');assert(resolveOld);
     let start=calls.length;await select('hapcheon');

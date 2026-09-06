@@ -981,6 +981,16 @@ describe('location HTTP authentication and region scope', () => {
       )
       .expect(200);
     expect(response.body.records[0].canWrite).toBe(true);
+    const missing = await request(app.getHttpServer())
+      .get('/api/copilot/locations?regionId=hapcheon&missingOnly=true')
+      .set('Authorization', `Bearer ${bearer('REGIONAL_MANAGER', ['hapcheon'])}`)
+      .expect(200);
+    expect(missing.body.records.filter((r: any) => r.canonicalEntityId === f.target.canonicalEntityId))
+      .toEqual([expect.objectContaining({ displayName: '유성가든식당', mapVisible: false, canWrite: true })]);
+    await request(app.getHttpServer())
+      .get('/api/copilot/locations?regionId=hapcheon&missingOnly=true')
+      .set('Authorization', 'Bearer invalid-token')
+      .expect(401);
     await request(app.getHttpServer())
       .get('/api/admin/locations?regionId=hapcheon')
       .set('x-admin-token', 'fixture-admin')

@@ -54,9 +54,10 @@ export default function LocationReviewManager({
   copilotToken?: string;
 }) {
   const [token, setToken] = useState(
-      () => sessionStorage.getItem("admin-write-token") || "",
+      () => sessionStorage.getItem("copilot-access-token") || "",
     ),
     [missing, setMissing] = useState(true),
+    [listState, setListState] = useState<"idle" | "loading" | "loaded" | "error">("idle"),
     [rows, setRows] = useState<any[]>([]),
     [selected, setSelected] = useState<any>(),
     [form, setForm] = useState<LocationForm>(empty),
@@ -71,10 +72,20 @@ export default function LocationReviewManager({
   const epoch = useRef(0),
     lock = useRef(false);
   const auth = {
-    kind:
-      copilotToken === undefined ? ("admin" as const) : ("copilot" as const),
+    kind: "copilot" as const,
     token: copilotToken ?? token,
   };
+  useEffect(() => {
+    const refresh = () => setToken(sessionStorage.getItem("copilot-access-token") || "");
+    window.addEventListener("focus", refresh);
+    window.addEventListener("storage", refresh);
+    window.addEventListener("copilot-session-change", refresh);
+    return () => {
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("storage", refresh);
+      window.removeEventListener("copilot-session-change", refresh);
+    };
+  }, []);
   const resetSelection = () => {
     setSelected(undefined);
     setPreview(undefined);
@@ -112,13 +123,16 @@ export default function LocationReviewManager({
     setRows([]);
     setError("");
     setNotice("");
+    setListState("idle");
     if (!auth.token || !regionId) return;
+    setListState("loading");
     locationRequest(auth, regionId, `?missingOnly=${missing}`)
       .then((data) => {
-        if (version === epoch.current) setRows(data.records);
+        if (!Array.isArray(data?.records)) throw new Error("장소 목록 응답을 확인하지 못했습니다. 다시 시도해 주세요.");
+        if (version === epoch.current) { setRows(data.records); setListState("loaded"); }
       })
       .catch((e) => {
-        if (version === epoch.current) setError(e.message);
+        if (version === epoch.current) { setError(e.message); setListState("error"); }
       });
     return () => {
       epoch.current++;
@@ -208,17 +222,9 @@ export default function LocationReviewManager({
         기존 장소의 위치만 보완합니다. 지도·거리·길찾기에는 승인된 좌표만
         반영됩니다.
       </p>
-      {copilotToken === undefined && (
-        <label>
-          위치정보 관리자 토큰
-          <input
-            type="password"
-            autoComplete="off"
-            value={token}
-            onChange={(e) => setToken(e.target.value)}
-          />
-        </label>
-      )}
+      {!auth.token && <p role="alert">로그인이 필요합니다. Regional Manager 계정으로 로그인한 뒤 다시 열어 주세요.</p>}
+      {!regionId && <p role="alert">관리 지역을 선택해 주세요.</p>}
+      {listState === "loading" && <p role="status">장소 목록을 불러오는 중입니다.</p>}
       <label>
         <input
           type="checkbox"
@@ -268,7 +274,7 @@ export default function LocationReviewManager({
           </li>
         ))}
       </ul>
-      {auth.token && rows.length === 0 && !error && (
+      {auth.token && listState === "loaded" && rows.length === 0 && !error && (
         <p>
           해당 조건의 장소가 없습니다. 좌표가 잘못된 장소는 전체 목록에서 확인해
           주세요.

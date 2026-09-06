@@ -41,6 +41,51 @@ Object.defineProperty(globalThis, "navigator", {
   value: window.navigator,
 });
 const savedFetch = globalThis.fetch;
+test("session-only list separates absent login, loading, 401, 403, network, empty and Yuseong", async () => {
+  for (const scenario of ["missing", "loading", 401, 403, "network", "malformed", "shape", "empty", "place"]) {
+    sessionStorage.getItem = key => key === "admin-write-token" ? "must-not-use-legacy" : key === "copilot-access-token" && scenario !== "missing" ? "session-jwt" : "";
+    const calls = [];
+    globalThis.fetch = async (url, init) => {
+      calls.push({url, init});
+      if (scenario === "loading") return new Promise(() => {});
+      if (scenario === "network") throw Error("secret raw connection data");
+      if (typeof scenario === "number") return {ok:false,status:scenario};
+      if (scenario === "malformed") return {ok:true,json:async()=>{throw Error("secret raw response");}};
+      if (scenario === "shape") return {ok:true,json:async()=>({})};
+      return {ok:true,json:async()=>({records:scenario==="place"?[row()]:[]})};
+    };
+    document.body.innerHTML='<div id="root"></div>';
+    const root=createRoot(document.querySelector("#root"));
+    try {
+      await act(async()=>root.render(React.createElement(Manager,{regionId:"hapcheon"})));
+      await act(async()=>{await new Promise(r=>setTimeout(r,0));});
+      const text=document.body.textContent;
+      assert(!text.includes("위치정보 관리자 토큰"));
+      assert(!text.includes("secret raw"));
+      assert.equal(text.includes("해당 조건의 장소가 없습니다"),scenario==="empty");
+      if(scenario==="missing"){assert.match(text,/로그인이 필요/);assert.equal(calls.length,0);}
+      else {
+        assert.equal(calls.length,1);
+        assert.equal(calls[0].init.headers.Authorization,"Bearer session-jwt");
+        assert.equal(calls[0].init.headers["x-admin-token"],undefined);
+        assert.equal(calls[0].url,"/api/copilot/locations?missingOnly=true&regionId=hapcheon");
+        assert.equal(calls[0].init.method,"GET");
+      }
+      if(scenario==="loading")assert.match(text,/목록을 불러오는 중/);
+      if(scenario===401)assert.match(text,/401.*다시 로그인/);
+      if(scenario===403)assert.match(text,/403.*담당 지역/);
+      if(scenario==="network")assert.match(text,/서버에 연결하지 못/);
+      if(scenario==="malformed" || scenario==="shape")assert.match(text,/응답을 확인하지 못/);
+      if(scenario==="place"){
+        assert.match(text,/유성가든식당/);
+        sessionStorage.getItem=()=>"";
+        await act(async()=>window.dispatchEvent(new Event("copilot-session-change")));
+        assert(!document.body.textContent.includes("유성가든식당"));
+        assert.match(document.body.textContent,/로그인이 필요/);
+      }
+    } finally {await act(async()=>root.unmount());}
+  }
+});
 after(() => {
   globalThis.fetch = savedFetch;
 });
