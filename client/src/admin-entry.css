@@ -1,0 +1,6 @@
+.admin-entry{max-width:1200px;margin:0 auto;padding:24px;overflow-wrap:anywhere}
+.admin-entry>section label{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:12px 0}
+.admin-entry>section input,.admin-entry>section select{min-height:44px;max-width:100%;box-sizing:border-box}
+.admin-entry .location-review-manager>label{display:flex;align-items:center;gap:8px}
+.admin-entry input[type="checkbox"]{width:auto}
+@media(max-width:600px){.admin-entry{padding:12px}.admin-entry>section label{align-items:stretch;flex-direction:column}}

@@ -18,20 +18,20 @@ export class BusinessRegistrationService {
   }
   async duplicates(principal: AdminPrincipal, regionId: string, raw: any, excluding?: string) {
     businessScope(principal,regionId);
-    const fields = businessInput(raw), keys = businessIdentity(fields);
+    const fields = businessInput(raw), keys = businessIdentity(fields,regionId);
     const rows: any[] = await this.rows.find({regionId}).lean();
-    const all = [...rows.map(r => ({...r,...r.registration?.input})), ...REGIONAL_CANDIDATE_DATASETS.hapcheon.records.map(r => ({...r,displayName:r.canonicalLabelKo,canonicalEntityId:r.entityUri}))];
-    return [...new Map(all.filter(r => (!excluding || r.id !== excluding) && businessIdentity(r).some(k => keys.includes(k))).map(r => [r.canonicalEntityId,{id:r.id,displayName:r.displayName,address:r.address,canonicalEntityId:r.canonicalEntityId}])).values()];
+    const all = [...rows.map(r => ({...r,...r.registration?.input})), ...(REGIONAL_CANDIDATE_DATASETS[regionId]?.records || []).map(r => ({...r,displayName:r.canonicalLabelKo,canonicalEntityId:r.entityUri}))];
+    return [...new Map(all.filter(r => (!excluding || r.id !== excluding) && businessIdentity(r,regionId).some(k => keys.includes(k))).map(r => [r.canonicalEntityId,{id:r.id,displayName:r.displayName,address:r.address,canonicalEntityId:r.canonicalEntityId}])).values()];
   }
   async create(principal: AdminPrincipal, regionId: string, raw: any) {
     businessScope(principal,regionId); const input = businessInput(raw);
     const duplicates = await this.duplicates(principal,regionId,input);
     if (duplicates.length) throw new ConflictException({message:'중복 후보가 있습니다. 등록된 업소를 확인해 주세요.',duplicates});
-    const id = `hapcheon-business-${randomUUID()}`, at = new Date().toISOString();
+    const id = `${regionId}-business-${randomUUID()}`, at = new Date().toISOString();
     try { return await this.rows.create({id,canonicalEntityId:`urn:regional-business:${id}`,regionId,
       displayName:input.displayName, entityType:businessFacts(input).entityType,category:businessFacts(input).category,
       proposedFacts:businessFacts(input),source:{sourceType:'OFFICIAL_BUSINESS',sourceUrl:input.sourceUrl,verifiedAt:input.verifiedOn},
-      lifecycleStatus:'NEW_CANDIDATE',verificationStatus:'UNVERIFIED',registration:{revision:1,input},registrationKeys:businessIdentity(input),
+      lifecycleStatus:'NEW_CANDIDATE',verificationStatus:'UNVERIFIED',registration:{revision:1,input},registrationKeys:businessIdentity(input,regionId),
       auditTrail:[{action:'BUSINESS_CREATED',actorId:principal.actorId,regionId,at}]});
     } catch (e) { if (e.code === 11000) throw new ConflictException('다른 관리자가 같은 업소를 등록했습니다. 다시 검색해 주세요.'); throw e; }
   }
@@ -45,7 +45,7 @@ export class BusinessRegistrationService {
       const input = businessInput(body.input);
       if ((await this.duplicates(principal,regionId,input,id)).length) throw new ConflictException('중복 업소를 확인해 주세요.');
       registration = {...registration,input,reviewedFingerprint:null};
-      fields = {displayName:input.displayName,proposedFacts:businessFacts(input),registrationKeys:businessIdentity(input),
+      fields = {displayName:input.displayName,proposedFacts:businessFacts(input),registrationKeys:businessIdentity(input,regionId),
         source:{sourceType:'OFFICIAL_BUSINESS',sourceUrl:input.sourceUrl,verifiedAt:input.verifiedOn},lifecycleStatus:'NEEDS_VERIFICATION',verificationStatus:'REVERIFY_REQUIRED'};
     } else if (action === 'VERIFY') {
       if (body.confirmed !== true) throw new BadRequestException('공식 근거와 기본정보를 명시적으로 확인해 주세요.');

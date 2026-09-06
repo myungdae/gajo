@@ -28,6 +28,7 @@ import { validVisitorContent } from '../i18n/place-content';
 import { atomicIgnoreChange, prepareIgnoreChange, IgnoreChangePrecondition } from './ignore-change';
 import { candidateObservation, requireObservationIndex, upsertObservation } from './candidate-observation';
 import { approvedLocationUsable, currentLocation } from './location-review.policy';
+import { RegionConfigService } from '../region/region-config.service';
 const SOURCE_TYPES = new Set([
   'OFFICIAL_LOCAL_GOV',
   'OFFICIAL_BUSINESS',
@@ -351,7 +352,11 @@ export class RegionalDataService implements OnModuleInit {
     });
   }
   async effectiveDataset(regionId: string) {
-    const base = REGIONAL_CANDIDATE_DATASETS[regionId];
+    const config = new RegionConfigService().tryGet(regionId);
+    const base = REGIONAL_CANDIDATE_DATASETS[regionId] || (config ? {
+      regionId, namespace: config.ontologyNamespace, records: [],
+      interestAliases: {}, interestLabels: {}, reasonSummary: '',
+    } : undefined);
     if (!base) return undefined;
     const regionalRows: any[] = await this.model.find({ regionId }).lean();
     const overrides = regionalRows.filter(

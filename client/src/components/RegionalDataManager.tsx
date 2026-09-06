@@ -6,21 +6,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { exportRegionalData,fetchRegionalData,importRegionalData,previewRegionalDataImport,regionalDataAction } from "../api/client";
 import { reviewActionsFor } from "../regionalDataReview";
 import { regionalActionError } from "../adminActionFeedback";
-const REGIONS = {
-  gajo: "가조",
-  okcheon: "옥천",
-  muan: "무안",
-  gyeryong: "계룡",
-  hapcheon: "합천",
-  "daejeon-junggu": "대전 중구",
-} as Record<string, string>;
+
 const SOURCE_LABELS:Record<string,string>={OFFICIAL_LOCAL_GOV:"지자체 공식 정보",OFFICIAL_BUSINESS:"공식 사업자",KTO:"한국관광공사",OFFICIAL_MAP_LISTING:"공식 지도 정보",OTHER_VERIFIED_SOURCE:"기타 검증 출처"};
 const LIFECYCLE_LABELS:Record<string,string>={NEW_CANDIDATE:"신규 등록",NEEDS_VERIFICATION:"정보 검수 필요",APPROVED:"검수 완료 · 비공개",ACTIVE:"공개 중",CHANGE_DETECTED:"변경사항 확인 필요",REJECTED:"등록 반려",ARCHIVED:"보관됨"};
 const VERIFICATION_LABELS:Record<string,string>={UNVERIFIED:"미검증",PARTIAL:"부분 확인",VERIFIED:"검증 완료",REVERIFY_REQUIRED:"재검증 필요"};
 const ENTITY_TYPE_LABELS:Record<string,string>={ACCOMMODATION:"숙박",PENSION:"펜션",GLAMPING:"글램핑",CAMPING:"캠핑",CAFE:"카페",RESTAURANT:"식당",ATTRACTION:"관광지",EXPERIENCE:"체험",TOURISM_NATURE:"자연 관광",TOURISM_CULTURE:"문화 관광"};
 const statusLabel=(value:string|undefined,labels:Record<string,string>)=>value?(labels[value]||value):"미정";
 const FIELD_LABELS:Record<string,string>={displayName:"이름",aliases:"별칭",entityType:"엔티티 유형",category:"카테고리",tags:"의미 태그",areaLabel:"권역",phone:"전화",address:"주소",latitude:"위도",longitude:"경도",websiteUrl:"홈페이지",reservationUrl:"예약 URL",operatingHours:"운영시간",closureDays:"휴무일",parking:"주차",accessibility:"접근성",walkingAccess:"보행 특성",shortDescription:"설명"};
-function LegacyRegionalDataManager({onAdminTokenChange,initialRegionId=""}:{onAdminTokenChange?:(token:string)=>void;initialRegionId?:string}={}) {
+function LegacyRegionalDataManager({adminToken:token,initialRegionId=""}:{adminToken:string;initialRegionId?:string}) {
+  const region=useRegion();
   const [data, setData] = useState<any>({ records: [], quality: {} }),
     [localFilters, setFilters] = useState({
       lifecycleStatus: "",
@@ -28,9 +22,6 @@ function LegacyRegionalDataManager({onAdminTokenChange,initialRegionId=""}:{onAd
       verificationStatus: "",
     }),
     [selected, setSelected] = useState<any>(),
-    [token, setToken] = useState(
-      () => sessionStorage.getItem("admin-write-token") || "",
-    ),
     [error, setError] = useState(""),[notice,setNotice]=useState(""),[importPackage,setImportPackage]=useState<any>(),[importPreview,setImportPreview]=useState<any>(),[trustedImport,setTrustedImport]=useState(false);
   const reviewRef=useRef<HTMLDivElement>(null), loadVersion=useRef(0);
   const filters = { ...localFilters, regionId: initialRegionId };
@@ -116,7 +107,7 @@ function LegacyRegionalDataManager({onAdminTokenChange,initialRegionId=""}:{onAd
         ))}
       </div>
       <div className="regional-data-filters">
-        <p>검수 지역: {REGIONS[initialRegionId] || initialRegionId} · 지역 변경은 상단 관리 지역에서 선택해 주세요.</p>
+        <p>검수 지역: {region.regionName || initialRegionId} · 지역 변경은 상단 관리 지역에서 선택해 주세요.</p>
         <select
           aria-label="상태"
           value={filters.lifecycleStatus}
@@ -166,9 +157,8 @@ function LegacyRegionalDataManager({onAdminTokenChange,initialRegionId=""}:{onAd
       </div>
       <section className="regional-transfer" aria-label="데이터 관리">
         <h3>데이터 관리</h3><p className="text-muted">기본 가져오기는 방문객에게 보이지 않는 검증 대기 상태입니다.</p>
-        <input type="password" value={token} onChange={e=>{setToken(e.target.value);sessionStorage.setItem("admin-write-token",e.target.value);onAdminTokenChange?.(e.target.value)}} placeholder="관리자 쓰기 토큰" aria-label="데이터 관리 관리자 쓰기 토큰"/>
         <div className="regional-transfer-actions"><button className="btn btn-outline" onClick={exportData}>운영 데이터 내보내기</button><label className="btn btn-outline">데이터 가져오기<input type="file" accept="application/json,.json" onChange={e=>void chooseImport(e.target.files?.[0])}/></label></div>
-        {importPackage&&<div className="regional-import-review"><p>지역: <b>{REGIONS[importPackage.regionId]||importPackage.regionId}</b> · 레코드: <b>{importPackage.records?.length??0}</b> · 스키마: <b>{importPackage.schemaVersion||"-"}</b></p><label><input type="checkbox" checked={trustedImport} onChange={e=>{setTrustedImport(e.target.checked);setImportPreview(undefined)}}/> 신뢰된 검증 데이터로 즉시 가져오기</label><button className="btn btn-outline" onClick={previewImport}>가져오기 검토</button></div>}
+        {importPackage&&<div className="regional-import-review"><p>지역: <b>{importPackage.regionId}</b> · 레코드: <b>{importPackage.records?.length??0}</b> · 스키마: <b>{importPackage.schemaVersion||"-"}</b></p><label><input type="checkbox" checked={trustedImport} onChange={e=>{setTrustedImport(e.target.checked);setImportPreview(undefined)}}/> 신뢰된 검증 데이터로 즉시 가져오기</label><button className="btn btn-outline" onClick={previewImport}>가져오기 검토</button></div>}
         {importPreview&&<div className="regional-import-summary" role="status"><span>신규 {importPreview.newRecords}</span><span>충돌 {importPreview.conflicts}</span><span>변경 없음 {importPreview.unchangedRecords}</span><span>검증 대기 {importPreview.stagedRecords}</span><button className="btn btn-primary" onClick={applyImport}>{trustedImport?"검증 데이터 활성화":"검증 대기로 가져오기"}</button></div>}
       </section>
       <div className="regional-data-list">
@@ -182,7 +172,7 @@ function LegacyRegionalDataManager({onAdminTokenChange,initialRegionId=""}:{onAd
           >
             <b>{row.displayName}</b>
             <span>
-              {REGIONS[row.regionId] || row.regionId} ·{" "}
+              {row.regionId || row.regionId} ·{" "}
               {row.entityType ? statusLabel(row.entityType,ENTITY_TYPE_LABELS) : "유형 미정"}
             </span>
             <small>
@@ -195,7 +185,7 @@ function LegacyRegionalDataManager({onAdminTokenChange,initialRegionId=""}:{onAd
       </div>
       {selected && (
         <div className="regional-data-review" id="regional-data-review" ref={reviewRef} tabIndex={-1}>
-          <div className="regional-review-heading"><div><small>{REGIONS[selected.regionId]||selected.regionId} · {selected.entityType?statusLabel(selected.entityType,ENTITY_TYPE_LABELS):"유형 미정"} / {selected.category||"카테고리 미정"}</small><h3>{selected.displayName}</h3></div>{selected.lifecycleStatus==='NEEDS_VERIFICATION'&&<strong className="verification-waiting">운영 반영 전 검증 대기</strong>}</div>
+          <div className="regional-review-heading"><div><small>{region.regionName} · {selected.entityType?statusLabel(selected.entityType,ENTITY_TYPE_LABELS):"유형 미정"} / {selected.category||"카테고리 미정"}</small><h3>{selected.displayName}</h3></div>{selected.lifecycleStatus==='NEEDS_VERIFICATION'&&<strong className="verification-waiting">운영 반영 전 검증 대기</strong>}</div>
           <dl className="regional-review-status"><div><dt>생명주기</dt><dd>{statusLabel(selected.lifecycleStatus,LIFECYCLE_LABELS)}</dd></div><div><dt>검증 상태</dt><dd>{statusLabel(selected.verificationStatus,VERIFICATION_LABELS)}</dd></div><div><dt>최종 검증일</dt><dd>{selected.lastVerifiedAt?.slice(0,10)||"미검증"}</dd></div></dl>
           <p>{selected.canonicalEntityId}</p>
           <table className="simple">
@@ -236,17 +226,6 @@ function LegacyRegionalDataManager({onAdminTokenChange,initialRegionId=""}:{onAd
             </tbody>
           </table>
           <p>출처: {SOURCE_LABELS[selected.source?.sourceType]||selected.source?.sourceName||selected.source?.sourceType} · <a href={selected.source?.sourceUrl} target="_blank" rel="noreferrer">근거 열기</a></p>
-          <input
-            type="password"
-            value={token}
-            onChange={(e) => {
-              setToken(e.target.value);
-              sessionStorage.setItem("admin-write-token", e.target.value);
-              onAdminTokenChange?.(e.target.value);
-            }}
-            placeholder="관리자 쓰기 토큰"
-            aria-label="관리자 쓰기 토큰"
-          />
           <div className="regional-data-actions">
             {reviewActionsFor(selected.lifecycleStatus).map(([action, label]) => (
               <button
@@ -271,4 +250,4 @@ function LegacyRegionalDataManager({onAdminTokenChange,initialRegionId=""}:{onAd
   );
 }
 
-export default function RegionalDataManager(props:{adminToken:string;onAdminTokenChange?:(token:string)=>void}) { const region=useRegion(); return <><LocationReviewManager regionId={region.id} adminToken={props.adminToken}/>{region.id==='hapcheon'?<><BusinessRegistrationManager {...props}/><details><summary>기존 후보·변경 검수</summary><LegacyRegionalDataManager {...props} initialRegionId={region.id}/></details></>:<LegacyRegionalDataManager {...props} initialRegionId={region.id}/>}</>; }
+export default function RegionalDataManager(props:{adminToken:string}) { const region=useRegion(); return <><LocationReviewManager regionId={region.id} adminToken={props.adminToken}/><BusinessRegistrationManager {...props}/><details><summary>기존 후보·변경 검수</summary><LegacyRegionalDataManager {...props} initialRegionId={region.id}/></details></>; }

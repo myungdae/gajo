@@ -12,6 +12,29 @@ function harness() {
   return {rows,model,service:new BusinessRegistrationService(model),regional:new RegionalDataService(model)};
 }
 describe('manager business registration',()=>{
+  it('publishes reviewed records for a data-configured new region without seeding',async()=>{
+    const saved=process.env.ADDITIONAL_REGION_CONFIG_JSON;
+    process.env.ADDITIONAL_REGION_CONFIG_JSON=JSON.stringify([{id:'new-county',regionName:'신규 군',ontologyNamespace:'https://new.example/#'}]);
+    try{
+      const {service,regional,rows}=harness(),actor={actorId:'COMMON',allowedRegionIds:['new-county']};
+      const row:any=await service.create(actor,'new-county',input());
+      expect((await regional.effectiveDataset('new-county'))?.records).toEqual([]);
+      await service.change(actor,'new-county',row.id,'VERIFY',{revision:1,confirmed:true});
+      await service.change(actor,'new-county',row.id,'PUBLISH',{revision:2});
+      expect((await regional.effectiveDataset('new-county'))?.records.map(r=>r.entityUri)).toEqual([row.canonicalEntityId]);
+      expect(rows).toHaveLength(1);
+    }finally{if(saved===undefined)delete process.env.ADDITIONAL_REGION_CONFIG_JSON;else process.env.ADDITIONAL_REGION_CONFIG_JSON=saved;}
+  });
+  it.each(['gajo','okcheon','muan','gyeryong','new-county'])('uses the same scoped business workflow for %s',async regionId=>{
+    const {service,rows}=harness(),actor={actorId:'COMMON',allowedRegionIds:[regionId]};
+    const row:any=await service.create(actor,regionId,input());
+    expect(row.regionId).toBe(regionId);
+    expect(row.registrationKeys.every((key:string)=>key.startsWith(regionId+':'))).toBe(true);
+    expect((await service.list(actor,regionId))).toHaveLength(1);
+    await expect(service.list(principal,regionId)).rejects.toThrow();
+    await expect(service.change(principal,regionId,row.id,'STOP',{revision:1})).rejects.toThrow();
+    expect(rows).toHaveLength(1);
+  });
   it('generates identity and requires distinct review and publish before public dataset/channel access',async()=>{
     const {service,regional,model}=harness();const row:any=await service.create(principal,'hapcheon',input());
     expect(row.canonicalEntityId).toMatch(/^urn:regional-business:hapcheon-business-/);expect(row.lifecycleStatus).toBe('NEW_CANDIDATE');

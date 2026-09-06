@@ -5,7 +5,7 @@ import HomePage from './pages/HomePage';
 import ConciergePage from './pages/ConciergePage';
 import ItineraryPage from './pages/ItineraryPage';
 import MapPage from './pages/MapPage';
-import AdminPage from './pages/AdminPage';
+import AdminEntry from './pages/AdminEntry';
 import OntologyExplorerPage from './pages/OntologyExplorerPage';
 import NearbyRestaurantsPage from './pages/NearbyRestaurantsPage';
 import { RegionProvider } from './RegionContext';
@@ -73,20 +73,15 @@ export default function App() {
           <Route path="/hapcheon/nearby-discovery" element={<NearbyRestaurantsPage />} />
           <Route path="/hapcheon/nearby" element={<NearbyRestaurantsPage />} />
           <Route path="/daejeon-junggu/nearby-discovery" element={<NearbyRestaurantsPage />} />
-          <Route path="/gajo/admin" element={<AdminPage />} />
-          <Route path="/okcheon/admin" element={<AdminPage />} />
-          <Route path="/muan/admin" element={<AdminPage />} />
-          <Route path="/gyeryong/admin" element={<AdminPage />} />
-          <Route path="/hapcheon/admin" element={<AdminPage />} />
-          <Route path="/daejeon-junggu/admin" element={<AdminPage />} />
           <Route path="/concierge" element={<ConciergePage />} />
           <Route path="/itinerary" element={<ItineraryPage />} />
           <Route path="/map" element={<MapPage />} />
           <Route path="/nearby-restaurants" element={<NearbyRestaurantsPage />} />
           <Route path="/nearby-discovery" element={<NearbyRestaurantsPage />} />
-          <Route path="/admin" element={<AdminPage />} />
           <Route path="/ontology" element={<OntologyExplorerPage />} />
         </Route>
+        <Route path="/admin" element={<AdminEntry />} />
+        <Route path="/:regionId/admin" element={<AdminEntry />} />
       </Routes></RegionalLanguageProvider></RegionProvider>
     </BrowserRouter>
   );

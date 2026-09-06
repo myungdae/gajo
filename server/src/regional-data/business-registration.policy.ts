@@ -5,12 +5,12 @@ import type { AdminPrincipal } from './admin-token.guard';
 
 export const BUSINESS_TYPES = ['ACCOMMODATION','PENSION','GLAMPING','CAMPING','CAFE','RESTAURANT','ATTRACTION','EXPERIENCE'] as const;
 export function businessScope(principal: AdminPrincipal, regionId: unknown) {
-  if (regionId !== 'hapcheon' || !principal?.allowedRegionIds?.includes('hapcheon')) throw new ForbiddenException('합천 지역 관리 권한이 필요합니다.');
+  if (typeof regionId !== 'string' || !regionId || !principal?.allowedRegionIds?.includes(regionId)) throw new ForbiddenException('해당 지역 관리 권한이 필요합니다.');
 }
 const normalized = (v: unknown) => typeof v === 'string' ? v.normalize('NFKC').toLowerCase().replace(/[^a-z0-9가-힣]/g, '') : '';
-export function businessIdentity(input: any) {
+export function businessIdentity(input: any, regionId: string) {
   return [ ['name',input.displayName], ['address',input.address], ['phone',input.phone || input.telephone], ['website',input.websiteUrl || input.website] ]
-    .filter(([,v]) => normalized(v)).map(([k,v]) => `hapcheon:${k}:${createHash('sha256').update(normalized(v)).digest('hex')}`);
+    .filter(([,v]) => normalized(v)).map(([k,v]) => `${regionId}:${k}:${createHash('sha256').update(normalized(v)).digest('hex')}`);
 }
 export function businessInput(input: any) {
   const allowed = ['displayName','englishName','businessType','address','phone','websiteUrl','naverPlaceUrl','kakaoPlaceUrl','latitude','longitude','mapConfirmed','phoneConfirmed','shortDescription','sourceUrl','verifiedOn'];

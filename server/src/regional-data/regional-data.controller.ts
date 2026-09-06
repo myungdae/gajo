@@ -1,3 +1,4 @@
+import { AdminRegionScopeGuard } from './admin-region-scope.guard';
 import {
   Body,
   Controller,
@@ -14,18 +15,18 @@ import { RegionalDataService } from './regional-data.service';
 @Controller('api/admin/regional-data')
 export class RegionalDataController {
   constructor(private service: RegionalDataService) {}
-  @Get() @UseGuards(AdminTokenGuard) async list(@Query() query: any) {
+  @Get() @UseGuards(AdminTokenGuard, AdminRegionScopeGuard) async list(@Query() query: any) {
     return {
       records: await this.service.list(query),
       quality: await this.service.quality(query.regionId),
     };
   }
-  @Get('operational-readiness') @UseGuards(AdminTokenGuard) operationalReadiness(
+  @Get('operational-readiness') @UseGuards(AdminTokenGuard, AdminRegionScopeGuard) operationalReadiness(
     @Query('regionId') regionId: string,
   ) {
     return this.service.operationalReadiness(regionId);
   }
-  @Get('export') @UseGuards(AdminTokenGuard) exportData(
+  @Get('export') @UseGuards(AdminTokenGuard, AdminRegionScopeGuard) exportData(
     @Query('regionId') regionId: string,
     @Query('includeChanges') includeChanges?: string,
     @Query('backup') backup?: string,
@@ -35,25 +36,25 @@ export class RegionalDataController {
       backup: backup === 'true',
     });
   }
-  @Post('import/preview') @UseGuards(AdminTokenGuard) previewImport(
+  @Post('import/preview') @UseGuards(AdminTokenGuard, AdminRegionScopeGuard) previewImport(
     @Body() body: any,
   ) {
     return this.service.previewImport(body?.package, {
       trustedVerified: body?.trustedVerified === true,
     });
   }
-  @Post('import') @UseGuards(AdminTokenGuard) importData(@Body() body: any) {
+  @Post('import') @UseGuards(AdminTokenGuard, AdminRegionScopeGuard) importData(@Body() body: any) {
     return this.service.importPackage(body?.package, {
       trustedVerified: body?.trustedVerified === true,
     });
   }
-  @Post('candidates') @UseGuards(AdminTokenGuard) create(@Body() body: any) {
+  @Post('candidates') @UseGuards(AdminTokenGuard, AdminRegionScopeGuard) create(@Body() body: any) {
     return this.service.create(body);
   }
-  @Get(':id/ignore-change-preflight') @UseGuards(AdminTokenGuard) ignoreChangePreflight(@Param('id') id: string) {
+  @Get(':id/ignore-change-preflight') @UseGuards(AdminTokenGuard, AdminRegionScopeGuard) ignoreChangePreflight(@Param('id') id: string) {
     return this.service.ignoreChangePreflight(id);
   }
-  @Post(':id/actions/:action') @UseGuards(AdminTokenGuard) action(
+  @Post(':id/actions/:action') @UseGuards(AdminTokenGuard, AdminRegionScopeGuard) action(
     @Param('id') id: string,
     @Param('action') action: string,
     @Body() body: any,

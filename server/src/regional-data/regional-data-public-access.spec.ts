@@ -1,4 +1,6 @@
 import { Test } from '@nestjs/testing';
+import { getModelToken } from '@nestjs/mongoose';
+import { RegionalDataRecord } from './regional-data.schema';
 import request from 'supertest';
 import { RegionalDataController } from './regional-data.controller';
 import { RegionalDataService } from './regional-data.service';
@@ -9,6 +11,7 @@ describe('public versus administrator HTTP identity boundary', () => {
   let app: any;
   const previousToken = process.env.ADMIN_WRITE_TOKEN;
   const previousActor = process.env.ADMIN_ACTOR_ID;
+  const previousRegions = process.env.ADMIN_REGION_IDS;
   const row = { id: 'private-review', canonicalEntityId: 'urn:test:private', regionId: 'hapcheon',
     displayName: '검토 전용 이름', aliases: ['검토 전용 별칭'], lifecycleStatus: 'ACTIVE', verificationStatus: 'PARTIAL',
     proposedFacts: { displayName: '검토 전용 이름', aliases: ['검토 전용 별칭'] },
@@ -16,6 +19,7 @@ describe('public versus administrator HTTP identity boundary', () => {
   beforeAll(async () => {
     process.env.ADMIN_WRITE_TOKEN = 'public-boundary-test-token';
     process.env.ADMIN_ACTOR_ID = 'PUBLIC_BOUNDARY_TEST';
+    process.env.ADMIN_REGION_IDS = 'hapcheon';
     const model = { find: (query: any = {}) => {
       const values = Object.entries(query).every(([key, value]) => row[key] === value) ? [row] : [];
       return { lean: async () => values, sort: () => ({ lean: async () => values }) };
@@ -25,6 +29,7 @@ describe('public versus administrator HTTP identity boundary', () => {
     const module = await Test.createTestingModule({
       controllers: [RegionalDataController, FacilityController],
       providers: [
+        { provide: getModelToken(RegionalDataRecord.name), useValue: model },
         { provide: RegionalDataService, useValue: {
           list: regional.list.bind(regional), quality: regional.quality.bind(regional),
           operationalReadiness: regional.operationalReadiness.bind(regional),
@@ -39,6 +44,7 @@ describe('public versus administrator HTTP identity boundary', () => {
     await app?.close();
     if (previousToken === undefined) delete process.env.ADMIN_WRITE_TOKEN; else process.env.ADMIN_WRITE_TOKEN = previousToken;
     if (previousActor === undefined) delete process.env.ADMIN_ACTOR_ID; else process.env.ADMIN_ACTOR_ID = previousActor;
+    if (previousRegions === undefined) delete process.env.ADMIN_REGION_IDS; else process.env.ADMIN_REGION_IDS = previousRegions;
   });
   it.each(['/api/admin/regional-data', '/api/admin/regional-data/operational-readiness?regionId=hapcheon'])('refuses anonymous review access: %s', async path => {
     await request(app.getHttpServer()).get(path).expect(403);

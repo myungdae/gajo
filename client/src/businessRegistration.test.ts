@@ -2,10 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const source=(path:string)=>readFileSync(new URL(path,import.meta.url),'utf8');
-test('Hapcheon manager has a single business form with search, review, publish and existing channels',()=>{
+test('Common regional manager has a single business form with search, review, publish and existing channels',()=>{
   const ui=source('./components/BusinessRegistrationManager.tsx');
   for(const label of ['등록된 업소 관리','새 업소 등록','업소명 검색','중복 업소 확인','검증 대기로 등록','검수 완료','장소 공개','운영 중지','업소별 이용 통계'])assert.ok(ui.includes(label),label);
-  assert.match(ui,/regionId=hapcheon/);assert.match(ui,/lifecycleStatus==='ACTIVE'&&selected.verificationStatus==='VERIFIED'/);
+  assert.match(ui,/encodeURIComponent\(region.id\)/);assert.doesNotMatch(ui,/hapcheon|합천/);assert.match(ui,/lifecycleStatus==='ACTIVE'&&selected.verificationStatus==='VERIFIED'/);
   assert.match(ui,/duplicates===null\|\|duplicates.length>0/);
   assert.doesNotMatch(ui,/type="file"|JSON\.parse|canonicalEntityId.*onChange/);
   assert.match(ui,/<ActionChannelManager/);assert.match(ui,/<VisitorAnalyticsDashboard token=\{token\}/);
