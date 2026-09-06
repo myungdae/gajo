@@ -27,22 +27,43 @@ export class FacilityService {
     requireRegionId(regionId,'facility list');
     if(regionId!=='gajo'){const dataset=this.regionalData?await this.regionalData.effectiveDataset(regionId):undefined;const records:any[]=dataset?.records||(regionId==='hapcheon'?[...HAPCHEON_MASTER_DATA]:[]);return records.map(place=>({uri:place.entityUri,label:place.canonicalLabelKo,comment:place.description,literalProps:{address:place.address,telephone:place.telephone,website:place.website,naverPlaceId:place.naverPlaceId,naverPlaceUrl:place.naverPlaceUrl,officialEvidenceUrl:place.officialEvidenceUrl,reservationUrl:place.reservationUrl,latitude:place.latitude,longitude:place.longitude,category:place.category,entityType:place.entityType,tags:place.tags,accessNotice:place.accessNotice,actions:place.actions},masterData:{verificationStatus:place.runtimeDataStatus,provenance:place.source,lastVerifiedAt:place.lastVerifiedAt}}))}
     const rows=await this.facilityModel.find().sort({ label: 1 }).lean();
-    return rows.map(row=>this.enrich(row));
+    const result = rows.map(row=>this.enrich(row));
+    for (const {canonicalEntityId,place} of await this.regionalData?.locationPublicOverrides?.(regionId) || []) {
+      const index = result.findIndex(r=>r.uri===canonicalEntityId);
+      if(!place){if(index>=0)result.splice(index,1);continue;}
+      const current = index >= 0 ? result[index] : {uri:canonicalEntityId};
+      const updated = {...current,label:place.canonicalLabelKo,literalProps:{...current.literalProps,address:place.address,telephone:place.telephone,latitude:place.latitude,longitude:place.longitude,actions:place.actions,category:place.category}};
+      if(index>=0)result[index]=updated;else result.push(updated);
+    }
+    return result;
   }
 
   async operationalPlaces(regionId:string) {
     requireRegionId(regionId,'operational place list');
     if(regionId!=='gajo'){const dataset=this.regionalData?await this.regionalData.effectiveDataset(regionId):undefined;const records:any[]=(dataset?.records||(regionId==='hapcheon'?[...HAPCHEON_MAP_PLACES]:[])).filter((place:any)=>place.actions?.navigate);return records.map(place=>({uri:place.entityUri,label:place.canonicalLabelKo,description:place.description,latitude:place.latitude,longitude:place.longitude,category:place.category,address:place.address,telephone:place.telephone,actions:place.actions,source:place.source,lastVerifiedAt:place.lastVerifiedAt,coordinateVerification:'VERIFIED'}))}
-    return this.masterData.mapEligiblePlaces().map((place) => ({
+    const result:any[] = this.masterData.mapEligiblePlaces().map((place) => ({
       uri: place.entityUri, label: place.canonicalLabelKo, description: place.description,
       latitude: place.latitude, longitude: place.longitude, category: place.category,
       operatingHours: place.operatingHours, walkingBurden: place.walkingBurden,
       coordinateVerification: place.coordinateProvenance?.verificationStatus,
     }));
+    for (const {canonicalEntityId,place} of await this.regionalData?.locationPublicOverrides?.(regionId) || []) {
+      const index=result.findIndex(r=>r.uri===canonicalEntityId);if(index>=0)result.splice(index,1);
+      if(place?.actions?.navigate)result.push({uri:canonicalEntityId,label:place.canonicalLabelKo,latitude:place.latitude,longitude:place.longitude,category:place.category,actions:place.actions,coordinateVerification:'VERIFIED'});
+    }
+    return result;
   }
 
   async getFacility(uri: string) {
-    const row=await this.facilityModel.findOne({ uri }).lean(); return row?this.enrich(row):null;
+    const managed = await this.regionalData?.locationPublicOverride?.(uri);
+    const row=await this.facilityModel.findOne({ uri }).lean();
+    if (managed) {
+      const place = managed.place;
+      if (!place) return null;
+      const current = row ? this.enrich(row) : { uri };
+      return {...current,label:place.canonicalLabelKo,literalProps:{...current.literalProps,address:place.address,telephone:place.telephone,latitude:place.latitude,longitude:place.longitude,actions:place.actions,category:place.category}};
+    }
+    return row?this.enrich(row):null;
   }
 
   updateFacility(uri: string, patch: Partial<OntologyIndividualDoc>) {

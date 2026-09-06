@@ -27,6 +27,7 @@ import { automaticBootstrapSeedEnabled } from '../bootstrap/startup-data-policy'
 import { validVisitorContent } from '../i18n/place-content';
 import { atomicIgnoreChange, prepareIgnoreChange, IgnoreChangePrecondition } from './ignore-change';
 import { candidateObservation, requireObservationIndex, upsertObservation } from './candidate-observation';
+import { approvedLocationUsable, currentLocation } from './location-review.policy';
 const SOURCE_TYPES = new Set([
   'OFFICIAL_LOCAL_GOV',
   'OFFICIAL_BUSINESS',
@@ -78,6 +79,14 @@ const OPERATIONAL_FIELDS = new Set([
   'parking',
   'accessibility',
 ]);
+function legacyReviewView(row: any) {
+  const result = { ...row };
+  // Location proposals/rollback evidence are available only through the scoped
+  // location review API, never through legacy unscoped administrator responses.
+  delete result.locationReview; delete result.locationRollback; delete result.approvedLocation;
+  if (Array.isArray(result.auditTrail)) result.auditTrail = result.auditTrail.filter(event => !String(event.action).startsWith('LOCATION_'));
+  return result;
+}
 @Injectable()
 export class RegionalDataService implements OnModuleInit {
   constructor(
@@ -151,7 +160,7 @@ export class RegionalDataService implements OnModuleInit {
       ].flatMap((key) => (filters[key] ? [[key, filters[key]]] : [])),
     );
     const rows = await this.model.find(query).sort({ regionId: 1, displayName: 1 }).lean();
-    return rows.filter(row => !row.registration);
+    return rows.filter(row => !row.registration).map(legacyReviewView);
   }
   async create(input: any) {
     if (
@@ -170,7 +179,7 @@ export class RegionalDataService implements OnModuleInit {
     if (observation) {
       await requireObservationIndex(this.model.collection);
       const reused = await upsertObservation(this.model, input.regionId, observation);
-      if (reused) return { ...reused.toObject(), ingestionOutcome: 'REUSED' };
+      if (reused) return { ...legacyReviewView(reused.toObject()), ingestionOutcome: 'REUSED' };
     }
     const regionalRows: any[] = requestedCanonical
       ? []
@@ -205,11 +214,11 @@ export class RegionalDataService implements OnModuleInit {
         existing.proposedFacts &&
         this.sameFacts(existing.proposedFacts, input.proposedFacts)
       )
-        return { ...existing.toObject(), ingestionOutcome: 'UNCHANGED' };
+        return { ...legacyReviewView(existing.toObject()), ingestionOutcome: 'UNCHANGED' };
       const current = this.toCandidate(baseline, existing);
       const changes = this.diffAll(current, input.proposedFacts);
       if (existing.verificationStatus === 'VERIFIED' && changes.length === 0)
-        return { ...existing.toObject(), ingestionOutcome: 'UNCHANGED' };
+        return { ...legacyReviewView(existing.toObject()), ingestionOutcome: 'UNCHANGED' };
       existing.source = input.source;
       existing.proposedFacts = input.proposedFacts;
       existing.detectedChanges = changes;
@@ -228,7 +237,7 @@ export class RegionalDataService implements OnModuleInit {
       });
       await existing.save();
       return {
-        ...existing.toObject(),
+        ...legacyReviewView(existing.toObject()),
         ingestionOutcome:
           existing.verificationStatus === 'VERIFIED'
             ? 'CHANGE_DETECTED'
@@ -262,7 +271,7 @@ export class RegionalDataService implements OnModuleInit {
       ? await upsertObservation(this.model, input.regionId, observation, candidate)
       : await this.model.create(candidate);
     return {
-      ...created.toObject(),
+      ...legacyReviewView(created.toObject()),
       ingestionOutcome: observation && created.seenCount > 1 ? 'REUSED' : baseline ? 'CHANGE_DETECTED' : 'CREATED',
     };
   }
@@ -277,8 +286,8 @@ export class RegionalDataService implements OnModuleInit {
     precondition?: IgnoreChangePrecondition,
   ) {
     if (action === 'IGNORE_CHANGE')
-      return atomicIgnoreChange(this.model.collection, id, auditContext?.actorId || 'SYSTEM_INTERNAL',
-        precondition!, event => Logger.log(JSON.stringify(event), 'RegionalDataAudit'));
+      return legacyReviewView(await atomicIgnoreChange(this.model.collection, id, auditContext?.actorId || 'SYSTEM_INTERNAL',
+        precondition!, event => Logger.log(JSON.stringify(event), 'RegionalDataAudit')));
     const row: any = await this.model.findOne({ id });
     if (!row) throw new NotFoundException();
     if (row.registration) throw new BadRequestException('Use the business review workflow for this place');
@@ -311,7 +320,7 @@ export class RegionalDataService implements OnModuleInit {
       regionId: auditContext?.regionId || row.regionId,
     });
     await row.save();
-    return row.toObject();
+    return legacyReviewView(row.toObject());
   }
   async approveCoreCoverageFix(
     regionId: string,
@@ -348,7 +357,7 @@ export class RegionalDataService implements OnModuleInit {
     const overrides = regionalRows.filter(
       (row) =>
         ['ACTIVE', 'CHANGE_DETECTED'].includes(row.lifecycleStatus) &&
-        (row.verificationStatus === 'VERIFIED' ||
+        (row.verificationStatus === 'VERIFIED' || row.approvedLocation?.verificationStatus === 'APPROVED' ||
           Object.values(row.fieldEvidence || {}).some(
             (e: any) => e?.status === 'APPROVED',
           )),
@@ -416,6 +425,24 @@ export class RegionalDataService implements OnModuleInit {
       ).length,
     };
   }
+  // Gajo's legacy facility projection keeps its richer metadata while managed
+  // locations use the same reviewed coordinates as the common discovery dataset.
+  async locationPublicOverrides(regionId: string) {
+    const rows: any[] = await this.model.find({ regionId }).lean();
+    const records = (await this.effectiveDataset(regionId))?.records || [];
+    return rows.filter(r => r.locationReview || r.approvedLocation).map(r => ({
+      canonicalEntityId: r.canonicalEntityId,
+      place: records.find(p => p.entityUri === r.canonicalEntityId),
+    }));
+  }
+  async locationPublicOverride(canonicalEntityId: string) {
+    const rows: any[] = await this.model.find({ canonicalEntityId }).lean();
+    const managed = rows.filter(r => r.locationReview || r.approvedLocation);
+    if (!managed.length) return undefined;
+    if (rows.length !== 1) return { place: undefined };
+    const records = (await this.effectiveDataset(managed[0].regionId))?.records || [];
+    return { place: records.find(p => p.entityUri === canonicalEntityId) };
+  }
   async operationalReadiness(regionId: string) {
     const dataset = await this.effectiveDataset(regionId);
     if (!dataset) throw new BadRequestException('Unsupported regionId');
@@ -446,7 +473,7 @@ export class RegionalDataService implements OnModuleInit {
       }),
       proposedFacts: row.proposedFacts,
       fieldEvidence: row.fieldEvidence || {},
-      auditTrail: row.auditTrail || [],
+      auditTrail: legacyReviewView(row).auditTrail || [],
     };
   }
   async proposeOperationalEvidence(
@@ -1007,12 +1034,10 @@ export class RegionalDataService implements OnModuleInit {
     base: RegionalCandidateRecord | undefined,
     row: any,
   ): RegionalCandidateRecord {
+    const location = currentLocation(row);
     const coordinatesSafe =
       !row.detectedChanges?.some((x: any) => x.unsafe) &&
-      Number.isFinite(row.latitude) &&
-      Number.isFinite(row.longitude) &&
-      (row.verificationStatus === 'VERIFIED' ||
-        row.fieldEvidence?.coordinates?.status === 'APPROVED');
+      approvedLocationUsable(row);
     const actions: any = { ...(base?.actions || {}) };
     if (row.phone) actions.call = { phone: row.phone };
     if (row.websiteUrl) actions.website = { url: row.websiteUrl };
@@ -1037,7 +1062,7 @@ export class RegionalDataService implements OnModuleInit {
     if (reserve) actions.reserve = reserve;
     else delete actions.reserve;
     if (coordinatesSafe)
-      actions.navigate = { latitude: row.latitude, longitude: row.longitude };
+      actions.navigate = { latitude: location!.latitude, longitude: location!.longitude };
     else delete actions.navigate;
     return {
       ...(base || {
@@ -1064,8 +1089,9 @@ export class RegionalDataService implements OnModuleInit {
       parking: row.parking ?? (base as any)?.parking,
       accessibility: row.accessibility ?? (base as any)?.accessibility,
       walkingAccess: row.walkingAccess ?? (base as any)?.walkingAccess,
-      latitude: coordinatesSafe ? row.latitude : undefined,
-      longitude: coordinatesSafe ? row.longitude : undefined,
+      latitude: coordinatesSafe ? location!.latitude : undefined,
+      longitude: coordinatesSafe ? location!.longitude : undefined,
+      coordinateSource: row.approvedLocation ? { sourceType: row.approvedLocation.sourceType, sourceReference: row.approvedLocation.sourceReference, verificationStatus: row.approvedLocation.verificationStatus, reviewedAt: row.approvedLocation.reviewedAt } : base?.coordinateSource,
       description: row.shortDescription ?? base?.description,
       operationalTips: row.operationalTips?.length
         ? row.operationalTips

@@ -1,0 +1,123 @@
+.location-review-manager {
+  padding: 18px;
+  margin: 18px 0;
+  border: 1px solid #ccd8d4;
+  border-radius: 12px;
+  background: #fff;
+  color: #17362e;
+}
+.location-review-manager label {
+  display: block;
+  margin: 10px 0;
+}
+.location-review-manager input:not([type="checkbox"]),
+.location-review-manager textarea,
+.location-review-manager select {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  padding: 10px;
+  border: 1px solid #9daea8;
+  border-radius: 6px;
+  font: inherit;
+}
+.location-review-manager button {
+  min-height: 44px;
+  padding: 10px 14px;
+  margin: 5px 8px 5px 0;
+  border: 1px solid #366c5b;
+  border-radius: 7px;
+  background: #edf6f1;
+  color: #153e2c;
+  cursor: pointer;
+  font: inherit;
+}
+.location-review-manager button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.location-review-manager button:focus-visible {
+  outline: 3px solid #176ca4;
+  outline-offset: 2px;
+}
+.location-place-list {
+  padding: 0;
+  list-style: none;
+}
+.location-place-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 0;
+  border-bottom: 1px solid #d4ded8;
+}
+.location-place-list li > button {
+  align-self: flex-start;
+}
+.location-review-detail {
+  margin-top: 16px;
+  border-top: 2px solid #28604d;
+  padding-top: 12px;
+}
+.location-review-manager fieldset {
+  min-width: 0;
+  margin: 14px 0;
+  border: 1px solid #c3d5cc;
+  border-radius: 8px;
+}
+.location-review-manager p,
+.location-review-manager span {
+  overflow-wrap: anywhere;
+}
+.location-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.location-warnings {
+  background: #fff3d6;
+  color: #704d00;
+  padding: 1px 12px;
+  border-radius: 8px;
+}
+.location-review-pin {
+  font-size: 30px;
+  background: transparent;
+  border: 0;
+}
+.location-pin-map {
+  isolation: isolate;
+  margin: 12px 0;
+}
+.location-pin-map > p {
+  font-size: 13px;
+}
+.location-review-manager [role="alert"] {
+  color: #a12121;
+}
+.location-review-manager .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+@media (max-width: 600px) {
+  .location-review-manager {
+    padding: 12px;
+  }
+  .location-fields {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .location-review-manager fieldset {
+    padding: 10px;
+  }
+  .location-review-manager h2 {
+    font-size: 21px;
+  }
+}

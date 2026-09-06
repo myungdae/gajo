@@ -14,6 +14,9 @@ export type VerificationStatus =
   'UNVERIFIED' | 'PARTIAL' | 'VERIFIED' | 'REVERIFY_REQUIRED';
 @Schema({ timestamps: true })
 export class RegionalDataRecord {
+  @Prop({ type: Object }) locationReview?: Record<string, any>;
+  @Prop({ type: Object }) approvedLocation?: Record<string, any>;
+  @Prop({ type: Object }) locationRollback?: Record<string, any>;
   @Prop({ type: Object }) registration?: Record<string, any>;
   @Prop({ type: [String], default: undefined }) registrationKeys?: string[];
   @Prop({ required: true, unique: true }) id: string;

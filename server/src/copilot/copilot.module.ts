@@ -16,6 +16,7 @@ import {
   CoreDestinationSchema,
 } from './core-destination.schema';
 import { ExkoSemanticModule } from '../exko-semantic/exko-semantic.module';
+import { CopilotLocationReviewController } from '../regional-data/location-review.controller';
 @Global()
 @Module({
   imports: [
@@ -27,7 +28,7 @@ import { ExkoSemanticModule } from '../exko-semantic/exko-semantic.module';
     ]),
   ],
   providers: [CopilotService, CopilotAuthService, CopilotAuthGuard],
-  controllers: [CopilotController],
+  controllers: [CopilotController, CopilotLocationReviewController],
   exports: [CopilotService],
 })
 export class CopilotModule {}

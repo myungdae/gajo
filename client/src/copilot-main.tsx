@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./copilot.css";
+import LocationReviewManager from './components/LocationReviewManager';
 import { runCopilotServiceWorkerRecovery } from "./copilotSwRecovery";
 
 void runCopilotServiceWorkerRecovery();
@@ -153,6 +154,7 @@ function Home({
           />
         </label>
       )}
+      <LocationReviewManager regionId={regionId} copilotToken={sessionStorage.getItem('copilot-access-token') || ''}/>
       <section className="copilot-counts">
         <article>
           <b>{home?.counts?.dataChanges || 0}</b>

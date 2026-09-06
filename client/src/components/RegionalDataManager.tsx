@@ -1,4 +1,5 @@
 import BusinessRegistrationManager from './BusinessRegistrationManager';
+import LocationReviewManager from './LocationReviewManager';
 import { useRegion } from '../RegionContext';
 import ActionChannelManager from "./ActionChannelManager";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -278,4 +279,4 @@ function LegacyRegionalDataManager({onAdminTokenChange,initialRegionId=""}:{onAd
   );
 }
 
-export default function RegionalDataManager(props:{onAdminTokenChange?:(token:string)=>void}={}) { const region=useRegion(); return region.id==='hapcheon'?<><BusinessRegistrationManager {...props}/><details><summary>기존 후보·변경 검수</summary><LegacyRegionalDataManager {...props} initialRegionId={region.id}/></details></>:<LegacyRegionalDataManager {...props} initialRegionId={region.id}/>; }
+export default function RegionalDataManager(props:{onAdminTokenChange?:(token:string)=>void}={}) { const region=useRegion(); return <><LocationReviewManager regionId={region.id}/>{region.id==='hapcheon'?<><BusinessRegistrationManager {...props}/><details><summary>기존 후보·변경 검수</summary><LegacyRegionalDataManager {...props} initialRegionId={region.id}/></details></>:<LegacyRegionalDataManager {...props} initialRegionId={region.id}/>}</>; }
