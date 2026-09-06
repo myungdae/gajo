@@ -122,7 +122,10 @@ for (const entry of ['/admin', '/hapcheon/admin'])
       const passwordInput = document.querySelector('input[name="password"]');
       assert(usernameInput, 'username input');
       assert(passwordInput, 'password input');
-      const usernameProps = usernameInput[Object.keys(usernameInput).find((key) => key.startsWith('__reactProps
+      const usernameProps = usernameInput[Object.keys(usernameInput).find((key) => key.startsWith('__reactProps$'))];
+      const passwordProps = passwordInput[Object.keys(passwordInput).find((key) => key.startsWith('__reactProps$'))];
+      assert.equal(usernameProps.autoComplete, 'username');
+      assert.equal(passwordProps.autoComplete, 'current-password');
       await change('input[name="username"]', 'manager');
       await change('input[name="password"]', 'secret');
       const form = document.querySelector('form');
