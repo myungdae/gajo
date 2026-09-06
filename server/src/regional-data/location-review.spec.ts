@@ -963,6 +963,25 @@ describe('location HTTP authentication and region scope', () => {
       .set('x-admin-token', 'fixture-admin')
       .expect(404);
   });
+  it('legacy admin missing-location GET includes Yuseong and denies Hapcheon to another region credential', async () => {
+    const result = await request(app.getHttpServer())
+      .get('/api/admin/locations?regionId=hapcheon&missingOnly=true')
+      .set('x-admin-token', 'fixture-admin')
+      .expect(200);
+    expect(result.body.records.filter((r: any) => r.canonicalEntityId === f.target.canonicalEntityId))
+      .toEqual([expect.objectContaining({ displayName: '유성가든식당', mapVisible: false })]);
+    const original = process.env.ADMIN_REGION_IDS;
+    try {
+      process.env.ADMIN_REGION_IDS = 'okcheon';
+      await request(app.getHttpServer())
+        .get('/api/admin/locations?regionId=hapcheon&missingOnly=true')
+        .set('x-admin-token', 'fixture-admin').expect(403);
+      await request(app.getHttpServer())
+        .post(`/api/admin/locations/${f.target.id}/actions/APPROVE?regionId=hapcheon`)
+        .set('x-admin-token', 'fixture-admin').send({}).expect(403);
+    } finally { process.env.ADMIN_REGION_IDS = original; }
+    expect(f.writes).toBe(0);
+  });
   it('JWT region assignment and write roles remain enforced', async () => {
     await request(app.getHttpServer())
       .get('/api/copilot/locations?regionId=hapcheon')

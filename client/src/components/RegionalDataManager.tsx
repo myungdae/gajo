@@ -166,7 +166,7 @@ function LegacyRegionalDataManager({onAdminTokenChange,initialRegionId=""}:{onAd
       </div>
       <section className="regional-transfer" aria-label="데이터 관리">
         <h3>데이터 관리</h3><p className="text-muted">기본 가져오기는 방문객에게 보이지 않는 검증 대기 상태입니다.</p>
-        <input type="password" value={token} onChange={e=>setToken(e.target.value)} onBlur={()=>{if(token){sessionStorage.setItem("admin-write-token",token);onAdminTokenChange?.(token)}}} placeholder="관리자 쓰기 토큰" aria-label="데이터 관리 관리자 쓰기 토큰"/>
+        <input type="password" value={token} onChange={e=>{setToken(e.target.value);sessionStorage.setItem("admin-write-token",e.target.value);onAdminTokenChange?.(e.target.value)}} placeholder="관리자 쓰기 토큰" aria-label="데이터 관리 관리자 쓰기 토큰"/>
         <div className="regional-transfer-actions"><button className="btn btn-outline" onClick={exportData}>운영 데이터 내보내기</button><label className="btn btn-outline">데이터 가져오기<input type="file" accept="application/json,.json" onChange={e=>void chooseImport(e.target.files?.[0])}/></label></div>
         {importPackage&&<div className="regional-import-review"><p>지역: <b>{REGIONS[importPackage.regionId]||importPackage.regionId}</b> · 레코드: <b>{importPackage.records?.length??0}</b> · 스키마: <b>{importPackage.schemaVersion||"-"}</b></p><label><input type="checkbox" checked={trustedImport} onChange={e=>{setTrustedImport(e.target.checked);setImportPreview(undefined)}}/> 신뢰된 검증 데이터로 즉시 가져오기</label><button className="btn btn-outline" onClick={previewImport}>가져오기 검토</button></div>}
         {importPreview&&<div className="regional-import-summary" role="status"><span>신규 {importPreview.newRecords}</span><span>충돌 {importPreview.conflicts}</span><span>변경 없음 {importPreview.unchangedRecords}</span><span>검증 대기 {importPreview.stagedRecords}</span><button className="btn btn-primary" onClick={applyImport}>{trustedImport?"검증 데이터 활성화":"검증 대기로 가져오기"}</button></div>}
@@ -239,7 +239,11 @@ function LegacyRegionalDataManager({onAdminTokenChange,initialRegionId=""}:{onAd
           <input
             type="password"
             value={token}
-            onChange={(e) => setToken(e.target.value)}
+            onChange={(e) => {
+              setToken(e.target.value);
+              sessionStorage.setItem("admin-write-token", e.target.value);
+              onAdminTokenChange?.(e.target.value);
+            }}
             placeholder="관리자 쓰기 토큰"
             aria-label="관리자 쓰기 토큰"
           />
@@ -267,4 +271,4 @@ function LegacyRegionalDataManager({onAdminTokenChange,initialRegionId=""}:{onAd
   );
 }
 
-export default function RegionalDataManager(props:{onAdminTokenChange?:(token:string)=>void}={}) { const region=useRegion(); return <><LocationReviewManager regionId={region.id}/>{region.id==='hapcheon'?<><BusinessRegistrationManager {...props}/><details><summary>기존 후보·변경 검수</summary><LegacyRegionalDataManager {...props} initialRegionId={region.id}/></details></>:<LegacyRegionalDataManager {...props} initialRegionId={region.id}/>}</>; }
+export default function RegionalDataManager(props:{adminToken:string;onAdminTokenChange?:(token:string)=>void}) { const region=useRegion(); return <><LocationReviewManager regionId={region.id} adminToken={props.adminToken}/>{region.id==='hapcheon'?<><BusinessRegistrationManager {...props}/><details><summary>기존 후보·변경 검수</summary><LegacyRegionalDataManager {...props} initialRegionId={region.id}/></details></>:<LegacyRegionalDataManager {...props} initialRegionId={region.id}/>}</>; }

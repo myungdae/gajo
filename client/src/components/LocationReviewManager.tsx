@@ -49,9 +49,11 @@ function Warnings({ value }: { value: any }) {
 export default function LocationReviewManager({
   regionId,
   copilotToken,
+  adminToken,
 }: {
   regionId: string;
   copilotToken?: string;
+  adminToken?: string;
 }) {
   const [token, setToken] = useState(
       () => sessionStorage.getItem("copilot-access-token") || "",
@@ -72,8 +74,9 @@ export default function LocationReviewManager({
   const epoch = useRef(0),
     lock = useRef(false);
   const auth = {
-    kind: "copilot" as const,
-    token: copilotToken ?? token,
+    // The entry screen selects authentication; never fall back between credentials.
+    kind: adminToken !== undefined ? ("admin" as const) : ("copilot" as const),
+    token: adminToken !== undefined ? adminToken : copilotToken ?? token,
   };
   useEffect(() => {
     const refresh = () => setToken(sessionStorage.getItem("copilot-access-token") || "");
@@ -137,7 +140,7 @@ export default function LocationReviewManager({
     return () => {
       epoch.current++;
     };
-  }, [regionId, token, copilotToken, missing]);
+  }, [regionId, auth.kind, auth.token, missing]);
   async function run(task: () => Promise<void>) {
     if (lock.current) return;
     lock.current = true;
@@ -222,7 +225,7 @@ export default function LocationReviewManager({
         기존 장소의 위치만 보완합니다. 지도·거리·길찾기에는 승인된 좌표만
         반영됩니다.
       </p>
-      {!auth.token && <p role="alert">로그인이 필요합니다. Regional Manager 계정으로 로그인한 뒤 다시 열어 주세요.</p>}
+      {!auth.token && <p role="alert">{auth.kind === "admin" ? "관리자 인증이 필요합니다. 이 화면의 기존 관리자 인증란에서 인증해 주세요." : "로그인이 필요합니다. Regional Manager 계정으로 로그인한 뒤 다시 열어 주세요."}</p>}
       {!regionId && <p role="alert">관리 지역을 선택해 주세요.</p>}
       {listState === "loading" && <p role="status">장소 목록을 불러오는 중입니다.</p>}
       <label>

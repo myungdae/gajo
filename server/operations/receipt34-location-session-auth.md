@@ -1,5 +1,37 @@
 # 접수번호 34: 위치정보 관리 로그인 세션 연결
 
+> **후속 수정: 진입 화면별 인증 (현재 계약)**
+>
+> 실제 운영 진입 경로는 https://exkovia.com/hapcheon/admin 이다.
+> 이전 JWT 전용 수정은 이 화면의 기존 관리자 인증을 무시하는 회귀를 만들었다.
+> 아래 이전 진단의 JWT 전용 UI 설명은 이 후속 수정으로 대체된다.
+> 잘못 전달된 copilot.html의 404는 실제 운영 관리자 경로와 무관하다.
+> 추가 호스트 조사나 nginx 변경은 수행하지 않는다.
+>
+> - /:regionId/admin: AdminPage의 adminToken 상태를 RegionalDataManager를 통해
+>   LocationReviewManager에 명시적으로 전달한다. 기존 “관리자 인증” 입력을 공유한다.
+>   GET /api/admin/locations?missingOnly=true&regionId=hapcheon, x-admin-token 사용.
+> - Copilot: 기존 JWT를 유지한다. /api/copilot/locations, Authorization Bearer 사용.
+> - 저장된 다른 종류의 인증으로 자동 fallback하지 않는다. 지역 admin의 빈 인증은
+>   JWT가 있어도 요청을 보내지 않으며 기존 관리자 인증 필요 안내를 표시한다.
+> - 추가 위치 토큰 입력은 없다. 기존 인증 변경은 부모 상태로 전파되고,
+>   인증 제거/지역 변경 시 기존 사적 목록과 선택, 지연 응답은 폐기된다.
+> - 서버 인증 및 지역 권한 정책은 변경하지 않는다. legacy 권한은 서버가 정한
+>   ADMIN_REGION_IDS, JWT는 기존 principal의 role/지역 할당으로 검증한다.
+>   화면의 지역 선택 자체가 권한을 부여하지 않는다.
+>
+> 격리 검증: 실제 AdminPage에서 1440/390 너비로 인증 전 요청 0건,
+> 기존 인증란 입력 후 legacy GET과 유성가든 fixture 표시, 인증 제거 후 목록 제거.
+> 다른 지역의 legacy 인증으로 합천 GET/APPROVE는 403, DB writes=0.
+> Copilot JWT/잘못된 JWT/타 지역 접근 및 401·403·빈 목록 구분 회귀도 유지한다.
+> 최종 전체 테스트: Client 583개, 서버 112 suites / 1123 tests 통과.
+> 서버·Client 빌드와 git diff --check 통과.
+>
+> 운영자가 직접 확인할 때는 실제 /hapcheon/admin의 기존 관리자 인증 후
+> Network에서 locations의 URL, GET, status만 확인한다. Headers, 자격증명,
+> 문서 원문이나 HAR는 공유하지 않는다. 이 후속 수정은 로컬 검증이며 운영 배포나
+> 인증된 운영 유성가든 조회 완료를 의미하지 않는다.
+
 ## 확인한 원인과 운영 확인 한계
 
 부모 커밋 3833710bc084e50d6ce65566a75734c10b9e218a의 일반 관리자

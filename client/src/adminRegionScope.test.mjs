@@ -12,7 +12,7 @@ const {default: AdminPage} = await vite.ssrLoadModule('/src/pages/AdminPage.tsx'
 const {RegionProvider} = await vite.ssrLoadModule('/src/RegionContext.tsx');
 const {api} = await vite.ssrLoadModule('/src/api/client.ts');
 const {window,document}=parseHTML('<html><body><div id="root"></div></body></html>');
-const values=new Map([['copilot-access-token','fixture-jwt']]);
+const values=new Map([['copilot-access-token','must-not-use-jwt'],['admin-write-token','fixture-admin']]);
 const storage={getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k)};
 Object.assign(window,{location:{hostname:'localhost',pathname:'/gajo/admin',search:'',href:'http://localhost/gajo/admin'},matchMedia:()=>({matches:false,addEventListener(){},removeEventListener(){}})});
 window.HTMLElement.prototype.scrollIntoView=()=>{};
@@ -25,6 +25,47 @@ const place=r=>({id:`location-${r}`,regionId:r,canonicalEntityId:`urn:${r}`,disp
 async function settle(){await act(async()=>{await new Promise(r=>setTimeout(r,0));});}
 async function click(prefix){const node=[...document.querySelectorAll('button')].find(n=>n.textContent.trim().startsWith(prefix));assert(node,prefix);await act(async()=>node.click());await settle();}
 async function select(value){const select=document.querySelector('select[aria-label="관리 지역"]');assert(select);const props=select[Object.keys(select).find(k=>k.startsWith('__reactProps$'))];await act(async()=>props.onChange({target:{value}}));await settle();}
+
+for(const width of [1440,390])test(`Hapcheon existing authentication enables location GET and clearing it removes private data at ${width}px`,async()=>{
+  window.innerWidth=width;
+  values.delete('admin-write-token');
+  values.set('copilot-access-token','must-not-use-jwt');
+  const calls=[];
+  api.defaults.adapter=async config=>({data:config.url.includes('dashboard')?{totals:{},recentContexts:[],recentRecommendations:[],recentReservations:[]}:config.url.includes('regional-spotlights')?[]:null,status:200,statusText:'OK',headers:{},config});
+  globalThis.fetch=async(url,init)=>{
+    calls.push({url,init});
+    return {ok:true,json:async()=>({records:[{...place('hapcheon'),displayName:'유성가든식당',publicDisplayName:'유성가든식당'}]})};
+  };
+  document.body.innerHTML='<div id="root"></div>';
+  const router=createMemoryRouter([{path:'/:region/admin',element:React.createElement(RegionProvider,null,React.createElement(AdminPage))}],{initialEntries:['/hapcheon/admin']});
+  const root=createRoot(document.querySelector('#root'));
+  const authenticate=async value=>{
+    const input=[...document.querySelectorAll('label')].find(n=>n.textContent==='관리자 인증')?.querySelector('input');
+    assert(input,'existing business manager authentication');
+    const props=input[Object.keys(input).find(k=>k.startsWith('__reactProps$'))];
+    await act(async()=>props.onChange({target:{value}}));await settle();
+  };
+  try{
+    await act(async()=>root.render(React.createElement(RouterProvider,{router})));await settle();
+    assert.match(document.body.textContent,/관리자 인증이 필요/);
+    assert.equal(calls.length,0);
+    assert.equal(document.querySelectorAll('.location-review-manager input[type="password"]').length,0);
+    await authenticate('fixture-admin');
+    assert.equal(calls.length,1);
+    assert.equal(calls[0].url,'/api/admin/locations?missingOnly=true&regionId=hapcheon');
+    assert.equal(calls[0].init.headers['x-admin-token'],'fixture-admin');
+    assert.equal(calls[0].init.headers.Authorization,undefined);
+    assert.equal(calls[0].init.method,'GET');
+    assert.match(document.body.textContent,/유성가든식당/);
+    await authenticate('');
+    assert(!document.body.textContent.includes('유성가든식당'));
+    assert.match(document.body.textContent,/관리자 인증이 필요/);
+    assert.equal(calls.length,1);
+  }finally{
+    await act(async()=>root.unmount());router.dispose();
+    values.set('admin-write-token','fixture-admin');
+  }
+});
 
 for(const width of [1440,390])test(`one URL scope for full administrator layout at ${width}px, including history and late responses`,async()=>{
   window.innerWidth=width;
@@ -39,8 +80,8 @@ for(const width of [1440,390])test(`one URL scope for full administrator layout 
     return{data,status:200,statusText:'OK',headers:{},config};
   };
   globalThis.fetch=async(url,init)=>{
-    assert.equal(init.headers.Authorization,'Bearer fixture-jwt');
-    assert.equal(init.headers['x-admin-token'],undefined);
+    assert.equal(init.headers.Authorization,undefined);
+    assert.equal(init.headers['x-admin-token'],'fixture-admin');
     const parsed=new URL(url,'http://localhost');const region=parsed.searchParams.get('regionId');calls.push({path:parsed.pathname,region,method:init?.method||'GET'});
     if(parsed.pathname.includes('/locations/location-gajo'))return new Promise(resolve=>{resolveOld=resolve;});
     return{ok:true,json:async()=>parsed.pathname.includes('/locations/location-')?place(region):{records:[place(region)]}};
@@ -52,7 +93,7 @@ for(const width of [1440,390])test(`one URL scope for full administrator layout 
     await act(async()=>root.render(React.createElement(RouterProvider,{router})));await settle();
     assert.match(document.body.textContent,/현재 관리 지역: 가조/);
     assert(!document.body.textContent.includes('위치정보 관리자 토큰'));
-    assert(calls.some(c=>c.path==='/api/copilot/locations'));
+    assert(calls.some(c=>c.path==='/api/admin/locations'));
     assert.equal(document.querySelectorAll('select[aria-label="지역"]').length,0);
     await click('위치정보 보완');assert(resolveOld);
     let start=calls.length;await select('hapcheon');
