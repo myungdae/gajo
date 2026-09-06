@@ -66,11 +66,11 @@ describe('common admin authorization boundary', () => {
   });
 
   it('preserves the legacy token for operational automation', async () => {
-    await request(app.getHttpServer()).get('/api/admin/regions').expect(401);
+    await request(app.getHttpServer()).get('/api/admin/regions').expect(403);
     await request(app.getHttpServer())
       .get('/api/admin/regions')
       .set('x-admin-token', 'wrong')
-      .expect(401);
+      .expect(403);
     const result = await request(app.getHttpServer())
       .get('/api/admin/regions')
       .set('x-admin-token', 'fixture-common')
