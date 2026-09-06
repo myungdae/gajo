@@ -14,7 +14,6 @@ import type { CopilotPrincipal } from '../copilot/copilot-auth';
 export type AdminPrincipal = {
   actorId: string;
   allowedRegionIds: string[];
-  authentication: 'ADMIN_TOKEN' | 'COPILOT_JWT';
 };
 
 const configuredActor = (token: string) => {
@@ -52,7 +51,6 @@ export class AdminTokenGuard implements CanActivate {
           .split(',')
           .map((value) => value.trim())
           .filter(Boolean),
-        authentication: 'ADMIN_TOKEN',
       } satisfies AdminPrincipal;
       return true;
     }
@@ -63,7 +61,7 @@ export class AdminTokenGuard implements CanActivate {
       : legacy && legacy !== configured
         ? legacy
         : '';
-    if (!bearer) throw new UnauthorizedException('Administrator login required');
+    if (!bearer) throw new ForbiddenException('Invalid admin token');
 
     const secret = process.env.COPILOT_JWT_SECRET;
     if (!secret)
@@ -95,7 +93,6 @@ export class AdminTokenGuard implements CanActivate {
     request.adminPrincipal = {
       actorId: `COPILOT:${principal.sub}`,
       allowedRegionIds,
-      authentication: 'COPILOT_JWT',
     } satisfies AdminPrincipal;
     return true;
   }
