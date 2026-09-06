@@ -398,8 +398,8 @@ export class RegionalDataService implements OnModuleInit {
     }
     return { ...base, records };
   }
-  async quality() {
-    const rows: any[] = await this.model.find().lean();
+  async quality(regionId?: string) {
+    const rows: any[] = await this.model.find(regionId ? { regionId } : {}).lean();
     const active = rows.filter((x) => x.lifecycleStatus === 'ACTIVE');
     return {
       totalActive: active.length,

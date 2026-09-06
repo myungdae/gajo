@@ -5,9 +5,13 @@ import { shortUri } from '../utils/uri';
 import RegionalDataManager from '../components/RegionalDataManager';
 import SpotlightManager from '../components/SpotlightManager';
 import { useRegion } from '../RegionContext';
+import { useNavigate } from 'react-router-dom';
+import { REGION_CONFIGS, type RegionId } from '../regionConfig';
+import { regionalPath } from '../regionRouting';
 
 export default function AdminPage() {
   const region=useRegion();
+  const navigate=useNavigate();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [pilot,setPilot]=useState<any>(null);
@@ -26,11 +30,12 @@ export default function AdminPage() {
     <div>
       <section className="card" aria-label="현재 관리 지역">
         <h1>현재 관리 지역: {region.regionName}</h1>
+        <label>관리 지역<select aria-label="관리 지역" value={region.id} onChange={e=>navigate(regionalPath('/admin', e.target.value as RegionId, true))}>{Object.values(REGION_CONFIGS).map(r=><option key={r.id} value={r.id}>{r.regionName}</option>)}</select></label>
         <p>아래 데이터 검수, 연결 관리, Spotlight는 모두 {region.regionName} 기준입니다.</p>
       </section>
-      <RegionalDataManager onAdminTokenChange={setAdminToken} />
-      <SpotlightManager token={adminToken} />
-      <VisitorAnalyticsDashboard token={adminToken} />
+      <RegionalDataManager key={`data:${region.id}`} onAdminTokenChange={setAdminToken} />
+      <SpotlightManager key={`spotlight:${region.id}`} token={adminToken} />
+      <VisitorAnalyticsDashboard key={`analytics:${region.id}`} token={adminToken} />
       {pilot&&<div className="card"><h2>Legacy / unknown 파일럿 이벤트 (신규 통계와 합산 금지)</h2><p className="text-muted">개인정보나 자유 입력 원문 없이 집계한 이용 지표입니다.</p><div className="grid-2"><div className="stat-box"><div className="num">{pilot.totalTripSessions}</div><div className="label">여행 세션</div></div><div className="stat-box"><div className="num">{Math.round(pilot.recommendationCompletionRate*100)}%</div><div className="label">추천 완료율</div></div><div className="stat-box"><div className="num">{pilot.navigationHandoffCount}</div><div className="label">내비 연결</div></div><div className="stat-box"><div className="num">{pilot.itineraryAddCount}</div><div className="label">일정 담기</div></div><div className="stat-box"><div className="num">{pilot.replanningCount}</div><div className="label">일정 다시 보기</div></div><div className="stat-box"><div className="num">{pilot.errorFallbackCount}</div><div className="label">오류·재시도</div></div></div><p>구조화 요청 {pilot.structuredUsage} · 자유 입력 {pilot.freeLanguageUsage}</p><p>유입: {(pilot.sessionsByEntrySource||[]).map((x:any)=>`${x.label} ${x.total}`).join(' · ')||'아직 없음'}</p><p>빠른 선택: {(pilot.mostUsedQuickIntents||[]).map((x:any)=>`${x.label} ${x.total}`).join(' · ')||'아직 없음'}</p></div>}
       {pilot&&<div className="card"><h2>PLAN → NOW 연속 이용</h2><p>PLAN 시작 {pilot.planSessionsStarted||0} · 완료 {pilot.planCompleted||0} · 재방문 {pilot.planResumed||0}</p><p>NOW 시작 {pilot.nowSessionsStarted||0} · 이어서 이용 {pilot.planNowContinuations||0} · 현재 상황 반영 {pilot.runtimeHydrations||0}</p></div>}
       {pilot?.sessionsByRegion&&<div className="card"><h2>지역별 이용</h2><p>{pilot.sessionsByRegion.map((item:any)=>`${({gajo:'가조',okcheon:'옥천',muan:'무안',gyeryong:'계룡',hapcheon:'합천','daejeon-junggu':'대전 중구'}as Record<string,string>)[item.label]||item.label} ${item.total}`).join(' · ')||'아직 없음'}</p></div>}

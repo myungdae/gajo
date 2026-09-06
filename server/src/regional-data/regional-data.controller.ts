@@ -17,7 +17,7 @@ export class RegionalDataController {
   @Get() @UseGuards(AdminTokenGuard) async list(@Query() query: any) {
     return {
       records: await this.service.list(query),
-      quality: await this.service.quality(),
+      quality: await this.service.quality(query.regionId),
     };
   }
   @Get('operational-readiness') @UseGuards(AdminTokenGuard) operationalReadiness(

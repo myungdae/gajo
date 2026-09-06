@@ -22,8 +22,7 @@ const statusLabel=(value:string|undefined,labels:Record<string,string>)=>value?(
 const FIELD_LABELS:Record<string,string>={displayName:"이름",aliases:"별칭",entityType:"엔티티 유형",category:"카테고리",tags:"의미 태그",areaLabel:"권역",phone:"전화",address:"주소",latitude:"위도",longitude:"경도",websiteUrl:"홈페이지",reservationUrl:"예약 URL",operatingHours:"운영시간",closureDays:"휴무일",parking:"주차",accessibility:"접근성",walkingAccess:"보행 특성",shortDescription:"설명"};
 function LegacyRegionalDataManager({onAdminTokenChange,initialRegionId=""}:{onAdminTokenChange?:(token:string)=>void;initialRegionId?:string}={}) {
   const [data, setData] = useState<any>({ records: [], quality: {} }),
-    [filters, setFilters] = useState({
-      regionId: initialRegionId,
+    [localFilters, setFilters] = useState({
       lifecycleStatus: "",
       entityType: "",
       verificationStatus: "",
@@ -34,9 +33,10 @@ function LegacyRegionalDataManager({onAdminTokenChange,initialRegionId=""}:{onAd
     ),
     [error, setError] = useState(""),[notice,setNotice]=useState(""),[importPackage,setImportPackage]=useState<any>(),[importPreview,setImportPreview]=useState<any>(),[trustedImport,setTrustedImport]=useState(false);
   const reviewRef=useRef<HTMLDivElement>(null), loadVersion=useRef(0);
+  const filters = { ...localFilters, regionId: initialRegionId };
   const load = () => {
     const version = ++loadVersion.current;
-    if (!token) { setData({ records: [], quality: {} }); setSelected(undefined); return Promise.resolve(); }
+    if (!token || !initialRegionId) { setData({ records: [], quality: {} }); setSelected(undefined); return Promise.resolve(); }
     return fetchRegionalData(
       Object.fromEntries(Object.entries(filters).filter(([, v]) => v)),
       token,
@@ -52,7 +52,6 @@ function LegacyRegionalDataManager({onAdminTokenChange,initialRegionId=""}:{onAd
     token,
   ]);
   useEffect(() => {
-    setFilters(current => current.regionId === initialRegionId ? current : { ...current, regionId: initialRegionId });
     setSelected(undefined);
     setError("");
     setNotice("");
@@ -117,23 +116,12 @@ function LegacyRegionalDataManager({onAdminTokenChange,initialRegionId=""}:{onAd
         ))}
       </div>
       <div className="regional-data-filters">
-        <select
-          aria-label="지역"
-          value={filters.regionId}
-          onChange={(e) => setFilters({ ...filters, regionId: e.target.value })}
-        >
-          <option value="">전체 지역</option>
-          {Object.entries(REGIONS).map(([id, label]) => (
-            <option value={id} key={id}>
-              {label}
-            </option>
-          ))}
-        </select>
+        <p>검수 지역: {REGIONS[initialRegionId] || initialRegionId} · 지역 변경은 상단 관리 지역에서 선택해 주세요.</p>
         <select
           aria-label="상태"
           value={filters.lifecycleStatus}
           onChange={(e) =>
-            setFilters({ ...filters, lifecycleStatus: e.target.value })
+            setFilters({ ...localFilters, lifecycleStatus: e.target.value })
           }
         >
           <option value="">전체 상태</option>
@@ -153,7 +141,7 @@ function LegacyRegionalDataManager({onAdminTokenChange,initialRegionId=""}:{onAd
           aria-label="유형"
           value={filters.entityType}
           onChange={(e) =>
-            setFilters({ ...filters, entityType: e.target.value })
+            setFilters({ ...localFilters, entityType: e.target.value })
           }
         >
           <option value="">전체 유형</option>
@@ -165,7 +153,7 @@ function LegacyRegionalDataManager({onAdminTokenChange,initialRegionId=""}:{onAd
           aria-label="검증"
           value={filters.verificationStatus}
           onChange={(e) =>
-            setFilters({ ...filters, verificationStatus: e.target.value })
+            setFilters({ ...localFilters, verificationStatus: e.target.value })
           }
         >
           <option value="">전체 검증</option>
