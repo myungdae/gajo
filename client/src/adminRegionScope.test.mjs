@@ -118,8 +118,14 @@ for (const entry of ['/admin', '/hapcheon/admin'])
       assert.equal(document.body.textContent.includes('관리자 인증'), false);
       assert.equal(calls.length, 0);
 
-      await change('input[autocomplete="username"]', 'manager');
-      await change('input[autocomplete="current-password"]', 'secret');
+      const usernameInput = document.querySelector('input[name="username"]');
+      const passwordInput = document.querySelector('input[name="password"]');
+      assert(usernameInput, 'username input');
+      assert(passwordInput, 'password input');
+      assert.equal(usernameInput.autocomplete || usernameInput.getAttribute('autocomplete'), 'username');
+      assert.equal(passwordInput.autocomplete || passwordInput.getAttribute('autocomplete'), 'current-password');
+      await change('input[name="username"]', 'manager');
+      await change('input[name="password"]', 'secret');
       const form = document.querySelector('form');
       const props = form[Object.keys(form).find((key) => key.startsWith('__reactProps$'))];
       await act(async () => props.onSubmit({ preventDefault() {} }));
