@@ -126,6 +126,7 @@ export default function AdminEntry() {
             <label>
               아이디
               <input
+                name="username"
                 autoComplete="username"
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
@@ -135,6 +136,7 @@ export default function AdminEntry() {
               비밀번호
               <input
                 type="password"
+                name="password"
                 autoComplete="current-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
