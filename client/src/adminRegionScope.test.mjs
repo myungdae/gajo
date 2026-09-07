@@ -135,6 +135,26 @@ for (const entry of ['/admin', '/hapcheon/admin'])
 
       assert.equal(values.get('copilot-access-token'), 'fixture-jwt');
       assert.equal(values.has('admin-write-token'), false);
+      assert.match(document.body.textContent, /내 비밀번호 변경/);
+      await change('input[name="currentPassword"]', 'Initial-password-1');
+      await change('input[name="newPassword"]', 'Changed-password-2');
+      await change('input[name="newPasswordConfirm"]', 'Changed-password-2');
+      const passwordForm = document
+        .querySelector('input[name="currentPassword"]')
+        .closest('form');
+      const passwordFormProps = passwordForm[
+        Object.keys(passwordForm).find((key) => key.startsWith('__reactProps'))
+      ];
+      await act(async () =>
+        passwordFormProps.onSubmit({ preventDefault() {} }),
+      );
+      await settle();
+      const passwordCall = calls.find((call) =>
+        call.path.endsWith('/copilot/auth/change-password'),
+      );
+      assert(passwordCall, 'password change request');
+      assert.equal(passwordCall.headers.Authorization, 'Bearer fixture-jwt');
+      assert.match(document.body.textContent, /비밀번호가 변경되었습니다/);
       if (entry === '/admin') await change('select[aria-label="관리 지역"]', 'hapcheon');
       assert.match(document.body.textContent, /현재 관리 지역: 합천/);
       assert.match(document.body.textContent, /합천 업소 관리/);
