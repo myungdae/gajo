@@ -1,4 +1,5 @@
 import { semanticDiscoveryCategory, toSemanticRuntimeSignal } from './semantic-runtime.adapter';
+import { resolveEntityInformation } from './entity-information.resolver';
 import { OpenAISemanticInterpreter } from './openai-semantic-interpreter.service';
 import { Injectable, Optional } from '@nestjs/common';
 import {
@@ -164,7 +165,9 @@ export class ConciergeService {
       } else if (semantic.intent === 'REPLAN') {
         route = { intentRoute: 'REPLAN', category: undefined };
       } else if (semantic.intent === 'IMMEDIATE_NEED') {
-        route = { intentRoute: 'IMMEDIATE_NOW', category: undefined };
+        route = { intentRoute: 'IMMEDIATE_NOW', category: semanticCategory };
+      } else if (semantic.intent === 'INFORMATION') {
+        route = { intentRoute: 'ENTITY_INFORMATION', category: semanticCategory };
       }
     }
 
@@ -191,10 +194,14 @@ export class ConciergeService {
           groundingText,
         );
     }
-    if (exactPlaceIntent && exactPlaceIntent.status !== 'AMBIGUOUS')
+    if (
+      exactPlaceIntent &&
+      exactPlaceIntent.status !== 'AMBIGUOUS' &&
+      route.intentRoute !== 'ENTITY_INFORMATION'
+    )
       route = {
         intentRoute: 'PLACE_DISCOVERY',
-        category: exactPlaceIntent.category,
+        category: route.category ?? exactPlaceIntent.category,
       };
     const routeDetails: any = route;
     if(route.intentRoute==='FIRST_TIME_VISITOR'){
@@ -332,6 +339,45 @@ export class ConciergeService {
       };
     }
 
+    if (route.intentRoute === 'ENTITY_INFORMATION') {
+      const canonicalEntityId =
+        exactPlaceIntent?.entityId ||
+        previousSubject?.entityId;
+
+      const publicPlace =
+        canonicalEntityId && this.regionalData
+          ? await this.regionalData.publicPlaceByCanonical(canonicalEntityId)
+          : undefined;
+
+      const place = publicPlace?.place;
+
+      const entityInformation = place
+        ? resolveEntityInformation(
+            place,
+            semanticSignal?.requestedAction,
+            semanticSignal?.categoryHint,
+          )
+        : {
+            kind: 'GENERAL',
+            status: 'NOT_VERIFIED',
+            message:
+              '말씀하신 장소는 이해했지만 현재 검증된 지역 데이터에서 해당 장소 정보를 확인하지 못했습니다.',
+          };
+
+      return {
+        context,
+        evidence,
+        firedRules,
+        recommendation: null,
+        intentRoute: 'ENTITY_INFORMATION',
+        entityInformation,
+        conversationalReference:
+          previousSubject || conversationalReference,
+        visitorMessage: entityInformation.message,
+        nearbyRestaurantIntent: false,
+        nearbyDiscoveryIntent: false,
+      };
+    }
     if (route.intentRoute === 'DISTANCE_INFO' && this.placeDiscovery) {
       const distanceInfo = await this.placeDiscovery.distanceInfo(
         regionId,

@@ -2,6 +2,7 @@ export type IntentRoute =
   | 'JOURNEY_PLAN'
   | 'PLACE_DISCOVERY'
   | 'DISTANCE_INFO'
+  | 'ENTITY_INFORMATION'
   | 'IMMEDIATE_NOW'
   | 'FIRST_TIME_VISITOR'
   | 'REPLAN';
