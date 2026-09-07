@@ -28,6 +28,7 @@ import {
 import { regionalRuntimeView } from "../regionalRuntime";
 import {
   currentAndNext,
+  executionState,
   removeSavedPlace,
   savedPlaceItems,
   verifiedNavigation,
@@ -39,6 +40,12 @@ import {
 import TripManagement from "../components/TripManagement";
 import ItineraryItemEditor from "../components/ItineraryItemEditor";
 import ArchivedTrips from "../components/ArchivedTrips";
+import EntityActions from "../components/EntityActions";
+import {
+  journeySoundMuted,
+  playJourneySound,
+  setJourneySoundMuted,
+} from "../journeySound";
 
 export default function ItineraryPage() {
   const {language} = useRegionalLanguage();
@@ -72,6 +79,7 @@ export default function ItineraryPage() {
   const [proposal, setProposal] = useState<ReplanningProposal | null>(null);
   const [runtimeMessage, setRuntimeMessage] = useState("");
   const [observing, setObserving] = useState(false);
+  const [soundMuted, setSoundMutedState] = useState(() => journeySoundMuted());
   const [knownRuntimeContext, setKnownRuntimeContext] = useState<any>(
     () =>
       runtimeContextForRegion(location.state?.result?.context, region.id) ||
@@ -86,6 +94,12 @@ export default function ItineraryPage() {
       savedPlaceCount: savedPlaces.length,
     });
   }, []);
+  useEffect(() => {
+    if (proposal)
+      playJourneySound("ready", `replan-ready:${proposal.proposalNo}`, {
+        muted: soundMuted,
+      });
+  }, [proposal?.proposalNo, soundMuted]);
   useEffect(() => {
     const refresh = (event: Event) => {
       if ((event as CustomEvent).detail?.regionId === region.id) setRevision((value) => value + 1);
@@ -209,7 +223,7 @@ export default function ItineraryPage() {
       );
     } catch (error: any) {
       setRuntimeMessage(
-        `런타임 관측 실패: ${error?.message || "알 수 없는 오류"}`,
+        `여행 상황을 확인하지 못했습니다. ${error?.message || "잠시 후 다시 시도해 주세요."}`,
       );
     } finally {
       setObserving(false);
@@ -250,6 +264,9 @@ export default function ItineraryPage() {
         ).size,
       });
     setProposal(null);
+    playJourneySound("success", `replan-approved:${proposal.proposalNo}`, {
+      muted: soundMuted,
+    });
     setRuntimeMessage(
       wasFull
         ? "변경된 일정을 내 여행에 반영했습니다. 완료된 일정은 그대로 유지됩니다."
@@ -291,7 +308,7 @@ export default function ItineraryPage() {
       <TripManagement onSavedPlacesCleared={setSavedPlaces} />
       <ArchivedTrips />
       <div className="card">
-        <h2>추천 근거 요약</h2>
+        <h2>추천 이유</h2>
         <p style={{ fontSize: 13 }}>{rec.reasonSummary}</p>
         {typeof rec.confidenceScore === "number" && (
           <div className="tag-row">
@@ -306,12 +323,31 @@ export default function ItineraryPage() {
 
       {journey.current && (
         <section className="card journey-execution-card">
-          <small>현재 일정:</small>
+          <small>지금 갈 곳</small>
           <h2>{recommendationItemLabel(journey.current)}</h2>
           {verifiedNavigation(journey.current) && (
-            <p>
-              장소를 열어 ‘출발하기’를 누르면 사용할 내비를 선택할 수 있습니다.
-            </p>
+            <EntityActions
+              entity={journey.current}
+              hideDetail
+              navigationLabel="출발하기"
+              showItineraryAdd={false}
+              onNavigate={(provider) => {
+                const entityId = canonicalEntityId(journey.current);
+                if (entityId)
+                  saveTripSession(
+                    executionState(
+                      ensureTripSession(region.id),
+                      entityId,
+                      "EN_ROUTE",
+                    ),
+                  );
+                track("JOURNEY_START_ACTION", tripSession.id, {
+                  entityId,
+                  provider,
+                  source: "itinerary-summary",
+                });
+              }}
+            />
           )}
           {journey.next && (
             <div className="next-stop">
@@ -342,13 +378,28 @@ export default function ItineraryPage() {
               });
             }}
           >
-            일정 변경
+            다른 곳으로 변경
           </button>
         </section>
       )}
 
       <div className="card">
-        <h2>런타임 상황 확인</h2>
+        <h2>여행 중 달라진 상황 확인</h2>
+        <p className="text-muted">
+          날씨나 이동 상황이 달라지면 남은 일정에 미치는 영향만 알려드려요.
+        </p>
+        <button
+          type="button"
+          className="btn btn-text"
+          aria-pressed={soundMuted}
+          onClick={() => {
+            const next = !soundMuted;
+            setJourneySoundMuted(next);
+            setSoundMutedState(next);
+          }}
+        >
+          {soundMuted ? "알림 소리 켜기" : "알림 소리 끄기"}
+        </button>
         <VisitorLocationControl
           onLocation={async (gps) =>
             observeLiveRuntime(
@@ -371,7 +422,7 @@ export default function ItineraryPage() {
           onLiveRefresh={observeLiveRuntime}
         />
         {runtimeMessage && <p style={{ fontSize: 12 }}>{runtimeMessage}</p>}
-        <div className="demo-runtime-control">
+        {import.meta.env.DEV && <div className="demo-runtime-control">
           <small>시연·테스트 기능</small>
           <p>
             완료된 앞의 두 일정을 보존하고 13:00, 강수량 20mm 상황을 재현합니다.
@@ -383,15 +434,16 @@ export default function ItineraryPage() {
           >
             {observing ? "데모 실행 중…" : "데모: 13시 강한 비 발생"}
           </button>
-        </div>
+        </div>}
       </div>
 
       {proposal && (
         <div className="card replanning-card">
-          <h2>상황이 바뀌었습니다</h2>
+          <small>새 일정 제안</small>
+          <h2>여행 상황이 바뀌었어요</h2>
           <div className="replanning-section">
             <b>무엇이 바뀌었나요?</b>
-            <p>강한 비가 시작되었습니다.</p>
+            <p>날씨나 이동 조건이 달라져 남은 일정을 다시 확인했어요.</p>
           </div>
           <div className="replanning-section">
             <b>영향받는 일정</b>
@@ -449,7 +501,7 @@ export default function ItineraryPage() {
           )}
           <div className="grid-2">
             <button className="btn btn-primary" onClick={approve}>
-              변경하기
+              새 일정으로 바꾸기
             </button>
             <button className="btn btn-outline" onClick={reject}>
               기존 일정 유지
@@ -460,7 +512,7 @@ export default function ItineraryPage() {
 
       {itinerarySteps.length > 0 && (
         <div className="card">
-          <h2>일정 단계</h2>
+          <h2>여행 일정</h2>
           {[
             ...new Set(
               itinerarySteps.map((step: any) => Number(step.dayIndex) || 1),
@@ -514,7 +566,7 @@ export default function ItineraryPage() {
 
       {rec.evidence && rec.evidence.length > 0 && (
         <div className="card">
-          <h2>설명 가능한 근거 (Evidence Chain)</h2>
+          <h2>이 추천을 만든 정보</h2>
           <p
             style={{
               fontSize: 12,
@@ -522,9 +574,7 @@ export default function ItineraryPage() {
               marginBottom: 10,
             }}
           >
-            아래는 온톨로지 그래프에서 실제로 추적된 RDF 트리플입니다. 이
-            서비스의 모든 추천은 프롬프트 규칙이 아닌 그래프 순회(graph
-            traversal)를 통해 도출됩니다.
+            추천에 사용한 장소와 조건의 연결 정보를 보여드려요.
           </p>
           {rec.evidence.map((e: any, i: number) => (
             <div className="evidence-item" key={i}>

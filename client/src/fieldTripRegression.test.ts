@@ -27,7 +27,8 @@ test("TEST B: starting a new Hapcheon trip leaves the old trip recoverable and v
   assert.ok(archived[0].archivedAt);
   const ui = readFileSync(new URL("./components/ArchivedTrips.tsx", import.meta.url), "utf8");
   assert.match(ui, /지난 여행/);
-  assert.match(ui, /읽기 전용/);
+  assert.match(ui, /이전에 다녀온 여행과 일정을 다시 볼 수 있어요/);
+  assert.doesNotMatch(ui, /읽기 전용/);
 });
 
 test("TEST C: location-based three-stop replan keeps identity, history, saved places, and constraints", () => {
