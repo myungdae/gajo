@@ -36,6 +36,11 @@ export default function AdminEntry() {
   const [regions, setRegions] = useState<Region[]>([]);
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
+  const [passwordChanging, setPasswordChanging] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState('');
   const initial =
     location.pathname.match(/^\/([^/]+)\/admin\/?$/)?.[1] ||
     new URLSearchParams(location.search).get('regionId') ||
@@ -106,6 +111,38 @@ export default function AdminEntry() {
     }
   };
 
+  const changePassword = async (event: FormEvent) => {
+    event.preventDefault();
+    setPasswordMessage('');
+    if (newPassword !== newPasswordConfirm) {
+      setPasswordMessage('새 비밀번호가 서로 일치하지 않습니다.');
+      return;
+    }
+    if (newPassword.length < 12) {
+      setPasswordMessage('새 비밀번호는 12자 이상으로 입력해 주세요.');
+      return;
+    }
+    setPasswordChanging(true);
+    try {
+      await api.post(
+        '/copilot/auth/change-password',
+        { currentPassword, newPassword },
+        { headers: { Authorization: `Bearer ${session?.token}` } },
+      );
+      setCurrentPassword('');
+      setNewPassword('');
+      setNewPasswordConfirm('');
+      setPasswordMessage('비밀번호가 변경되었습니다. 다음 로그인부터 새 비밀번호를 사용해 주세요.');
+    } catch (requestError: any) {
+      setPasswordMessage(
+        requestError?.response?.data?.message ||
+          '현재 비밀번호를 확인한 뒤 다시 시도해 주세요.',
+      );
+    } finally {
+      setPasswordChanging(false);
+    }
+  };
+
   const logout = () => {
     sessionStorage.removeItem(TOKEN_KEY);
     sessionStorage.removeItem(PRINCIPAL_KEY);
@@ -157,6 +194,57 @@ export default function AdminEntry() {
             <button type="button" onClick={logout}>
               로그아웃
             </button>
+            <details>
+              <summary>내 비밀번호 변경</summary>
+              <form onSubmit={changePassword}>
+                <label>
+                  현재 비밀번호
+                  <input
+                    type="password"
+                    name="currentPassword"
+                    autoComplete="current-password"
+                    value={currentPassword}
+                    onChange={(event) => setCurrentPassword(event.target.value)}
+                  />
+                </label>
+                <label>
+                  새 비밀번호
+                  <input
+                    type="password"
+                    name="newPassword"
+                    autoComplete="new-password"
+                    minLength={12}
+                    value={newPassword}
+                    onChange={(event) => setNewPassword(event.target.value)}
+                  />
+                </label>
+                <label>
+                  새 비밀번호 확인
+                  <input
+                    type="password"
+                    name="newPasswordConfirm"
+                    autoComplete="new-password"
+                    minLength={12}
+                    value={newPasswordConfirm}
+                    onChange={(event) => setNewPasswordConfirm(event.target.value)}
+                  />
+                </label>
+                <button
+                  type="submit"
+                  disabled={
+                    passwordChanging ||
+                    !currentPassword ||
+                    !newPassword ||
+                    !newPasswordConfirm
+                  }
+                >
+                  {passwordChanging ? '변경 중…' : '비밀번호 변경'}
+                </button>
+              </form>
+              {passwordMessage && (
+                <p role="status">{passwordMessage}</p>
+              )}
+            </details>
           </div>
         )}
         {error && <p role="alert">{error}</p>}
