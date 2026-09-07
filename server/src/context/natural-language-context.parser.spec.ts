@@ -41,3 +41,11 @@ describe('parseNaturalLanguageContext', () => {
     expect(parseNaturalLanguageContext(message).stayUntil).toBeUndefined();
   });
 });
+
+describe('Hapcheon single-entry golden request',()=>{
+  it('understands parents, two hours, low walking, sightseeing and dinner in one utterance',()=>{
+    const parsed=parseNaturalLanguageContext('부모님과 왔는데 두 시간 정도 있어요. 많이 걷지 않고 합천에서 꼭 볼 만한 곳 보고 저녁 먹고 싶어요.',new Date('2026-09-07T06:00:00Z'));
+    expect(parsed.companions[0].relationship).toBe('parent');expect(parsed.stayUntil).toBe('17:00');expect(parsed.walkingLevel).toBe('LOW');expect(parsed.activityPreferences).toEqual(expect.arrayContaining(['NATURE','FOOD']));
+  });
+  it('does not mistake a travel duration for available time',()=>expect(parseNaturalLanguageContext('부모님과 두 시간 운전해서 왔어요.').stayUntil).toBeUndefined());
+});

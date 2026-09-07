@@ -13,7 +13,8 @@ test("planning UI explicitly exposes saved regional trip loading and safe new-tr
     "지금 여행은 그대로 보관됩니다",
   ])
     assert.ok(entry.includes(copy));
-  assert.match(concierge, /tripMode\s*===\s*["']PLAN["'][\s\S]*<SavedTripEntry/);
+  assert.doesNotMatch(concierge, /<SavedTripEntry/);
+  assert.match(concierge, /concierge-primary-entry/);
 });
 test("automatic restore is not the only My Trip access path", () => {
   const layout = source("./components/Layout.tsx"),
@@ -24,7 +25,7 @@ test("automatic restore is not the only My Trip access path", () => {
   assert.match(layout, /itineraryItemCount/);
   assert.match(layout, /my-trip-count/);
   assert.match(layout, /regionalPath\(item\.to, region\.id\)/);
-  assert.match(continuity, /이어갈 \$\{region\.regionName\} 여행이 있어요/);
+  assert.match(continuity, /지난 여행이 남아 있어요/);
 });
 test("post-save continuation keeps discovery in place and exposes immediate execution", () => {
   const continuation = source("./components/ItineraryAddContinuation.tsx"),

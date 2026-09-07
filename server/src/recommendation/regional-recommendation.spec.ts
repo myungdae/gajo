@@ -1,3 +1,4 @@
+import { parseNaturalLanguageContext } from '../context/natural-language-context.parser';
 import { RecommendationService } from './recommendation.service';
 import { DecisionPipelineService } from './decision-pipeline.service';
 import { regionalCandidateDataset } from '../regions/regional-candidate.registry';
@@ -472,5 +473,19 @@ describe('regional recommendation ownership', () => {
       runtimeStates: [],
     });
     expect(traversal.findSuitablePrograms).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('Hapcheon single utterance to real regional choices',()=>{
+  it('uses parsed golden context without asking the visitor to start a trip',async()=>{
+    const parsed=parseNaturalLanguageContext('부모님과 왔는데 두 시간 정도 있어요. 많이 걷지 않고 합천에서 꼭 볼 만한 곳 보고 저녁 먹고 싶어요.',new Date('2026-09-07T06:00:00Z'));
+    const {instance}=service();
+    const result=await instance.buildRecommendation({...parsed,contextNo:'golden-hapcheon',regionId:'hapcheon',currentTime:'15:00',healthConditions:[],wellnessGoals:[],expandedConditions:parsed.companionConstraints,environmentConditions:[],risks:[],runtimeStates:[]});
+    const ids=new Set(regionalCandidateDataset('hapcheon')!.records.map(r=>r.entityUri));
+    expect(result.regionId).toBe('hapcheon');
+    expect(result.itinerary.steps.length).toBeGreaterThan(0);
+    expect(result.itinerary.steps.every((step:any)=>ids.has(step.programUri))).toBe(true);
+    expect(result.reasonSummary).toContain('실시간 확인 정보가 아닙니다');
+    expect(JSON.stringify(result)).not.toMatch(/여정을 시작하시겠습니까|새로운 여행을 시작할까요/);
   });
 });

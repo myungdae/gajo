@@ -210,6 +210,11 @@ export function routeNaturalLanguageIntent(input: {
     )
   )
     return { intentRoute: 'IMMEDIATE_NOW' as const, category };
+  if (
+    category === 'LODGING' &&
+    /(?:잘|잠잘)\s*(?:곳|데)(?:이|가)?\s*(?:필요|있었으면|찾)/.test(message)
+  )
+    return { intentRoute: 'PLACE_DISCOVERY' as const, category };
   const journey =
     /\d+박\s*\d+일|당일\s*여행|(?:하루|내일).{0,8}(?:일정|코스)|일정\s*(?:짜|만들|추천)|여행\s*(?:짜|계획)|코스\s*(?:짜|만들)|(?:보고|갔다가|들렀다가|먹고).{0,30}(?:보고|갔다가|들렀다가|먹고|펜션|숙소)/.test(
       message,
@@ -217,7 +222,7 @@ export function routeNaturalLanguageIntent(input: {
   if (journey) return { intentRoute: 'JOURNEY_PLAN' as const, category };
   if (
     category &&
-    /주변|근처|가까운|인근|알려|찾아|보여|추천|어디|있어|아니|먹을\s*(?:곳|데)|살\s*(?:곳|데)|장\s*볼|(?:가고|먹고|쉬고)\s*싶|(?:숙박|목욕|자고|묵고).{0,6}싶|가기\s*좋|편한|갈\s*만한|^카페$|^커피$|(?:아이와|부모님과)?\s*갈\s+(?:실내\s*)?(?:체험|카페|식당)/.test(
+    /주변|근처|가까운|인근|알려|찾아|보여|추천|어디|있어|아니|먹을\s*(?:곳|데)|살\s*(?:곳|데)|장\s*볼|(?:가고|먹고|마시고|쉬고)\s*싶|(?:숙박|목욕|자고|묵고).{0,6}싶|가기\s*좋|편한|갈\s*만한|^카페$|^커피$|(?:아이와|부모님과)?\s*갈\s+(?:실내\s*)?(?:체험|카페|식당)/.test(
       message,
     )
   )

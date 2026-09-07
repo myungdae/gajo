@@ -1,6 +1,7 @@
 import { REQUEST_PRESENTATION_COPY, requestPresentation, shouldOfferContextRefresh } from "../conversationPresentation";
 import { RECOMMENDATION_REQUEST_COPY } from '../recommendationRequestCopy';
 import VoiceInputDialog from "../components/VoiceInputDialog";
+import JourneyConciergeNext from '../components/JourneyConciergeNext';
 import { readConversation, saveConversation, shouldAutoSubmitEntry } from "../conversationMemory";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -29,6 +30,7 @@ import { getQuickStartPreset } from "../quickStartPresets";
 import {
   ensureTripSession,
   loadTripSession,
+  hasTripEvidence,
   mergeTravelContext,
   saveTripSession,
   sessionContext,
@@ -48,7 +50,7 @@ import { regionalRuntimeView } from "../regionalRuntime";
 import { SHARED_VISITOR_COPY } from "../visitorCopy";
 import InstallExperience from "../components/InstallExperience";
 import FullJourneySave from "../components/FullJourneySave";
-import SavedTripEntry from "../components/SavedTripEntry";
+
 import AiResponseActions from "../components/AiResponseActions";
 import RuntimeJourneyEntry from '../components/RuntimeJourneyEntry';
 import RuntimeJourneyResultActions from '../components/RuntimeJourneyResultActions';
@@ -68,7 +70,7 @@ import {
 import { GlossaryText } from "../components/GlossaryText";
 import { isExplanationOnly } from "../aiResponseActions";
 import { understoodSummary } from "../understoodSummary";
-import { acceptVoiceResult, understandVoice, type VoiceResultFingerprint, type VoiceUnderstanding } from "../voice/voiceUx";
+import { acceptVoiceResult, understandVoice, canAutoExecuteTravelSpeech, type VoiceResultFingerprint, type VoiceUnderstanding } from "../voice/voiceUx";
 import { useRegionalLanguage } from "../RegionalLanguageContext";
 
 interface Message {
@@ -131,6 +133,7 @@ function ConciergeConversation() {
     quickStartPreset?: unknown;
     quickContext?: CreateContextInput;
     freeTextOpen?: boolean;
+    voiceRequested?: boolean;
     tripMode?: "PLAN" | "NOW";
     initialMessage?: string;
     autoSubmit?: boolean;
@@ -183,7 +186,7 @@ function ConciergeConversation() {
   const [freeTextOpen, setFreeTextOpen] = useState(
     restored?.messages.some(message=>Boolean(message.result)) ? false : restored?.freeTextOpen ?? Boolean(entryState?.freeTextOpen),
   );
-  const [manualEntryMode,setManualEntryMode]=useState<"VOICE"|"TEXT"|null>(null);
+  const [,setManualEntryMode]=useState<"VOICE"|"TEXT"|null>(null);
   const [otherRequestOpen,setOtherRequestOpen]=useState(Boolean(entryState?.otherRequestOpen));
   const [emptyJourneyEditOpen,setEmptyJourneyEditOpen]=useState(false);
   const [structuredDraft, setStructuredDraft] = useState<CreateContextInput>(
@@ -219,7 +222,10 @@ function ConciergeConversation() {
     const gate=acceptVoiceResult(lastVoiceResultRef.current,text,Date.now(),requestInFlightRef.current);
     lastVoiceResultRef.current=gate.next;
     if(!text.trim()||!gate.accepted||requestInFlightRef.current){track("VOICE_DUPLICATE_BLOCKED",tripSession.id,{source:"FINAL_RESULT"});return;}
-    setVoiceDraft(text);setVoiceUnderstanding(understandVoice(text));setVoiceState("CONFIRMING");
+    const model=understandVoice(text);
+    setVoiceDraft(text);setVoiceUnderstanding(model);
+    if(canAutoExecuteTravelSpeech(model)){void send(text,undefined,false,model)}
+    else setVoiceState("CONFIRMING");
   };
   const {
     listening,
@@ -433,7 +439,8 @@ function ConciergeConversation() {
         ...(discoveryContext?.regionId === region.id
           ? { discoveryContext }
           : {}),
-        ...(hasCompletedTurn ? carriedContext : structuredDraft),
+        ...sessionContext(loadTripSession(localStorage,region.id)||tripSession),
+        ...Object.fromEntries(Object.entries(hasCompletedTurn ? carriedContext : structuredDraft).filter(([,value])=>value!==undefined)),
         ...(hasCompletedTurn ? explicitJourneyPayload(explicitJourney) : {}),
         ...structured,
         tripContext: sessionContext(
@@ -445,7 +452,7 @@ function ConciergeConversation() {
           currentResult?.discovery
             ?.category) as CreateContextInput["discoveryCategoryHint"],
         isFollowup:
-          hasCompletedTurn &&
+          (hasCompletedTurn || hasTripEvidence(storedTrip)) &&
           !/카페|커피|식당|맛집|배고|밥|숙소|호텔|펜션|관광|명소|왜|유래|역사|의미/.test(
             text,
           ),
@@ -468,6 +475,7 @@ function ConciergeConversation() {
         saveTripSession({
           ...latestSession,
           mode: tripMode === "GENERIC" ? latestSession.mode : tripMode,
+          plannedContext: {...latestSession.plannedContext,...Object.fromEntries(Object.entries({companions:result.context?.companions,stayUntil:result.context?.stayUntil,walkingLevel:result.context?.walkingLevel,transportMode:result.context?.transportMode,interests:result.context?.activityPreferences,mobilityConstraints:result.context?.companionConstraints}).filter(([,value])=>value!==undefined))},
           runtimeContext:
             tripMode === "PLAN" ? latestSession.runtimeContext : result.context,
         });
@@ -645,6 +653,7 @@ function ConciergeConversation() {
   }, []);
 
   const hasCompletedTurn = messages.some((message) => Boolean(message.result));
+  useEffect(()=>{if(entryState?.voiceRequested)openVoice()},[]);
   const requestUi=requestPresentation(hasCompletedTurn,loading,freeTextOpen,voiceOpen);
   const requestCopy=REQUEST_PRESENTATION_COPY[language];
   const currentResult =
@@ -659,7 +668,11 @@ function ConciergeConversation() {
       currentResult?.discovery ||
       currentResult?.distanceInfo,
     );
-  const latestRecommendation = hasRecommendation ? currentResult : undefined;
+  const isJourneyResult =
+    currentResult?.intentRoute === "JOURNEY_PLAN" ||
+    currentResult?.intentRoute === "REPLAN";
+  const latestRecommendation =
+    hasRecommendation && isJourneyResult ? currentResult : undefined;
   const journeySteps = runtimeJourneySteps(currentResult?.recommendation);
   const latestPrimaryResult = hasPrimaryResult ? currentResult : undefined;
   useEffect(() => {
@@ -737,15 +750,54 @@ function ConciergeConversation() {
 
   return (
     <div className="concierge-conversation">
-      {requestUi.intro&&!otherRequestOpen&&<RuntimeJourneyEntry loading={loading} onCreate={createRuntimeJourney} onDirect={()=>setOtherRequestOpen(true)}/>}
-      {requestUi.intro&&otherRequestOpen&&<section className="runtime-other-request" aria-label={language==='ko'?'다른 요청 방식':'Another request method'}><button className="btn btn-primary" onClick={openVoice}>{language==='ko'?'말하기':'Speak'}</button><button className="btn btn-outline" onClick={openText}>{language==='ko'?'글로 입력하기':'Type'}</button><button className="btn btn-text" onClick={()=>setOtherRequestOpen(false)}>{language==='ko'?'닫기':'Close'}</button></section>}
+      <section className="concierge-primary-entry" aria-labelledby="concierge-entry-title">
+        <h1 id="concierge-entry-title">{language==='ko'?'원하는 걸 편하게 말씀해 주세요':'Tell me what you would like'}</h1>
+        <p>{language==='ko'?'한 번 말씀하시면 지금 위치·시간·날씨와 여행 조건을 함께 보고 알맞게 찾아드릴게요.':'I will use your preferences and available location, time and weather to help you.'}</p>
 
-      {tripMode === "PLAN" && !hasCompletedTurn && <SavedTripEntry />}
+        <div className={"concierge-input-panel concierge-unified-composer"}>
+          <textarea
+            ref={textInputRef}
+            rows={2}
+            aria-label={RECOMMENDATION_REQUEST_COPY[language].inputLabel}
+            placeholder={requestCopy.help}
+            value={input}
+            onChange={(e)=>setInput(e.target.value)}
+            onKeyDown={(e)=>{if(e.key==="Enter"&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();send();}}}
+          />
+          <button
+            className="btn btn-primary btn-block concierge-submit"
+            onClick={() => send()}
+            disabled={loading||Boolean(voiceUnderstanding)}
+            aria-label={requestCopy.send}
+          >
+            {hasCompletedTurn ? (
+              <>
+                <span aria-hidden="true">➤</span>
+                <span className="sr-only">{requestCopy.send}</span>
+              </>
+            ) : (
+              requestCopy.send
+            )}
+          </button>
+          <button type="button" className="btn btn-outline" disabled={loading} onClick={openVoice}>{language==='ko'?'말하기':'Speak'}</button>
+          {hasCompletedTurn && (
+            <button
+              type="button"
+              className="btn btn-outline btn-block concierge-return-trip"
+              onClick={() => navigate(regionLink("/itinerary"))}
+            >
+              내 여행으로 돌아가기
+            </button>
+          )}
+        </div>
+        <RuntimeJourneyEntry auxiliary loading={loading} onCreate={createRuntimeJourney} onDirect={openText}/>
+      </section>
+      <JourneyConciergeNext busy={loading||voiceOpen} mode={tripMode} onReplan={text=>void send(text)}/>
       {tripMode !== "PLAN" && (
         <div ref={liveStoryRef} className="journey-live-context">
           {tripMode === "NOW" && !hasCompletedTurn && !loading && (
             <header className="journey-mode-header now">
-              <small>NOW · 여행 중</small>
+              <small>여행 중</small>
               {entryState?.entryDescription && entryState.entryMessage && (
                 <strong className="partner-entry-title">{entryState.entryMessage}</strong>
               )}
@@ -761,7 +813,7 @@ function ConciergeConversation() {
           />
         </div>
       )}
-      {tripMode === "NOW" && tripSession.plannedContext && (
+      {tripMode === "NOW" && tripSession.plannedContext && !hasCompletedTurn && (
         <NowContinuationSummary planned={tripSession.plannedContext} language={language} />
       )}
       {tripMode === "NOW" && <details className="structured-request-alternative"><summary>{language==="en"?"Location settings":"위치 설정"}</summary><LocationContextBar mode="NOW" refreshNeeded={Boolean(locationFreshnessNotice)} onConfirmed={()=>setLocationFreshnessNotice(null)} /></details>}
@@ -823,7 +875,7 @@ function ConciergeConversation() {
           )}
           <UnderstoodContext result={latestRecommendation} />
           {journeySteps.length>0&&<h1>{RUNTIME_JOURNEY_NAME[language]}</h1>}
-          {journeySteps.length?<ResultPanel result={latestRecommendation} onFindNearbyRestaurants={openNearby}/>:<section className="runtime-empty-journey" aria-labelledby="runtime-empty-journey-title"><h2 id="runtime-empty-journey-title">{language==='ko'?'조건에 맞는 여정을 찾지 못했어요.':'We could not find a matching journey.'}</h2><p>{language==='ko'?'검증된 장소가 부족하거나 선택한 조건이 좁을 수 있어요. 목적이나 조건을 바꿔 다시 만들어 보세요.':'Verified places may be limited or the selected conditions may be too narrow. Change the goal or preferences and try again.'}</p><div className="runtime-empty-actions"><button type="button" className="runtime-empty-primary" aria-expanded={emptyJourneyEditOpen} onClick={()=>setEmptyJourneyEditOpen(open=>!open)}>{language==='ko'?'목적·조건 다시 선택':'Choose Goal and Preferences'}</button><button type="button" disabled={loading} onClick={()=>{const request=journeyRequest({goal:'ACCOMMODATION'},language);createRuntimeJourney(request.text,request.context,request.planned)}}>{language==='ko'?'숙소 찾기':'Find Lodging'}</button><button type="button" disabled={loading} onClick={()=>{const last=lastRequestRef.current;if(last)void send(last.text,last.structured,true)}}>{language==='ko'?'같은 조건으로 다시 찾기':'Retry Same Search'}</button></div>{emptyJourneyEditOpen&&<div className="runtime-empty-editor"><RuntimeJourneyEntry loading={loading} onCreate={createRuntimeJourney} onDirect={()=>{setEmptyJourneyEditOpen(false);openText()}}/></div>}</section>}
+          {journeySteps.length?<ResultPanel result={latestRecommendation} onFindNearbyRestaurants={openNearby}/>:<section className="runtime-empty-journey" aria-labelledby="runtime-empty-journey-title"><h2 id="runtime-empty-journey-title">{language==='ko'?'조건에 맞는 여정을 찾지 못했어요.':'We could not find a matching journey.'}</h2><p>{language==='ko'?'검증된 장소가 부족하거나 선택한 조건이 좁을 수 있어요. 목적이나 조건을 바꿔 다시 만들어 보세요.':'Verified places may be limited or the selected conditions may be too narrow. Change the goal or preferences and try again.'}</p><div className="runtime-empty-actions"><button type="button" className="runtime-empty-primary" aria-expanded={emptyJourneyEditOpen} onClick={()=>setEmptyJourneyEditOpen(open=>!open)}>{language==='ko'?'목적·조건 다시 선택':'Choose Goal and Preferences'}</button><button type="button" disabled={loading} onClick={()=>{const request=journeyRequest({goal:'ACCOMMODATION'},language);createRuntimeJourney(request.text,request.context,request.planned)}}>{language==='ko'?'숙소 찾기':'Find Lodging'}</button><button type="button" disabled={loading} onClick={()=>{const last=lastRequestRef.current;if(last)void send(last.text,last.structured,true)}}>{language==='ko'?'같은 조건으로 다시 찾기':'Retry Same Search'}</button></div>{emptyJourneyEditOpen&&<div className="runtime-empty-editor"><RuntimeJourneyEntry auxiliary loading={loading} onCreate={createRuntimeJourney} onDirect={()=>{setEmptyJourneyEditOpen(false);openText()}}/></div>}</section>}
           {journeySteps.length>0&&<FullJourneySave
             itinerary={latestRecommendation.recommendation?.itinerary}
             durationLabel={
@@ -908,46 +960,7 @@ function ConciergeConversation() {
         onChange={text=>{setVoiceDraft(text);track("VOICE_PARTIAL_EDIT_COMPLETED",tripSession.id,{inputMethod:"TEXT"});}}
         onStop={stopListening} onSpeakAgain={beginVoice} onCancel={dismissVoice} onType={voiceToText}
         onConfirm={()=>send(voiceDraft,undefined,false,voiceUnderstanding||undefined)}/>}
-      {requestUi.followup&&!hasRecommendation&&<button type="button" className="btn btn-text" onClick={()=>setOtherRequestOpen(true)}>{language==='ko'?'다른 요청하기':'Make Another Request'}</button>}
-      {requestUi.followup&&otherRequestOpen&&!hasRecommendation&&<div className="conversation-other-request" aria-label={language==="en"?"Another request":"다른 요청"}><button type="button" className="btn btn-text" onClick={openVoice}>{language==='ko'?'말하기':'Speak'}</button><button type="button" className="btn btn-text" onClick={openText}>{language==='ko'?'글로 입력하기':'Type'}</button><button type="button" className="btn btn-text" onClick={()=>setOtherRequestOpen(false)}>{requestCopy.cancel}</button></div>}
-      {requestUi.text && (
-        <div className={"concierge-input-panel concierge-unified-composer"}>
-          {manualEntryMode!=="VOICE"&&<textarea
-            ref={textInputRef}
-            rows={5}
-            aria-label={RECOMMENDATION_REQUEST_COPY[language].inputLabel}
-            placeholder={requestCopy.help}
-            value={input}
-            onChange={(e)=>setInput(e.target.value)}
-            onKeyDown={(e)=>{if(e.key==="Enter"&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();send();}}}
-          />}
-          {manualEntryMode!=="VOICE"&&<button
-            className="btn btn-primary btn-block concierge-submit"
-            onClick={() => send()}
-            disabled={loading||Boolean(voiceUnderstanding)}
-            aria-label={requestCopy.send}
-          >
-            {hasCompletedTurn ? (
-              <>
-                <span aria-hidden="true">➤</span>
-                <span className="sr-only">{requestCopy.send}</span>
-              </>
-            ) : (
-              requestCopy.send
-            )}
-          </button>}
-          <button type="button" className="btn btn-outline" onClick={()=>{setManualEntryMode(null);setFreeTextOpen(false)}}>{requestCopy.cancel}</button>
-          {hasCompletedTurn && (
-            <button
-              type="button"
-              className="btn btn-outline btn-block concierge-return-trip"
-              onClick={() => navigate(regionLink("/itinerary"))}
-            >
-              내 여행으로 돌아가기
-            </button>
-          )}
-        </div>
-      )}
+
     </div>
   );
 }
@@ -1178,8 +1191,8 @@ function PlaceDiscoveryPanel({
       <h2>조건에 맞는 {label}</h2>
       <p className="text-muted">
         {result.discovery?.searchFallback?.used
-          ? "지역 운영 데이터에 없는 장소는 검색 후보로 구분해 안내합니다. 현재 영업 여부는 방문 전에 확인해 주세요."
-          : "검증된 지역 운영 데이터에서 맞는 장소만 보여드려요. 현재 영업 여부는 방문 전에 확인해 주세요."}
+          ? "추가로 찾은 장소도 함께 안내해요. 당일 영업 여부는 출발 전에 확인해 주세요."
+          : "조건에 맞는 장소를 골랐어요. 당일 영업 여부는 출발 전에 확인해 주세요."}
       </p>
       {discovery.categoryFallbackNotice && (
         <p className="text-muted">{discovery.categoryFallbackNotice}</p>

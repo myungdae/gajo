@@ -35,6 +35,7 @@ export default function ContextResourceNetwork({ data, selected, onSelect }: {
       <div role="group" aria-label="관계 필터">{FILTERS.map(([key, label]) => <button key={key} aria-pressed={filter === key} onClick={() => { setFilter(key); setCategory(undefined); setPage(0); }}>{label}</button>)}</div>
     </div>
     <p className="context-graph-key"><span>─ 분류 구조</span><span>┄ 자원 관계</span><span className="interest-key">··· 관심 행동</span><span className="movement-key">┅ 이동 의도</span><span className="usage-key">━ 검증 이용</span><span>금색 점선 노드: 추가 검증 필요</span></p>
+    {!edges.length && ['INTEREST','MOVEMENT_INTENT','VERIFIED_USE'].includes(filter) && <p className="context-empty context-empty-prominent" role="status">아직 확인된 {EVIDENCE_LABELS[filter as Exclude<Filter,'ALL'>]} 관계가 없습니다.</p>}
     <div className="context-graph-scroll" role="region" aria-label="합천 자원 네트워크, 작은 화면에서는 가로 스크롤" tabIndex={0}>
       <svg className="context-graph" viewBox="0 0 1300 710" role="group" aria-label="여행자 현재 맥락 중심 지역자원 네트워크">
         <ellipse cx="650" cy="355" rx="495" ry="272" className="context-orbit"/>

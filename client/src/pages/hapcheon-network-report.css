@@ -6,3 +6,4 @@
 @media(prefers-reduced-motion:reduce){.context-category,.context-resource,.context-center{transition:none}}
 
 .context-edge.resource_relationship{stroke:#789287;stroke-width:2;stroke-dasharray:5 7}.context-edge.interest{stroke:#428675;stroke-width:3;stroke-dasharray:2 6}.context-edge.movement_intent{stroke:#8b684c;stroke-width:3;stroke-dasharray:12 5}.context-edge.verified_use{stroke:#bb8628;stroke-width:4;stroke-dasharray:none}.interest-key{color:#428675}.movement-key{color:#8b684c}
+.context-empty-prominent{font-weight:700;border-left:4px solid #c5953f}

@@ -14,6 +14,8 @@ export interface PlannedPlace {
   provenance?:string;
 }
 export interface PlannedContext {
+  stayUntil?: string;
+  firstVisit?: boolean;
   duration?: "DAY" | "1N2D" | "2N3D" | "CUSTOM";
   startDate?: string;
   arrivalPeriod?: string;
@@ -430,21 +432,23 @@ export function sessionContext(s: TripSession): CreateContextInput {
   const currentIndex = s.execution?.currentEntityId ? itineraryEntityIds.indexOf(s.execution.currentEntityId) : -1;
   const nextEntityId = itineraryEntityIds.slice(Math.max(0, currentIndex + 1)).find((id: string) => !completedEntityIds.includes(id) && !skippedEntityIds.includes(id));
   return {
-    companions: p.companions,
-    companionConstraints: p.mobilityConstraints,
-    walkingLevel: p.walkingLevel,
-    transportMode: p.transportMode,
-    activityPreferences: p.interests,
+    companions: p.companions ?? s.runtimeContext?.companions,
+    companionConstraints: p.mobilityConstraints ?? s.runtimeContext?.companionConstraints,
+    walkingLevel: p.walkingLevel ?? s.runtimeContext?.walkingLevel,
+    transportMode: p.transportMode ?? s.runtimeContext?.transportMode,
+    activityPreferences: p.interests ?? s.runtimeContext?.activityPreferences,
+    stayUntil: p.stayUntil ?? s.runtimeContext?.stayUntil,
+    duration: p.duration ?? s.runtimeContext?.duration,
     mustVisitPlaces: p.mustVisitPlaces?.map((place) => ({
       entityId: place.entityId,
       label: place.label,
       resolved: place.resolved,
-    })),
+    })) ?? s.runtimeContext?.mustVisitPlaces,
     accommodationIntents: p.accommodationIntents?.map((place) => ({
       entityId: place.entityId,
       label: place.label,
       resolved: place.resolved,
-    })),
+    })) ?? s.runtimeContext?.accommodationIntents,
     tripContext: {
       anonymousTripId: s.anonymousTripId,
       currentEntityId: s.execution?.currentEntityId,
@@ -463,7 +467,7 @@ export function mergeTravelContext(
 ): CreateContextInput {
   return {
     ...carried,
-    ...explicit,
+    ...Object.fromEntries(Object.entries(explicit).filter(([, value]) => value !== undefined)),
     companions: explicit.companions ?? carried.companions,
     companionConstraints:
       explicit.companionConstraints ?? carried.companionConstraints,

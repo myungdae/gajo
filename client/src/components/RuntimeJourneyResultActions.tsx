@@ -9,7 +9,7 @@ import { track } from "../analytics";
 import { localizedRegionalPath } from "../visitorRouting";
 import { ensureTripSession, type PlannedContext } from "../tripSession";
 
-export default function RuntimeJourneyResultActions({ result, loading, otherOpen, onAdjust, onReplace, onOther, onVoice, onText, onCloseOther }: {
+export default function RuntimeJourneyResultActions({ result, loading, onAdjust, onReplace, onText, onCloseOther }: {
   result: ConciergeChatResponse;
   loading: boolean;
   onAdjust: (text: string, context: CreateContextInput, planned: PlannedContext) => void;
@@ -35,7 +35,7 @@ export default function RuntimeJourneyResultActions({ result, loading, otherOpen
     <div>
       <button className="btn btn-primary" onClick={start}>{copy.start}</button>
       <button type="button" className="btn btn-outline" aria-expanded={adjusting} onClick={() => { if (!adjusting) track("RUNTIME_JOURNEY_ADJUSTMENT_OPENED", ensureTripSession(region.id).id); onCloseOther();setAdjusting(open => !open);setCategory(null); }}>{copy.adjust}</button>
-      <button type="button" className="btn btn-text" aria-expanded={otherOpen} onClick={()=>{setAdjusting(false);setCategory(null);onOther()}}>{copy.other}</button>
+      <button type="button" className="btn btn-text" onClick={()=>{setAdjusting(false);setCategory(null);onText()}}>{copy.other}</button>
     </div>
     {adjusting && <div className="runtime-adjustment">
       <h3>{language==='ko'?'무엇을 바꿀까요?':'What would you like to change?'}</h3><div className="runtime-adjustment-categories">{categories.map(([key,label])=><button type="button" aria-pressed={category===key} onClick={()=>setCategory(key)} key={key}>{label}</button>)}</div>
@@ -44,7 +44,7 @@ export default function RuntimeJourneyResultActions({ result, loading, otherOpen
       <button className="btn btn-primary" disabled={loading || !Object.keys(value).length} onClick={() => { const request = journeyRequest(value, language); onAdjust(request.text, request.context, request.planned); setAdjusting(false); }}>{language === "ko" ? "선택한 조건으로 다시 구성" : "Re-plan with These Changes"}</button>
       <button type="button" className="btn btn-text" onClick={()=>{setAdjusting(false);setCategory(null);setValue({})}}>{language==='ko'?'취소':'Cancel'}</button>
     </div>}
-    {otherOpen&&<div className="runtime-other-request" aria-label={language==='ko'?'다른 요청 방식':'Another request method'}><button type="button" onClick={onVoice}>{copy.speak}</button><button type="button" onClick={onText}>{copy.type}</button><button type="button" className="btn btn-text" onClick={onCloseOther}>{language==='ko'?'닫기':'Close'}</button></div>}
+
     <p role="status">{notice}</p>
   </section>;
 }

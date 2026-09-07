@@ -120,7 +120,7 @@ test("home continuation remains visible and every new-trip entry requires confir
   const continuity = readFileSync(new URL("./components/TripContinuity.tsx", import.meta.url), "utf8"), savedEntry = readFileSync(new URL("./components/SavedTripEntry.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(continuity, /regional-trip-return-shown|sessionStorage\.getItem\(seen\)/);
   assert.match(continuity, /hasTripEvidence\(local\)[\s\S]*setVisible\(true\)/);
-  assert.match(continuity, /active&&<button[\s\S]*TRIP_CONTINUED/);
+  assert.match(continuity, /home-trip-secondary[\s\S]*TRIP_CONTINUED/);
   assert.match(continuity, /role="alertdialog"/);
   assert.match(savedEntry, /role="alertdialog"/);
   assert.match(savedEntry, /onClick=\{\(\) => setConfirming\(true\)\}/);

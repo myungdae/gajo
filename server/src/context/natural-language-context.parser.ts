@@ -22,10 +22,16 @@ function parseTransport(message: string): TransportMode | undefined {
   return undefined;
 }
 
-function parseStayUntil(message: string): string | undefined {
+function parseStayUntil(message: string, now: Date): string | undefined {
   const returnMatch=message.match(/(?:(오전|오후)\s*)?(\d{1,2})\s*시(?:쯤)?\s*(?:돌아가|떠나|출발)/);if(returnMatch){let hour=Number(returnMatch[2]);if(returnMatch[1]==='오후'&&hour<12)hour+=12;if(returnMatch[1]==='오전'&&hour===12)hour=0;return`${String(hour).padStart(2,'0')}:00`}
   const match = message.match(/(?:(오전|오후)\s*)?(\d{1,2})\s*시(?:\s*(\d{1,2})\s*분)?\s*(?:까지|에(?:는)?\s*(?:가야|떠나야|출발해야))/);
-  if (!match) return undefined;
+  if (!match) {
+    const relative=message.match(/(?:^|[\s,.])([1-8]|한|두|세|네)\s*시간\s*(?:정도(?:만)?\s*(?:있|남|둘러|볼|머물)|밖에\s*없|동안\s*(?:둘러|볼|머물))/);
+    if(!relative)return undefined;
+    const hours=Number(relative[1])||({한:1,두:2,세:3,네:4} as Record<string,number>)[relative[1]];
+    const seoul=new Date(now.getTime()+9*3600000),end=Math.min(1439,seoul.getUTCHours()*60+seoul.getUTCMinutes()+hours*60);
+    return `${String(Math.floor(end/60)).padStart(2,'0')}:${String(end%60).padStart(2,'0')}`;
+  }
   let hour = Number(match[2]);
   const minute = Number(match[3] || 0);
   if (hour > 23 || minute > 59) return undefined;
@@ -35,7 +41,7 @@ function parseStayUntil(message: string): string | undefined {
   return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 }
 
-export function parseNaturalLanguageContext(message: string): ParsedNaturalLanguageContext {
+export function parseNaturalLanguageContext(message: string, now = new Date()): ParsedNaturalLanguageContext {
   const conditions: string[] = [];
   if (/무릎/.test(message)) conditions.push('kneePain');
   if (/피로|피곤/.test(message)) conditions.push('fatigue');
@@ -60,7 +66,7 @@ export function parseNaturalLanguageContext(message: string): ParsedNaturalLangu
   if(/카페(?:에|도)?\s*(?:가고)?\s*싶|카페(?:에서|에)\s*(?:쉬|휴식)/.test(message)) activityPreferences.push('CAFE');
   if(/맛집|맛있(?:는|게|는\s*것)|밥\s*먹|(?:점심|저녁|아침)(?:을|를)?\s*먹|식사/.test(message)) activityPreferences.push('FOOD');
   if(/합천호|호수\s*주변/.test(message)) activityPreferences.push('HAPCHEON_LAKE','NATURE');
-  if(/둘러보|풍경|드라이브/.test(message)) activityPreferences.push('NATURE');
+  if(/둘러보|풍경|드라이브|볼\s*만한\s*곳|관광/.test(message)) activityPreferences.push('NATURE');
   if(/(?:하루|1박|2박|묵고|숙박)/.test(message)) activityPreferences.push('ACCOMMODATION');
   if(/은행동|중앙로|대흥동|으능정이|도심\s*문화/.test(message)) activityPreferences.push('URBAN_CULTURE');
   if(/중앙시장|전통시장|시장\s*(?:쪽|을|보다|구경)/.test(message)) activityPreferences.push('TRADITIONAL_MARKET');
@@ -72,7 +78,7 @@ export function parseNaturalLanguageContext(message: string): ParsedNaturalLangu
     activityPreferences:[...new Set(activityPreferences)],
     explicitAccommodation:/(?:합천호\s*)?스마일\s*펜션/.test(message)?'합천호 스마일펜션':undefined,
     transportMode: parseTransport(message),
-    stayUntil: parseStayUntil(message),
+    stayUntil: parseStayUntil(message, now),
     walkingLevel: shortWalking || (/무릎/.test(message) && comfort) ? 'LOW' : undefined,
     wellnessGoal: comfort || /휴식|회복/.test(message) ? 'restAndRecovery' : /어머니|엄마|아버지|아빠|부모님|가족/.test(message) ? 'familyHealingTrip' : /스트레스/.test(message) ? 'stressRelief' : undefined,
     weather: /비\s*(?:가|는)?\s*(?:옴|와|내려|오는)|우천|장마/.test(message) ? 'rainyWeather' : /맑|화창/.test(message) ? 'clearWeather' : undefined,

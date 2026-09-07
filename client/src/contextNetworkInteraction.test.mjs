@@ -60,10 +60,13 @@ test('empty movement and verified use filters show their exact guidance below th
       ['검증 이용', '현재 확인된 검증 이용 관계가 없습니다. 현장 검증 기준을 충족한 이용이 확인되면 이곳에 표시됩니다.'],
     ]) {
       await act(async () => { [...document.querySelectorAll('.context-graph-toolbar button')].find(b => b.textContent === filter).click(); });
-      const notice = document.querySelector('.context-empty');
+      const notice = document.querySelector('.context-empty:not(.context-empty-prominent)');
       assert.equal(notice?.textContent, message);
       assert.equal(notice.getAttribute('role'), 'status');
       assert.ok(document.querySelector('.context-graph-scroll').compareDocumentPosition(notice) & 4);
+      const prominent=document.querySelector('.context-empty-prominent');
+      assert.equal(prominent.textContent,`아직 확인된 ${filter} 관계가 없습니다.`);
+      assert.ok(prominent.compareDocumentPosition(document.querySelector('.context-graph-scroll')) & 4);
       assert.equal(document.querySelectorAll('.context-edge').length, 0);
       assert.equal(document.querySelectorAll('.context-resource').length, 2);
     }

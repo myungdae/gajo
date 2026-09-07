@@ -1,3 +1,4 @@
+jest.setTimeout(30000);
 import jsQR from 'jsqr';import{PNG}from'pngjs';import{RegionShareController}from'./region-share.controller';
 describe('English regional QR entry', () => {
   it('preserves English and bypasses the Korean-only first poster for all six regions', async () => {

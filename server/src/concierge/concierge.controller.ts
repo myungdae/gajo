@@ -1,11 +1,17 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, Optional } from '@nestjs/common';
+import { ProactiveLocalDiscoveryService } from './proactive-local-discovery.service';
 import { ConciergeService } from './concierge.service';
 import type { CreateContextInput } from '../context/runtime-context.service';
 import { localizeVisitorPayload, normalizeVisitorLocale } from '../i18n/visitor-locale';
 
 @Controller('api/concierge')
 export class ConciergeController {
-  constructor(private readonly service: ConciergeService) {}
+  constructor(private readonly service: ConciergeService, @Optional() private readonly discovery?: ProactiveLocalDiscoveryService) {}
+
+  @Post('local-discovery')
+  discover(@Body() body: any) {
+    return this.discovery?.discover(body) || { offers: [] };
+  }
 
   @Post('chat')
   async chat(@Body() body: CreateContextInput) {

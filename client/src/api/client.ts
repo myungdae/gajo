@@ -28,6 +28,7 @@ export interface CompanionInput {
 }
 
 export interface CreateContextInput {
+  duration?: string;
   locale?: "ko" | "en";
   turnId?: string;
   conversationalAnchor?: {

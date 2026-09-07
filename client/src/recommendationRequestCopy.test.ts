@@ -30,10 +30,10 @@ test('refresh performs current-context lookup then one existing send, without a 
   assert.match(live,/if\(liveEnabled&&!actionOnly\)void refresh\(false\)/);
 });
 test('direct request controls reuse voice popup and composer handlers with no duplicate headings',()=>{
-  assert.match(page,/requestUi.followup/);
-  assert.match(page,/requestUi.text/);
+  assert.match(page,/concierge-primary-entry/);
+  assert.match(page,/ref=\{textInputRef\}/);
   assert.match(page,/onClick=\{openVoice\}>\{language==='ko'\?'말하기':'Speak'\}/);
-  assert.match(page,/onClick=\{openText\}>\{language==='ko'\?'글로 입력하기':'Type'\}/);
+  assert.match(page,/<textarea/);
   assert.match(page,/onConfirm=\{\(\)=>send\(voiceDraft,undefined,false,voiceUnderstanding\|\|undefined\)\}/);
   assert.equal((page.match(/<VoiceInputDialog /g)||[]).length,1);
   const css=read('./index.css');assert.match(css,/\.automatic-recommendation-choice\s*\{/);assert.match(css,/\.direct-request-choice\s*\{/);assert.match(css,/\.direct-request-choice\[hidden\]/);

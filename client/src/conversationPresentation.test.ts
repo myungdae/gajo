@@ -21,9 +21,9 @@ test('restored results default closed and send closes inputs without changing sa
   assert.match(page,/restored\?\.messages.some\(message=>Boolean\(message.result\)\) \? false/);
   assert.match(page,/const activeVoice=voiceModel\|\|voiceUnderstanding;\s*setFreeTextOpen\(false\);\s*setVoiceOpen\(false\);/);
   assert.doesNotMatch(page,/hasCompletedTurn \|\| freeTextOpen/);
-  assert.match(page,/requestUi.text &&/);assert.match(page,/requestUi.voice&&<VoiceInputDialog/);
+  assert.match(page,/concierge-primary-entry/);assert.match(page,/requestUi.voice&&<VoiceInputDialog/);
   assert.match(page,/onConfirm=\{\(\)=>send\(voiceDraft,undefined,false,voiceUnderstanding\|\|undefined\)\}/);
-  assert.ok(page.indexOf('<PlaceDiscoveryPanel')<page.indexOf('requestUi.followup'));
+  assert.ok(page.indexOf('concierge-primary-entry')<page.indexOf('<PlaceDiscoveryPanel'));
   assert.match(page,/shouldOfferContextRefresh\(currentResult,Boolean\(locationFreshnessNotice\)\)/);
 });
 test('both languages explain only first entry and label optional requests separately',()=>{

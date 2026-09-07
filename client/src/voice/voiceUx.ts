@@ -61,6 +61,15 @@ export function updateVoiceSlot(model: VoiceUnderstanding, slot: VoiceSlotName, 
 export function voiceNeedsConfirmation(model: VoiceUnderstanding): VoiceSlotName[] {
   return voiceConfirmationPolicy(model).slots;
 }
+export function canAutoExecuteTravelSpeech(model:VoiceUnderstanding) {
+  const policy=voiceConfirmationPolicy(model);
+  if(policy.mode==='AUTO_EXECUTE')return true;
+  // A broad travel request needs no destination slot. External actions still use confirmation.
+  return policy.reasons.every(reason=>reason==='LOW_CONFIDENCE') &&
+    !/예약|결제|전화|삭제|취소|일정에.*(?:넣|추가|담)/.test(model.transcript) &&
+    /추천|찾|싶|여행|둘러|갈\s*(?:곳|만)/.test(model.transcript) &&
+    /부모|아이|카페|커피|저녁|식사|맛집|시간|합천|관광|여행/.test(model.transcript);
+}
 
 const riskyAction=/일정에 담기|일정에서 삭제|예약하기|전화하기|길 안내 시작/;
 export function voiceConfirmationPolicy(model:VoiceUnderstanding,options:{userRequestedEdit?:boolean}={}):VoiceConfirmationDecision{

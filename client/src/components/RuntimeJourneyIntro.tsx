@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useRegionalLanguage } from "../RegionalLanguageContext";
-import { RUNTIME_JOURNEY_NAME, rememberRuntimeIntro, runtimeIntroSeen } from "../runtimeJourney";
+import { RUNTIME_JOURNEY_NAME, rememberRuntimeIntro } from "../runtimeJourney";
 
 export default function RuntimeJourneyIntro() {
   const { language } = useRegionalLanguage();
@@ -12,7 +12,7 @@ export default function RuntimeJourneyIntro() {
     setOpen(false);
     requestAnimationFrame(() => trigger.current?.focus());
   };
-  useEffect(() => { if (!runtimeIntroSeen()) setOpen(true); }, []);
+  // Introduction remains available on request without interrupting the first travel action.
   useEffect(() => {
     if (!open) return;
     close.current?.focus();
