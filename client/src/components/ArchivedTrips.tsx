@@ -19,8 +19,8 @@ export default function ArchivedTrips() {
   return (
     <section className="card archived-trips" aria-labelledby="archived-trips-title">
       <h2 id="archived-trips-title">지난 여행</h2>
-      <p>과거 여행 상세는 읽기 전용으로 확인하거나 기록 전체를 삭제할 수 있어요. 현재 여행은 바뀌지 않습니다.</p>
-      {!trips.length && <p className="archived-trips-empty">아직 지난 여행 기록이 없습니다.</p>}
+      <p>이전에 다녀온 여행과 일정을 다시 볼 수 있어요. 필요 없는 여행 기록은 삭제할 수 있습니다.</p>
+      {!trips.length && <p className="archived-trips-empty">아직 지난 여행이 없습니다.</p>}
       {(showAll ? trips : trips.slice(0, DEFAULT_ARCHIVE_COUNT)).map((trip) => {
         const { steps, saved: places, completed, skipped, replaced, newlyAdded } = archivedTripSummary(trip);
         const items = [...steps, ...places].filter((item, itemIndex, all) =>
@@ -43,8 +43,8 @@ export default function ArchivedTrips() {
                 {items.length ? <ol className="archived-trip-items">{items.map((item, itemIndex) => <li key={`${item.entityId || item.itemId || itemIndex}:${itemIndex}`}>{recommendationItemLabel(item)}</li>)}</ol> : <p>기록된 일정이 없습니다.</p>}
                 {completed.length > 0 && <p>방문 완료 {completed.length}곳</p>}
                 {skipped.length > 0 && <p>건너뜀 {skipped.length}곳</p>}
-                {replaced.length > 0 && <p>재계획으로 변경됨 {replaced.length}곳</p>}
-                {newlyAdded.length > 0 && <p>재계획에서 추가됨 {newlyAdded.length}곳</p>}
+                {replaced.length > 0 && <p>상황 변화로 바뀜 {replaced.length}곳</p>}
+                {newlyAdded.length > 0 && <p>새 일정에 추가됨 {newlyAdded.length}곳</p>}
               </div>
             )}
             {confirming === trip.anonymousTripId && <div className="archive-delete-confirm" role="alertdialog" aria-modal="true"><p>이 여행 기록을 삭제하시겠습니까?</p><div><button className="btn btn-danger" type="button" onClick={() => { deleteArchivedTripSession(region.id, trip.anonymousTripId); void removeRemote(trip); refresh(); }}>삭제</button><button className="btn btn-text" type="button" onClick={() => setConfirming(undefined)}>취소</button></div></div>}
