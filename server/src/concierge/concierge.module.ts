@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ProactiveLocalDiscoveryService } from './proactive-local-discovery.service';
+import { OpenAISemanticInterpreter } from './openai-semantic-interpreter.service';
 import { ConciergeService } from './concierge.service';
 import { ConciergeController } from './concierge.controller';
 import { ContextModule } from '../context/context.module';
@@ -11,7 +12,7 @@ import{GuideModule}from'../guide/guide.module';
 
 @Module({
   imports: [ContextModule, AgentsModule,ExkoSemanticModule,NearbyModule,GuideModule],
-  providers: [ConciergeService,PlaceDiscoveryService,ProactiveLocalDiscoveryService],
+  providers: [ConciergeService,PlaceDiscoveryService,ProactiveLocalDiscoveryService,OpenAISemanticInterpreter],
   controllers: [ConciergeController],
 })
 export class ConciergeModule {}

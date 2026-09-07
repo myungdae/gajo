@@ -1,3 +1,5 @@
+import { semanticDiscoveryCategory, toSemanticRuntimeSignal } from './semantic-runtime.adapter';
+import { OpenAISemanticInterpreter } from './openai-semantic-interpreter.service';
 import { Injectable, Optional } from '@nestjs/common';
 import {
   RuntimeContextService,
@@ -122,6 +124,7 @@ export class ConciergeService {
     @Optional() private readonly regionalData?: RegionalDataService,
     @Optional() private readonly guide?: GuideService,
     @Optional() private readonly nearby?:NearbyService,
+    @Optional() private readonly semanticInterpreter?:OpenAISemanticInterpreter,
   ) {}
 
   async chat(input: CreateContextInput) {
@@ -131,12 +134,63 @@ export class ConciergeService {
       const explanation=this.guide.approvedExplanation({question:input.rawMessage});
       if(explanation)return{intentRoute:'GUIDE_EXPLANATION',guideExplanation:explanation,recommendation:null,visitorMessage:`${explanation.answer}\n\n여행을 계속할까요?`,journeyContinuation:{prompt:'여행을 계속할까요?',preserveJourney:true}};
     }
-    let route: any = routeNaturalLanguageIntent(input);
-    let exactPlaceIntent = await this.placeDiscovery?.resolveExactPlaceIntent?.(
-      regionId,
-      input.rawMessage || '',
+    const semanticResult = input.rawMessage && this.semanticInterpreter
+      ? await this.semanticInterpreter.interpret(
+          input.rawMessage,
+          input.conversationalAnchor?.label,
+        )
+      : undefined;
+
+    const semantic =
+      semanticResult?.status === 'SUCCESS'
+        ? semanticResult.interpretation
+        : undefined;
+
+    const semanticSignal = toSemanticRuntimeSignal(semantic);
+    const semanticCategory = semanticDiscoveryCategory(
+      semanticSignal?.categoryHint,
+      semanticSignal?.requestedAction,
     );
-    if(!exactPlaceIntent&&searchRegionId&&searchRegionId!==regionId)exactPlaceIntent=await this.placeDiscovery?.resolveExactPlaceIntent?.(searchRegionId,input.rawMessage||'');
+
+    let route: any = routeNaturalLanguageIntent(input);
+
+    if (semantic) {
+      if (
+        semantic.intent === 'NAVIGATION' ||
+        semantic.intent === 'VISIT' ||
+        semantic.intent === 'PLACE_DISCOVERY'
+      ) {
+        route = { intentRoute: 'PLACE_DISCOVERY', category: semanticCategory };
+      } else if (semantic.intent === 'REPLAN') {
+        route = { intentRoute: 'REPLAN', category: undefined };
+      } else if (semantic.intent === 'IMMEDIATE_NEED') {
+        route = { intentRoute: 'IMMEDIATE_NOW', category: undefined };
+      }
+    }
+
+    const semanticSubject = semanticSignal?.explicitSubjectText;
+
+    const previousSubject =
+      semanticSignal?.usePreviousSubject
+        ? input.conversationalAnchor
+        : undefined;
+
+    const groundingText =
+      semanticSubject ||
+      (previousSubject?.label ?? input.rawMessage ?? '');
+    let exactPlaceIntent =
+      await this.placeDiscovery?.resolveExactPlaceIntent?.(
+        regionId,
+        groundingText,
+      );
+
+    if (!exactPlaceIntent && searchRegionId && searchRegionId !== regionId) {
+      exactPlaceIntent =
+        await this.placeDiscovery?.resolveExactPlaceIntent?.(
+          searchRegionId,
+          groundingText,
+        );
+    }
     if (exactPlaceIntent && exactPlaceIntent.status !== 'AMBIGUOUS')
       route = {
         intentRoute: 'PLACE_DISCOVERY',
@@ -333,6 +387,9 @@ export class ConciergeService {
         input.rawMessage || '',
         {
           ...context,
+          ...(semanticSignal?.usePreviousSubject && input.conversationalAnchor
+            ? { conversationalAnchor: input.conversationalAnchor }
+            : {}),
           ...(semanticFollowup ? { semanticContext: semanticFollowup } : {}),
           discoveryAlternative: followup.alternative,
           preferCloser: followup.preferCloser,

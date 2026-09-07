@@ -30,4 +30,374 @@ describe('ConciergeService service-area handling', () => {
 
   it('keeps the exact structured journey for 어디부터 갈까 follow-up even without context reconstruction',async()=>{const requested=[{entityId:'https://gajo-wellness.kr/semantic#gajoHotSpringArea',label:'가조온천',requestedLabel:'가조온천',resolved:false,requested:true,source:'SEMANTIC'},{entityId:'https://gajo-wellness.kr/ontology#suseungdae',label:'수승대',requestedLabel:'수승대',resolved:false,requested:true,source:'SEMANTIC'}],contextService={createContext:jest.fn(async(input:any)=>({context:{contextNo:'RC-F',operationUri:'gajo:operation',regionId:'gajo',mustVisitPlaces:input.mustVisitPlaces},evidence:[],firedRules:[]}))},orchestrator={run:jest.fn(async(_id:string,_op:string,context:any)=>({tasks:[],executionLog:[],recommendation:{itinerary:{steps:context.mustVisitPlaces.map((x:any)=>({programLabel:x.label,requestedLabel:x.requestedLabel,actions:{}}))}}}))},discovery={resolveReference:jest.fn(),discover:jest.fn()};const service=new ConciergeService(contextService as any,orchestrator as any,{label:jest.fn()}as any,{get:jest.fn(()=>GAJO_REGION_CONFIG),detectOutOfRegion:jest.fn()}as any,discovery as any);const result:any=await service.chat({regionId:'gajo',inputMode:'FREE_TEXT',rawMessage:'어디부터 갈까?',isFollowup:true,explicitJourney:{requestedDestinations:requested as any,multiDestination:true,sourceTurnId:'turn-1'}});expect(contextService.createContext).toHaveBeenCalledWith(expect.objectContaining({mustVisitPlaces:requested}));expect(result).toMatchObject({intentRoute:'REPLAN',requestedDestinations:requested,recommendation:{itinerary:{steps:[{programLabel:'가조온천'},{programLabel:'수승대'}]}}});expect(result.visitorMessage).toContain('거리순 계산은 어렵습니다');expect(JSON.stringify(result)).not.toMatch(/다온 카페|항노화힐링랜드|백두산천지온천|관광과 체험을 둘러본 뒤/)});
   it('routes a registered exact place through the common canonical resolver',async()=>{const contextService={createContext:jest.fn(async()=>({context:{contextNo:'RC-EXACT',operationUri:'gajo:operation'},evidence:[],firedRules:[]}))},orchestrator={run:jest.fn()},discovery={resolveExactPlaceIntent:jest.fn(async()=>({category:'TOURISM_NATURE',entityId:'urn:fixture:canonical-place',label:'등록 장소'})),resolveReference:jest.fn(),discover:jest.fn(async()=>({regionId:'gajo',category:'TOURISM_NATURE',entities:[{entityId:'urn:fixture:canonical-place'}]}))},service=new ConciergeService(contextService as any,orchestrator as any,{label:jest.fn()}as any,{get:jest.fn(()=>GAJO_REGION_CONFIG),detectOutOfRegion:jest.fn()}as any,discovery as any),result:any=await service.chat({regionId:'gajo',inputMode:'FREE_TEXT',rawMessage:'등록 장소 찾아줘'});expect(result).toMatchObject({intentRoute:'PLACE_DISCOVERY',discovery:{entities:[{entityId:'urn:fixture:canonical-place'}]}});expect(discovery.resolveExactPlaceIntent).toHaveBeenCalledWith('gajo','등록 장소 찾아줘');expect(discovery.discover).toHaveBeenCalledWith('gajo','TOURISM_NATURE','등록 장소 찾아줘',expect.anything());expect(orchestrator.run).not.toHaveBeenCalled()});
+
+  it('uses OpenAI semantic subject before canonical grounding',async()=>{
+    const contextService={
+      createContext:jest.fn(async()=>({
+        context:{contextNo:'RC-SEM',operationUri:'hapcheon:operation'},
+        evidence:[],
+        firedRules:[]
+      }))
+    };
+    const orchestrator={run:jest.fn()};
+    const discovery={
+      resolveExactPlaceIntent:jest.fn(async(_region:string,text:string)=>
+        text==='황매산'
+          ? {category:'TOURISM_NATURE',entityId:'https://hapcheon.example/ontology#hwangmaesanCountyPark',label:'황매산 군립공원'}
+          : undefined
+      ),
+      resolveReference:jest.fn(),
+      discover:jest.fn(async()=>({
+        regionId:'hapcheon',
+        category:'TOURISM_NATURE',
+        entities:[{
+          entityId:'https://hapcheon.example/ontology#hwangmaesanCountyPark',
+          programLabel:'황매산 군립공원'
+        }]
+      }))
+    };
+    const semanticInterpreter={
+      interpret:jest.fn(async()=>({
+        status:'SUCCESS',
+        provider:'openai',
+        latencyMs:1,
+        interpretation:{
+          intent:'NAVIGATION',
+          subjectText:'황매산',
+          referenceType:'EXPLICIT_ENTITY',
+          relationToPrevious:'REPLACE',
+          requestedAction:'NAVIGATE',
+          categoryHint:'TOURISM',
+          confidence:.99
+        }
+      }))
+    };
+
+    const service=new ConciergeService(
+      contextService as any,
+      orchestrator as any,
+      {label:jest.fn()} as any,
+      {get:jest.fn(()=>GAJO_REGION_CONFIG),detectOutOfRegion:jest.fn()} as any,
+      discovery as any,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      semanticInterpreter as any
+    );
+
+    const result:any=await service.chat({
+      regionId:'hapcheon',
+      inputMode:'FREE_TEXT',
+      rawMessage:'황매산 어떻게 가죠',
+      conversationalAnchor:{
+        entityId:'https://hapcheon.example/ontology#haeinsa',
+        regionId:'hapcheon',
+        label:'해인사'
+      }
+    } as any);
+
+    expect(semanticInterpreter.interpret)
+      .toHaveBeenCalledWith('황매산 어떻게 가죠','해인사');
+
+    expect(discovery.resolveExactPlaceIntent)
+      .toHaveBeenCalledWith('hapcheon','황매산');
+
+    expect(result).toMatchObject({
+      intentRoute:'PLACE_DISCOVERY',
+      discovery:{
+        entities:[{
+          entityId:'https://hapcheon.example/ontology#hwangmaesanCountyPark'
+        }]
+      }
+    });
+
+    expect(orchestrator.run).not.toHaveBeenCalled();
+  });
+
+  it('falls back to deterministic routing when OpenAI semantic interpretation times out',async()=>{
+    const contextService={
+      createContext:jest.fn(async()=>({
+        context:{contextNo:'RC-FALLBACK',operationUri:'hapcheon:operation'},
+        evidence:[],
+        firedRules:[]
+      }))
+    };
+
+    const orchestrator={run:jest.fn()};
+
+    const discovery={
+      resolveExactPlaceIntent:jest.fn(async(_region:string,text:string)=>
+        text==='등록 장소 찾아줘'
+          ? {category:'TOURISM_NATURE',entityId:'urn:fallback:place',label:'등록 장소'}
+          : undefined
+      ),
+      resolveReference:jest.fn(),
+      discover:jest.fn(async()=>({
+        regionId:'hapcheon',
+        category:'TOURISM_NATURE',
+        entities:[{entityId:'urn:fallback:place',programLabel:'등록 장소'}]
+      }))
+    };
+
+    const semanticInterpreter={
+      interpret:jest.fn(async()=>({
+        status:'TIMEOUT',
+        provider:'openai',
+        latencyMs:8000,
+        errorCode:'AbortError'
+      }))
+    };
+
+    const service=new ConciergeService(
+      contextService as any,
+      orchestrator as any,
+      {label:jest.fn()} as any,
+      {get:jest.fn(()=>GAJO_REGION_CONFIG),detectOutOfRegion:jest.fn()} as any,
+      discovery as any,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      semanticInterpreter as any
+    );
+
+    const result:any=await service.chat({
+      regionId:'hapcheon',
+      inputMode:'FREE_TEXT',
+      rawMessage:'등록 장소 찾아줘'
+    });
+
+    expect(discovery.resolveExactPlaceIntent)
+      .toHaveBeenCalledWith('hapcheon','등록 장소 찾아줘');
+
+    expect(result).toMatchObject({
+      intentRoute:'PLACE_DISCOVERY',
+      discovery:{entities:[{entityId:'urn:fallback:place'}]}
+    });
+  });
+
+  it('keeps the grounded previous subject for a semantic continuation',async()=>{
+    const contextService={
+      createContext:jest.fn(async()=>({
+        context:{contextNo:'RC-CONT',operationUri:'hapcheon:operation'},
+        evidence:[],
+        firedRules:[]
+      }))
+    };
+    const orchestrator={
+      run:jest.fn(async()=>({
+        tasks:[],
+        executionLog:[],
+        recommendation:null
+      }))
+    };
+    const discovery={
+      resolveExactPlaceIntent:jest.fn(async()=>undefined),
+      resolveReference:jest.fn(),
+      discover:jest.fn(async()=>({
+        regionId:'hapcheon',
+        category:'TOURISM_NATURE',
+        entities:[]
+      }))
+    };
+    const semanticInterpreter={
+      interpret:jest.fn(async()=>({
+        status:'SUCCESS',
+        provider:'openai',
+        latencyMs:1,
+        interpretation:{
+          intent:'NAVIGATION',
+          subjectText:'거기',
+          referenceType:'PREVIOUS_SUBJECT',
+          relationToPrevious:'CONTINUE',
+          requestedAction:'차로 올라갈 수 있는지 확인',
+          categoryHint:null,
+          confidence:.98
+        }
+      }))
+    };
+
+    const anchor={
+      entityId:'https://hapcheon.example/ontology#hwangmaesanCountyPark',
+      regionId:'hapcheon',
+      label:'황매산 군립공원'
+    };
+
+    const service=new ConciergeService(
+      contextService as any,
+      orchestrator as any,
+      {label:jest.fn()} as any,
+      {get:jest.fn(()=>GAJO_REGION_CONFIG),detectOutOfRegion:jest.fn()} as any,
+      discovery as any,
+      undefined,undefined,undefined,undefined,
+      semanticInterpreter as any
+    );
+
+    await service.chat({
+      regionId:'hapcheon',
+      inputMode:'FREE_TEXT',
+      rawMessage:'거기 차로 올라갈 수 있어?',
+      conversationalAnchor:anchor
+    } as any);
+
+    expect(semanticInterpreter.interpret)
+      .toHaveBeenCalledWith('거기 차로 올라갈 수 있어?','황매산 군립공원');
+
+    expect(discovery.resolveExactPlaceIntent)
+      .toHaveBeenCalledWith('hapcheon','황매산 군립공원');
+  });
+
+  it('replaces the previous grounded subject with a new explicit semantic subject',async()=>{
+    const contextService={
+      createContext:jest.fn(async()=>({
+        context:{contextNo:'RC-REPLACE',operationUri:'hapcheon:operation'},
+        evidence:[],
+        firedRules:[]
+      }))
+    };
+    const orchestrator={run:jest.fn()};
+    const discovery={
+      resolveExactPlaceIntent:jest.fn(async(_region:string,text:string)=>
+        text==='황매산'
+          ? {category:'TOURISM_NATURE',entityId:'https://hapcheon.example/ontology#hwangmaesanCountyPark',label:'황매산 군립공원'}
+          : undefined
+      ),
+      resolveReference:jest.fn(),
+      discover:jest.fn(async()=>({
+        regionId:'hapcheon',
+        category:'TOURISM_NATURE',
+        entities:[{entityId:'https://hapcheon.example/ontology#hwangmaesanCountyPark'}]
+      }))
+    };
+    const semanticInterpreter={
+      interpret:jest.fn(async()=>({
+        status:'SUCCESS',
+        provider:'openai',
+        latencyMs:1,
+        interpretation:{
+          intent:'REPLAN',
+          subjectText:'황매산',
+          referenceType:'EXPLICIT_ENTITY',
+          relationToPrevious:'REPLACE',
+          requestedAction:'방문 대상 변경',
+          categoryHint:null,
+          confidence:.98
+        }
+      }))
+    };
+
+    const service=new ConciergeService(
+      contextService as any,
+      orchestrator as any,
+      {label:jest.fn()} as any,
+      {get:jest.fn(()=>GAJO_REGION_CONFIG),detectOutOfRegion:jest.fn()} as any,
+      discovery as any,
+      undefined,undefined,undefined,undefined,
+      semanticInterpreter as any
+    );
+
+    await service.chat({
+      regionId:'hapcheon',
+      inputMode:'FREE_TEXT',
+      rawMessage:'해인사 말고 황매산 쪽이 낫겠어',
+      conversationalAnchor:{
+        entityId:'https://hapcheon.example/ontology#haeinsa',
+        regionId:'hapcheon',
+        label:'해인사'
+      }
+    } as any);
+
+    expect(discovery.resolveExactPlaceIntent)
+      .toHaveBeenCalledWith('hapcheon','황매산');
+  });
+
+  it('uses the grounded previous subject for semantic food discovery',async()=>{
+    const contextService={
+      createContext:jest.fn(async()=>({
+        context:{contextNo:'RC-SEM-FOOD',operationUri:'hapcheon:operation'},
+        evidence:[],
+        firedRules:[]
+      }))
+    };
+    const orchestrator={run:jest.fn()};
+
+    const anchor={
+      entityId:'https://hapcheon.example/ontology#hwangmaesanCountyPark',
+      regionId:'hapcheon',
+      label:'황매산 군립공원',
+      entityType:'ATTRACTION',
+      category:'TOURISM_NATURE',
+      sourceTurnId:'turn-hwangmaesan',
+      role:'RESULT'
+    };
+
+    const discovery={
+      resolveExactPlaceIntent:jest.fn(async()=>undefined),
+      resolveReference:jest.fn(async()=>undefined),
+      discover:jest.fn(async()=>({
+        regionId:'hapcheon',
+        category:'FOOD',
+        anchorEntityId:anchor.entityId,
+        entities:[{
+          entityId:'urn:fixture:restaurant',
+          programLabel:'검증 식당',
+          category:'FOOD'
+        }]
+      }))
+    };
+
+    const semanticInterpreter={
+      interpret:jest.fn(async()=>({
+        status:'SUCCESS',
+        provider:'openai',
+        latencyMs:1,
+        interpretation:{
+          intent:'PLACE_DISCOVERY',
+          subjectText:'거기',
+          referenceType:'PREVIOUS_SUBJECT',
+          relationToPrevious:'CONTINUE',
+          requestedAction:'식사할 만한 곳 찾기',
+          categoryHint:'음식점',
+          confidence:.98
+        }
+      }))
+    };
+
+    const service=new ConciergeService(
+      contextService as any,
+      orchestrator as any,
+      {label:jest.fn()} as any,
+      {get:jest.fn(()=>GAJO_REGION_CONFIG),detectOutOfRegion:jest.fn()} as any,
+      discovery as any,
+      undefined,undefined,undefined,undefined,
+      semanticInterpreter as any
+    );
+
+    const result:any=await service.chat({
+      regionId:'hapcheon',
+      inputMode:'FREE_TEXT',
+      rawMessage:'거기서 밥 먹을 만한 데 있어?',
+      conversationalAnchor:anchor
+    } as any);
+
+    expect(discovery.discover).toHaveBeenCalledWith(
+      'hapcheon',
+      'FOOD',
+      '거기서 밥 먹을 만한 데 있어?',
+      expect.objectContaining({
+        conversationalAnchor:anchor
+      })
+    );
+
+    expect(result).toMatchObject({
+      intentRoute:'PLACE_DISCOVERY',
+      discovery:{
+        category:'FOOD',
+        anchorEntityId:anchor.entityId
+      }
+    });
+
+    expect(orchestrator.run).not.toHaveBeenCalled();
+  });
 });
