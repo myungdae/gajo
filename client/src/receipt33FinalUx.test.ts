@@ -43,8 +43,8 @@ test("receipt 33 uses everyday language for past trips and recommendation eviden
 
 test("receipt 33 keeps the current journey ahead of travel history", () => {
   const page = read("./pages/ItineraryPage.tsx");
-  const activeReturn = page.lastIndexOf("return (");
-  const activePage = page.slice(activeReturn);
+  const activeReturn = page.indexOf("  return (", page.indexOf("const reject"));
+  const activePage = page.slice(activeReturn, page.indexOf("function SavedPlacesSection"));
   assert.ok(activePage.indexOf("<small>지금 갈 곳</small>") >= 0);
   assert.ok(activePage.indexOf("<ArchivedTrips />") > activePage.indexOf("<small>지금 갈 곳</small>"));
   assert.ok(activePage.indexOf("<ArchivedTrips />") > activePage.indexOf("<h2>여행 일정</h2>"));
