@@ -163,6 +163,24 @@ export class RegionalDataService implements OnModuleInit {
     const rows = await this.model.find(query).sort({ regionId: 1, displayName: 1 }).lean();
     return rows.filter(row => !row.registration).map(legacyReviewView);
   }
+  /** Read-only, DB-only projection. Never publish registration drafts or seed fallbacks. */
+  async networkResources(regionId: string) {
+    const rows = await this.model.find({ regionId,
+      lifecycleStatus: { $in: ['ACTIVE', 'CHANGE_DETECTED'] },
+    }).sort({ displayName: 1 }).lean();
+    return rows.flatMap(row => {
+      const identity = this.publicIdentity(undefined, row);
+      // Previously published identities remain usable while additional review is pending.
+      const published = row.lastVerifiedAt && row.displayName?.trim();
+      if (!identity && !published) return [];
+      const location = approvedLocationUsable(row) &&
+        !row.detectedChanges?.some(change => change.unsafe) ? currentLocation(row) : undefined;
+      return [{ id: row.canonicalEntityId, label: identity?.displayName || row.displayName,
+        category: row.category || row.entityType, status: row.verificationStatus,
+        area: row.areaLabel || '합천군', sourceName: row.source?.sourceName || row.source?.sourceType || '',
+        latitude: location?.latitude, longitude: location?.longitude }];
+    });
+  }
   async create(input: any) {
     if (
       !input.regionId ||

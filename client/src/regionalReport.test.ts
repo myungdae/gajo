@@ -132,11 +132,11 @@ test("Hapcheon network is public read-only, evidence-bounded, and linked for its
   assert.match(app, /path="\/hapcheon\/network-report"/);
   assert.match(mayorPage, /\/public\/regional-network\/hapcheon/);
   assert.doesNotMatch(mayorPage, /x-regional-report-token|보고용 접근 키/);
-  assert.match(mayorPage, /온톨로지 관계는 실적이나 매출의 증거가 아닙니다/);
+  assert.match(mayorPage, /분류선은 구조 설명이며 근접 관계는 이동·매출 실적이 아닙니다/);
   assert.match(page, /report\.region\.id === "hapcheon"/);
   assert.match(page, /합천 지역 연결망/);
   assert.doesNotMatch(page + mayorPage, /군수/);
   assert.match(page, /navigate\("\/hapcheon\/network-report"\)/);
   for (const label of ["현재 상황", "관광·체험", "음식점", "숙박", "체류 연장·지역 소비"])
-    assert.match(mayorPage, new RegExp(label));
+    assert.match(mayorPage + readFileSync(new URL("./contextNetwork.ts", import.meta.url), "utf8"), new RegExp(label));
 });

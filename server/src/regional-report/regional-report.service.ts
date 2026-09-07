@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Optional } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { PilotEvent, PilotEventDocument } from '../schemas/pilot-event.schema';
@@ -8,7 +8,10 @@ import {
   PartnerActivityDocument,
   PartnerDocument,
 } from '../partner/partner.schema';
-import { HAPCHEON_MASTER_DATA } from '../regions/hapcheon/master-data';
+import { createHash } from 'crypto';
+import { RegionalDataService } from '../regional-data/regional-data.service';
+import { TourismNetworkAggregationService } from './tourism-network-aggregation.service';
+import { contextNetwork, EVIDENCE_INTERPRETATION, type EvidenceLevel } from './context-network';
 
 export type ReportPeriod = 'today' | '7d' | '30d';
 const PERIOD_DAYS: Record<ReportPeriod, number> = {
@@ -57,116 +60,50 @@ export class RegionalReportService {
     @InjectModel(PartnerActivity.name)
     private activities: Model<PartnerActivityDocument>,
     @InjectModel(Partner.name) private partners: Model<PartnerDocument>,
+    @Optional() private regionalData?: RegionalDataService,
+    @Optional() private network?: TourismNetworkAggregationService,
   ) {}
-  ecosystem(regionId: string) {
-    if (regionId !== 'hapcheon')
-      return {
-        schemaVersion: 1,
-        region: { id: regionId },
-        status: 'PREPARING',
-        nodes: [],
-        edges: [],
-      };
-    const category = (value: string) => {
-      if (['FOOD'].includes(value)) return 'FOOD';
-      if (value === 'CAFE') return 'CAFE';
-      if (value === 'ACCOMMODATION') return 'STAY';
-      if (value === 'FESTIVAL_EXHIBITION') return 'FESTIVAL';
-      return 'ATTRACTION';
-    };
-    const places = HAPCHEON_MASTER_DATA.map((place) => ({
-      id: place.entityUri,
-      label: place.displayName.ko,
-      kind: category(place.category),
-      status: place.runtimeDataStatus,
-      area: place.areaLabel || place.address?.split(' ')[2] || '합천군',
-      sourceName: place.source.sourceName,
-    }));
-    const placeIds = new Set(places.map((place) => place.id));
-    const edges = new Map<
-      string,
-      { source: string; target: string; relation: string; basis: string }
-    >();
-    const add = (
-      source: string,
-      target: string,
-      relation: string,
-      basis: string,
-    ) => {
-      if (source === target || !placeIds.has(source) || !placeIds.has(target))
-        return;
-      const ordered = [source, target].sort();
-      edges.set(`${ordered[0]}|${ordered[1]}|${relation}`, {
-        source,
-        target,
-        relation,
-        basis,
-      });
-    };
-    for (const place of HAPCHEON_MASTER_DATA) {
-      for (const related of place.relatedEntityIds || [])
-        add(
-          place.entityUri,
-          related,
-          'EXPLICIT_RELATED',
-          '마스터데이터 relatedEntityIds',
-        );
-    }
-    for (let i = 0; i < HAPCHEON_MASTER_DATA.length; i++) {
-      for (let j = i + 1; j < HAPCHEON_MASTER_DATA.length; j++) {
-        const a = HAPCHEON_MASTER_DATA[i],
-          b = HAPCHEON_MASTER_DATA[j];
-        if (a.themeId && a.themeId === b.themeId)
-          add(
-            a.entityUri,
-            b.entityUri,
-            'SAME_THEME',
-            `공통 테마: ${a.themeId}`,
-          );
-        else if (
-          a.tags.includes('HAPCHEON_LAKE') &&
-          b.tags.includes('HAPCHEON_LAKE')
-        )
-          add(
-            a.entityUri,
-            b.entityUri,
-            'SAME_AREA',
-            '공통 태그: HAPCHEON_LAKE',
-          );
+  async ecosystem(regionId: string) {
+    if (regionId !== 'hapcheon') return { region: { id: regionId }, status: 'PREPARING', nodes: [], edges: [] };
+    const resources = await this.regionalData?.networkResources(regionId) || [];
+    const { nodes, edges } = contextNetwork(resources);
+    // Only reuse an existing privacy-suppressed snapshot; never run aggregation here.
+    const snapshot = await this.network?.latestPublicRolling(regionId);
+    if (snapshot) {
+      const partners = await this.partners.find({ regionId, status: 'OPERATING',
+        qrStatus: 'ACTIVE', verificationStatus: 'VERIFIED' }).select({ partnerId: 1, canonicalEntityId: 1, _id: 0 }).lean();
+      const ids = new Set(nodes.map(node => node.id));
+      const entityByNode = new Map(partners.map(partner => [
+        `node-${createHash('sha256').update(`regional-report:${partner.partnerId}`).digest('hex').slice(0, 20)}`,
+        partner.canonicalEntityId,
+      ]));
+      for (const edge of snapshot.released.edges) {
+        const source = entityByNode.get(edge.sourceNodeId), target = entityByNode.get(edge.targetNodeId);
+        // Interest, navigation intent and QR confirmation are not proof of actual use.
+        const evidenceLevel: EvidenceLevel | undefined = edge.stage === 'BENEFIT_USE_CONFIRMED' ? 'VERIFIED_USE' :
+          edge.stage === 'INTEREST' ? 'INTEREST' : edge.stage === 'MOVEMENT_INTENT' ? 'MOVEMENT_INTENT' : undefined;
+        if (!evidenceLevel || !source || !target || source === target ||
+          !ids.has(source) || !ids.has(target) || !Number.isInteger(edge.total) || edge.total < snapshot.minimumCellSize) continue;
+        edges.push({ source, target, relation: evidenceLevel === 'VERIFIED_USE' ? 'ACTUAL_USAGE' : edge.stage,
+          evidenceLevel, total: edge.total,
+          basis: EVIDENCE_INTERPRETATION[evidenceLevel] });
       }
     }
     return {
-      schemaVersion: 1,
-      region: { id: 'hapcheon', name: '합천' },
-      status: 'AVAILABLE',
-      generatedFrom: 'HAPCHEON_MASTER_DATA',
-      interpretation: 'ONTOLOGY_RELATIONSHIP_NOT_OBSERVED_PERFORMANCE',
-      nodes: places,
-      edges: [...edges.values()],
-      counts: {
-        total: places.length,
-        verified: places.filter((place) => place.status === 'VERIFIED').length,
-        byKind: places.reduce<Record<string, number>>((out, place) => {
-          out[place.kind] = (out[place.kind] || 0) + 1;
-          return out;
-        }, {}),
-      },
-      runtimeSignals: [
-        '현재 위치',
-        '날씨',
-        '시간·영업상태',
-        '동행자',
-        '보행 여건',
-        '남은 시간',
-      ],
+      schemaVersion: 2, region: { id: 'hapcheon', name: '합천' },
+      status: nodes.length ? 'AVAILABLE' : 'PREPARING', generatedFrom: 'REGIONAL_DATA_RECORD',
+      nodes, edges,
+      interpretation: EVIDENCE_INTERPRETATION,
+      privacy: { minimumCellSize: snapshot?.minimumCellSize || 5,
+        individualPathsReturned: false, suppressionApplied: true },
+      usage: { status: edges.some(edge => edge.relation === 'ACTUAL_USAGE') ? 'AVAILABLE' : 'PREPARING',
+        start: snapshot?.windowStart, endExclusive: snapshot?.windowEndExclusive,
+        minimumCellSize: snapshot?.minimumCellSize || 5 },
+      counts: { total: nodes.length, verified: nodes.filter(node => node.status === 'VERIFIED').length,
+        byKind: nodes.reduce<Record<string, number>>((out, node) => { out[node.kind] = (out[node.kind] || 0) + 1; return out; }, {}) },
+      runtimeSignals: ['현재 위치', '시간', '날씨', '동행자', '보행 여건'],
       actionPath: ['PLAN', 'NOW', 'REPLAN', 'ACTION'],
-      outcomePath: [
-        '지역 내 이동',
-        '식사·카페',
-        '체험',
-        '숙박',
-        '체류 연장·지역 소비',
-      ],
+      outcomePath: ['지역 내 이동', '식사·카페', '체험', '숙박', '체류 연장·지역 소비'],
     };
   }
   async report(
