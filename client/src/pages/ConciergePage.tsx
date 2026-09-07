@@ -654,7 +654,14 @@ function ConciergeConversation() {
   }, []);
 
   const hasCompletedTurn = messages.some((message) => Boolean(message.result));
-  useEffect(()=>{if(entryState?.voiceRequested)openVoice()},[]);
+  useEffect(()=>{
+    if(!entryState?.voiceRequested || entryState?.autoSubmit || entryState?.initialMessage)return;
+    openVoice();
+    navigate(location.pathname+location.search,{
+      replace:true,
+      state:{...entryState,voiceRequested:false},
+    });
+  },[]);
   const requestUi=requestPresentation(hasCompletedTurn,loading,freeTextOpen,voiceOpen);
   const requestCopy=REQUEST_PRESENTATION_COPY[language];
   const currentResult =
