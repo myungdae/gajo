@@ -1,4 +1,4 @@
-﻿export type EntityInformationKind =
+export type EntityInformationKind =
   | 'VEHICLE_ACCESS'
   | 'PARKING'
   | 'TELEPHONE'
