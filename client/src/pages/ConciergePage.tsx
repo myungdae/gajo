@@ -752,7 +752,7 @@ function ConciergeConversation() {
 
   return (
     <div className="concierge-conversation">
-      {!currentNeedRecommendation&&<JourneyConciergeNext busy={loading||voiceOpen} mode={tripMode} onReplan={text=>void send(text)}/>}
+      {!entryState?.autoSubmit&&!currentNeedRecommendation&&<JourneyConciergeNext busy={loading||voiceOpen} mode={tripMode} onReplan={text=>void send(text)}/>}
       {tripMode !== "PLAN" && !currentNeedRecommendation && (
         <div ref={liveStoryRef} className="journey-live-context">
           {tripMode === "NOW" && !hasCompletedTurn && !loading && (
@@ -780,7 +780,7 @@ function ConciergeConversation() {
       {tripMode === "PLAN" && !hasCompletedTurn && <details className="structured-request-alternative"><summary>{language==="en"?"Starting point":"여행 시작 위치"}</summary><LocationContextBar mode="PLAN" /></details>}
       {tripMode==="NOW"&&locationFreshnessNotice&&<section className="card location-freshness-choice" role="status"><b>위치를 확인한 지 시간이 조금 지났어요. 지금 계신 곳을 다시 확인할까요?</b><p>{locationFreshnessNotice.label||"이전 확인 위치"}{locationFreshnessNotice.confirmedAt?` · ${new Date(locationFreshnessNotice.confirmedAt).toLocaleString("ko-KR")}`:""}</p><button type="button" className="btn btn-outline" onClick={()=>{const request=lastRequestRef.current;if(!request)return;allowStaleLocationOnceRef.current=true;setLocationFreshnessNotice(null);void send(request.text,request.structured,true)}}>이 위치 기준으로 검색</button></section>}
       <div className="chat-window" hidden={Boolean(entryState?.autoSubmit || currentNeedRecommendation)}>
-        {messages.map((m, i) => {
+        {messages.filter(m => !currentTurn?.turnId || m.turnId === currentTurn.turnId).map((m, i) => {
           if(i===0&&m.role==="ai"&&!m.result&&!m.turnId)return null;
           const isCurrentAnswer =
             m.role === "ai" &&
