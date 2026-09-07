@@ -752,7 +752,7 @@ function ConciergeConversation() {
 
   return (
     <div className="concierge-conversation">
-      <section className="concierge-primary-entry" aria-labelledby="concierge-entry-title" hidden={Boolean(currentNeedRecommendation)}>
+      <section className="concierge-primary-entry" aria-labelledby="concierge-entry-title" hidden={Boolean(entryState?.autoSubmit || currentNeedRecommendation)}>
         <h1 id="concierge-entry-title">{language==='ko'?'원하는 걸 편하게 알려주세요':'Tell me what you would like'}</h1>
         <p>{language==='ko'?'지금 필요한 것을 말이나 글로 알려주시면 위치·시간·날씨와 함께 보고 찾아드릴게요.':'I will use your preferences and available location, time and weather to help you.'}</p>
 
@@ -821,7 +821,7 @@ function ConciergeConversation() {
       {tripMode === "NOW" && !currentNeedRecommendation && <details className="structured-request-alternative"><summary>{language==="en"?"Location settings":"위치 설정"}</summary><LocationContextBar mode="NOW" refreshNeeded={Boolean(locationFreshnessNotice)} onConfirmed={()=>setLocationFreshnessNotice(null)} /></details>}
       {tripMode === "PLAN" && !hasCompletedTurn && <details className="structured-request-alternative"><summary>{language==="en"?"Starting point":"여행 시작 위치"}</summary><LocationContextBar mode="PLAN" /></details>}
       {tripMode==="NOW"&&locationFreshnessNotice&&<section className="card location-freshness-choice" role="status"><b>위치를 확인한 지 시간이 조금 지났어요. 지금 계신 곳을 다시 확인할까요?</b><p>{locationFreshnessNotice.label||"이전 확인 위치"}{locationFreshnessNotice.confirmedAt?` · ${new Date(locationFreshnessNotice.confirmedAt).toLocaleString("ko-KR")}`:""}</p><button type="button" className="btn btn-outline" onClick={()=>{const request=lastRequestRef.current;if(!request)return;allowStaleLocationOnceRef.current=true;setLocationFreshnessNotice(null);void send(request.text,request.structured,true)}}>이 위치 기준으로 검색</button></section>}
-      <div className="chat-window" hidden={Boolean(currentNeedRecommendation)}>
+      <div className="chat-window" hidden={Boolean(entryState?.autoSubmit || currentNeedRecommendation)}>
         {messages.map((m, i) => {
           if(i===0&&m.role==="ai"&&!m.result&&!m.turnId)return null;
           const isCurrentAnswer =
