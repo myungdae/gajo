@@ -673,6 +673,8 @@ function ConciergeConversation() {
     currentResult?.intentRoute === "REPLAN";
   const latestRecommendation =
     hasRecommendation && isJourneyResult ? currentResult : undefined;
+  const currentNeedRecommendation =
+    hasRecommendation && !isJourneyResult ? currentResult : undefined;
   const journeySteps = runtimeJourneySteps(currentResult?.recommendation);
   const latestPrimaryResult = hasPrimaryResult ? currentResult : undefined;
   useEffect(() => {
@@ -914,6 +916,12 @@ function ConciergeConversation() {
         </div>
       )}
 
+      {currentNeedRecommendation && (
+        <div className="recommendation-journey-start">
+          <UnderstoodContext result={currentNeedRecommendation} />
+          <ResultPanel result={currentNeedRecommendation} onFindNearbyRestaurants={openNearby} />
+        </div>
+      )}
       {!hasRecommendation && currentResult && (currentResult.nearbyDiscoveryIntent || currentResult.nearbyRestaurantIntent) && (
         <div className="recommendation-journey-start nearby-fallback-action">
           <ResultPanel result={currentResult} onFindNearbyRestaurants={openNearby} />
