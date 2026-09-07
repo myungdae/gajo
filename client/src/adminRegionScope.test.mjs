@@ -139,24 +139,15 @@ for (const entry of ['/admin', '/hapcheon/admin'])
       await change('input[name="currentPassword"]', 'Initial-password-1');
       await change('input[name="newPassword"]', 'Changed-password-2');
       await change('input[name="newPasswordConfirm"]', 'Changed-password-2');
-      const passwordForm = document.querySelector('input[name="currentPassword"]').closest('form');
-      const passwordFormProps =
-        passwordForm[Object.keys(passwordForm).find((key) => key.startsWith('__reactProps      if (entry === '/admin') await change('select[aria-label="관리 지역"]', 'hapcheon');
-      assert.match(document.body.textContent, /현재 관리 지역: 합천/);
-      assert.match(document.body.textContent, /합천 업소 관리/);
-
-      await change('select[aria-label="관리 지역"]', 'gyeryong');
-      assert.equal(router.state.location.pathname, '/admin');
-      assert.equal(new URLSearchParams(router.state.location.search).get('regionId'), 'gyeryong');
-      assert.match(document.body.textContent, /현재 관리 지역: 계룡/);
-      assert(calls.filter((call) => call.region).every((call) => call.region === 'hapcheon' || call.region === 'gyeryong'));
-    } finally {
-      await act(async () => root.unmount());
-      router.dispose();
-    }
-  });
-))];
-      await act(async () => passwordFormProps.onSubmit({ preventDefault() {} }));
+      const passwordForm = document
+        .querySelector('input[name="currentPassword"]')
+        .closest('form');
+      const passwordFormProps = passwordForm[
+        Object.keys(passwordForm).find((key) => key.startsWith('__reactProps'))
+      ];
+      await act(async () =>
+        passwordFormProps.onSubmit({ preventDefault() {} }),
+      );
       await settle();
       const passwordCall = calls.find((call) =>
         call.path.endsWith('/copilot/auth/change-password'),
