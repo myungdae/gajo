@@ -752,48 +752,6 @@ function ConciergeConversation() {
 
   return (
     <div className="concierge-conversation">
-      <section className="concierge-primary-entry" aria-labelledby="concierge-entry-title" hidden={Boolean(entryState?.autoSubmit || currentNeedRecommendation)}>
-        <h1 id="concierge-entry-title">{language==='ko'?'원하는 걸 편하게 알려주세요':'Tell me what you would like'}</h1>
-        <p>{language==='ko'?'지금 필요한 것을 말이나 글로 알려주시면 위치·시간·날씨와 함께 보고 찾아드릴게요.':'I will use your preferences and available location, time and weather to help you.'}</p>
-
-        <div className={"concierge-input-panel concierge-unified-composer"}>
-          <textarea
-            ref={textInputRef}
-            rows={2}
-            aria-label={RECOMMENDATION_REQUEST_COPY[language].inputLabel}
-            placeholder={requestCopy.help}
-            value={input}
-            onChange={(e)=>setInput(e.target.value)}
-            onKeyDown={(e)=>{if(e.key==="Enter"&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();send();}}}
-          />
-          <button
-            className="btn btn-primary btn-block concierge-submit"
-            onClick={() => send()}
-            disabled={loading||Boolean(voiceUnderstanding)}
-            aria-label={requestCopy.send}
-          >
-            {hasCompletedTurn ? (
-              <>
-                <span aria-hidden="true">➤</span>
-                <span className="sr-only">{requestCopy.send}</span>
-              </>
-            ) : (
-              requestCopy.send
-            )}
-          </button>
-          <button type="button" className="btn btn-outline" disabled={loading} onClick={openVoice}>{language==='ko'?'말하기':'Speak'}</button>
-          {hasCompletedTurn && (
-            <button
-              type="button"
-              className="btn btn-outline btn-block concierge-return-trip"
-              onClick={() => navigate(regionLink("/itinerary"))}
-            >
-              내 여행으로 돌아가기
-            </button>
-          )}
-        </div>
-        <RuntimeJourneyEntry auxiliary loading={loading} onCreate={createRuntimeJourney} onDirect={openText}/>
-      </section>
       {!currentNeedRecommendation&&<JourneyConciergeNext busy={loading||voiceOpen} mode={tripMode} onReplan={text=>void send(text)}/>}
       {tripMode !== "PLAN" && !currentNeedRecommendation && (
         <div ref={liveStoryRef} className="journey-live-context">

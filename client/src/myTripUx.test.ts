@@ -14,7 +14,7 @@ test("planning UI explicitly exposes saved regional trip loading and safe new-tr
   ])
     assert.ok(entry.includes(copy));
   assert.doesNotMatch(concierge, /<SavedTripEntry/);
-  assert.match(concierge, /concierge-primary-entry/);
+  assert.doesNotMatch(concierge, /concierge-primary-entry|concierge-unified-composer/);
 });
 test("automatic restore is not the only My Trip access path", () => {
   const layout = source("./components/Layout.tsx"),

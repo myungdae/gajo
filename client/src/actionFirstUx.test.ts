@@ -7,9 +7,9 @@ const confirmation=readFileSync(new URL("./components/VoiceConfirmation.tsx",imp
 
 test("NOW starts with one common journey entry and secondary manual controls",()=>{
   for(const label of ["맛있는 곳 찾기","카페에서 쉬기","숙소 찾기","다음에 갈 곳 찾기","오늘 행사·축제 찾기"])assert.match(readFileSync(new URL("./runtimeJourney.ts",import.meta.url),"utf8"),new RegExp(label));
-  for(const label of ["RECOMMENDATION_REQUEST_COPY","concierge-primary-entry","openVoice","voiceToText"])assert.match(page,new RegExp(label));
-  assert.match(page,/RuntimeJourneyEntry/);
-  assert.match(page,/onDirect=\{openText\}/);
+  for(const label of ["RECOMMENDATION_REQUEST_COPY","JourneyConciergeNext","openVoice","voiceToText"])assert.match(page,new RegExp(label));
+  assert.doesNotMatch(page,/concierge-primary-entry|concierge-unified-composer/);
+  assert.match(page,/requestUi.voice&&<VoiceInputDialog/);
   assert.match(page,/tripMode === "PLAN" && !hasCompletedTurn/);
 });
 

@@ -29,12 +29,12 @@ test('refresh performs current-context lookup then one existing send, without a 
   assert.match(live,/if\(notify&&\(refreshPending.current\|\|disabled\)\)return/);
   assert.match(live,/if\(liveEnabled&&!actionOnly\)void refresh\(false\)/);
 });
-test('direct request controls reuse voice popup and composer handlers with no duplicate headings',()=>{
-  assert.match(page,/concierge-primary-entry/);
-  assert.match(page,/ref=\{textInputRef\}/);
-  assert.match(page,/onClick=\{openVoice\}>\{language==='ko'\?'말하기':'Speak'\}/);
-  assert.match(page,/<textarea/);
+test('Home owns direct entry while Concierge keeps one safe voice follow-up path',()=>{
+  const home=read('./pages/HomePage.tsx'),entry=read('./components/RuntimeJourneyEntry.tsx');
+  assert.doesNotMatch(page,/concierge-primary-entry|concierge-unified-composer/);
+  assert.match(home,/<RuntimeJourneyEntry/);
+  assert.match(entry,/말로 알려주기/);
+  assert.match(entry,/글로 입력하기/);
   assert.match(page,/onConfirm=\{\(\)=>send\(voiceDraft,undefined,false,voiceUnderstanding\|\|undefined\)\}/);
   assert.equal((page.match(/<VoiceInputDialog /g)||[]).length,1);
-  const css=read('./index.css');assert.match(css,/\.automatic-recommendation-choice\s*\{/);assert.match(css,/\.direct-request-choice\s*\{/);assert.match(css,/\.direct-request-choice\[hidden\]/);
 });

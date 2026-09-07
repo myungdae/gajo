@@ -2,20 +2,23 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 const source = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
-const page = source("./pages/ConciergePage.tsx"), css = source("./index.css");
+const page = source("./pages/ConciergePage.tsx"), home = source("./pages/HomePage.tsx"), entry = source("./components/RuntimeJourneyEntry.tsx"), runtimeCss = source("./components/runtime-journey.css"), css = source("./index.css");
 
-test("AI conversation renders one shared text and voice composer", () => {
-  assert.equal((page.match(/<textarea/g) || []).length, 1);
+test("Home owns the primary text and voice entry while Concierge owns results", () => {
+  assert.match(home, /<RuntimeJourneyEntry/);
+  assert.match(entry, /말로 알려주기/);
+  assert.match(entry, /글로 입력하기/);
+  assert.match(entry, /<textarea/);
+  assert.doesNotMatch(page, /concierge-primary-entry|concierge-unified-composer/);
   assert.equal((page.match(/<VoiceInputDialog /g) || []).length, 1);
-  assert.match(page, /concierge-input-panel concierge-unified-composer/);
-  assert.doesNotMatch(page, /"concierge-followup-composer"/);
 });
-test("typed Enter click and speech preserve the existing send and voice flows", () => {
-  assert.match(page, /e\.key\s*===\s*"Enter"[\s\S]*send\(\)/);
-  assert.match(page, /onClick=\{\(\) => send\(\)\}/);
-  assert.match(page, /onClick=\{openVoice\}/);assert.match(page,/const openVoice=.*setVoiceOpen\(true\);beginVoice\(\)/);
-  assert.match(page, /aria-label=\{RECOMMENDATION_REQUEST_COPY\[language\]\.inputLabel\}/);
-  assert.match(page, /aria-label=\{requestCopy.send\}/);
+
+test("Home text submit and voice entry feed the existing concierge flow", () => {
+  assert.match(entry, /onSubmit=\{event=>/);
+  assert.match(home, /onSubmit=\{text=>ask\(text,text\)\}/);
+  assert.match(home, /voiceRequested:true/);
+  assert.match(page, /entryState\?\.voiceRequested/);
+  assert.match(page, /openVoice\(\)/);
 });
 test("composer clears only after success and retains text on failure", () => {
   assert.match(page, /await postConciergeChat[\s\S]*setInput\(""\)[\s\S]*catch/);
@@ -23,10 +26,10 @@ test("composer clears only after success and retains text on failure", () => {
   assert.match(page, /conversationAnchor\?\.regionId === region\.id/);
   assert.match(page, /turnId,[\s\S]*conversationalAnchor/);
 });
-test("unified composer is large, inline, and does not overlap bottom navigation", () => {
-  assert.match(css, /\.concierge-input-panel\s*\{[\s\S]*?position:\s*static/);
-  assert.match(css, /\.concierge-input-panel textarea\s*\{[\s\S]*?min-height:\s*132px/);
-  assert.match(page, /내 여행으로 돌아가기/);
+test("Home primary entry is vertical and Concierge does not duplicate it", () => {
+  assert.match(runtimeCss, /\.entry-input-actions\{display:flex;flex-direction:column/);
+  assert.match(home, /<RuntimeJourneyEntry/);
+  assert.doesNotMatch(page, /concierge-primary-entry|concierge-unified-composer/);
 });
 test("360 390 430 and desktop widths retain compact 44px controls without overflow", () => {
   assert.match(css, /@media\s*\(max-width:\s*430px\)/);

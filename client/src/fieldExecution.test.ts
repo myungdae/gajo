@@ -59,7 +59,7 @@ test("unified conversation uses one API/session and has no app audio or auto-res
   assert.match(page, /postConciergeChat/);
   assert.match(page, /contextSessionId:\s*contextSessionIdRef\.current/);
   assert.match(page, /loadTripSession\(localStorage, region\.id\)/);
-  assert.match(page, /concierge-unified-composer/);
+  assert.doesNotMatch(page, /concierge-primary-entry|concierge-unified-composer/);
   assert.doesNotMatch(speech, /setTimeout|SPEECH_RESTART_DELAY_MS|new Audio|AudioContext|oscillator/);
   assert.match(css, /@media\s*\(max-width:\s*430px\)[\s\S]*concierge-unified-composer/);
 });
