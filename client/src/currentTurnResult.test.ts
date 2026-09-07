@@ -19,3 +19,15 @@ test("late response cannot overwrite a newer turn", () => { const current = begi
 test("alternatives stay in the current category", () => { const result = discovery("CAFE", "lowful"); const next = buildAiResponseActionModel({ result, excludedEntityIds: [result.discovery.entities[0].entityId] })!; assert.equal(next.decision.entity.category, "CAFE"); });
 test("transient replacement does not mutate My Trip", () => { const trip = { anonymousTripId: "stable", savedPlaces: [entity("FOOD", "saved")] }; resolveCurrentTurn(beginCurrentTurn("new", "카페"), "new", discovery("CAFE", "lowful")); assert.equal(trip.anonymousTripId, "stable"); assert.equal(trip.savedPlaces[0].category, "FOOD"); });
 test("lodging dead-end response renders the Nearby CTA and restores conversation after browser back",()=>{const page=readFileSync(new URL("./pages/ConciergePage.tsx",import.meta.url),"utf8");assert.match(page,/!hasRecommendation && currentResult && \(currentResult\.nearbyDiscoveryIntent \|\| currentResult\.nearbyRestaurantIntent\)/);assert.match(page,/ResultPanel result=\{currentResult\} onFindNearbyRestaurants=\{openNearby\}/);assert.match(page,/state:\{category\}/);assert.match(page,/saveConversation\(sessionStorage,region.id,tripSession.id,tripMode/);assert.match(page,/restored\?\.messages/);assert.match(page,/shouldAutoSubmitEntry\(entryState\.initialMessage, restored\?\.messages\)/);assert.match(page,/conversationAnchor,discoveryContext,explicitJourney,excludedDiscoveryIds/)});
+test("explicit new destination starts a new turn after a food request", () => {
+  let current = resolveCurrentTurn(
+    beginCurrentTurn("food", "배고파요"),
+    "food",
+    discovery("FOOD", "restaurant")
+  );
+
+  current = beginCurrentTurn("destination", "해인사에 가고 싶어요");
+
+  assert.equal(isCurrentTurn("food", current), false);
+  assert.equal(current?.requestText, "해인사에 가고 싶어요");
+});

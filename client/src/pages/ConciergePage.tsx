@@ -453,6 +453,7 @@ function ConciergeConversation() {
             ?.category) as CreateContextInput["discoveryCategoryHint"],
         isFollowup:
           (hasCompletedTurn || hasTripEvidence(storedTrip)) &&
+          !/(?:가고|갈래|방문하고|둘러보고|보고)\s*싶|갈래/.test(text) &&
           !/카페|커피|식당|맛집|배고|밥|숙소|호텔|펜션|관광|명소|왜|유래|역사|의미/.test(
             text,
           ),
