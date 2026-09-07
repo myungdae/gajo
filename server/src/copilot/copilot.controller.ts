@@ -20,6 +20,15 @@ export class CopilotController {
   @Post('auth/login') login(@Body() body: any) {
     return this.auth.login(body?.username, body?.password);
   }
+  @Post('auth/change-password')
+  @UseGuards(CopilotAuthGuard)
+  changePassword(@Req() req: any, @Body() body: any) {
+    return this.auth.changePassword(
+      req.copilotUser,
+      body?.currentPassword,
+      body?.newPassword,
+    );
+  }
   @Post('assignments/:sub') @UseGuards(CopilotAuthGuard) assign(
     @Req() req: any,
     @Param('sub') sub: string,
