@@ -128,11 +128,10 @@ test("internal report keys always render through Korean allowlists", () => {
     );
   assert.doesNotMatch(page, />검색 fallback<|오류·fallback/);
 });
-test("Hapcheon mayor network is protected, evidence-bounded, and separate from visitor screens", () => {
+test("Hapcheon network is public read-only, evidence-bounded, and linked for its manager", () => {
   assert.match(app, /path="\/hapcheon\/network-report"/);
-  assert.match(mayorPage, /x-regional-report-token/);
-  assert.match(mayorPage, /\/regional-report\/ecosystem/);
-  assert.match(mayorPage, /관광객 화면 비노출/);
+  assert.match(mayorPage, /\/public\/regional-network\/hapcheon/);
+  assert.doesNotMatch(mayorPage, /x-regional-report-token|보고용 접근 키/);
   assert.match(mayorPage, /온톨로지 관계는 실적이나 매출의 증거가 아닙니다/);
   assert.match(page, /report\.region\.id === "hapcheon"/);
   assert.match(page, /합천 지역 연결망/);

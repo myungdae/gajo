@@ -27,6 +27,7 @@ export default function AdminPage({adminToken}:{adminToken:string}) {
       <section className="card" aria-label="현재 관리 지역">
         <h1>현재 관리 지역: {region.regionName}</h1>
         <p>아래 데이터 검수, 연결 관리, Spotlight는 모두 {region.regionName} 기준입니다.</p>
+        {region.id === 'hapcheon' && <a className="btn btn-secondary" href="/hapcheon/network-report" target="_blank" rel="noreferrer">합천 지역 연결망 열기</a>}
       </section>
       <RegionalDataManager key={`data:${region.id}`} adminToken={adminToken} />
       <SpotlightManager key={`spotlight:${region.id}`} token={adminToken} />

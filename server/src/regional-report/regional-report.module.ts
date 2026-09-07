@@ -10,6 +10,7 @@ import {
   BenefitRedemptionSchema,
 } from '../partner/partner.schema';
 import { RegionalReportController } from './regional-report.controller';
+import { PublicRegionalNetworkController } from './public-regional-network.controller';
 import { RegionalReportGuard } from './regional-report.guard';
 import { RegionalReportRateLimitGuard } from './regional-report-rate-limit.guard';
 import { RegionalReportService } from './regional-report.service';
@@ -33,7 +34,7 @@ import { TourismNetworkJobService } from './tourism-network-job.service';
       },
     ]),
   ],
-  controllers: [RegionalReportController],
+  controllers: [RegionalReportController, PublicRegionalNetworkController],
   providers: [
     RegionalReportGuard,
     RegionalReportRateLimitGuard,
