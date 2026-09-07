@@ -306,7 +306,6 @@ export default function ItineraryPage() {
   return (
     <div>
       <TripManagement onSavedPlacesCleared={setSavedPlaces} />
-      <ArchivedTrips />
       <div className="card">
         <h2>추천 이유</h2>
         <p style={{ fontSize: 13 }}>{rec.reasonSummary}</p>
@@ -547,6 +546,7 @@ export default function ItineraryPage() {
             ))}
         </div>
       )}
+      <ArchivedTrips />
       {savedPlaces.length > 0 && (
         <SavedPlacesSection places={savedPlaces} onRemove={removePlace} />
       )}
