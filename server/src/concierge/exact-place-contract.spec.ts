@@ -61,6 +61,15 @@ describe.each(cases)('$regionId exact-place contract', (fixture) => {
     });
   });
 
+  it.each([
+    ['어떻게 가죠', `${fixture.alias} 어떻게 가죠`],
+    ['가는 길 알려줘', `${fixture.alias} 가는 길 알려줘`],
+    ['가려면', `${fixture.alias} 가려면`],
+  ])('grounds the named place for navigation phrase %s', async (_kind, query) => {
+    await expect(
+      service.resolveExactPlaceIntent(fixture.regionId, query),
+    ).resolves.toMatchObject({ entityId: fixture.entityId });
+  });
   it('keeps the named place as an anchor for 주변 관광지', async () => {
     const result: any = await service.discover(
       fixture.regionId,

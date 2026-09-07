@@ -517,7 +517,7 @@ export class PlaceDiscoveryService {
   async resolveExactPlaceIntent(regionId: string, message: string) {
     if (/주변|근처|가까|인근|기준/.test(message)) return undefined;
     const requestedName = message
-      .replace(/(?:을|를|에)?\s*(?:찾아\s*줘|찾아줘|알려\s*줘|알려줘|보여\s*줘|보여줘|어디(?:야|예요|에요|인가요)?)[.!?\s]*$/u, '')
+      .replace(/(?:을|를|에|로|으로|까지)?\s*(?:찾아\s*줘|찾아줘|알려\s*줘|알려줘|보여\s*줘|보여줘|어디(?:야|예요|에요|인가요)?|어떻게\s*가(?:죠|요|나요|야)?|가는\s*(?:길|법)(?:\s*알려\s*줘)?|가려면|길찾기)[.!?\s]*$/u, '')
       .trim();
     if (!requestedName) return undefined;
     const dataset = await this.regionalData?.effectiveDataset(regionId);
