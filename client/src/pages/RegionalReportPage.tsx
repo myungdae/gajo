@@ -159,6 +159,15 @@ export default function RegionalReportPage() {
           <button className="report-logout" type="button" onClick={logout}>
             접근 키 지우기
           </button>
+          {report.region.id === "hapcheon" && (
+            <button
+              className="mayor-report-link"
+              type="button"
+              onClick={() => navigate("/hapcheon/network-report")}
+            >
+              합천 지역 연결망
+            </button>
+          )}
         </div>
         <div className="period-tabs" role="group" aria-label="집계 기간">
           {[

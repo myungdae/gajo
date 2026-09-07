@@ -8,6 +8,7 @@ import {
   PartnerActivityDocument,
   PartnerDocument,
 } from '../partner/partner.schema';
+import { HAPCHEON_MASTER_DATA } from '../regions/hapcheon/master-data';
 
 export type ReportPeriod = 'today' | '7d' | '30d';
 const PERIOD_DAYS: Record<ReportPeriod, number> = {
@@ -57,6 +58,117 @@ export class RegionalReportService {
     private activities: Model<PartnerActivityDocument>,
     @InjectModel(Partner.name) private partners: Model<PartnerDocument>,
   ) {}
+  ecosystem(regionId: string) {
+    if (regionId !== 'hapcheon')
+      return {
+        schemaVersion: 1,
+        region: { id: regionId },
+        status: 'PREPARING',
+        nodes: [],
+        edges: [],
+      };
+    const category = (value: string) => {
+      if (['FOOD'].includes(value)) return 'FOOD';
+      if (value === 'CAFE') return 'CAFE';
+      if (value === 'ACCOMMODATION') return 'STAY';
+      if (value === 'FESTIVAL_EXHIBITION') return 'FESTIVAL';
+      return 'ATTRACTION';
+    };
+    const places = HAPCHEON_MASTER_DATA.map((place) => ({
+      id: place.entityUri,
+      label: place.displayName.ko,
+      kind: category(place.category),
+      status: place.runtimeDataStatus,
+      area: place.areaLabel || place.address?.split(' ')[2] || '합천군',
+      sourceName: place.source.sourceName,
+    }));
+    const placeIds = new Set(places.map((place) => place.id));
+    const edges = new Map<
+      string,
+      { source: string; target: string; relation: string; basis: string }
+    >();
+    const add = (
+      source: string,
+      target: string,
+      relation: string,
+      basis: string,
+    ) => {
+      if (source === target || !placeIds.has(source) || !placeIds.has(target))
+        return;
+      const ordered = [source, target].sort();
+      edges.set(`${ordered[0]}|${ordered[1]}|${relation}`, {
+        source,
+        target,
+        relation,
+        basis,
+      });
+    };
+    for (const place of HAPCHEON_MASTER_DATA) {
+      for (const related of place.relatedEntityIds || [])
+        add(
+          place.entityUri,
+          related,
+          'EXPLICIT_RELATED',
+          '마스터데이터 relatedEntityIds',
+        );
+    }
+    for (let i = 0; i < HAPCHEON_MASTER_DATA.length; i++) {
+      for (let j = i + 1; j < HAPCHEON_MASTER_DATA.length; j++) {
+        const a = HAPCHEON_MASTER_DATA[i],
+          b = HAPCHEON_MASTER_DATA[j];
+        if (a.themeId && a.themeId === b.themeId)
+          add(
+            a.entityUri,
+            b.entityUri,
+            'SAME_THEME',
+            `공통 테마: ${a.themeId}`,
+          );
+        else if (
+          a.tags.includes('HAPCHEON_LAKE') &&
+          b.tags.includes('HAPCHEON_LAKE')
+        )
+          add(
+            a.entityUri,
+            b.entityUri,
+            'SAME_AREA',
+            '공통 태그: HAPCHEON_LAKE',
+          );
+      }
+    }
+    return {
+      schemaVersion: 1,
+      region: { id: 'hapcheon', name: '합천' },
+      status: 'AVAILABLE',
+      generatedFrom: 'HAPCHEON_MASTER_DATA',
+      interpretation: 'ONTOLOGY_RELATIONSHIP_NOT_OBSERVED_PERFORMANCE',
+      nodes: places,
+      edges: [...edges.values()],
+      counts: {
+        total: places.length,
+        verified: places.filter((place) => place.status === 'VERIFIED').length,
+        byKind: places.reduce<Record<string, number>>((out, place) => {
+          out[place.kind] = (out[place.kind] || 0) + 1;
+          return out;
+        }, {}),
+      },
+      runtimeSignals: [
+        '현재 위치',
+        '날씨',
+        '시간·영업상태',
+        '동행자',
+        '보행 여건',
+        '남은 시간',
+      ],
+      actionPath: ['PLAN', 'NOW', 'REPLAN', 'ACTION'],
+      outcomePath: [
+        '지역 내 이동',
+        '식사·카페',
+        '체험',
+        '숙박',
+        '체류 연장·지역 소비',
+      ],
+    };
+  }
   async report(
     regionId: string,
     periodValue: string | undefined,

@@ -23,6 +23,7 @@ const network = readFileSync(
   new URL("./components/RegionalTourismNetwork.tsx", import.meta.url),
   "utf8",
 );
+const mayorPage = readFileSync(new URL("./pages/HapcheonNetworkReportPage.tsx", import.meta.url), "utf8");
 test("regional report is read-only, header-authenticated, and has fixed periods", () => {
   assert.match(app, /path="\/regional-report"/);
   assert.match(app, /path="\/:regionId\/regional-report"/);
@@ -126,4 +127,17 @@ test("internal report keys always render through Korean allowlists", () => {
       /[a-z][A-Z]|unknown|internal|source/,
     );
   assert.doesNotMatch(page, />검색 fallback<|오류·fallback/);
+});
+test("Hapcheon mayor network is protected, evidence-bounded, and separate from visitor screens", () => {
+  assert.match(app, /path="\/hapcheon\/network-report"/);
+  assert.match(mayorPage, /x-regional-report-token/);
+  assert.match(mayorPage, /\/regional-report\/ecosystem/);
+  assert.match(mayorPage, /관광객 화면 비노출/);
+  assert.match(mayorPage, /온톨로지 관계는 실적이나 매출의 증거가 아닙니다/);
+  assert.match(page, /report\.region\.id === "hapcheon"/);
+  assert.match(page, /합천 지역 연결망/);
+  assert.doesNotMatch(page + mayorPage, /군수/);
+  assert.match(page, /navigate\("\/hapcheon\/network-report"\)/);
+  for (const label of ["현재 상황", "관광·체험", "음식점", "숙박", "체류 연장·지역 소비"])
+    assert.match(mayorPage, new RegExp(label));
 });

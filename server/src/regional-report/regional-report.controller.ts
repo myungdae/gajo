@@ -68,4 +68,8 @@ export class RegionalReportController {
       network: snapshot.released,
     };
   }
+  @Get('ecosystem')
+  ecosystem(@Req() req: RegionalReportRequest) {
+    return this.service.ecosystem(req.regionalReportAccess.regionId);
+  }
 }

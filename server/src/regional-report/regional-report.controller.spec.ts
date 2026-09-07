@@ -31,7 +31,18 @@ describe('RegionalReportController boundary', () => {
       providers: [
         RegionalReportGuard,
         RegionalReportRateLimitGuard,
-        { provide: RegionalReportService, useValue: { report } },
+        {
+          provide: RegionalReportService,
+          useValue: {
+            report,
+            ecosystem: jest.fn((regionId: string) => ({
+              region: { id: regionId },
+              status: 'AVAILABLE',
+              nodes: [],
+              edges: [],
+            })),
+          },
+        },
         {
           provide: TourismNetworkAggregationService,
           useValue: { latestPublicRolling },
@@ -57,6 +68,16 @@ describe('RegionalReportController boundary', () => {
     expect(JSON.stringify(response.body)).not.toMatch(
       /sourceRevision|eventCount|activityCount|distinctSession|jobId|sessionId|anonymousTripId|redemptionId|eventId|coordinates|latitude|longitude|query|raw/i,
     );
+  });
+  it('protects and credential-scopes the policy ecosystem', async () => {
+    await request(app.getHttpServer())
+      .get('/api/regional-report/ecosystem')
+      .expect(403);
+    await request(app.getHttpServer())
+      .get('/api/regional-report/ecosystem')
+      .set('x-regional-report-token', 'h'.repeat(32))
+      .expect(200)
+      .expect(({ body }) => expect(body.region.id).toBe('hapcheon'));
   });
   it('keeps the network period fixed and rejects query scope mismatch', async () => {
     await request(app.getHttpServer())

@@ -50,6 +50,17 @@
   font: inherit;
   cursor: pointer;
 }
+.mayor-report-link {
+  min-height: 44px;
+  margin: 10px 0 0 8px;
+  padding: 9px 14px;
+  border: 1px solid #b78432;
+  background: #fff8e9;
+  color: #755018;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
 .period-tabs {
   display: flex;
   gap: 6px;
@@ -324,6 +335,11 @@
   .regional-report header {
     align-items: stretch;
     flex-direction: column;
+  }
+  .mayor-report-link {
+    display: block;
+    width: 100%;
+    margin-left: 0;
   }
   .period-tabs {
     display: grid;
