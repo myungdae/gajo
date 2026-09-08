@@ -50,6 +50,7 @@ import { regionalRuntimeView } from "../regionalRuntime";
 import { SHARED_VISITOR_COPY } from "../visitorCopy";
 import InstallExperience from "../components/InstallExperience";
 import FullJourneySave from "../components/FullJourneySave";
+import ConciergeDemoOverlay from "../components/ConciergeDemoOverlay";
 
 import AiResponseActions from "../components/AiResponseActions";
 import RuntimeJourneyEntry from '../components/RuntimeJourneyEntry';
@@ -125,7 +126,9 @@ export default function ConciergePage() {
 
 function ConciergeConversation() {
   const { language } = useRegionalLanguage();
+  const [showConciergeDemo, setShowConciergeDemo] = useState(false);
   const region = useRegion();
+
   const regionLink = (path: string) => regionalPath(path, region.id);
   const navigate = useNavigate();
   const location = useLocation();
@@ -776,6 +779,27 @@ function ConciergeConversation() {
   return (
     <div className="concierge-conversation">
       {!entryState?.autoSubmit&&!currentNeedRecommendation&&<JourneyConciergeNext busy={loading||voiceOpen} mode={tripMode} onReplan={text=>void send(text)}/>}
+      {!entryState?.autoSubmit && !currentNeedRecommendation && (
+  <button
+    type="button"
+    onClick={() => setShowConciergeDemo(true)}
+    style={{
+      width: "100%",
+      margin: "12px 0 16px",
+      padding: "14px 16px",
+      border: "1px solid #dbeafe",
+      borderRadius: "16px",
+      background: "#f8fbff",
+      color: "#1e40af",
+      fontSize: "15px",
+      fontWeight: 800,
+      cursor: "pointer",
+    }}
+  >
+    ✨ 이 여행도우미가 다른 이유, 20초만 보세요
+  </button>
+)}
+
       {tripMode !== "PLAN" && !currentNeedRecommendation && (
         <div ref={liveStoryRef} className="journey-live-context">
           {tripMode === "NOW" && !hasCompletedTurn && !loading && (
@@ -963,11 +987,43 @@ function ConciergeConversation() {
       )}
       {!currentNeedRecommendation&&<InstallExperience usefulResult={hasPrimaryResult} />}
 
-      {requestUi.voice&&<VoiceInputDialog state={voiceState} text={voiceDraft} reviewing={Boolean(voiceUnderstanding)}
-        error={voiceError} locale={language}
-        onChange={text=>{setVoiceDraft(text);track("VOICE_PARTIAL_EDIT_COMPLETED",tripSession.id,{inputMethod:"TEXT"});}}
-        onStop={stopListening} onSpeakAgain={beginVoice} onCancel={dismissVoice} onType={voiceToText}
-        onConfirm={()=>send(voiceDraft,undefined,false,voiceUnderstanding||undefined)}/>}
+          {requestUi.voice&&<VoiceInputDialog
+        state={voiceState}
+        text={voiceDraft}
+        reviewing={Boolean(voiceUnderstanding)}
+        error={voiceError}
+        locale={language}
+        onChange={text=>{
+          setVoiceDraft(text);
+          track("VOICE_PARTIAL_EDIT_COMPLETED",tripSession.id,{inputMethod:"TEXT"});
+        }}
+        onStop={stopListening}
+        onSpeakAgain={beginVoice}
+        onCancel={dismissVoice}
+        onType={voiceToText}
+        onConfirm={()=>send(voiceDraft,undefined,false,voiceUnderstanding||undefined)}
+      />}
+
+      <ConciergeDemoOverlay
+        open={showConciergeDemo}
+        onClose={() => setShowConciergeDemo(false)}
+        onStartTrip={() => {
+          setShowConciergeDemo(false);
+
+          window.setTimeout(() => {
+            const target =
+              document.querySelector<HTMLTextAreaElement>("textarea") ||
+              document.querySelector<HTMLInputElement>('input[type="text"]');
+
+            target?.focus();
+            target?.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
+          }, 100);
+        }}
+      />
+
 
     </div>
   );

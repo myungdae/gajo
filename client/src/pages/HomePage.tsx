@@ -7,6 +7,7 @@ import { localizedRegionalPath as regionalPath } from '../visitorRouting';
 import { ensureTripSession, loadTripSession, saveTripSession, type PlannedContext } from "../tripSession";
 import type{CreateContextInput}from'../api/client';
 import RuntimeJourneyEntry from '../components/RuntimeJourneyEntry';
+import ConciergeDemoOverlay from "../components/ConciergeDemoOverlay";
 import GajoLiveStatus from '../components/GajoLiveStatus';
 import { regionalRuntimeView } from "../regionalRuntime";
 import { locationPermissionState, observeVisitorLocation } from "../utils/visitorLocation";
@@ -23,6 +24,7 @@ import { regionalHomeGuidancePlace, selectedRegionalHomePlace } from "../regiona
 export default function HomePage() {
   const navigate = useNavigate(), location = useLocation(), region = useRegion(), { language, withLanguage } = useRegionalLanguage(), english = getRegionalHomeEnglish(region), copy = HOME_COPY[language], [managed, setManaged] = useState<any>();
   const [,refreshTrip]=useState(0);
+  const [showConciergeDemo, setShowConciergeDemo] = useState(false);
   const [homeLocation,setHomeLocation]=useState<TripLocation|undefined>(
     ()=>ensureTripSession(region.id).locationContext?.now
   );
@@ -165,8 +167,45 @@ export default function HomePage() {
         </button>
       )}
     </section>
-    <RuntimeJourneyEntry loading={false} onCreate={createJourney} onSubmit={text=>ask(text,text)} onDirect={()=>navigate(link('/concierge?mode=now'),{state:{tripMode:'NOW',voiceRequested:true}})}/>
+    <button
+      type="button"
+      className="home-concierge-demo-button"
+      onClick={() => setShowConciergeDemo(true)}
+      style={{
+        width: "100%",
+        margin: "12px 0 16px",
+        padding: "14px 16px",
+        border: "1px solid #dbeafe",
+        borderRadius: "16px",
+        background: "#f8fbff",
+        color: "#1e40af",
+        fontSize: "15px",
+        fontWeight: 800,
+        cursor: "pointer",
+      }}
+    >
+      ✨ 이 여행도우미가 다른 이유, 20초만 보세요
+    </button>
+
+    <RuntimeJourneyEntry
+      loading={false}
+      onCreate={createJourney}
+      onSubmit={text=>ask(text,text)}
+      onDirect={()=>navigate(link('/concierge?mode=now'),{state:{tripMode:'NOW',voiceRequested:true}})}
+    />
     <TripContinuity onNewTrip={()=>refreshTrip(value=>value+1)}/>
     {guidancePlace&&<section className="proactive-card" aria-label={language==='ko'?'출발 전에 확인하세요':'Check Before You Leave'}><small>{language==='ko'?'출발 전에 확인하세요':'Check Before You Leave'}</small>{guidancePlace&&<h2>{guidanceContext.label}{language==='ko'?'로 가시나요?':' — ready to leave?'}</h2>}<p>{guidance.fact && `${guidance.fact} `}{guidance.context} {guidance.fallbackUsed?(guidancePlace?(language==='ko'?'목적지의 최신 날씨는 아직 확인되지 않았어요.':'The latest destination weather has not been verified yet.'):(language==='ko'?'여정을 만들면 출발 전에 필요한 정보를 확인해 드릴게요.':'Create a journey and I will check what you need before departure.')):guidance.recommendation}</p>{guidance.basisLabel && <span>{guidance.basisLabel}</span>}{guidancePlace&&<button type="button" className="btn btn-outline" onClick={()=>ask(`${guidanceContext.label}로 출발하기 전에 최신 날씨와 이용 정보를 확인해 주세요.`,`Check the latest weather and visitor information before I leave for ${guidanceContext.label}.`)}>{language==='ko'?'출발 정보 확인하기':'Check Departure Information'}</button>}</section>}
+
+    <ConciergeDemoOverlay
+      open={showConciergeDemo}
+      onClose={() => setShowConciergeDemo(false)}
+      onStartTrip={() => {
+        setShowConciergeDemo(false);
+        navigate(
+          link("/concierge?mode=now"),
+          { state: { tripMode: "NOW", freeTextOpen: true } }
+        );
+      }}
+    />
   </div>;
 }
