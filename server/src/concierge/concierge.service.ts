@@ -236,7 +236,24 @@ export class ConciergeService {
       : input;
     const { context, evidence, firedRules } =
       await this.contextService.createContext(effectiveInput);
-    const nearbyDiscovery = detectNearbyDiscovery(input.rawMessage);
+    const detectedNearbyDiscovery = detectNearbyDiscovery(input.rawMessage);
+
+    const defaultToCurrentLocation =
+      (route.intentRoute === 'PLACE_DISCOVERY' ||
+        route.intentRoute === 'IMMEDIATE_NOW') &&
+      Boolean(route.category) &&
+      !detectedNearbyDiscovery.intent &&
+      !exactPlaceIntent &&
+      !semanticSubject &&
+      !previousSubject;
+
+    const nearbyDiscovery = defaultToCurrentLocation
+      ? {
+          intent: true,
+          category: route.category,
+          currentLocationIntent: true,
+        }
+      : detectedNearbyDiscovery;
     const nearbyRestaurantIntent =
       nearbyDiscovery.intent && nearbyDiscovery.category === 'FOOD';
     const config = this.regionConfig?.get(regionId) || REGION_CONFIGS[regionId];

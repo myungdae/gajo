@@ -401,7 +401,7 @@ describe('ConciergeService service-area handling', () => {
     expect(orchestrator.run).not.toHaveBeenCalled();
   });
 
-  it('routes semantic immediate food need to FOOD discovery and never enters journey orchestration',async()=>{
+  it('requires current location for an unanchored semantic immediate food need',async()=>{
     const contextService={
       createContext:jest.fn(async()=>({
         context:{contextNo:'RC-IMMEDIATE-FOOD',operationUri:'hapcheon:operation'},
@@ -415,15 +415,7 @@ describe('ConciergeService service-area handling', () => {
     const discovery={
       resolveExactPlaceIntent:jest.fn(async()=>undefined),
       resolveReference:jest.fn(async()=>undefined),
-      discover:jest.fn(async()=>({
-        regionId:'hapcheon',
-        category:'FOOD',
-        entities:[{
-          entityId:'urn:fixture:food',
-          programLabel:'검증 식당',
-          category:'FOOD'
-        }]
-      }))
+      discover:jest.fn()
     };
 
     const semanticInterpreter={
@@ -459,21 +451,116 @@ describe('ConciergeService service-area handling', () => {
       rawMessage:'배고파요'
     } as any);
 
-    expect(discovery.discover).toHaveBeenCalledWith(
-      'hapcheon',
+    expect(result).toMatchObject({
+      intentRoute:'PLACE_DISCOVERY',
+      nearbyLocationRequired:true,
+      nearbyCategory:'FOOD'
+    });
+
+    expect(discovery.discover).not.toHaveBeenCalled();
+    expect(orchestrator.run).not.toHaveBeenCalled();
+  });
+
+  it('uses actual current coordinates for an unanchored semantic immediate food need',async()=>{
+    const contextService={
+      createContext:jest.fn(async()=>({
+        context:{contextNo:'RC-IMMEDIATE-FOOD-GPS',operationUri:'hapcheon:operation'},
+        evidence:[],
+        firedRules:[]
+      }))
+    };
+
+    const orchestrator={run:jest.fn()};
+
+    const discovery={
+      resolveExactPlaceIntent:jest.fn(async()=>undefined),
+      resolveReference:jest.fn(async()=>undefined),
+      discover:jest.fn()
+    };
+
+    const nearby={
+      search:jest.fn(async()=>[
+        {
+          id:'food-1',
+          provider:'KAKAO',
+          providerPlaceId:'food-1',
+          name:'현재위치 식당',
+          category:'FOOD',
+          lat:35.566,
+          lng:128.165,
+          distanceMeters:320
+        }
+      ])
+    };
+
+    const semanticInterpreter={
+      interpret:jest.fn(async()=>({
+        status:'SUCCESS',
+        provider:'openai',
+        latencyMs:1,
+        interpretation:{
+          intent:'IMMEDIATE_NEED',
+          subjectText:null,
+          referenceType:'NONE',
+          relationToPrevious:'NONE',
+          requestedAction:'지금 식사할 곳 찾기',
+          categoryHint:'음식점',
+          confidence:.99
+        }
+      }))
+    };
+
+    const service=new ConciergeService(
+      contextService as any,
+      orchestrator as any,
+      {label:jest.fn()} as any,
+      {get:jest.fn(()=>GAJO_REGION_CONFIG),detectOutOfRegion:jest.fn()} as any,
+      discovery as any,
+      undefined,
+      undefined,
+      undefined,
+      nearby as any,
+      semanticInterpreter as any
+    );
+
+    const result:any=await service.chat({
+      regionId:'hapcheon',
+      inputMode:'FREE_TEXT',
+      rawMessage:'배고파요',
+      locationStatus:'AVAILABLE',
+      latitude:35.565,
+      longitude:128.164,
+      locationAccuracy:25
+    } as any);
+
+    expect(nearby.search).toHaveBeenCalledWith(
       'FOOD',
-      '배고파요',
+      35.565,
+      128.164,
+      1000,
+      expect.objectContaining({useDistance:true}),
       expect.anything()
     );
 
     expect(result).toMatchObject({
-      intentRoute:'IMMEDIATE_NOW',
-      discovery:{category:'FOOD'}
+      intentRoute:'PLACE_DISCOVERY',
+      nearbyDiscoveryIntent:true,
+      nearbyCategory:'FOOD',
+      discovery:{
+        category:'FOOD',
+        relation:'NEARBY',
+        entities:[
+          expect.objectContaining({
+            programLabel:'현재위치 식당',
+            distanceMeters:320
+          })
+        ]
+      }
     });
 
+    expect(discovery.discover).not.toHaveBeenCalled();
     expect(orchestrator.run).not.toHaveBeenCalled();
   });
-
   it('keeps grounded previous subject for semantic entity information and never discovers alternatives',async()=>{
     const anchor={
       entityId:'https://hapcheon.example/ontology#hwangmaesanCountyPark',
