@@ -27,80 +27,81 @@ export default function HomePage() {
     ()=>ensureTripSession(region.id).locationContext?.now
   );
 
-  useEffect(()=>{
-    let active=true;
+  const hydrateHomeLocation=async(requestPermission=false)=>{
+    const saved=ensureTripSession(region.id).locationContext?.now;
 
-    const hydrateLocation=async()=>{
-      const saved=ensureTripSession(region.id).locationContext?.now;
+    if(saved?.status==="CONFIRMED"){
+      setHomeLocation(saved);
+    }
 
-      if(saved?.status==="CONFIRMED"){
-        setHomeLocation(saved);
-      }
+    const permission=await locationPermissionState();
 
-      const permission=await locationPermissionState();
-      if(permission!=="granted")return;
+    if(permission==="denied")return;
+    if(permission!=="granted"&&!requestPermission)return;
 
-      const gps=await observeVisitorLocation();
-      if(!active||gps.status!=="AVAILABLE")return;
+    const gps=await observeVisitorLocation();
+    if(gps.status!=="AVAILABLE")return;
 
-      if(!Number.isFinite(gps.accuracy)||gps.accuracy!>500){
-        const approximate:TripLocation={
-          status:"STALE",
-          source:"GPS",
-          latitude:gps.latitude,
-          longitude:gps.longitude,
-          accuracy:gps.accuracy,
-          label:language==="ko"?"대략적인 위치":"Approximate location",
-          experienceRegionId:region.id,
-          regionMembership:"UNCERTAIN",
-          observedAt:gps.observedAt
-        };
-        if(active)setHomeLocation(approximate);
-        return;
-      }
-
-      let label=saved?.label||saved?.address||"현재 위치 주변";
-      let address=saved?.address;
-      let searchRegionId=saved?.searchRegionId;
-      let regionMembership=saved?.regionMembership||"UNCERTAIN";
-
-      try{
-        const reverse=await reverseGeocodeLocation(
-          gps.latitude!,
-          gps.longitude!,
-          region.id,
-          gps.accuracy
-        );
-        if(reverse.status==="RESOLVED"){
-          label=reverse.label;
-          address=reverse.address;
-        }
-        searchRegionId=reverse.searchRegionId||reverse.detectedRegionId;
-        regionMembership=reverse.regionMembership||"UNCERTAIN";
-      }catch{}
-
-      const next:TripLocation={
-        status:"CONFIRMED",
+    if(!Number.isFinite(gps.accuracy)||gps.accuracy!>500){
+      setHomeLocation({
+        status:"STALE",
         source:"GPS",
         latitude:gps.latitude,
         longitude:gps.longitude,
         accuracy:gps.accuracy,
-        label,
-        address,
+        label:language==="ko"?"대략적인 위치":"Approximate location",
         experienceRegionId:region.id,
-        searchRegionId,
-        regionMembership,
-        observedAt:gps.observedAt,
-        confirmedAt:new Date().toISOString()
-      };
+        regionMembership:"UNCERTAIN",
+        observedAt:gps.observedAt
+      });
+      return;
+    }
 
-      confirmTripLocation(region.id,"NOW",next);
-      if(active)setHomeLocation(next);
+    let label=saved?.label||saved?.address||"현재 위치 주변";
+    let address=saved?.address;
+    let searchRegionId=saved?.searchRegionId;
+    let regionMembership=saved?.regionMembership||"UNCERTAIN";
+
+    try{
+      const reverse=await reverseGeocodeLocation(
+        gps.latitude!,
+        gps.longitude!,
+        region.id,
+        gps.accuracy
+      );
+
+      if(reverse.status==="RESOLVED"){
+        label=reverse.label;
+        address=reverse.address;
+      }
+
+      searchRegionId=reverse.searchRegionId||reverse.detectedRegionId;
+      regionMembership=reverse.regionMembership||"UNCERTAIN";
+    }catch{}
+
+    const next:TripLocation={
+      status:"CONFIRMED",
+      source:"GPS",
+      latitude:gps.latitude,
+      longitude:gps.longitude,
+      accuracy:gps.accuracy,
+      label,
+      address,
+      experienceRegionId:region.id,
+      searchRegionId,
+      regionMembership,
+      observedAt:gps.observedAt,
+      confirmedAt:new Date().toISOString()
     };
 
-    void hydrateLocation();
-    return()=>{active=false};
+    confirmTripLocation(region.id,"NOW",next);
+    setHomeLocation(next);
+  };
+
+  useEffect(()=>{
+    void hydrateHomeLocation(false);
   },[region.id]);
+
   useEffect(() => {
     let active = true;
     fetchRegionalHome(region.id).then((value) => active && setManaged(sanitizeRegionalSpotlight(value.spotlight))).catch(() => active && setManaged(undefined));
@@ -158,7 +159,7 @@ export default function HomePage() {
         <button
           type="button"
           className="home-context-location"
-          onClick={()=>navigate(link('/concierge?mode=now'),{state:{tripMode:'NOW'}})}
+          onClick={()=>void hydrateHomeLocation(true)}
         >
           {language==="ko"?"위치 확인 필요":"Location needed"}
         </button>
