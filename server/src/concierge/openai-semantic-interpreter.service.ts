@@ -1,4 +1,4 @@
-﻿import { Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   SemanticInterpretation,
@@ -18,6 +18,8 @@ Important:
 - Expressions such as "거기", "그곳", "거기서", "아까 그곳" may refer to the previous subject.
 - Distinguish a new destination from modification of the previous request.
 - "어떻게 가", "가는 길", "가려면" and semantically equivalent expressions indicate navigation.
+- If the subject is already known and the visitor asks whether that place has or allows a property or capability, such as vehicle access, parking, accessibility, admission, opening status, or similar place-specific facts, interpret it as INFORMATION rather than NAVIGATION.
+- If the visitor asks for another place or facility in relation to the known subject, such as somewhere nearby to eat, drink coffee, stay, shop, or visit, interpret it as PLACE_DISCOVERY even when the utterance is phrased as "is there...?" or another existence question.
 - If the visitor rejects or replaces an earlier subject, use relationToPrevious REPLACE.
 - subjectText must contain only the place/entity expression actually stated by the visitor, never a canonical database ID.
 Return only the supplied schema.`;

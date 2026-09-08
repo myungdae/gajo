@@ -20,4 +20,25 @@ describe('real visitor short utterances',()=>{
     expect(routeNaturalLanguageIntent({rawMessage,inputMode:'FREE_TEXT'}))
       .toMatchObject({intentRoute,category});
   });
+
+  it('routes a clear cafe need to place discovery while keeping explicit journey planning as journey planning',()=>{
+    expect(
+      routeNaturalLanguageIntent({
+        inputMode:'FREE_TEXT',
+        rawMessage:'커피 한잔 하고 싶은데',
+      }),
+    ).toEqual({
+      intentRoute:'PLACE_DISCOVERY',
+      category:'CAFE',
+    });
+
+    expect(
+      routeNaturalLanguageIntent({
+        inputMode:'FREE_TEXT',
+        rawMessage:'1박 2일 여행 코스 짜줘',
+      }),
+    ).toMatchObject({
+      intentRoute:'JOURNEY_PLAN',
+    });
+  });
 });
