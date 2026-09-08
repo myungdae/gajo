@@ -7,6 +7,11 @@ import { localizedRegionalPath as regionalPath } from '../visitorRouting';
 import { ensureTripSession, loadTripSession, saveTripSession, type PlannedContext } from "../tripSession";
 import type{CreateContextInput}from'../api/client';
 import RuntimeJourneyEntry from '../components/RuntimeJourneyEntry';
+import GajoLiveStatus from '../components/GajoLiveStatus';
+import { regionalRuntimeView } from "../regionalRuntime";
+import { locationPermissionState, observeVisitorLocation } from "../utils/visitorLocation";
+import { confirmTripLocation, type TripLocation } from "../tripSession";
+import { reverseGeocodeLocation } from "../api/client";
 import { track } from "../analytics";
 import { buildProactiveGuidance } from "../proactiveGuidance";
 import { sanitizeRegionalSpotlight } from "../regionalHomeCopy";
@@ -18,6 +23,84 @@ import { regionalHomeGuidancePlace, selectedRegionalHomePlace } from "../regiona
 export default function HomePage() {
   const navigate = useNavigate(), location = useLocation(), region = useRegion(), { language, withLanguage } = useRegionalLanguage(), english = getRegionalHomeEnglish(region), copy = HOME_COPY[language], [managed, setManaged] = useState<any>();
   const [,refreshTrip]=useState(0);
+  const [homeLocation,setHomeLocation]=useState<TripLocation|undefined>(
+    ()=>ensureTripSession(region.id).locationContext?.now
+  );
+
+  useEffect(()=>{
+    let active=true;
+
+    const hydrateLocation=async()=>{
+      const saved=ensureTripSession(region.id).locationContext?.now;
+
+      if(saved?.status==="CONFIRMED"){
+        setHomeLocation(saved);
+      }
+
+      const permission=await locationPermissionState();
+      if(permission!=="granted")return;
+
+      const gps=await observeVisitorLocation();
+      if(!active||gps.status!=="AVAILABLE")return;
+
+      if(!Number.isFinite(gps.accuracy)||gps.accuracy!>500){
+        const approximate:TripLocation={
+          status:"STALE",
+          source:"GPS",
+          latitude:gps.latitude,
+          longitude:gps.longitude,
+          accuracy:gps.accuracy,
+          label:language==="ko"?"대략적인 위치":"Approximate location",
+          experienceRegionId:region.id,
+          regionMembership:"UNCERTAIN",
+          observedAt:gps.observedAt
+        };
+        if(active)setHomeLocation(approximate);
+        return;
+      }
+
+      let label=saved?.label||saved?.address||"현재 위치 주변";
+      let address=saved?.address;
+      let searchRegionId=saved?.searchRegionId;
+      let regionMembership=saved?.regionMembership||"UNCERTAIN";
+
+      try{
+        const reverse=await reverseGeocodeLocation(
+          gps.latitude!,
+          gps.longitude!,
+          region.id,
+          gps.accuracy
+        );
+        if(reverse.status==="RESOLVED"){
+          label=reverse.label;
+          address=reverse.address;
+        }
+        searchRegionId=reverse.searchRegionId||reverse.detectedRegionId;
+        regionMembership=reverse.regionMembership||"UNCERTAIN";
+      }catch{}
+
+      const next:TripLocation={
+        status:"CONFIRMED",
+        source:"GPS",
+        latitude:gps.latitude,
+        longitude:gps.longitude,
+        accuracy:gps.accuracy,
+        label,
+        address,
+        experienceRegionId:region.id,
+        searchRegionId,
+        regionMembership,
+        observedAt:gps.observedAt,
+        confirmedAt:new Date().toISOString()
+      };
+
+      confirmTripLocation(region.id,"NOW",next);
+      if(active)setHomeLocation(next);
+    };
+
+    void hydrateLocation();
+    return()=>{active=false};
+  },[region.id]);
   useEffect(() => {
     let active = true;
     fetchRegionalHome(region.id).then((value) => active && setManaged(sanitizeRegionalSpotlight(value.spotlight))).catch(() => active && setManaged(undefined));
@@ -60,6 +143,26 @@ export default function HomePage() {
     <section className={`spotlight-card${spotlight.imageUrl ? " has-image" : ""}`} style={spotlight.imageUrl ? { backgroundImage: `linear-gradient(180deg,rgba(8,24,18,.08) 5%,rgba(8,24,18,.96) 100%),url(${spotlight.imageUrl})`, backgroundPosition: `${spotlight.imageFocusX || "center"} ${spotlight.imageFocusY || "center"}` } : {}} aria-labelledby="spotlight-title">
       {spotlight.imageUrl && <img className="sr-only" src={spotlight.imageUrl} alt={spotlight.imageAlt || ""} />}
       <div><small>{spotlight.statusLabel}</small><h1 id="spotlight-title">{spotlight.title}</h1><p>{spotlight.shortDescription}</p>{spotlightQuestion&&<p className="spotlight-question">{spotlightQuestion}</p>}{region.id!=="hapcheon"&&<div className="spotlight-actions"><button onClick={primary}>{spotlight.primaryAction?.label || copy.story}</button>{(spotlight.secondaryAction || place?.latitude !== undefined) && <button onClick={() => findNearby("TOURIST_ATTRACTION")}>{spotlight.secondaryAction?.label || copy.nearby}</button>}</div>}</div>
+    </section>
+    <section className="home-context-strip" aria-label={language==="ko"?"현재 여행 상황":"Current travel context"}>
+      <GajoLiveStatus
+        regionName={region.regionName}
+        regionId={region.id}
+        liveEnabled={regionalRuntimeView(region).weatherEnabled}
+      />
+      {homeLocation?.status==="CONFIRMED" ? (
+        <span className="home-context-location home-context-location-confirmed">
+          {homeLocation.label||homeLocation.address||(language==="ko"?"현재 위치":"Current location")}
+        </span>
+      ) : (
+        <button
+          type="button"
+          className="home-context-location"
+          onClick={()=>navigate(link('/concierge?mode=now'),{state:{tripMode:'NOW'}})}
+        >
+          {language==="ko"?"위치 확인 필요":"Location needed"}
+        </button>
+      )}
     </section>
     <RuntimeJourneyEntry loading={false} onCreate={createJourney} onSubmit={text=>ask(text,text)} onDirect={()=>navigate(link('/concierge?mode=now'),{state:{tripMode:'NOW',voiceRequested:true}})}/>
     <TripContinuity onNewTrip={()=>refreshTrip(value=>value+1)}/>

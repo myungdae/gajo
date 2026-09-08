@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { fetchLiveRuntimeContext, type LiveRuntimeResponse } from '../api/client';
 import { liveRuntimeForRegion } from '../liveRuntimeGuard';
 
-import { weatherStatusLabel, liveStatusHeading, liveRegionName } from '../liveStatusPresentation';
+import { weatherStatusIcon, weatherStatusLabel, liveStatusHeading, liveRegionName } from '../liveStatusPresentation';
 
 export default function GajoLiveStatus({ contextNo, onLiveRefresh,regionName,regionId,liveEnabled,actionOnly=false,disabled=false }: { actionOnly?:boolean;disabled?:boolean;contextNo?: string;regionName:string;regionId:string;liveEnabled:boolean; onLiveRefresh?: (live: LiveRuntimeResponse) => Promise<void> | void }) {
   const {language}=useRegionalLanguage(); const [live, setLive] = useState<LiveRuntimeResponse | null>(null);
@@ -29,7 +29,9 @@ export default function GajoLiveStatus({ contextNo, onLiveRefresh,regionName,reg
   const context = live?.context;
   const status = live?.metadata.status;
   const time = context?.currentTime?.slice(0, 5);
-  const weather = weatherStatusLabel(context?.weatherState || context?.weather, language);
+  const weatherValue=context?.weatherState || context?.weather;
+  const weather = weatherStatusLabel(weatherValue, language);
+  const weatherIcon = weatherStatusIcon(weatherValue);
   const temperature = typeof context?.temperature === 'number' ? `${Math.round(context.temperature)}°C` : null;
   const precipitation = typeof context?.precipitation === 'number' && context.precipitation > 0 ? `${language === 'en' ? 'Rain' : '비'} ${context.precipitation}mm` : null;
   const automaticAction=onLiveRefresh&&<section className="automatic-recommendation-choice" aria-label={requestCopy.automatic} aria-busy={loading}><p>{requestCopy.automaticHelp}</p><button type="button" className="btn btn-primary btn-block" onClick={()=>void refresh(true)} disabled={loading||disabled||!liveEnabled}>{loading?requestCopy.checking:requestCopy.automatic}</button>{refreshFailed&&<p role="status">{requestCopy.unavailable}</p>}</section>;
@@ -37,7 +39,7 @@ export default function GajoLiveStatus({ contextNo, onLiveRefresh,regionName,reg
   return (
     <div className="live-runtime-status" aria-live="polite">
       <div><span className="live-dot" data-status={status || 'UNAVAILABLE'} /><b>{liveStatusHeading(regionId, regionName, language)}</b></div>
-      {context&&status!=='UNAVAILABLE' ? <p>{[time, temperature, precipitation || weather].filter(Boolean).join(' · ')}</p> : <p>{new Date().toLocaleTimeString(language === 'en' ? 'en-US' : 'ko-KR',{hour:'2-digit',minute:'2-digit'})} · {language === 'en' ? 'Weather not checked' : '날씨 정보 확인 전'}</p>}
+      {context&&status!=='UNAVAILABLE' ? <p><span className="live-weather-icon" aria-hidden="true">{weatherIcon}</span> {[time, temperature, precipitation || weather].filter(Boolean).join(' · ')}</p> : <p>{new Date().toLocaleTimeString(language === 'en' ? 'en-US' : 'ko-KR',{hour:'2-digit',minute:'2-digit'})} · {language === 'en' ? 'Weather not checked' : '날씨 정보 확인 전'}</p>}
       <small>{language === 'en' ? (status === 'LIVE' ? 'Current weather checked' : status === 'STALE' ? 'Recently checked weather' : `Weather information for ${liveRegionName(regionId, regionName, language)} is being prepared.`) : status === 'LIVE' ? '실시간 날씨 확인됨' : status === 'STALE' ? '최근 확인한 날씨 정보' : `현재 ${regionName} 날씨 정보는 확인 준비 중입니다.`}</small>
       {automaticAction}
     </div>

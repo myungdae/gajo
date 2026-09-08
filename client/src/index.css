@@ -3753,3 +3753,190 @@ dialog.voice-dialog .voice-dialog-actions .btn-outline { background: #fff; color
 .conversation-other-request button { min-height: 44px; font-size: .95rem; white-space: normal; overflow-wrap: anywhere; }
 .structured-request-alternative { margin-block: 16px; }
 .structured-request-alternative > summary { min-height: 44px; padding: 12px; cursor: pointer; }
+
+.live-weather-icon {
+  display: inline-block;
+  margin-right: 5px;
+  font-size: 22px;
+  line-height: 1;
+  vertical-align: -2px;
+}
+
+.now-runtime-dashboard {
+  margin: 12px 0 16px;
+  padding: 16px;
+  border: 1px solid #c9ddd4;
+  border-radius: 18px;
+  background: #f7fbf9;
+}
+
+.now-runtime-dashboard .live-runtime-status {
+  margin: 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #dce9e3;
+}
+
+.now-runtime-dashboard .location-context-bar {
+  margin: 12px 0 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.now-runtime-dashboard .location-context-bar h2 {
+  margin: 4px 0 6px;
+  font-size: 17px;
+}
+
+.now-runtime-dashboard-help {
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid #dce9e3;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.now-runtime-dashboard .live-weather-icon {
+  font-size: 28px;
+  margin-right: 7px;
+}
+
+/* NOW context is supporting information; the request composer remains primary. */
+.now-runtime-dashboard {
+  margin: 6px 0 10px;
+  padding: 10px 12px;
+  border: 1px solid #d7e5df;
+  border-radius: 12px;
+  background: #f8fbfa;
+}
+
+.now-runtime-dashboard .live-runtime-status {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.now-runtime-dashboard .live-runtime-status > div:first-child {
+  display: none;
+}
+
+.now-runtime-dashboard .live-runtime-status p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.now-runtime-dashboard .live-runtime-status small {
+  display: none;
+}
+
+.now-runtime-dashboard .live-weather-icon {
+  font-size: 20px;
+  margin-right: 5px;
+}
+
+.now-runtime-dashboard .location-context-bar {
+  margin: 7px 0 0;
+  padding: 7px 0 0;
+  border: 0;
+  border-top: 1px solid #e3ece8;
+  border-radius: 0;
+  background: transparent;
+}
+
+.now-runtime-dashboard .location-context-bar > small,
+.now-runtime-dashboard .location-context-bar > h2,
+.now-runtime-dashboard .location-context-bar > p {
+  display: none;
+}
+
+.now-runtime-dashboard .location-methods {
+  display: flex;
+  gap: 8px;
+  margin-top: 0;
+}
+
+.now-runtime-dashboard .location-methods button {
+  min-height: 34px;
+  padding: 6px 10px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.now-runtime-dashboard .location-confirmation > p {
+  margin: 0 0 5px;
+  font-size: 12px;
+}
+
+.now-runtime-dashboard .location-confirmation > details {
+  font-size: 12px;
+}
+
+.now-runtime-dashboard .location-confirmation > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.now-runtime-dashboard .location-confirmation .btn {
+  min-height: 32px;
+  padding: 5px 9px;
+  font-size: 12px;
+}
+
+.now-runtime-dashboard .location-next-actions {
+  display: none !important;
+}
+
+.now-runtime-dashboard-help {
+  margin: 7px 0 0;
+  padding: 7px 0 0;
+  border-top: 1px solid #e3ece8;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--color-text-muted);
+}
+
+.home-context-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 2px 10px;
+  padding: 7px 10px;
+  border: 1px solid #dbe7e2;
+  border-radius: 10px;
+  background: #f8fbfa;
+}
+
+.home-context-strip .live-runtime-status {
+  flex: 1;
+  min-width: 0;
+}
+
+.home-context-strip .live-runtime-status > div:first-child,
+.home-context-strip .live-runtime-status small,
+.home-context-strip .automatic-recommendation-choice {
+  display: none;
+}
+
+.home-context-strip .live-runtime-status p {
+  margin: 0;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.home-context-strip .live-weather-icon {
+  font-size: 19px;
+  margin-right: 4px;
+}
+
+.home-context-location {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}

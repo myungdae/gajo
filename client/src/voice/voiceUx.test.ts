@@ -10,3 +10,21 @@ test("low place confirms only place and low action confirms only action",()=>{co
 test("high-confidence itinerary mutation still requires final confirmation",()=>{const decision=voiceConfirmationPolicy(understandVoice("합천영상테마파크 일정에 담아줘"));assert.equal(decision.mode,"CONFIRM");assert.deepEqual(decision.slots,[]);assert.deepEqual(decision.reasons,["RISKY_ACTION"])});
 test("ambiguous place and unclear region request only their affected fields",()=>{const base=understandVoice("미가추어탕 주변 식당 찾아줘");assert.deepEqual(voiceConfirmationPolicy({...base,placeAmbiguous:true}).slots,["place"]);assert.deepEqual(voiceConfirmationPolicy({...base,regionRelationship:"UNCLEAR"}).slots,["referenceLocation"])});
 test("duplicate final speech results are accepted only once during execution window",()=>{const first=acceptVoiceResult(null,"미가추어탕 주변 식당 찾아줘",1000,false),duplicate=acceptVoiceResult(first.next," 미가추어탕  주변 식당 찾아줘 ",1100,true),later=acceptVoiceResult(first.next,"미가추어탕 주변 식당 찾아줘",3000,false);assert.equal(first.accepted,true);assert.equal(duplicate.accepted,false);assert.equal(later.accepted,true)});
+test("natural NOW needs distinguish current location from an explicit place anchor",()=>{
+  const current=understandVoice("지금 커피 한잔 하고 싶은데");
+  assert.equal(current.slots.place.value,"");
+  assert.equal(current.slots.category.value,"카페");
+  assert.equal(current.slots.action.value,"장소 찾기");
+  assert.equal(current.slots.referenceLocation.value,"현재 위치");
+
+  const anchored=understandVoice("계룡시청 근처에서 지금 커피 한잔 하고 싶은데");
+  assert.equal(anchored.slots.place.value,"계룡시청");
+  assert.equal(anchored.slots.place.confidence,"HIGH");
+  assert.equal(anchored.slots.category.value,"카페");
+  assert.equal(anchored.slots.action.value,"주변 장소 찾기");
+  assert.equal(anchored.slots.referenceLocation.value,"계룡시청 주변");
+
+  const destination=understandVoice("계룡산에 가고 싶어");
+  assert.equal(destination.slots.place.value,"계룡산");
+  assert.equal(destination.slots.place.confidence,"HIGH");
+});

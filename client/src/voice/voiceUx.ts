@@ -27,6 +27,22 @@ const actionRules: Array<[RegExp, string]> = [
   [/찾아|추천/, "장소 찾기"], [/안내|알려|정보|어떤\s*곳/, "장소 정보 보기"],
 ];
 
+const explicitVoicePlace = (text:string) => {
+  const transcript=text.trim().replace(/\s+/g," ");
+
+  const relational=transcript.match(
+    /^(.+?)\s*(?:주변|근처|가까이)(?:에서|에|의)?(?:\s|$)/
+  );
+  if(relational?.[1]) return relational[1].trim();
+
+  const destination=transcript.match(
+    /^(.+?)(?:에|으로)\s*(?:가고|가려|갈래|가자|방문|둘러|보고)/
+  );
+  if(destination?.[1]) return destination[1].trim();
+
+  return "";
+};
+
 const cleanPlace = (text: string) => text
   .replace(/주변|근처|가까운|식당|맛집|음식점|카페|커피|관광지|숙소|숙박|호텔|펜션/g, " ")
   .replace(/찾아\s*줘|찾아줘|찾아|추천해?\s*줘|추천|일정에?\s*(담아|넣어|추가)\s*줘?|일정에서?\s*(빼|삭제)\s*줘?|예약해?\s*줘?|전화해?\s*줘?|길\s*안내(?:를)?\s*(시작해?\s*줘?|해\s*줘)?|몇\s*시까지\s*해|몇\s*시|지금|추워|더워|날씨|정보를?|알려\s*줘|볼까|할까/g, " ")
@@ -35,9 +51,18 @@ const cleanPlace = (text: string) => text
 export function understandVoice(text: string, referenceLocation = "현재 위치"): VoiceUnderstanding {
   const transcript = text.trim().replace(/\s+/g, " ");
   const category = categoryRules.find(([pattern]) => pattern.test(transcript))?.[1] || "";
-  const action = actionRules.find(([pattern]) => pattern.test(transcript))?.[1] || "";
+  const detectedAction = actionRules.find(([pattern]) => pattern.test(transcript))?.[1] || "";
+  const action =
+    detectedAction ||
+    (category && /싶|먹고|마시고|쉬고/.test(transcript) ? "장소 찾기" : "");
   const effectiveCategory=category||(action==="운영시간 확인"?"장소 운영정보":action==="장소 정보 보기"?"장소 정보":/일정에 담기|일정에서 삭제/.test(action)?"여행 장소":/예약하기|전화하기|길 안내 시작/.test(action)?"장소 실행":"");
-  const place = cleanPlace(transcript);
+  const explicitPlace=explicitVoicePlace(transcript);
+  const genericCategoryNeed=
+    Boolean(category) &&
+    /싶|찾|추천|먹고|마시고|쉬고/.test(transcript);
+  const place =
+    explicitPlace ||
+    (genericCategoryNeed ? "" : cleanPlace(transcript));
   const constraints = [
     /도보|걸어서/.test(transcript) ? "도보" : "",
     /차로|자동차/.test(transcript) ? "자동차" : "",

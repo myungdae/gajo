@@ -789,17 +789,36 @@ function ConciergeConversation() {
               )}
             </header>
           )}
-          <GajoLiveStatus
-            regionName={region.regionName}
-            regionId={region.id}
-            liveEnabled={regionalRuntimeView(region).weatherEnabled}
-          />
+          {tripMode === "NOW" ? (
+            <section className="now-runtime-dashboard" aria-label={language==="en"?"Current travel context":"지금 여행 상황"}>
+              <GajoLiveStatus
+                regionName={region.regionName}
+                regionId={region.id}
+                liveEnabled={regionalRuntimeView(region).weatherEnabled}
+              />
+              <LocationContextBar
+                mode="NOW"
+                refreshNeeded={Boolean(locationFreshnessNotice)}
+                onConfirmed={()=>setLocationFreshnessNotice(null)}
+              />
+              <p className="now-runtime-dashboard-help">
+                {language==="en"
+                  ?"I’ll use your current location, local time and weather to help with what you need now."
+                  :"현재 위치·시간·날씨를 기준으로 지금 필요한 곳을 찾아드려요."}
+              </p>
+            </section>
+          ) : (
+            <GajoLiveStatus
+              regionName={region.regionName}
+              regionId={region.id}
+              liveEnabled={regionalRuntimeView(region).weatherEnabled}
+            />
+          )}
         </div>
       )}
       {tripMode === "NOW" && tripSession.plannedContext && !hasCompletedTurn && (
         <NowContinuationSummary planned={tripSession.plannedContext} language={language} />
       )}
-      {tripMode === "NOW" && <details className="structured-request-alternative"><summary>{language==="en"?"Location settings":"위치 설정"}</summary><LocationContextBar mode="NOW" refreshNeeded={Boolean(locationFreshnessNotice)} onConfirmed={()=>setLocationFreshnessNotice(null)} /></details>}
       {tripMode === "PLAN" && !hasCompletedTurn && <details className="structured-request-alternative"><summary>{language==="en"?"Starting point":"여행 시작 위치"}</summary><LocationContextBar mode="PLAN" /></details>}
       {tripMode==="NOW"&&locationFreshnessNotice&&<section className="card location-freshness-choice" role="status"><b>위치를 확인한 지 시간이 조금 지났어요. 지금 계신 곳을 다시 확인할까요?</b><p>{locationFreshnessNotice.label||"이전 확인 위치"}{locationFreshnessNotice.confirmedAt?` · ${new Date(locationFreshnessNotice.confirmedAt).toLocaleString("ko-KR")}`:""}</p><button type="button" className="btn btn-outline" onClick={()=>{const request=lastRequestRef.current;if(!request)return;allowStaleLocationOnceRef.current=true;setLocationFreshnessNotice(null);void send(request.text,request.structured,true)}}>이 위치 기준으로 검색</button></section>}
       <div className="chat-window" hidden={Boolean(entryState?.autoSubmit || currentNeedRecommendation)}>
