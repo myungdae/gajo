@@ -55,7 +55,7 @@ export default function VoiceInputDialog({state,text,reviewing,error,locale,onCh
         ? <VoiceConfirmation state={state} text={text} onChange={onChange}/>
         : <>{text&&<p className="voice-live-transcript">{text}</p>}
             {error&&<p className="voice-error" role="alert">{error}</p>}
-            <p className="voice-helper">{copy.privacyCompact}</p></>}
+            {copy.privacyCompact&&<p className="voice-helper">{copy.privacyCompact}</p>}</>}
     </div>
     <div className="voice-dialog-actions voice-confirm-actions">
       {reviewing
