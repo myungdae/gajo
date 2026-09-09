@@ -3,7 +3,7 @@ export const VOICE_COPY = {
   ko: {
     start:'말로 질문하기',stop:'듣기 중지',review:'인식된 문장을 확인해 주세요',transcript:'인식된 문장 · 직접 수정할 수 있어요',
     confirm:'이대로 보내기',again:'다시 말하기',cancel:'취소',text:'글자로 입력하기',sending:'전송 중…',
-    privacyCompact:'',
+    privacyCompact:'이렇게 말해보세요\n“근처 식당 찾아줘”\n“조용한 카페 찾아줘”\n“근처 숙소 찾아줘”\n“비 오는데 부모님과 갈 만한 곳 찾아줘”',
     privacy:'',
     permission:'마이크 권한이 거부되었습니다. 브라우저의 사이트 설정에서 마이크를 허용한 뒤 다시 시도하거나 글자로 입력해 주세요.',
     unsupported:'이 브라우저에서는 음성 입력을 지원하지 않습니다. 글자로 질문을 입력해 주세요.',
@@ -14,7 +14,7 @@ export const VOICE_COPY = {
   en: {
     start:'Speak a Question',stop:'Stop Listening',review:'Review your question',transcript:'Recognized text · you can edit it',
     confirm:'Send This Question',again:'Speak Again',cancel:'Cancel',text:'Type a Question',sending:'Sending…',
-    privacyCompact:'',
+    privacyCompact:'Try saying\n“Find a restaurant nearby”\n“Find a quiet cafe”\n“Find accommodation nearby”\n“Where can I go with my parents when it is raining?”',
     privacy:'',
     permission:'Microphone permission was denied. Allow microphone access in your browser’s site settings and try again, or type your question.',
     unsupported:'Voice input is not supported in this browser. Please type your question.',

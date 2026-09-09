@@ -3718,7 +3718,7 @@ dialog.voice-dialog .voice-activity[data-phase="listening"] .voice-activity-symb
 dialog.voice-dialog .voice-activity[data-phase="complete"] .voice-activity-symbol { background: #eff6ff; }
 .voice-dialog-content { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 dialog.voice-dialog textarea { display: block; margin: 0; min-height: 72px; height: 88px; max-height: 144px; resize: vertical; padding: 10px; border: 1px solid #64748b; border-radius: 8px; font-size: 16px; }
-dialog.voice-dialog .voice-helper, dialog.voice-dialog .voice-error { margin: 0; font-size: 13px; line-height: 1.45; }
+dialog.voice-dialog .voice-helper, dialog.voice-dialog .voice-error { margin: 0; font-size: 13px; line-height: 1.45; white-space: pre-line; }
 dialog.voice-dialog .voice-live-transcript { margin: 0 0 8px; max-height: 72px; overflow-y: auto; font-size: 16px; }
 dialog.voice-dialog .voice-dialog-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
 dialog.voice-dialog .voice-dialog-actions > button {
