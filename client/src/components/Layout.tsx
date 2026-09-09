@@ -17,7 +17,7 @@ const navItems = [
   { to: "/", label: "홈", icon: "home", end: true },
   { to: "/nearby-discovery", label: "주변 찾기", icon: "map" },
   { to: "/itinerary", label: "내 여행", icon: "trip", end: false },
-  { to: "/concierge?mode=now", label: "AI 여행도우미", icon: "chat" },
+  { to: "/concierge?mode=now", label: "말하기", icon: "mic" },
 ];
 
 function NavIcon({ name }: { name: string }) {
@@ -26,6 +26,12 @@ function NavIcon({ name }: { name: string }) {
       <>
         <path d="M3 11.5 12 4l9 7.5" />
         <path d="M5.5 10v10h13V10M9 20v-6h6v6" />
+      </>
+    ),
+    mic: (
+      <>
+        <rect x="9" y="3" width="6" height="11" rx="3" />
+        <path d="M6.5 11a5.5 5.5 0 0 0 11 0M12 16.5V21M9 21h6" />
       </>
     ),
     chat: (
@@ -102,6 +108,7 @@ export default function Layout() {
                 : regionalPath(item.to, region.id)
             )}
             end={item.end}
+            state={item.to === "/concierge?mode=now" ? { voiceRequested:true, tripMode:"NOW" } : undefined}
             className={({ isActive }) => (isActive ? "active" : "")}
           >
             <NavIcon name={item.icon} />
