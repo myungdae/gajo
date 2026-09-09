@@ -693,7 +693,7 @@ const [excludedDiscoveryIds, setExcludedDiscoveryIds] = useState<string[]>(
       replace:true,
       state:{...entryState,voiceRequested:false},
     });
-  },[]);
+  },[location.key]);
   const requestUi=requestPresentation(hasCompletedTurn,loading,freeTextOpen,voiceOpen);
   const requestCopy=REQUEST_PRESENTATION_COPY[language];
   const currentResult =
