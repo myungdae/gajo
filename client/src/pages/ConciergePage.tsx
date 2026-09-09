@@ -53,6 +53,7 @@ import FullJourneySave from "../components/FullJourneySave";
 import ConciergeDemoOverlay from "../components/ConciergeDemoOverlay";
 
 import AiResponseActions from "../components/AiResponseActions";
+import { editItineraryItem } from "../itineraryEditing";
 import RuntimeJourneyEntry from '../components/RuntimeJourneyEntry';
 import RuntimeJourneyResultActions from '../components/RuntimeJourneyResultActions';
 import '../components/runtime-empty-journey.css';
@@ -71,7 +72,7 @@ import {
 import { GlossaryText } from "../components/GlossaryText";
 import { isExplanationOnly } from "../aiResponseActions";
 import { understoodSummary } from "../understoodSummary";
-import { acceptVoiceResult, understandVoice, canAutoExecuteTravelSpeech, type VoiceResultFingerprint, type VoiceUnderstanding } from "../voice/voiceUx";
+import { acceptVoiceResult, understandVoice, type VoiceResultFingerprint, type VoiceUnderstanding } from "../voice/voiceUx";
 import { useRegionalLanguage } from "../RegionalLanguageContext";
 
 interface Message {
@@ -176,9 +177,14 @@ function ConciergeConversation() {
     useState<CreateContextInput["discoveryContext"]>(restored?.discoveryContext);
   const [explicitJourney, setExplicitJourney] =
     useState<ExplicitJourneyContext | undefined>(restored?.explicitJourney);
-  const [excludedDiscoveryIds, setExcludedDiscoveryIds] = useState<string[]>(
+
+const [excludedDiscoveryIds, setExcludedDiscoveryIds] = useState<string[]>(
     restored?.excludedDiscoveryIds || [],
   );
+
+  // "다른 장소로 바꾸기"가 시작된 원래 일정 슬롯을 기억한다.
+  // 대안을 여러 번 살펴봐도 전체 일정이 아니라 이 슬롯만 교체한다.
+  const [replacementTarget, setReplacementTarget] = useState<any | null>(null);
   const currentAnswerRef = useRef<HTMLDivElement>(null);
   const currentTurnConversationRef = useRef<HTMLDivElement>(null);
   const followCurrentTurnRef = useRef(true);
@@ -235,14 +241,9 @@ function ConciergeConversation() {
     const model=understandVoice(text);
     setVoiceDraft(text);setVoiceUnderstanding(model);
     cancelVoiceAutoExecute();
-    if(canAutoExecuteTravelSpeech(model)){
-      voiceAutoExecuteTimerRef.current=setTimeout(()=>{
-        voiceAutoExecuteTimerRef.current=null;
-        if(requestInFlightRef.current)return;
-        void send(text,undefined,false,model);
-      },800);
-    }
-    else setVoiceState("CONFIRMING");
+    // 음성 인식기가 발화를 일찍 종료하더라도 자동 실행하지 않는다.
+    // 사용자가 인식 결과를 확인한 뒤 직접 실행하도록 한다.
+    setVoiceState("CONFIRMING");
   };
   const {
     listening,
@@ -563,7 +564,20 @@ function ConciergeConversation() {
       ]);
       setCurrentTurn((current) => resolveCurrentTurn(current, turnId, result));
       if(activeVoice){track("VOICE_COMPLETED",tripSession.id,{durationMs:Date.now()-voiceStartedAtRef.current,confirmation:true});setVoiceUnderstanding(null);setVoiceState("IDLE");}
-      setExcludedDiscoveryIds([]);
+      const previousDiscoveryCategory = currentResult?.discovery?.category;
+      const nextDiscoveryCategory = result.discovery?.category;
+
+      // 같은 종류의 장소를 계속 찾는 동안에는 이미 거절한 후보를 유지한다.
+      // 예: 카페 A → 다른 곳 추천 → B → 다시 추천 → C
+      // 음식점 → 카페처럼 탐색 종류가 실제로 바뀔 때만 제외 목록을 초기화한다.
+      if (
+        previousDiscoveryCategory &&
+        nextDiscoveryCategory &&
+        previousDiscoveryCategory !== nextDiscoveryCategory
+      ) {
+        setExcludedDiscoveryIds([]);
+      }
+
       const referenceEntity = result.discovery?.entities?.[0];
       const reference = referenceEntity
         ? {
@@ -912,7 +926,7 @@ function ConciergeConversation() {
                   : undefined
             }
           />}
-          {journeySteps.length>0&&<RuntimeJourneyResultActions result={latestRecommendation} loading={loading} otherOpen={otherRequestOpen} onAdjust={(text,context,planned)=>{track('RUNTIME_JOURNEY_REPLAN_REQUESTED',tripSession.id,{mode:tripMode});createRuntimeJourney(text,context,planned)}} onReplace={(step)=>{if(requestInFlightRef.current)return;track('RUNTIME_JOURNEY_REPLAN_REQUESTED',tripSession.id,{mode:tripMode,entityId:step.entityId||step.programUri||step.facilityUri});const label=step.programLabel||step.facilityLabel||step.label||step.name;void send(language==='ko'?`${label} 단계만 다른 검증된 장소로 바꾸고 나머지 여정과 조건은 유지해 주세요.`:`Replace only the ${label} step with another verified place and keep the rest of the journey and preferences.`,structuredDraft)}} onOther={()=>setOtherRequestOpen(true)} onVoice={()=>{setOtherRequestOpen(false);openVoice()}} onText={()=>{setOtherRequestOpen(false);openText()}} onCloseOther={()=>setOtherRequestOpen(false)}/>}
+          {journeySteps.length>0&&<RuntimeJourneyResultActions result={latestRecommendation} loading={loading} otherOpen={otherRequestOpen} onAdjust={(text,context,planned)=>{track('RUNTIME_JOURNEY_REPLAN_REQUESTED',tripSession.id,{mode:tripMode});createRuntimeJourney(text,context,planned)}} onReplace={(step)=>{if(requestInFlightRef.current)return;setReplacementTarget(step);track('RUNTIME_JOURNEY_REPLAN_REQUESTED',tripSession.id,{mode:tripMode,entityId:step.entityId||step.programUri||step.facilityUri});const label=step.programLabel||step.facilityLabel||step.label||step.name;void send(language==='ko'?`${label} 단계만 다른 검증된 장소로 바꾸고 나머지 여정과 조건은 유지해 주세요.`:`Replace only the ${label} step with another verified place and keep the rest of the journey and preferences.`,structuredDraft)}} onOther={()=>setOtherRequestOpen(true)} onVoice={()=>{setOtherRequestOpen(false);openVoice()}} onText={()=>{setOtherRequestOpen(false);openText()}} onCloseOther={()=>setOtherRequestOpen(false)}/>}
           {shouldOfferContextRefresh(currentResult,Boolean(locationFreshnessNotice))&&<section className="card runtime-journey-card">
             <GajoLiveStatus
               actionOnly
@@ -981,6 +995,21 @@ function ConciergeConversation() {
             if(next&&(!next.regionId||next.regionId===region.id)&&next.entityId){
               setConversationAnchor({entityId:next.entityId,regionId:region.id,label:next.programLabel||next.facilityLabel||next.label,
                 latitude:next.latitude,longitude:next.longitude,sourceTurnId:currentTurn.turnId,role:"SELECTED"});
+            }
+          }}
+          onReplaceAlternative={entity=>{
+            if(!replacementTarget)return;
+            const targetId=replacementTarget.itemId||replacementTarget.entityId||replacementTarget.programUri||replacementTarget.facilityUri;
+            if(!targetId)return;
+            const outcome=editItineraryItem(region.id,targetId,{type:"REPLACE",replacement:entity});
+            if(outcome.status==="updated"){
+              setReplacementTarget(null);
+              setExcludedDiscoveryIds([]);
+              track("FULL_ITINERARY_UPDATED",tripSession.id,{
+                fromEntityId:targetId,
+                toEntityId:entity.entityId,
+              });
+              navigate(regionLink("/itinerary"));
             }
           }}
         />

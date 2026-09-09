@@ -10,3 +10,25 @@ test("replan apply requires a current and revised itinerary", () => { const resu
 test("alternative excludes the current canonical result", () => assert.equal(buildAiResponseActionModel({ result: discovery([place("one"), place("two")]), excludedEntityIds: [place("one").entityId] })?.decision.entityId, place("two").entityId));
 test("regional response retains its canonical region", () => assert.equal(buildAiResponseActionModel({ result: discovery([place("one")]) })?.decision.entity?.regionId, "hapcheon"));
 test("explicit journey actions prioritize the selected itinerary and suppress alternatives",()=>{const first={...place('hot'),requestedLabel:'가조온천',programLabel:'백두산천지온천'},second={...place('suseungdae',false),requestedLabel:'수승대',accessStatus:'NEEDS_VERIFICATION'},result={intentRoute:'JOURNEY_PLAN',requestedDestinations:[{requestedLabel:'가조온천'},{requestedLabel:'수승대'}],recommendation:{itinerary:{steps:[first,second]}}},model=buildAiResponseActionModel({result})!;assert.deepEqual(model.actions.map(x=>x.type),['VIEW_ITINERARY','NAVIGATE','REORDER_JOURNEY','SAVE_JOURNEY']);assert.equal(model.decision.label,'가조온천');assert.equal(model.actions.some(x=>x.type==='FIND_ALTERNATIVES'),false)});
+
+test("repeated alternatives preserve cumulative exclusions A to B to C", () => {
+  const result = discovery([place("A"), place("B"), place("C")]);
+
+  const first = buildAiResponseActionModel({
+    result,
+    excludedEntityIds: [],
+  })!;
+  assert.equal(first.decision.entityId, place("A").entityId);
+
+  const second = buildAiResponseActionModel({
+    result,
+    excludedEntityIds: [place("A").entityId],
+  })!;
+  assert.equal(second.decision.entityId, place("B").entityId);
+
+  const third = buildAiResponseActionModel({
+    result,
+    excludedEntityIds: [place("A").entityId, place("B").entityId],
+  })!;
+  assert.equal(third.decision.entityId, place("C").entityId);
+});
