@@ -3701,7 +3701,7 @@ dialog.voice-dialog {
   overflow: auto;
   overscroll-behavior: contain;
 }
-dialog.voice-dialog[open] { display: grid; grid-template-rows: auto minmax(0,1fr) auto; gap: 12px; }
+dialog.voice-dialog[open] { display: grid; grid-template-rows: auto auto auto; gap: 12px; }
 dialog.voice-dialog::backdrop { background: #102e3855; }
 dialog.voice-dialog .voice-activity {
   border: 0;
