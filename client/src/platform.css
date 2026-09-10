@@ -747,3 +747,7 @@
     transform: translateY(-1px);
   }
 }
+
+.platform-secondary-action {
+  cursor: pointer;
+}
