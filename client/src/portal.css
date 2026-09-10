@@ -37,3 +37,14 @@
   border-color: #285f4d;
   transform: translateY(-1px);
 }
+
+/* Strong desktop hover for the 20-second demo button */
+@media (hover: hover) and (pointer: fine) {
+  .portal-shell .hero-actions button.hero-demo-action:hover {
+    background: #285f4d !important;
+    color: #fff !important;
+    border-color: #285f4d !important;
+    box-shadow: 0 8px 22px rgba(40,95,77,.22);
+    transform: translateY(-2px);
+  }
+}
