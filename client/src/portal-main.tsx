@@ -2,6 +2,7 @@ import { StrictMode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { askGuide } from './guideClient';
 import { trackPortal, type PortalEvent } from './portalAnalytics';
+import ConciergeDemoOverlay from './components/ConciergeDemoOverlay';
 import './portal.css';
 
 const regions = [
@@ -46,10 +47,11 @@ function GuideAnswer({ question, event }: { question: string; event?: PortalEven
 }
 
 function Portal() {
+  const [showConciergeDemo,setShowConciergeDemo]=useState(false);
   return <div className="portal-shell">
     <header className="portal-nav"><a className="brand" href="/portal.html" aria-label="지역 AI 여행안내 포털 홈"><span>R</span>지역 AI 여행안내</a><button onClick={jumpToRegions}>지역 선택</button></header>
     <main>
-      <section className="hero" aria-labelledby="hero-title"><div className="hero-copy"><p className="eyebrow">지역 AI 여행안내</p><h1 id="hero-title">대한민국 어디서든,<br/>그 지역을 가장 잘 아는 AI와 여행하세요</h1><p className="hero-lead">메뉴를 배우지 마세요.<br/>그냥 지금 상황을 말씀하세요.</p><div className="hero-actions"><button className="primary hero-primary" onClick={jumpToRegions}>지역 AI 여행안내 시작하기</button><a href="#difference">어떻게 다른가요?</a></div><nav className="hero-fast-lane" aria-label="바로 여행 시작하기"><strong>바로 여행 시작하기</strong><div>{regions.map((region)=><a key={region.id} href={`/${region.id}`} onClick={()=>{trackPortal('portal_region_selected',{region:region.id,source:'hero_fast_lane'});trackPortal('portal_concierge_started',{region:region.id,source:'hero_fast_lane'})}}>{region.shortName} AI <span aria-hidden="true">→</span></a>)}</div></nav><small>확인 가능한 위치·시간·날씨와 방문자가 알려준 여행 상황을 바탕으로 다음 선택을 돕습니다.</small></div><div className="hero-visual" aria-label="계획부터 행동까지 이어지는 여행의 흐름">{[['PLAN','부모님과 옥천 하루 여행하고 싶어요.'],['NOW','지금 오후 4시고 여기까지 봤어요.'],['RE-PLAN','비가 오고 어머니가 좀 힘들어하세요.'],['ACTION','그럼 가까운 곳부터 갈게. 길찾기 해줘.']].map(([step,example],index)=><div className="journey-step" key={step}><span>{step}</span><p>“{example}”</p>{index<3&&<i aria-hidden="true">↓</i>}</div>)}</div></section>
+      <section className="hero" aria-labelledby="hero-title"><div className="hero-copy"><p className="eyebrow">지역 AI 여행안내</p><h1 id="hero-title">대한민국 어디서든,<br/>그 지역을 가장 잘 아는 AI와 여행하세요</h1><p className="hero-lead">메뉴를 배우지 마세요.<br/>그냥 지금 상황을 말씀하세요.</p><div className="hero-actions"><button className="primary hero-primary" onClick={jumpToRegions}>지역 AI 여행안내 시작하기</button><a href="#difference">어떻게 다른가요?</a><button type="button" onClick={()=>setShowConciergeDemo(true)}>✨ 20초만 보세요</button></div><nav className="hero-fast-lane" aria-label="바로 여행 시작하기"><strong>바로 여행 시작하기</strong><div>{regions.map((region)=><a key={region.id} href={`/${region.id}`} onClick={()=>{trackPortal('portal_region_selected',{region:region.id,source:'hero_fast_lane'});trackPortal('portal_concierge_started',{region:region.id,source:'hero_fast_lane'})}}>{region.shortName} AI <span aria-hidden="true">→</span></a>)}</div></nav><small>확인 가능한 위치·시간·날씨와 방문자가 알려준 여행 상황을 바탕으로 다음 선택을 돕습니다.</small></div><div className="hero-visual" aria-label="계획부터 행동까지 이어지는 여행의 흐름">{[['PLAN','부모님과 옥천 하루 여행하고 싶어요.'],['NOW','지금 오후 4시고 여기까지 봤어요.'],['RE-PLAN','비가 오고 어머니가 좀 힘들어하세요.'],['ACTION','그럼 가까운 곳부터 갈게. 길찾기 해줘.']].map(([step,example],index)=><div className="journey-step" key={step}><span>{step}</span><p>“{example}”</p>{index<3&&<i aria-hidden="true">↓</i>}</div>)}</div></section>
 
       <section className="section neighbor-section"><div className="neighbor-mark" aria-hidden="true">R</div><div><p className="eyebrow">EASY LOCAL KNOWLEDGE</p><h2>그 지역을 구석구석 잘 아는<br/><em>‘AI 동네박사’</em>처럼</h2><p>관광지만 알려주는 AI가 아닙니다. 맛집과 카페는 물론 주차장, 화장실, 충전소, 쉼터처럼 여행 중 실제로 필요한 지역의 사정까지 연결합니다.</p><p>그리고 지금 어디에 있는지, 누구와 함께인지, 시간이 얼마나 남았는지를 바탕으로 지금 무엇을 하는 것이 좋은지 함께 판단합니다.</p><small>이처럼 지역 현장에서 실제로 필요한 구체적인 지식을 하이퍼로컬 지식(Hyper-local Knowledge)이라고 합니다.</small></div></section>
 
@@ -72,6 +74,15 @@ function Portal() {
       <section className="section audience-section"><div className="section-heading"><p className="eyebrow">FOUR WAYS IN</p><h2>지역을 찾는 사람부터<br/>지역을 운영하는 사람까지</h2></div><div className="audience-grid">{[['여행객','우리 지역 AI 만나기'],['지역 업체','우리 가게를 지역 AI와 연결하기'],['지자체·관광기관','우리 지역 지역 AI 여행안내 도입하기'],['Regional Manager / 지역 운영자','지역정보 운영에 참여하기']].map(([title,cta],index)=><article className={index===0?'audience-primary':'audience-professional'} key={title}><small>{title}</small><h3>{cta}</h3><button onClick={()=>index===0?jumpToRegions():trackPortal('portal_audience_selected',{audience:title})}>{index===0?'지역 선택하기':'Phase 1 안내 보기'} →</button></article>)}</div></section>
 
       <section className="section faq-section"><div className="section-heading"><p className="eyebrow">APPROVED GUIDE KNOWLEDGE</p><h2>자주 묻는 질문</h2><p>답변은 별도 문구가 아니라 기존 읽기 전용 Guide Knowledge에서 불러옵니다.</p></div><div className="faq-list">{questions.map(q=><GuideAnswer key={q} question={q}/>)}</div></section>
+      <ConciergeDemoOverlay
+        open={showConciergeDemo}
+        startLabel="지역 AI 여행 시작하기"
+        onClose={()=>setShowConciergeDemo(false)}
+        onStartTrip={()=>{
+          setShowConciergeDemo(false);
+          window.location.href="/regions";
+        }}
+      />
     </main>
     <footer><div><strong>지역 AI 여행안내</strong><p>발견하고, 이해하고, 지역을 선택하는 입구.</p></div><button className="primary" onClick={jumpToRegions}>지역 선택하기</button></footer>
   </div>;
