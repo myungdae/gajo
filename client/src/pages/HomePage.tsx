@@ -198,6 +198,7 @@ export default function HomePage() {
 
     <ConciergeDemoOverlay
       open={showConciergeDemo}
+      regionName={region.regionName}
       onClose={() => setShowConciergeDemo(false)}
       onStartTrip={() => {
         setShowConciergeDemo(false);

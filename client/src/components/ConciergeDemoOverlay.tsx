@@ -5,6 +5,8 @@ type ConciergeDemoOverlayProps = {
   open: boolean;
   onClose: () => void;
   onStartTrip?: () => void;
+  regionName?: string;
+  startLabel?: string;
 };
 
 type DemoStep = 0 | 1 | 2 | 3 | 4;
@@ -13,6 +15,8 @@ export default function ConciergeDemoOverlay({
   open,
   onClose,
   onStartTrip,
+  regionName,
+  startLabel,
 }: ConciergeDemoOverlayProps) {
   const [step, setStep] = useState<DemoStep>(0);
 
@@ -88,7 +92,7 @@ export default function ConciergeDemoOverlay({
 
             <p className="concierge-demo-kicker">지금 여행자의 상황</p>
 
-            <h2>부모님과 합천 여행 중</h2>
+            <h2>{regionName ? `부모님과 ${regionName} 여행 중` : "어느 지역을 여행하든"}</h2>
 
             <p className="concierge-demo-main-message">
               “많이 걷기는 힘드세요.”
@@ -148,18 +152,18 @@ export default function ConciergeDemoOverlay({
 
         {step === 3 && (
           <div className="concierge-demo-scene concierge-demo-enter">
-            <div className="concierge-demo-icon">🔄</div>
+            <div className="concierge-demo-icon">✨</div>
 
-            <p className="concierge-demo-kicker">상황에 맞게 다시 계획</p>
+            <p className="concierge-demo-kicker">지금 상황에 맞는 우선추천</p>
 
-            <h2>일정 순서를 바꾸는 편이 좋겠습니다.</h2>
+            <h2>지금은 이 세 가지를 먼저 추천드려요.</h2>
 
             <div className="concierge-demo-route">
               <div className="concierge-demo-route-item">
                 <span className="route-number">1</span>
                 <div>
                   <strong>🍚 가까운 식당</strong>
-                  <small>먼저 편하게 식사해요</small>
+                  <small>점심시간과 이동 부담을 함께 고려했어요</small>
                 </div>
               </div>
 
@@ -168,8 +172,8 @@ export default function ConciergeDemoOverlay({
               <div className="concierge-demo-route-item">
                 <span className="route-number">2</span>
                 <div>
-                  <strong>🏛️ 실내 장소</strong>
-                  <small>비 오는 동안 둘러봐요</small>
+                  <strong>🏛️ 실내 관광지</strong>
+                  <small>비가 와도 편하게 둘러볼 수 있어요</small>
                 </div>
               </div>
 
@@ -178,8 +182,8 @@ export default function ConciergeDemoOverlay({
               <div className="concierge-demo-route-item">
                 <span className="route-number">3</span>
                 <div>
-                  <strong>🌤️ 야외 일정</strong>
-                  <small>비가 그친 뒤 이어가요</small>
+                  <strong>🌿 걷기 부담이 적은 곳</strong>
+                  <small>부모님과 함께 가기 좋은 선택이에요</small>
                 </div>
               </div>
             </div>
@@ -190,18 +194,18 @@ export default function ConciergeDemoOverlay({
           <div className="concierge-demo-scene concierge-demo-enter">
             <div className="concierge-demo-icon">📍</div>
 
-            <p className="concierge-demo-kicker">이제 바로 행동으로</p>
+            <p className="concierge-demo-kicker">추천에서 바로 행동으로</p>
 
-            <h2>첫 장소로 바로 안내할까요?</h2>
+            <h2>마음에 드는 곳을 고르거나 더 찾아볼 수 있어요.</h2>
 
             <div className="concierge-demo-action-preview">
-              <button type="button">길찾기</button>
-              <button type="button">이 일정으로</button>
+              <button type="button">이곳으로 출발</button>
+              <button type="button">주변 업소 더 보기</button>
             </div>
 
             <div className="concierge-demo-final">
-              <strong>검색하지 않아도 됩니다.</strong>
-              <span>여행이 바뀌면, 저도 함께 바뀝니다.</span>
+              <strong>전화 · 지도 · 길찾기까지 바로 이어집니다.</strong>
+              <span>상황이 바뀌면 다시 말씀해 주세요. 그때 다시 판단합니다.</span>
             </div>
 
             <button
@@ -209,7 +213,7 @@ export default function ConciergeDemoOverlay({
               className="concierge-demo-start"
               onClick={handleStartTrip}
             >
-              내 여행 시작하기
+              {startLabel || "내 여행 시작하기"}
             </button>
           </div>
         )}
