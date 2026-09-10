@@ -3693,6 +3693,8 @@ dialog.voice-dialog {
   box-sizing: border-box;
   padding: 16px 16px calc(12px + env(safe-area-inset-bottom, 0px));
   max-width: calc(100vw - 16px);
+  height: fit-content;
+  min-height: 0;
   max-height: calc(100dvh - 16px);
   border: 1px solid #86aaa6;
   border-radius: 18px;
@@ -3969,4 +3971,21 @@ dialog.voice-dialog .voice-dialog-actions .btn-outline { background: #fff; color
 .bottom-nav a.bottom-nav-talk.active .nav-icon {
   transform: translateY(-6px) scale(1.05);
   box-shadow: 0 5px 15px rgba(15, 118, 110, 0.30);
+}
+
+/* Keep the iPhone voice sheet compact and content-sized. */
+dialog.voice-dialog[open] {
+  height: fit-content;
+  min-height: 0;
+}
+
+dialog.voice-dialog .voice-dialog-actions {
+  align-items: stretch;
+}
+
+dialog.voice-dialog .voice-dialog-actions > button {
+  flex: 1 1 0;
+  height: 48px;
+  min-height: 48px;
+  max-height: 48px;
 }
