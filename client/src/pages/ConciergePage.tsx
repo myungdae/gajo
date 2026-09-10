@@ -997,7 +997,7 @@ const [excludedDiscoveryIds, setExcludedDiscoveryIds] = useState<string[]>(
                 latitude:next.latitude,longitude:next.longitude,sourceTurnId:currentTurn.turnId,role:"SELECTED"});
             }
           }}
-          onReplaceAlternative={entity=>{
+          onReplaceAlternative={replacementTarget ? (entity=>{
             if(!replacementTarget)return;
             const targetId=replacementTarget.itemId||replacementTarget.entityId||replacementTarget.programUri||replacementTarget.facilityUri;
             if(!targetId)return;
@@ -1011,7 +1011,7 @@ const [excludedDiscoveryIds, setExcludedDiscoveryIds] = useState<string[]>(
               });
               navigate(regionLink("/itinerary"));
             }
-          }}
+          }) : undefined}
         />
       )}
       {!currentNeedRecommendation&&<InstallExperience usefulResult={hasPrimaryResult} />}

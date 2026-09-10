@@ -19,6 +19,16 @@ export default function AiResponseActions({ rawMessage, result, turnId, excluded
   useEffect(() => { if (model) track("AI_RESPONSE_ACTION_SHOWN", session.id, { turnId, actionType: model.actions.map((a) => a.type).join(","), entityId: model.decision.entityId }); }, []);
   if (!model) return null;
   const entity = model.decision.entity;
+  const nearbyCategory = result.nearbyCategory || result.discovery?.category;
+  const canBrowseNearby =
+    !onReplaceAlternative &&
+    Boolean(nearbyCategory) &&
+    Boolean(
+      result.nearbyDiscoveryIntent ||
+      result.nearbyRestaurantIntent ||
+      result.intentRoute === "PLACE_DISCOVERY" ||
+      result.intentRoute === "IMMEDIATE_NOW"
+    );
   const selected = (actionType: string) => track("AI_NEXT_ACTION_SELECTED", session.id, { turnId, actionType, entityId: model.decision.entityId });
   return <section className="ai-response-actions" aria-label="이 답변에서 바로 하기">
     {effectiveExcluded.length > 0 && model.decision.label && <p className="ai-alternative-decision" aria-live="polite">다음 대안은 <strong>{model.decision.label}</strong>입니다.</p>}
@@ -27,6 +37,10 @@ export default function AiResponseActions({ rawMessage, result, turnId, excluded
     {entity && model.actions.some((a) => a.type === "NAVIGATE") && <EntityActions entity={entity} hideDetail navigationLabel={model.actions.some(a=>a.type==='VIEW_ITINERARY')?'첫 장소로 출발':`${model.decision.label}으로 출발하기`} showItineraryAdd={false} onNavigate={() => selected("NAVIGATE")} />}
     {entity && onReplaceAlternative && entity.operationalEvidence?.tripEligible !== false && <button type="button" className="btn btn-primary" onClick={() => { selected("REPLACE_ALTERNATIVE"); onReplaceAlternative(entity); }}>이 장소로 바꾸기</button>}
     {model.actions.some((a) => a.type === "FIND_ALTERNATIVES") && <button type="button" className="btn btn-outline" onClick={() => { selected("FIND_ALTERNATIVES"); if (model.decision.entityId) { const next = [...effectiveExcluded, model.decision.entityId]; setExcluded(next); onExcludedEntityIdsChange?.(next); } }}>{result.discovery?.category === "FOOD" ? "다른 식당 보기" : "다른 곳 추천받기"}</button>}
+    {canBrowseNearby && <button type="button" className="btn btn-outline" onClick={()=>{
+      selected("BROWSE_NEARBY");
+      navigate(regionalPath("/nearby-discovery",region.id),{state:{category:nearbyCategory}});
+    }}>주변 업소 더 보기</button>}
     {model.actions.some((a)=>a.type==='REORDER_JOURNEY')&&<button type="button" className="btn btn-outline" onClick={()=>{selected('REORDER_JOURNEY');navigate(regionalPath('/itinerary',region.id),{state:{result,editing:true}})}}>순서 바꾸기</button>}
     {model.actions.some((a)=>a.type==='SAVE_JOURNEY')&&<button type="button" className="btn btn-outline" onClick={()=>{selected('SAVE_JOURNEY');const outcome=saveFullJourney(region.id,result.recommendation?.itinerary,localStorage);if(outcome.status==='saved'&&outcome.session)track('FULL_ITINERARY_SAVED',outcome.session.id,{itemCount:outcome.itemCount});setJourneyNotice(outcome.status==='saved'?'내 여행에 담았습니다.':outcome.status==='identical'?'이미 내 여행에 담겨 있습니다.':outcome.status==='different'?'기존 내 여행과 다른 일정입니다. 일정 보기에서 변경할 수 있어요.':'내 여행에 담지 못했습니다.')}}>내 여행에 담기</button>}
     {entity && model.actions.some((a) => a.type === "ADD_TO_MY_TRIP") && <button type="button" className="btn btn-outline" onClick={() => { selected("ADD_TO_MY_TRIP"); setSaved(addEntityToRegionalItinerary(region.id, entity, localStorage, track)); }}>내 여행에 담기</button>}

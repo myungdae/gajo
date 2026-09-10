@@ -109,7 +109,7 @@ export default function Layout() {
             )}
             end={item.end}
             state={item.to === "/concierge?mode=now" ? { voiceRequested:true, tripMode:"NOW" } : undefined}
-            className={({ isActive }) => (isActive ? "active" : "")}
+            className={({ isActive }) => `${isActive ? "active " : ""}${item.icon === "mic" ? "bottom-nav-talk" : ""}`.trim()}
           >
             <NavIcon name={item.icon} />
             <span className="nav-label">

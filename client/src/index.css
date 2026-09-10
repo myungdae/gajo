@@ -3940,3 +3940,33 @@ dialog.voice-dialog .voice-dialog-actions .btn-outline { background: #fff; color
   font-weight: 700;
   cursor: pointer;
 }
+
+/* Global Talk entry: primary conversational doorway */
+.bottom-nav a.bottom-nav-talk {
+  position: relative;
+  font-weight: 700;
+}
+
+.bottom-nav a.bottom-nav-talk .nav-icon {
+  width: 27px;
+  height: 27px;
+  padding: 7px;
+  box-sizing: content-box;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: #fff;
+  stroke-width: 2;
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.22);
+}
+
+.bottom-nav a.bottom-nav-talk .nav-label {
+  display: block;
+  margin-top: -3px;
+  color: var(--color-primary);
+}
+
+.bottom-nav a.bottom-nav-talk.active .nav-icon {
+  transform: translateY(-6px) scale(1.05);
+  box-shadow: 0 5px 15px rgba(15, 118, 110, 0.30);
+}
