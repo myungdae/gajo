@@ -3973,19 +3973,24 @@ dialog.voice-dialog .voice-dialog-actions .btn-outline { background: #fff; color
   box-shadow: 0 5px 15px rgba(15, 118, 110, 0.30);
 }
 
-/* Keep the iPhone voice sheet compact and content-sized. */
+/* Keep the mobile voice window content-sized. */
 dialog.voice-dialog[open] {
-  height: fit-content;
+  height: auto;
+  min-height: 0;
+}
+
+dialog.voice-dialog .voice-dialog-content {
+  flex: none;
   min-height: 0;
 }
 
 dialog.voice-dialog .voice-dialog-actions {
-  align-items: stretch;
+  align-items: center;
 }
 
 dialog.voice-dialog .voice-dialog-actions > button {
   flex: 1 1 0;
-  height: 48px;
+  height: auto;
   min-height: 48px;
-  max-height: 48px;
+  max-height: none;
 }

@@ -25,7 +25,7 @@ export default function VoiceInputDialog({state,text,reviewing,error,locale,onCh
       const bounds=voiceWindowBounds({width:viewport?.width??window.innerWidth,height:viewport?.height??window.innerHeight,
         offsetTop:viewport?.offsetTop??0,offsetLeft:viewport?.offsetLeft??0,navTop:nav?.top,navBottom:nav?.bottom});
       Object.assign(element.style,{left:bounds.left+'px',top:(bounds.sheet?bounds.bottom:bounds.center)+'px',
-        width:bounds.width+'px',maxHeight:bounds.maxHeight+'px',transform:bounds.sheet?'translate(-50%, -100%)':'translate(-50%, -50%)'});
+        width:bounds.width+'px',height:'auto',minHeight:'0',maxHeight:bounds.maxHeight+'px',transform:bounds.sheet?'translate(-50%, -100%)':'translate(-50%, -50%)'});
     };
     resize();
     if(main)main.style.overflowY='hidden';
