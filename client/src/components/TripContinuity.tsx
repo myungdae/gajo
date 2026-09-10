@@ -97,8 +97,8 @@ export default function TripContinuity({onNewTrip}:{onNewTrip?:()=>void}={}) {
     <section className="home-trip-secondary" aria-labelledby="resume-trip-title">
       <p id="resume-trip-title">{language==='en'?'Your previous trip is here.':'지난 여행이 남아 있어요.'}</p>
       <div className="entity-actions">
-        <button className="btn btn-text" onClick={()=>{track('TRIP_CONTINUED',trip.id,{itemCount:count});navigate(withLanguage(regionalPath('/concierge?mode=now',region.id)),{state:{tripMode:'NOW'}})}}>{language==='en'?'Continue':'이어가기'}</button>
-        <button className="btn btn-text" onClick={()=>setConfirmingNew(true)}>{language==='en'?'Start fresh':'새로 시작'}</button>
+        <button className="btn btn-primary home-trip-continue" onClick={()=>{track('TRIP_CONTINUED',trip.id,{itemCount:count});navigate(withLanguage(regionalPath('/concierge?mode=now',region.id)),{state:{tripMode:'NOW'}})}}>{language==='en'?'Continue Previous Trip':'▶ 지난 여행 이어가기'}</button>
+        <button className="btn btn-outline home-trip-new" onClick={()=>setConfirmingNew(true)}>{language==='en'?'Start a New Trip':'＋ 새 여행 시작하기'}</button>
       </div>
       {confirmingNew && (
         <div role="alertdialog" aria-labelledby="continuity-new-trip-title">

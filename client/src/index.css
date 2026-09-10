@@ -3994,3 +3994,20 @@ dialog.voice-dialog .voice-dialog-actions > button {
   min-height: 48px;
   max-height: none;
 }
+
+/* Clear choice between continuing the previous trip and starting a new one. */
+.home-trip-secondary .entity-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.home-trip-secondary .entity-actions > button {
+  width: 100%;
+  min-height: 50px;
+  padding: 10px 8px;
+  white-space: normal;
+  word-break: keep-all;
+  font-weight: 700;
+}
