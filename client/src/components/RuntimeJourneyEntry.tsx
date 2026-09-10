@@ -25,7 +25,7 @@ export default function RuntimeJourneyEntry({ loading, onCreate, onDirect, onSub
     </button>)}</div>;
   return <section className="runtime-journey-entry" aria-labelledby="runtime-journey-title">
     {!auxiliary&&<>
-    <h1 id="runtime-journey-title">{language === 'ko' ? '원하는 걸 편하게 알려주세요' : 'Tell me what you need'}</h1>
+    <h1 id="runtime-journey-title">{language === 'ko' ? '무엇을 원하시는지 알려주세요' : 'Tell me what you need'}</h1>
     <p>{language === 'ko' ? '지금 필요한 것을 말이나 글로 알려주시면 위치·시간·날씨와 함께 보고 찾아드릴게요.' : 'Tell me what you need by voice or text, and I will use your location, time and weather to help.'}</p>
 
     <div className="entry-input-actions">
