@@ -735,3 +735,15 @@
 @media (forced-colors:active) {
   .region-service-corsage { forced-color-adjust:none; filter:none; }
 }
+
+/* Desktop hover feedback for platform secondary actions */
+@media (hover: hover) and (pointer: fine) {
+  .platform-secondary-action:hover,
+  .platform-secondary-action:focus-visible {
+    background: var(--exko-green);
+    color: #fff;
+    border-color: var(--exko-green);
+    box-shadow: 0 8px 20px rgb(25 55 45 / 16%);
+    transform: translateY(-1px);
+  }
+}
