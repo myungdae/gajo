@@ -167,7 +167,52 @@ export default function HomePage() {
         </button>
       )}
     </section>
-    <button
+        <a
+      href="/#why-exkovia"
+      aria-label="ChatGPT·T맵과 무엇이 다른가요?"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 14,
+        width: "100%",
+        margin: "0 0 10px",
+        padding: "15px 17px",
+        borderRadius: 16,
+        border: "1px solid rgba(16, 88, 78, .22)",
+        background: "linear-gradient(135deg, rgba(16,88,78,.10), rgba(255,255,255,.96))",
+        color: "var(--color-text)",
+        textDecoration: "none",
+        boxSizing: "border-box",
+        boxShadow: "0 5px 18px rgba(20,60,55,.07)"
+      }}
+    >
+      <span style={{display:"flex",alignItems:"center",gap:12}}>
+        <span
+          aria-hidden="true"
+          style={{
+            display:"grid",
+            placeItems:"center",
+            width:38,
+            height:38,
+            borderRadius:"50%",
+            background:"#10584e",
+            color:"white",
+            fontWeight:800,
+            fontSize:13,
+            flex:"0 0 auto"
+          }}
+        >
+          AI
+        </span>
+        <span style={{textAlign:"left",lineHeight:1.35}}>
+          <small style={{display:"block",opacity:.7,fontWeight:700}}>ChatGPT · T맵과</small>
+          <strong style={{fontSize:16}}>무엇이 다른가요?</strong>
+        </span>
+      </span>
+      <strong aria-hidden="true" style={{fontSize:22}}>›</strong>
+    </a>
+<button
       type="button"
       className="home-concierge-demo-button"
       onClick={() => setShowConciergeDemo(true)}
