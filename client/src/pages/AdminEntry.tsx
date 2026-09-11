@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { AdminRegionProvider } from '../RegionContext';
 import AdminPage from './AdminPage';
+import NationalAIUsageDashboard from '../components/NationalAIUsageDashboard';
 import '../admin-entry.css';
 
 type Region = { id: string; regionName: string; serviceName: string };
@@ -265,7 +266,11 @@ export default function AdminEntry() {
                 )
               }
             >
-              <option value="">권한 있는 지역을 선택해 주세요</option>
+              <option value="">
+                {session.principal.role === 'PLATFORM_ADMIN'
+                  ? '전국 전체 — 지역을 선택하세요'
+                  : '권한 있는 지역을 선택해 주세요'}
+              </option>
               {regions.map((item) => (
                 <option key={item.id} value={item.id}>
                   {item.regionName}
@@ -281,8 +286,12 @@ export default function AdminEntry() {
         )}
         {session && !checking && !regions.length && !error && (
           <p>관리 가능한 지역이 없습니다.</p>
-        )}
-      </section>
+        )}      </section>
+
+      {session?.principal.role === 'PLATFORM_ADMIN' && (
+        <NationalAIUsageDashboard />
+      )}
+
       {region && session && (
         <AdminRegionProvider region={region}>
           <AdminPage key={region.id} adminToken={session.token} />
