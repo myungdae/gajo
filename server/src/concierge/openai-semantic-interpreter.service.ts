@@ -57,6 +57,7 @@ export class OpenAISemanticInterpreter {
   async interpret(
     utterance:string,
     previousSubject?:string,
+    regionId?:string,
   ):Promise<SemanticInterpretationResult>{
     const started=Date.now();
     const key=this.config.get<string>('OPENAI_API_KEY');

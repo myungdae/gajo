@@ -159,6 +159,7 @@ export class ConciergeService {
     if (useDeterministicFastPath) {
       void this.aiUsageLedger?.record({
         component:'SEMANTIC',
+        regionId,
         eventType:'SKIP',
         reason:'DETERMINISTIC_FAST_PATH',
       });
@@ -169,6 +170,7 @@ export class ConciergeService {
         ? await this.semanticInterpreter.interpret(
             input.rawMessage,
             input.conversationalAnchor?.label,
+            regionId,
           )
         : undefined;
 

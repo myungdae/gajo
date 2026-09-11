@@ -15,6 +15,7 @@ export class AiUsageLedgerService {
 
   async record(input:{
     component:AiUsageComponent;
+    regionId?:string;
     eventType:AiUsageEventType;
     reason?:string;
     modelName?:string;
@@ -27,6 +28,7 @@ export class AiUsageLedgerService {
       await this.model.create({
         occurredAt:new Date(),
         component:input.component,
+        regionId:input.regionId||'unknown',
         eventType:input.eventType,
         reason:input.reason,
         modelName:input.modelName,
@@ -71,10 +73,24 @@ export class AiUsageLedgerService {
       };
     };
 
-    const [todaySummary,sevenDaySummary,monthSummary]=await Promise.all([
+    const [todaySummary,sevenDaySummary,monthSummary,byRegion]=await Promise.all([
       summarize(today),
       summarize(sevenDays),
       summarize(month),
+      this.model.aggregate([
+        {$match:{occurredAt:{$gte:month}}},
+        {$group:{
+          _id:'$regionId',
+          calls:{$sum:{$cond:[{$eq:['$eventType','CALL']},1,0]}},
+          successes:{$sum:{$cond:[{$eq:['$eventType','SUCCESS']},1,0]}},
+          errors:{$sum:{$cond:[{$eq:['$eventType','ERROR']},1,0]}},
+          skips:{$sum:{$cond:[{$eq:['$eventType','SKIP']},1,0]}},
+          blocked:{$sum:{$cond:[{$eq:['$eventType','BLOCKED']},1,0]}},
+          inputTokens:{$sum:'$inputTokens'},
+          outputTokens:{$sum:'$outputTokens'},
+        }},
+        {$sort:{calls:-1,_id:1}}
+      ]),
     ]);
 
     return {
@@ -82,6 +98,16 @@ export class AiUsageLedgerService {
       today:todaySummary,
       last7Days:sevenDaySummary,
       month:monthSummary,
+      byRegion:byRegion.map((row:any)=>({
+        regionId:row._id||'unknown',
+        calls:row.calls||0,
+        successes:row.successes||0,
+        errors:row.errors||0,
+        skips:row.skips||0,
+        blocked:row.blocked||0,
+        inputTokens:row.inputTokens||0,
+        outputTokens:row.outputTokens||0,
+      })),
     };
   }
 }

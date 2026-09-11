@@ -9,6 +9,9 @@ export class AiUsageEvent {
   @Prop({ required: true, index: true })
   component: 'CONTEXT' | 'SEMANTIC';
 
+  @Prop({ index: true, default: 'unknown' })
+  regionId: string;
+
   @Prop({ required: true, index: true })
   eventType: 'CALL' | 'SUCCESS' | 'ERROR' | 'SKIP' | 'BLOCKED';
 
