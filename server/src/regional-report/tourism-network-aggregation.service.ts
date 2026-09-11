@@ -5,6 +5,10 @@ import { Model } from 'mongoose';
 import { PilotEvent, PilotEventDocument } from '../schemas/pilot-event.schema';
 import { VisitorAnalyticsEvent } from '../analytics/visitor-event.schema';
 import {
+  RegionalDataRecord,
+  RegionalDataRecordDocument,
+} from '../regional-data/regional-data.schema';
+import {
   Partner,
   PartnerActivity,
   PartnerActivityDocument,
@@ -106,6 +110,7 @@ const validFlowId = (value?: string): value is string =>
 const PILOT_STAGES: Record<string, Stage> = {
   ENTITY_DETAIL_OPENED: 'INTEREST',
   PLACE_DETAIL_OPENED: 'INTEREST',
+  ITINERARY_SAVE_SUCCEEDED: 'MOVEMENT_INTENT',
   NAVIGATION_HANDOFF: 'MOVEMENT_INTENT',
   JOURNEY_START_ACTION: 'MOVEMENT_INTENT',
   MAP_OPENED: 'MOVEMENT_INTENT',
@@ -183,6 +188,52 @@ export function releaseNetwork(
     })),
   ].filter((x) => validFlowId(x.identity) && x.stage);
   const edgeKeys = new Set<string>();
+
+  // QR-independent place-to-place flow.
+  // Only qualified place actions with a verified network entity participate.
+  const placeRowsByFlow = new Map<string, typeof observations>();
+
+  for (const row of observations) {
+    const entityId = row.metadata?.entityId;
+    if (
+      !validFlowId(row.identity) ||
+      typeof entityId !== 'string' ||
+      !partnerByEntity.has(entityId)
+    )
+      continue;
+
+    placeRowsByFlow.set(row.identity, [
+      ...(placeRowsByFlow.get(row.identity) || []),
+      row,
+    ]);
+  }
+
+  for (const [identity, rows] of placeRowsByFlow) {
+    const ordered = [...rows].sort(
+      (a, b) =>
+        +new Date(a.createdAt || 0) - +new Date(b.createdAt || 0),
+    );
+
+    let previous: NetworkPartner | undefined;
+
+    for (const row of ordered) {
+      const entityId = row.metadata?.entityId;
+      const current =
+        typeof entityId === 'string'
+          ? partnerByEntity.get(entityId)
+          : undefined;
+
+      if (!current) continue;
+
+      if (previous && previous.partnerId !== current.partnerId) {
+        edgeKeys.add(
+          `${identity}|${previous.partnerId}|${current.partnerId}|${row.stage}`,
+        );
+      }
+
+      previous = current;
+    }
+  }
   for (const row of observations) {
     const at = +new Date(row.createdAt || 0),
       source = (entriesBySession.get(row.identity!) || [])
@@ -357,6 +408,8 @@ export class TourismNetworkAggregationService {
     @InjectModel(PilotEvent.name) private events: Model<PilotEventDocument>,
     @InjectModel(VisitorAnalyticsEvent.name)
     private visitorEvents: Model<VisitorAnalyticsEvent>,
+    @InjectModel(RegionalDataRecord.name)
+    private regionalEntities: Model<RegionalDataRecordDocument>,
     @InjectModel(PartnerActivity.name)
     private activities: Model<PartnerActivityDocument>,
     @InjectModel(Partner.name) private partners: Model<PartnerDocument>,
@@ -411,7 +464,7 @@ export class TourismNetworkAggregationService {
       regionId,
       createdAt: { $gte: window.start, $lt: window.end },
     };
-    const [events, visitorEvents, activities, partners] = await Promise.all([
+    const [events, visitorEvents, activities, partners, regionalEntities] = await Promise.all([
       this.events.find(range).lean(),
       this.visitorEvents
         .find({
@@ -425,6 +478,13 @@ export class TourismNetworkAggregationService {
           regionId,
           status: 'OPERATING',
           qrStatus: 'ACTIVE',
+          verificationStatus: 'VERIFIED',
+        })
+        .lean(),
+      this.regionalEntities
+        .find({
+          regionId,
+          lifecycleStatus: 'ACTIVE',
           verificationStatus: 'VERIFIED',
         })
         .lean(),
@@ -448,10 +508,53 @@ export class TourismNetworkAggregationService {
       metadata: row.placeKey ? { entityId: row.placeKey } : undefined,
     }));
 
+    // Regional Entity is the primary network node.
+    // Partner membership strengthens attribution such as QR entry.
+    const networkEntityMap = new Map<string, NetworkPartner>();
+
+    for (const entity of regionalEntities) {
+      networkEntityMap.set(entity.canonicalEntityId, {
+        partnerId: entity.canonicalEntityId,
+        canonicalEntityId: entity.canonicalEntityId,
+        displayName: entity.displayName,
+        category: entity.category,
+      });
+    }
+
+    for (const partner of partners) {
+      if (!networkEntityMap.has(partner.canonicalEntityId)) {
+        networkEntityMap.set(partner.canonicalEntityId, {
+          partnerId: partner.canonicalEntityId,
+          canonicalEntityId: partner.canonicalEntityId,
+          displayName: partner.displayName,
+          category: partner.category,
+        });
+      }
+    }
+
+    const networkEntities = [...networkEntityMap.values()];
+
+    const partnerCanonicalById = new Map(
+      partners.map((partner) => [
+        partner.partnerId,
+        partner.canonicalEntityId,
+      ]),
+    );
+
+    const adaptedActivities: RawRow[] = (activities as RawRow[]).map(
+      (row) => {
+        const canonical =
+          typeof row.partnerId === 'string'
+            ? partnerCanonicalById.get(row.partnerId)
+            : undefined;
+
+        return canonical ? { ...row, partnerId: canonical } : row;
+      },
+    );
     const released = releaseNetwork(
       [...(events as RawRow[]), ...adaptedVisitorEvents],
-      activities as RawRow[],
-      partners,
+      adaptedActivities,
+      networkEntities,
       minimumCellSize,
     );
     validateReleasedNetwork(released, minimumCellSize);
@@ -463,6 +566,7 @@ export class TourismNetworkAggregationService {
             eventCount: events.length,
             visitorEventCount: visitorEvents.length,
             activityCount: activities.length,
+            regionalEntityCount: regionalEntities.length,
           }),
         )
         .digest('hex'),
@@ -532,7 +636,7 @@ export class TourismNetworkAggregationService {
   }
 
   async latestPublicRolling(regionId: string) {
-    const [snapshot, partners] = await Promise.all([
+    const [snapshot, partners, regionalEntities] = await Promise.all([
       this.latestRolling(regionId),
       this.partners
         .find({
@@ -541,15 +645,27 @@ export class TourismNetworkAggregationService {
           qrStatus: 'ACTIVE',
           verificationStatus: 'VERIFIED',
         })
-        .select({ partnerId: 1, _id: 0 })
+        .select({ canonicalEntityId: 1, _id: 0 })
+        .lean(),
+      this.regionalEntities
+        .find({
+          regionId,
+          lifecycleStatus: 'ACTIVE',
+          verificationStatus: 'VERIFIED',
+        })
+        .select({ canonicalEntityId: 1, _id: 0 })
         .lean(),
     ]);
+
     if (!snapshot) return null;
     return {
       ...snapshot,
       released: publicNetwork(
         snapshot.released as unknown as ReleasedNetwork,
-        new Set(partners.map((partner) => partner.partnerId)),
+        new Set([
+          ...regionalEntities.map((entity) => entity.canonicalEntityId),
+          ...partners.map((partner) => partner.canonicalEntityId),
+        ]),
       ),
     };
   }

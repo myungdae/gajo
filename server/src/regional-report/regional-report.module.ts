@@ -2,6 +2,10 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PilotEvent, PilotEventSchema } from '../schemas/pilot-event.schema';
 import {
+  RegionalDataRecord,
+  RegionalDataRecordSchema,
+} from '../regional-data/regional-data.schema';
+import {
   VisitorAnalyticsEvent,
   VisitorAnalyticsEventSchema,
 } from '../analytics/visitor-event.schema';
@@ -29,6 +33,10 @@ import { TourismNetworkJobService } from './tourism-network-job.service';
   imports: [
     MongooseModule.forFeature([
       { name: PilotEvent.name, schema: PilotEventSchema },
+      {
+        name: RegionalDataRecord.name,
+        schema: RegionalDataRecordSchema,
+      },
       {
         name: VisitorAnalyticsEvent.name,
         schema: VisitorAnalyticsEventSchema,

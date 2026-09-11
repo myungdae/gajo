@@ -132,6 +132,50 @@ describe('tourism network aggregation', () => {
     ).toMatchObject({ status: 'PREPARING', edges: [], nodes: [] });
   });
 
+  it('releases a QR-independent regional entity flow after five distinct anonymous trips', () => {
+    const entities = [
+      {
+        partnerId: 'entity:a',
+        canonicalEntityId: 'entity:a',
+        displayName: '장소 A',
+        category: 'RESTAURANT',
+      },
+      {
+        partnerId: 'entity:b',
+        canonicalEntityId: 'entity:b',
+        displayName: '장소 B',
+        category: 'CAFE',
+      },
+    ];
+
+    const events = Array.from({ length: 5 }, (_, index) => [
+      {
+        eventType: 'PLACE_DETAIL_OPENED',
+        sessionId: flow(index),
+        anonymousTripId: flow(index),
+        metadata: { entityId: 'entity:a' },
+        createdAt: `2026-08-01T00:0${index}:00Z`,
+      },
+      {
+        eventType: 'ITINERARY_SAVE_SUCCEEDED',
+        sessionId: flow(index),
+        anonymousTripId: flow(index),
+        metadata: { entityId: 'entity:b' },
+        createdAt: `2026-08-01T00:0${index}:30Z`,
+      },
+    ]).flat();
+
+    const released = releaseNetwork(events, [], entities, 5);
+
+    expect(released.status).toBe('AVAILABLE');
+    expect(released.edges).toHaveLength(1);
+    expect(released.edges[0]).toMatchObject({
+      sourcePartnerId: 'entity:a',
+      targetPartnerId: 'entity:b',
+      stage: 'MOVEMENT_INTENT',
+      total: 5,
+    });
+  });
   it('removes internal partner identifiers and currently ineligible nodes at serialization', () => {
     const released = releaseNetwork(
       Array.from({ length: 5 }, (_, index) => ({
@@ -179,6 +223,7 @@ describe('tourism network aggregation', () => {
       service = new TourismNetworkAggregationService(
         events as any,
         { find: jest.fn().mockReturnValue(query([])) } as any,
+        { find: jest.fn().mockReturnValue(query([])) } as any,
         activities as any,
         partners as any,
         aggregates as any,
@@ -214,6 +259,7 @@ describe('tourism network aggregation', () => {
       service = new TourismNetworkAggregationService(
         events as any,
         { find: jest.fn().mockReturnValue(query([])) } as any,
+        { find: jest.fn().mockReturnValue(query([])) } as any,
         activities as any,
         partners as any,
         aggregates as any,
@@ -242,6 +288,7 @@ describe('tourism network aggregation', () => {
       },
       service = new TourismNetworkAggregationService(
         events as any,
+        { find: jest.fn().mockReturnValue(query([])) } as any,
         { find: jest.fn().mockReturnValue(query([])) } as any,
         activities as any,
         partners as any,
