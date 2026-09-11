@@ -128,6 +128,23 @@ export class ConciergeService {
     @Optional() private readonly semanticInterpreter?:OpenAISemanticInterpreter,
   ) {}
 
+  private canUseDeterministicFastPath(input: CreateContextInput): boolean {
+    const text = input.rawMessage?.trim();
+    if (!text) return false;
+
+    // Previous-subject references and conversational modifications still need
+    // semantic interpretation.
+    if (input.conversationalAnchor && /거기|그곳|아까|말고|대신|바꿔|변경/.test(text)) {
+      return false;
+    }
+
+    // Skip the semantic LLM only for generic discovery requests that do not
+    // contain a named-place anchor or conversational/replanning context.
+    const simpleGenericDiscovery =
+      /^(?:(?:지금|여기서|내\s*주변|현재\s*위치에서)\s*)?(?:(?:근처|주변|가까운)\s*)?(?:식당|맛집|카페|커피|숙소|숙박|호텔|펜션|관광지|명소)(?:을|를|이|가)?\s*(?:찾아\s*줘|찾아줘|찾아\s*주세요|추천해\s*줘|추천해줘|추천해\s*주세요|추천\s*해\s*줘|추천\s*해주세요)?[?.!]*$/u.test(text);
+
+    return simpleGenericDiscovery;
+  }
   async chat(input: CreateContextInput) {
     const regionId = requireRegionId(input.regionId, 'Concierge chat');
     const experienceRegionId=input.experienceRegionId||regionId,explicitlyRequestedRegion=this.regionConfig?.explicitRegion?.(input.rawMessage),searchRegionId=explicitlyRequestedRegion||(input.searchRegionId===null?undefined:input.searchRegionId||regionId);
@@ -135,12 +152,15 @@ export class ConciergeService {
       const explanation=this.guide.approvedExplanation({question:input.rawMessage});
       if(explanation)return{intentRoute:'GUIDE_EXPLANATION',guideExplanation:explanation,recommendation:null,visitorMessage:`${explanation.answer}\n\n여행을 계속할까요?`,journeyContinuation:{prompt:'여행을 계속할까요?',preserveJourney:true}};
     }
-    const semanticResult = input.rawMessage && this.semanticInterpreter
-      ? await this.semanticInterpreter.interpret(
-          input.rawMessage,
-          input.conversationalAnchor?.label,
-        )
-      : undefined;
+    const useDeterministicFastPath = this.canUseDeterministicFastPath(input);
+
+    const semanticResult =
+      input.rawMessage && this.semanticInterpreter && !useDeterministicFastPath
+        ? await this.semanticInterpreter.interpret(
+            input.rawMessage,
+            input.conversationalAnchor?.label,
+          )
+        : undefined;
 
     const semantic =
       semanticResult?.status === 'SUCCESS'

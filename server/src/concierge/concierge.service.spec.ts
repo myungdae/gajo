@@ -756,3 +756,30 @@ describe('ConciergeService service-area handling', () => {
     expect(orchestrator.run).not.toHaveBeenCalled();
   });
 });
+
+describe('deterministic semantic fast-path',()=>{
+  const service=new ConciergeService({} as any,{} as any,{} as any);
+
+  it('skips only simple generic discovery and preserves semantic context',()=>{
+    const fast=(rawMessage:string,conversationalAnchor?:any)=>
+      (service as any).canUseDeterministicFastPath({
+        regionId:'hapcheon',
+        inputMode:'FREE_TEXT',
+        rawMessage,
+        conversationalAnchor
+      });
+
+    expect(fast('근처 식당 찾아줘')).toBe(true);
+    expect(fast('카페 추천해줘')).toBe(true);
+    expect(fast('거기서 밥 먹을 데 있어?',{
+      entityId:'test',
+      regionId:'hapcheon',
+      label:'황매산 군립공원'
+    })).toBe(false);
+    expect(fast('해인사 말고 황매산',{
+      entityId:'test',
+      regionId:'hapcheon',
+      label:'해인사'
+    })).toBe(false);
+  });
+});
