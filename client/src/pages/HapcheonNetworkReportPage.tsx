@@ -35,6 +35,53 @@ type LiveNetworkSnapshot = {
   };
 };
 
+type NetworkChangeItem = {
+  kind: "NEWLY_RELEASED" | "STRENGTHENED" | "WEAKENED" | "NO_LONGER_PUBLIC";
+  sourceNodeId: string;
+  targetNodeId: string;
+  sourceName: string;
+  targetName: string;
+  stage: string;
+  previousTotal?: number;
+  currentTotal?: number;
+  delta?: number;
+};
+
+type NetworkChangeSnapshot = {
+  status: "AVAILABLE" | "INSUFFICIENT_HISTORY";
+  notice?: string;
+  comparison?: {
+    currentPeriodKey: string;
+    previousPeriodKey: string;
+    currentSnapshotAt?: string;
+    previousSnapshotAt?: string;
+  };
+  summary?: {
+    previousConnections: number;
+    currentConnections: number;
+    newlyReleased: number;
+    strengthened: number;
+    weakened: number;
+    noLongerPublic: number;
+    previousInterest: number;
+    currentInterest: number;
+    interestDelta: number;
+    previousMovement: number;
+    currentMovement: number;
+    movementDelta: number;
+    newlyReleasedInterestContribution: number;
+  };
+  changes?: {
+    newlyReleased: NetworkChangeItem[];
+    strengthened: NetworkChangeItem[];
+    weakened: NetworkChangeItem[];
+    noLongerPublic: NetworkChangeItem[];
+  };
+  interpretation?: {
+    interestIncreaseMostlyFromNewlyReleased: boolean;
+    caution: string;
+  };
+};
 type NetworkCategory = "숙박" | "음식점" | "카페" | "관광";
 
 type NetworkQuery = {
@@ -73,6 +120,7 @@ const FLAGSHIP_TOURISM_ENTITIES = [
 export default function HapcheonNetworkReportPage() {
   const [data, setData] = useState<Ecosystem>();
   const [live, setLive] = useState<LiveNetworkSnapshot>();
+  const [change, setChange] = useState<NetworkChangeSnapshot>();
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<PlaceNode>();
   const [showNetworkDemo, setShowNetworkDemo] = useState(false);
@@ -84,9 +132,10 @@ export default function HapcheonNetworkReportPage() {
     setError("");
 
     try {
-      const [ecosystemResponse, liveResponse] = await Promise.all([
+      const [ecosystemResponse, liveResponse, changeResponse] = await Promise.all([
         api.get("/public/regional-network/hapcheon"),
         api.get("/public/regional-network/hapcheon/live"),
+        api.get("/public/regional-network/hapcheon/change"),
       ]);
 
       const ecosystem = ecosystemResponse.data;
@@ -94,9 +143,11 @@ export default function HapcheonNetworkReportPage() {
 
       setData(ecosystem);
       setLive(liveResponse.data || undefined);
+      setChange(changeResponse.data || undefined);
     } catch {
       setData(undefined);
       setLive(undefined);
+      setChange(undefined);
       setError("합천 지역 연결망을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
     }
   };
@@ -517,6 +568,103 @@ export default function HapcheonNetworkReportPage() {
             })}
           </small>
         )}
+      </section>
+    )}
+    {change?.status === "AVAILABLE" && change.summary && (
+      <section className="change-intelligence">
+        <div className="change-intelligence-head">
+          <div>
+            <small>CHANGE INTELLIGENCE · SINCE PREVIOUS SNAPSHOT</small>
+            <h2>지난 집계 이후 무엇이 달라졌나</h2>
+            <p>
+              같은 방식으로 생성된 직전 30일 이동창 snapshot과 비교합니다.
+            </p>
+          </div>
+
+          <div className="change-connection-shift">
+            <span>공개 연결</span>
+            <strong>
+              {change.summary.previousConnections}
+              <i>→</i>
+              {change.summary.currentConnections}
+            </strong>
+          </div>
+        </div>
+
+        <div className="change-intelligence-kpis">
+          <article>
+            <strong>+{change.summary.newlyReleased}</strong>
+            <span>새로 공개된 연결</span>
+          </article>
+          <article>
+            <strong>+{change.summary.strengthened}</strong>
+            <span>강해진 연결</span>
+          </article>
+          <article>
+            <strong>{change.summary.weakened}</strong>
+            <span>약해진 연결</span>
+          </article>
+          <article>
+            <strong>{change.summary.noLongerPublic}</strong>
+            <span>더 이상 공개되지 않는 연결</span>
+          </article>
+        </div>
+
+        <div className="change-intelligence-explanation">
+          <small>변화의 이유</small>
+          <p>
+            관심 공개 집계는{" "}
+            <strong>
+              {change.summary.previousInterest} → {change.summary.currentInterest}
+            </strong>
+            로 변했습니다.
+            {change.interpretation?.interestIncreaseMostlyFromNewlyReleased && (
+              <>
+                {" "}증가분 {change.summary.interestDelta} 가운데{" "}
+                <strong>
+                  {change.summary.newlyReleasedInterestContribution}
+                </strong>
+                는 새롭게 공개기준을 충족한 연결이 공개 집계에 포함된 영향입니다.
+              </>
+            )}
+          </p>
+        </div>
+
+        {(change.changes?.newlyReleased?.length ||
+          change.changes?.strengthened?.length) ? (
+          <div className="change-intelligence-highlights">
+            <small>주목할 변화</small>
+
+            {[...(change.changes?.newlyReleased || [])
+              .slice(0, 2),
+              ...(change.changes?.strengthened || []).slice(0, 2)]
+              .slice(0, 3)
+              .map((item, index) => (
+                <div key={`${item.kind}-${item.sourceNodeId}-${item.targetNodeId}-${index}`}>
+                  <span>
+                    {item.kind === "NEWLY_RELEASED"
+                      ? "새로 공개"
+                      : item.kind === "STRENGTHENED"
+                        ? "강화"
+                        : item.kind}
+                  </span>
+                  <strong>
+                    {item.sourceName} <i>→</i> {item.targetName}
+                  </strong>
+                  <em>
+                    {item.stage === "MOVEMENT_INTENT" ? "이동" : "관심"}{" "}
+                    {item.previousTotal !== undefined
+                      ? `${item.previousTotal}→${item.currentTotal}`
+                      : item.currentTotal}
+                  </em>
+                </div>
+              ))}
+          </div>
+        ) : null}
+
+        <p className="change-intelligence-caution">
+          {change.interpretation?.caution}
+        </p>
       </section>
     )}
     <section className="flagship-tourism">
