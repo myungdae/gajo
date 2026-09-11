@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { AiUsageLedgerService } from '../admin/ai-usage-ledger.service';
 import {
   SemanticInterpretation,
   SemanticInterpretationResult,
@@ -51,7 +52,7 @@ function valid(value:any): value is SemanticInterpretation {
 
 @Injectable()
 export class OpenAISemanticInterpreter {
-  constructor(private readonly config:ConfigService){}
+  constructor(private readonly config:ConfigService,@Optional() private readonly aiUsageLedger?:AiUsageLedgerService){}
 
   async interpret(
     utterance:string,
@@ -74,6 +75,11 @@ export class OpenAISemanticInterpreter {
         : `Current utterance: ${utterance}`;
 
       console.log("[OPENAI_CALL] type=SEMANTIC model=" + model);
+      void this.aiUsageLedger?.record({
+        component:'SEMANTIC',
+        eventType:'CALL',
+        modelName:model,
+      });
       const response=await fetch('https://api.openai.com/v1/responses',{
         method:'POST',
         headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},
@@ -86,11 +92,27 @@ export class OpenAISemanticInterpreter {
         }),
       });
 
-      if(!response.ok)
+      if(!response.ok) {
+        void this.aiUsageLedger?.record({
+          component:'SEMANTIC',
+          eventType:'ERROR',
+          modelName:model,
+          latencyMs:Date.now()-started,
+          errorCode:`HTTP_${response.status}`,
+        });
         return {status:'PROVIDER_ERROR',provider:'openai',model,latencyMs:Date.now()-started,errorCode:`HTTP_${response.status}`};
+      }
 
       const body:any=await response.json();
       console.log("[OPENAI_USAGE] type=SEMANTIC model=" + model + " inputTokens=" + (body.usage?.input_tokens ?? 0) + " outputTokens=" + (body.usage?.output_tokens ?? 0));
+      void this.aiUsageLedger?.record({
+        component:'SEMANTIC',
+        eventType:'SUCCESS',
+        modelName:model,
+        inputTokens:body.usage?.input_tokens ?? 0,
+        outputTokens:body.usage?.output_tokens ?? 0,
+        latencyMs:Date.now()-started,
+      });
       const outputText=body.output_text ||
         body.output?.flatMap((o:any)=>o.content||[]).find((c:any)=>c.type==='output_text')?.text;
 
@@ -99,6 +121,13 @@ export class OpenAISemanticInterpreter {
         ? {status:'SUCCESS',provider:'openai',model,latencyMs:Date.now()-started,interpretation:parsed}
         : {status:'INVALID',provider:'openai',model,latencyMs:Date.now()-started,errorCode:'SCHEMA_VALIDATION'};
     }catch(error:any){
+      void this.aiUsageLedger?.record({
+        component:'SEMANTIC',
+        eventType:'ERROR',
+        modelName:model,
+        latencyMs:Date.now()-started,
+        errorCode:error?.name||'ERROR',
+      });
       return {
         status:error?.name==='AbortError'?'TIMEOUT':'PROVIDER_ERROR',
         provider:'openai',

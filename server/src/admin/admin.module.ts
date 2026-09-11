@@ -5,9 +5,16 @@ import { SeedModule } from '../seed/seed.module';
 import { OntologyModule } from '../ontology/ontology.module';
 import { MasterDataModule } from '../master-data/master-data.module';
 import { ContextModule } from '../context/context.module';
+import { AiUsageModule } from './ai-usage.module';
 
 @Module({
-  imports: [SeedModule, OntologyModule, MasterDataModule, ContextModule],
+  imports: [
+    SeedModule,
+    OntologyModule,
+    MasterDataModule,
+    ContextModule,
+    AiUsageModule,
+  ],
   providers: [AdminService],
   controllers: [AdminController],
 })

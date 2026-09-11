@@ -9,9 +9,10 @@ import{PlaceDiscoveryService}from'./place-discovery.service';
 import{ExkoSemanticModule}from'../exko-semantic/exko-semantic.module';
 import{NearbyModule}from'../nearby/nearby.module';
 import{GuideModule}from'../guide/guide.module';
+import { AiUsageModule } from '../admin/ai-usage.module';
 
 @Module({
-  imports: [ContextModule, AgentsModule,ExkoSemanticModule,NearbyModule,GuideModule],
+  imports: [ContextModule, AgentsModule,ExkoSemanticModule,NearbyModule,GuideModule,AiUsageModule],
   providers: [ConciergeService,PlaceDiscoveryService,ProactiveLocalDiscoveryService,OpenAISemanticInterpreter],
   controllers: [ConciergeController],
 })

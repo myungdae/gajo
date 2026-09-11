@@ -2,6 +2,7 @@ import { semanticDiscoveryCategory, toSemanticRuntimeSignal } from './semantic-r
 import { resolveEntityInformation } from './entity-information.resolver';
 import { OpenAISemanticInterpreter } from './openai-semantic-interpreter.service';
 import { Injectable, Optional } from '@nestjs/common';
+import { AiUsageLedgerService } from '../admin/ai-usage-ledger.service';
 import {
   RuntimeContextService,
   CreateContextInput,
@@ -126,6 +127,7 @@ export class ConciergeService {
     @Optional() private readonly guide?: GuideService,
     @Optional() private readonly nearby?:NearbyService,
     @Optional() private readonly semanticInterpreter?:OpenAISemanticInterpreter,
+    @Optional() private readonly aiUsageLedger?:AiUsageLedgerService,
   ) {}
 
   private canUseDeterministicFastPath(input: CreateContextInput): boolean {
@@ -153,6 +155,14 @@ export class ConciergeService {
       if(explanation)return{intentRoute:'GUIDE_EXPLANATION',guideExplanation:explanation,recommendation:null,visitorMessage:`${explanation.answer}\n\n여행을 계속할까요?`,journeyContinuation:{prompt:'여행을 계속할까요?',preserveJourney:true}};
     }
     const useDeterministicFastPath = this.canUseDeterministicFastPath(input);
+
+    if (useDeterministicFastPath) {
+      void this.aiUsageLedger?.record({
+        component:'SEMANTIC',
+        eventType:'SKIP',
+        reason:'DETERMINISTIC_FAST_PATH',
+      });
+    }
 
     const semanticResult =
       input.rawMessage && this.semanticInterpreter && !useDeterministicFastPath
