@@ -349,6 +349,10 @@ export async function fetchAdminDashboard() {
   const { data } = await api.get("/admin/dashboard");
   return data;
 }
+export async function fetchContextExtractionMetrics() {
+  const { data } = await api.get("/admin/context-extraction-metrics");
+  return data;
+}
 
 export async function fetchOntologyStats() {
   const { data } = await api.get("/ontology/stats");

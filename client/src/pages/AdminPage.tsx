@@ -1,4 +1,5 @@
 import VisitorAnalyticsDashboard from '../components/VisitorAnalyticsDashboard';
+import AIUsageCostDashboard from '../components/AIUsageCostDashboard';
 import { useEffect, useState } from 'react';
 import { fetchAdminDashboard, fetchPilotAnalytics } from '../api/client';
 import { shortUri } from '../utils/uri';
@@ -29,7 +30,8 @@ export default function AdminPage({adminToken}:{adminToken:string}) {
         <p>아래 데이터 검수, 연결 관리, Spotlight는 모두 {region.regionName} 기준입니다.</p>
         {region.id === 'hapcheon' && <a className="btn btn-secondary" href="/hapcheon/network-report" target="_blank" rel="noreferrer">합천 지역 연결망 열기</a>}
       </section>
-      <RegionalDataManager key={`data:${region.id}`} adminToken={adminToken} />
+            <AIUsageCostDashboard />
+<RegionalDataManager key={`data:${region.id}`} adminToken={adminToken} />
       <SpotlightManager key={`spotlight:${region.id}`} token={adminToken} />
       <VisitorAnalyticsDashboard key={`analytics:${region.id}`} token={adminToken} />
       {pilot&&<div className="card"><h2>Legacy / unknown 파일럿 이벤트 (신규 통계와 합산 금지)</h2><p className="text-muted">개인정보나 자유 입력 원문 없이 집계한 이용 지표입니다.</p><div className="grid-2"><div className="stat-box"><div className="num">{pilot.totalTripSessions}</div><div className="label">여행 세션</div></div><div className="stat-box"><div className="num">{Math.round(pilot.recommendationCompletionRate*100)}%</div><div className="label">추천 완료율</div></div><div className="stat-box"><div className="num">{pilot.navigationHandoffCount}</div><div className="label">내비 연결</div></div><div className="stat-box"><div className="num">{pilot.itineraryAddCount}</div><div className="label">일정 담기</div></div><div className="stat-box"><div className="num">{pilot.replanningCount}</div><div className="label">일정 다시 보기</div></div><div className="stat-box"><div className="num">{pilot.errorFallbackCount}</div><div className="label">오류·재시도</div></div></div><p>구조화 요청 {pilot.structuredUsage} · 자유 입력 {pilot.freeLanguageUsage}</p><p>유입: {(pilot.sessionsByEntrySource||[]).map((x:any)=>`${x.label} ${x.total}`).join(' · ')||'아직 없음'}</p><p>빠른 선택: {(pilot.mostUsedQuickIntents||[]).map((x:any)=>`${x.label} ${x.total}`).join(' · ')||'아직 없음'}</p></div>}
