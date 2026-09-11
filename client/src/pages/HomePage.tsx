@@ -167,70 +167,141 @@ export default function HomePage() {
         </button>
       )}
     </section>
-        <a
-      href="/#why-exkovia"
-      aria-label="ChatGPT·T맵과 무엇이 다른가요?"
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 14,
-        width: "100%",
-        margin: "0 0 10px",
-        padding: "15px 17px",
-        borderRadius: 16,
-        border: "1px solid rgba(16, 88, 78, .22)",
-        background: "linear-gradient(135deg, rgba(16,88,78,.10), rgba(255,255,255,.96))",
-        color: "var(--color-text)",
-        textDecoration: "none",
-        boxSizing: "border-box",
-        boxShadow: "0 5px 18px rgba(20,60,55,.07)"
-      }}
-    >
-      <span style={{display:"flex",alignItems:"center",gap:12}}>
+    <div style={{display:"grid",gap:8,margin:"0 0 16px"}}>
+      <a
+        href={`/?lang=${language}#why-exkovia`}
+        aria-label={language==="ko"?"ChatGPT·T맵과 무엇이 다른가요?":"How is this different from ChatGPT and TMAP?"}
+        style={{
+          minHeight:72,
+          display:"flex",
+          alignItems:"center",
+          justifyContent:"space-between",
+          gap:12,
+          width:"100%",
+          padding:"10px 12px",
+          borderRadius:14,
+          border:"1px solid #9fd6cf",
+          background:"#eef9f7",
+          color:"#08786d",
+          textDecoration:"none",
+          boxSizing:"border-box"
+        }}
+      >
+        <span style={{display:"flex",alignItems:"center",gap:12,minWidth:0}}>
+          <span
+            aria-hidden="true"
+            style={{
+              width:42,
+              height:42,
+              display:"grid",
+              placeItems:"center",
+              flex:"0 0 auto",
+              borderRadius:"50%",
+              border:"2px solid #08786d",
+              fontSize:13,
+              fontWeight:900,
+              letterSpacing:"-0.5px"
+            }}
+          >
+            GPT
+          </span>
+
+          <span style={{textAlign:"left",lineHeight:1.25}}>
+            <strong style={{display:"block",fontSize:14,fontWeight:800}}>
+              {language==="ko"?"ChatGPT · T맵과":"ChatGPT · TMAP"}
+            </strong>
+            <strong style={{display:"block",fontSize:16,fontWeight:900}}>
+              {language==="ko"?"무엇이 다른가요?":"What is different?"}
+            </strong>
+          </span>
+        </span>
+
         <span
           aria-hidden="true"
           style={{
+            width:42,
+            height:42,
             display:"grid",
             placeItems:"center",
-            width:38,
-            height:38,
+            flex:"0 0 auto",
             borderRadius:"50%",
-            background:"#10584e",
-            color:"white",
-            fontWeight:800,
-            fontSize:13,
-            flex:"0 0 auto"
+            background:"#0b8a7d",
+            color:"#fff",
+            fontSize:30,
+            fontWeight:900,
+            lineHeight:1
           }}
         >
-          AI
+          ›
         </span>
-        <span style={{textAlign:"left",lineHeight:1.35}}>
-          <small style={{display:"block",opacity:.7,fontWeight:700}}>ChatGPT · T맵과</small>
-          <strong style={{fontSize:16}}>무엇이 다른가요?</strong>
+      </a>
+
+      <button
+        type="button"
+        className="home-concierge-demo-button"
+        onClick={() => setShowConciergeDemo(true)}
+        style={{
+          minHeight:72,
+          display:"flex",
+          alignItems:"center",
+          justifyContent:"space-between",
+          gap:12,
+          width:"100%",
+          padding:"10px 12px",
+          borderRadius:14,
+          border:"1px solid #9fd6cf",
+          background:"#eef9f7",
+          color:"#08786d",
+          boxSizing:"border-box",
+          cursor:"pointer",
+          fontFamily:"inherit"
+        }}
+      >
+        <span style={{display:"flex",alignItems:"center",gap:12,minWidth:0}}>
+          <span
+            aria-hidden="true"
+            style={{
+              width:42,
+              height:42,
+              display:"grid",
+              placeItems:"center",
+              flex:"0 0 auto",
+              fontSize:27
+            }}
+          >
+            ✨
+          </span>
+
+          <span style={{textAlign:"left",lineHeight:1.25}}>
+            <strong style={{display:"block",fontSize:14,fontWeight:800}}>
+              {language==="ko"?"이 여행도우미가 다른 이유,":"Why this travel assistant is different"}
+            </strong>
+            <strong style={{display:"block",fontSize:16,fontWeight:900}}>
+              {language==="ko"?"20초만 보세요":"See it in 20 seconds"}
+            </strong>
+          </span>
         </span>
-      </span>
-      <strong aria-hidden="true" style={{fontSize:22}}>›</strong>
-    </a>
-<button
-      type="button"
-      className="home-concierge-demo-button"
-      onClick={() => setShowConciergeDemo(true)}
-      style={{
-        width: "100%",
-        margin: "12px 0 16px",
-        padding: "14px 16px",
-        border: "1px solid #dbeafe",
-        borderRadius: "16px",
-        background: "#f8fbff",
-        color: "#1e40af",
-        fontSize: "15px",
-        fontWeight: 800,
-        cursor: "pointer",
-      }}
-    >
-      ✨ 이 여행도우미가 다른 이유, 20초만 보세요
-    </button>
+
+        <span
+          aria-hidden="true"
+          style={{
+            width:42,
+            height:42,
+            display:"grid",
+            placeItems:"center",
+            flex:"0 0 auto",
+            borderRadius:"50%",
+            background:"#0b8a7d",
+            color:"#fff",
+            fontSize:30,
+            fontWeight:900,
+            lineHeight:1
+          }}
+        >
+          ›
+        </span>
+      </button>
+    </div>
 
     <RuntimeJourneyEntry
       loading={false}
