@@ -52,12 +52,15 @@ function valid(value:any): value is SemanticInterpretation {
 
 @Injectable()
 export class OpenAISemanticInterpreter {
+  private readonly callsBySession=new Map<string,number>();
+
   constructor(private readonly config:ConfigService,@Optional() private readonly aiUsageLedger?:AiUsageLedgerService){}
 
   async interpret(
     utterance:string,
     previousSubject?:string,
     regionId?:string,
+    contextSessionId?:string,
   ):Promise<SemanticInterpretationResult>{
     const started=Date.now();
     const key=this.config.get<string>('OPENAI_API_KEY');
@@ -65,6 +68,32 @@ export class OpenAISemanticInterpreter {
 
     if(!key||!model)
       return {status:'DISABLED',provider:'openai',model,latencyMs:0,errorCode:'NOT_CONFIGURED'};
+
+    const region=regionId||'unknown';
+    const session=contextSessionId||'anonymous';
+    const regionalSession=`${region}:${session}`;
+    const max=Math.max(0,Number(this.config.get('MAX_SEMANTIC_LLM_CALLS_PER_SESSION')??2));
+    const count=this.callsBySession.get(regionalSession)||0;
+
+    if(count>=max){
+      void this.aiUsageLedger?.record({
+        component:'SEMANTIC',
+        regionId:region,
+        eventType:'BLOCKED',
+        reason:'SESSION_LIMIT',
+        modelName:model,
+      });
+
+      return {
+        status:'DISABLED',
+        provider:'openai',
+        model,
+        latencyMs:0,
+        errorCode:'SESSION_LIMIT',
+      };
+    }
+
+    this.callsBySession.set(regionalSession,count+1);
 
     const controller=new AbortController();
     const timeout=Number(this.config.get('OPENAI_CONTEXT_TIMEOUT_MS')||8000);

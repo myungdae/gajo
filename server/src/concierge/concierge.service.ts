@@ -171,6 +171,7 @@ export class ConciergeService {
             input.rawMessage,
             input.conversationalAnchor?.label,
             regionId,
+            input.contextSessionId,
           )
         : undefined;
 

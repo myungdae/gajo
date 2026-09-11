@@ -98,7 +98,7 @@ describe('ConciergeService service-area handling', () => {
     } as any);
 
     expect(semanticInterpreter.interpret)
-      .toHaveBeenCalledWith('황매산 어떻게 가죠','해인사','hapcheon');
+      .toHaveBeenCalledWith('황매산 어떻게 가죠','해인사','hapcheon',undefined);
 
     expect(discovery.resolveExactPlaceIntent)
       .toHaveBeenCalledWith('hapcheon','황매산');
@@ -242,7 +242,7 @@ describe('ConciergeService service-area handling', () => {
     } as any);
 
     expect(semanticInterpreter.interpret)
-      .toHaveBeenCalledWith('거기 차로 올라갈 수 있어?','황매산 군립공원','hapcheon');
+      .toHaveBeenCalledWith('거기 차로 올라갈 수 있어?','황매산 군립공원','hapcheon',undefined);
 
     expect(discovery.resolveExactPlaceIntent)
       .toHaveBeenCalledWith('hapcheon','황매산 군립공원');
@@ -650,7 +650,7 @@ describe('ConciergeService service-area handling', () => {
     } as any);
 
     expect(semanticInterpreter.interpret)
-      .toHaveBeenCalledWith('거기 차로 올라갈 수 있어?','황매산 군립공원','hapcheon');
+      .toHaveBeenCalledWith('거기 차로 올라갈 수 있어?','황매산 군립공원','hapcheon',undefined);
 
     expect(discovery.resolveExactPlaceIntent)
       .toHaveBeenCalledWith('hapcheon','황매산 군립공원');
