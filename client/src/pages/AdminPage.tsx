@@ -1,5 +1,6 @@
 import VisitorAnalyticsDashboard from '../components/VisitorAnalyticsDashboard';
 import AIUsageCostDashboard from '../components/AIUsageCostDashboard';
+import NationalAIUsageDashboard from '../components/NationalAIUsageDashboard';
 import { useEffect, useState } from 'react';
 import { fetchAdminDashboard, fetchPilotAnalytics } from '../api/client';
 import { shortUri } from '../utils/uri';
@@ -25,6 +26,7 @@ export default function AdminPage({adminToken}:{adminToken:string}) {
 
   return (
     <div>
+      <NationalAIUsageDashboard />
       <section className="card" aria-label="현재 관리 지역">
         <h1>현재 관리 지역: {region.regionName}</h1>
         <p>아래 데이터 검수, 연결 관리, Spotlight는 모두 {region.regionName} 기준입니다.</p>
