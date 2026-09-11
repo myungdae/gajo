@@ -73,6 +73,7 @@ export class OpenAISemanticInterpreter {
         ? `Previous subject: ${previousSubject}\nCurrent utterance: ${utterance}`
         : `Current utterance: ${utterance}`;
 
+      console.log([OPENAI_CALL] type=SEMANTIC model=);
       const response=await fetch('https://api.openai.com/v1/responses',{
         method:'POST',
         headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},
@@ -89,6 +90,7 @@ export class OpenAISemanticInterpreter {
         return {status:'PROVIDER_ERROR',provider:'openai',model,latencyMs:Date.now()-started,errorCode:`HTTP_${response.status}`};
 
       const body:any=await response.json();
+      console.log([OPENAI_USAGE] type=SEMANTIC model= inputTokens= outputTokens=);
       const outputText=body.output_text ||
         body.output?.flatMap((o:any)=>o.content||[]).find((c:any)=>c.type==='output_text')?.text;
 

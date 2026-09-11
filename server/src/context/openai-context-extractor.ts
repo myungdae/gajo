@@ -24,9 +24,10 @@ export class OpenAIContextExtractor implements ContextExtractor {
     if (!key || !model) return {status:'DISABLED',provider:'openai',model,latencyMs:0,errorCode:'NOT_CONFIGURED'};
     const controller=new AbortController(); const timeout=Number(this.config.get('OPENAI_CONTEXT_TIMEOUT_MS')||8000); const timer=setTimeout(()=>controller.abort(),timeout);
     try {
+      console.log([OPENAI_CALL] type=CONTEXT model=);
       const response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},signal:controller.signal,body:JSON.stringify({model,instructions:SYSTEM_PROMPT,input:text,text:{format:{type:'json_schema',name:'gajo_context_extraction',strict:true,schema}}})});
       if(!response.ok)return {status:'PROVIDER_ERROR',provider:'openai',model,latencyMs:Date.now()-started,errorCode:`HTTP_${response.status}`};
-      const body:any=await response.json(); const outputText=body.output_text || body.output?.flatMap((o:any)=>o.content||[]).find((c:any)=>c.type==='output_text')?.text;
+      const body:any=await response.json(); console.log([OPENAI_USAGE] type=CONTEXT model= inputTokens= outputTokens=); const outputText=body.output_text || body.output?.flatMap((o:any)=>o.content||[]).find((c:any)=>c.type==='output_text')?.text;
       const validated=validateContextExtraction(JSON.parse(outputText));
       return validated?{status:'SUCCESS',provider:'openai',model,latencyMs:Date.now()-started,extraction:validated,usage:{inputTokens:body.usage?.input_tokens,outputTokens:body.usage?.output_tokens}}:{status:'INVALID',provider:'openai',model,latencyMs:Date.now()-started,errorCode:'SCHEMA_VALIDATION'};
     } catch(error:any) { return {status:error?.name==='AbortError'?'TIMEOUT':'PROVIDER_ERROR',provider:'openai',model,latencyMs:Date.now()-started,errorCode:error?.name||'ERROR'}; }
