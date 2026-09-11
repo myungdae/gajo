@@ -287,15 +287,12 @@ export default function HapcheonNetworkReportPage() {
         nodeName.get(edge.targetNodeId) || "지역자원"
       } · ${edge.stage === "MOVEMENT_INTENT" ? "이동" : "관심"} ${edge.total}`;
 
-    const categoryFromQuestion = (): NetworkCategory | undefined => {
-      if (/숙박|펜션|호텔/.test(q)) return "숙박";
-      if (/음식|식당|맛집/.test(q)) return "음식점";
-      if (/카페|커피/.test(q)) return "카페";
-      if (/관광|명소|관광지/.test(q)) return "관광";
-      return undefined;
-    };
-
-    const category = categoryFromQuestion();
+    const category =
+      /숙박|펜션|호텔/.test(q) ? "숙박" :
+      /음식|식당|맛집/.test(q) ? "음식점" :
+      /카페|커피/.test(q) ? "카페" :
+      /관광|명소|관광지/.test(q) ? "관광" :
+      undefined;
 
     const query: NetworkQuery = {
       stage: /이동|다음 행동|길찾기|일정/.test(q)
@@ -321,35 +318,26 @@ export default function HapcheonNetworkReportPage() {
       );
 
       filtered = filtered.filter(
-        (edge) =>
-          ids.has(edge.sourceNodeId) ||
-          ids.has(edge.targetNodeId),
+        (edge) => ids.has(edge.sourceNodeId) || ids.has(edge.targetNodeId),
       );
     }
 
     filtered.sort((a, b) => b.total - a.total);
 
-    if (query.ranking === "TOP") {
-      filtered = filtered.slice(0, 1);
-    } else {
-      filtered = filtered.slice(0, 5);
-    }
+    if (query.ranking === "TOP") filtered = filtered.slice(0, 1);
+    else filtered = filtered.slice(0, 5);
 
     query.focusNodeIds = [
-      ...new Set(
-        filtered.flatMap((edge) => [
-          edge.sourceNodeId,
-          edge.targetNodeId,
-        ]),
-      ),
+      ...new Set(filtered.flatMap((edge) => [
+        edge.sourceNodeId,
+        edge.targetNodeId,
+      ])),
     ];
 
     setActiveNetworkQuery(query);
 
     if (!filtered.length) {
-      setNetworkAnswer(
-        "현재 공개 기준을 충족하는 해당 조건의 연결은 없습니다.",
-      );
+      setNetworkAnswer("현재 공개 기준을 충족하는 해당 조건의 연결은 없습니다.");
       return;
     }
 
@@ -360,9 +348,7 @@ export default function HapcheonNetworkReportPage() {
         : query.stage === "INTEREST"
           ? "관심"
           : "",
-    ]
-      .filter(Boolean)
-      .join(" ");
+    ].filter(Boolean).join(" ");
 
     setNetworkAnswer(
       `${condition ? `${condition} ` : ""}주요 연결은 ${filtered
