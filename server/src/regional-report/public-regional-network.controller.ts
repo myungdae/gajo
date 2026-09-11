@@ -20,4 +20,10 @@ export class PublicRegionalNetworkController {
     if (regionId !== 'hapcheon') throw new NotFoundException();
     return this.network.latestPublicRolling(regionId);
   }
+
+  @Get(':regionId/change')
+  change(@Param('regionId') regionId: string) {
+    if (regionId !== 'hapcheon') throw new NotFoundException();
+    return this.network.latestPublicChange(regionId);
+  }
 }

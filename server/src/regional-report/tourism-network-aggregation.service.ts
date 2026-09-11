@@ -76,6 +76,52 @@ type ReleasedNetwork = {
   }>;
 };
 
+type PublicChangeKind =
+  | 'NEWLY_RELEASED'
+  | 'STRENGTHENED'
+  | 'WEAKENED'
+  | 'NO_LONGER_PUBLIC';
+
+type PublicNetworkChange = {
+  kind: PublicChangeKind;
+  sourceNodeId: string;
+  targetNodeId: string;
+  sourceName: string;
+  targetName: string;
+  stage: string;
+  previousTotal?: number;
+  currentTotal?: number;
+  delta?: number;
+};
+
+type ComparableReleasedNetwork = {
+  status: string;
+  notice?: string;
+  nodes: Array<{
+    id: string;
+    name: string;
+    category: string;
+  }>;
+  edges: Array<{
+    sourceNodeId: string;
+    targetNodeId: string;
+    stage: string;
+    total: number;
+    unit: string;
+  }>;
+  stageTotals: Array<{
+    stage: string;
+    total: number;
+    unit: string;
+  }>;
+  categoryConnections: Array<{
+    sourceCategory: string;
+    targetCategory: string;
+    stage: string;
+    total: number;
+    unit: string;
+  }>;
+};
 const SEOUL_OFFSET_MS = 9 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const ANONYMOUS_FLOW_ID =
@@ -151,6 +197,150 @@ export function monthlyWindow(monthKey: string) {
   };
 }
 
+const releasedEdgeKey = (edge: {
+  sourceNodeId: string;
+  targetNodeId: string;
+  stage: string;
+}) => `${edge.sourceNodeId}|${edge.targetNodeId}|${edge.stage}`;
+
+const stageTotal = (released: ComparableReleasedNetwork, stage: string) =>
+  released.stageTotals.find((item) => item.stage === stage)?.total || 0;
+
+export function compareReleasedNetworks(
+  previous: ComparableReleasedNetwork,
+  current: ComparableReleasedNetwork,
+) {
+  const previousEdges = new Map(
+    previous.edges.map((edge) => [releasedEdgeKey(edge), edge]),
+  );
+  const currentEdges = new Map(
+    current.edges.map((edge) => [releasedEdgeKey(edge), edge]),
+  );
+
+  const nodeNames = new Map<string, string>();
+
+  for (const node of previous.nodes) nodeNames.set(node.id, node.name);
+  for (const node of current.nodes) nodeNames.set(node.id, node.name);
+
+  const changes: PublicNetworkChange[] = [];
+
+  for (const [key, currentEdge] of currentEdges) {
+    const previousEdge = previousEdges.get(key);
+
+    if (!previousEdge) {
+      changes.push({
+        kind: 'NEWLY_RELEASED',
+        sourceNodeId: currentEdge.sourceNodeId,
+        targetNodeId: currentEdge.targetNodeId,
+        sourceName: nodeNames.get(currentEdge.sourceNodeId) || '지역자원',
+        targetName: nodeNames.get(currentEdge.targetNodeId) || '지역자원',
+        stage: currentEdge.stage,
+        currentTotal: currentEdge.total,
+        delta: currentEdge.total,
+      });
+      continue;
+    }
+
+    const delta = currentEdge.total - previousEdge.total;
+
+    if (delta > 0) {
+      changes.push({
+        kind: 'STRENGTHENED',
+        sourceNodeId: currentEdge.sourceNodeId,
+        targetNodeId: currentEdge.targetNodeId,
+        sourceName: nodeNames.get(currentEdge.sourceNodeId) || '지역자원',
+        targetName: nodeNames.get(currentEdge.targetNodeId) || '지역자원',
+        stage: currentEdge.stage,
+        previousTotal: previousEdge.total,
+        currentTotal: currentEdge.total,
+        delta,
+      });
+    } else if (delta < 0) {
+      changes.push({
+        kind: 'WEAKENED',
+        sourceNodeId: currentEdge.sourceNodeId,
+        targetNodeId: currentEdge.targetNodeId,
+        sourceName: nodeNames.get(currentEdge.sourceNodeId) || '지역자원',
+        targetName: nodeNames.get(currentEdge.targetNodeId) || '지역자원',
+        stage: currentEdge.stage,
+        previousTotal: previousEdge.total,
+        currentTotal: currentEdge.total,
+        delta,
+      });
+    }
+  }
+
+  for (const [key, previousEdge] of previousEdges) {
+    if (currentEdges.has(key)) continue;
+
+    changes.push({
+      kind: 'NO_LONGER_PUBLIC',
+      sourceNodeId: previousEdge.sourceNodeId,
+      targetNodeId: previousEdge.targetNodeId,
+      sourceName: nodeNames.get(previousEdge.sourceNodeId) || '지역자원',
+      targetName: nodeNames.get(previousEdge.targetNodeId) || '지역자원',
+      stage: previousEdge.stage,
+      previousTotal: previousEdge.total,
+      delta: -previousEdge.total,
+    });
+  }
+
+  const newlyReleased = changes.filter(
+    (change) => change.kind === 'NEWLY_RELEASED',
+  );
+  const strengthened = changes.filter(
+    (change) => change.kind === 'STRENGTHENED',
+  );
+  const weakened = changes.filter(
+    (change) => change.kind === 'WEAKENED',
+  );
+  const noLongerPublic = changes.filter(
+    (change) => change.kind === 'NO_LONGER_PUBLIC',
+  );
+
+  const previousInterest = stageTotal(previous, 'INTEREST');
+  const currentInterest = stageTotal(current, 'INTEREST');
+  const previousMovement = stageTotal(previous, 'MOVEMENT_INTENT');
+  const currentMovement = stageTotal(current, 'MOVEMENT_INTENT');
+
+  const newlyReleasedInterestContribution = newlyReleased
+    .filter((change) => change.stage === 'INTEREST')
+    .reduce((sum, change) => sum + (change.currentTotal || 0), 0);
+
+  const interestDelta = currentInterest - previousInterest;
+
+  return {
+    summary: {
+      previousConnections: previous.edges.length,
+      currentConnections: current.edges.length,
+      newlyReleased: newlyReleased.length,
+      strengthened: strengthened.length,
+      weakened: weakened.length,
+      noLongerPublic: noLongerPublic.length,
+      previousInterest,
+      currentInterest,
+      interestDelta,
+      previousMovement,
+      currentMovement,
+      movementDelta: currentMovement - previousMovement,
+      newlyReleasedInterestContribution,
+    },
+    changes: {
+      newlyReleased,
+      strengthened,
+      weakened,
+      noLongerPublic,
+    },
+    interpretation: {
+      interestIncreaseMostlyFromNewlyReleased:
+        interestDelta > 0 &&
+        newlyReleasedInterestContribution > 0 &&
+        newlyReleasedInterestContribution >= interestDelta * 0.5,
+      caution:
+        '공개 수치의 변화는 개인정보 보호 최소 공개기준을 새로 충족하거나 더 이상 충족하지 않는 연결의 영향을 받을 수 있습니다. 따라서 공개 집계 증감을 같은 기간의 신규 행동 발생량으로 직접 해석해서는 안 됩니다.',
+    },
+  };
+}
 export function releaseNetwork(
   events: RawRow[],
   activities: RawRow[],
@@ -635,6 +825,72 @@ export class TourismNetworkAggregationService {
       .lean();
   }
 
+  async latestPublicChange(regionId: string) {
+    const [snapshots, partners, regionalEntities] = await Promise.all([
+      this.aggregates
+        .find({
+          regionId,
+          kind: 'ROLLING_30D',
+          status: 'COMPLETE',
+        })
+        .sort({ windowEndExclusive: -1 })
+        .limit(2)
+        .lean(),
+      this.partners
+        .find({
+          regionId,
+          status: 'OPERATING',
+          qrStatus: 'ACTIVE',
+          verificationStatus: 'VERIFIED',
+        })
+        .select({ canonicalEntityId: 1, _id: 0 })
+        .lean(),
+      this.regionalEntities
+        .find({
+          regionId,
+          lifecycleStatus: 'ACTIVE',
+          verificationStatus: 'VERIFIED',
+        })
+        .select({ canonicalEntityId: 1, _id: 0 })
+        .lean(),
+    ]);
+
+    if (snapshots.length < 2) {
+      return {
+        status: 'INSUFFICIENT_HISTORY',
+        notice: '변화를 판단하려면 완료된 비교 snapshot이 2개 이상 필요합니다.',
+      };
+    }
+
+    const eligibleIds = new Set([
+      ...regionalEntities.map((entity) => entity.canonicalEntityId),
+      ...partners.map((partner) => partner.canonicalEntityId),
+    ]);
+
+    const currentSnapshot = snapshots[0];
+    const previousSnapshot = snapshots[1];
+
+    const current = publicNetwork(
+      currentSnapshot.released as unknown as ReleasedNetwork,
+      eligibleIds,
+    );
+
+    const previous = publicNetwork(
+      previousSnapshot.released as unknown as ReleasedNetwork,
+      eligibleIds,
+    );
+
+    return {
+      status: 'AVAILABLE',
+      comparison: {
+        currentPeriodKey: currentSnapshot.periodKey,
+        previousPeriodKey: previousSnapshot.periodKey,
+        currentSnapshotAt: currentSnapshot.snapshotAt,
+        previousSnapshotAt: previousSnapshot.snapshotAt,
+      },
+      ...compareReleasedNetworks(previous, current),
+    };
+  }
   async latestPublicRolling(regionId: string) {
     const [snapshot, partners, regionalEntities] = await Promise.all([
       this.latestRolling(regionId),
