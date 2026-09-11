@@ -3,8 +3,16 @@ import { GROUPS, EVIDENCE_LABELS, evidenceLevel, filteredEdges, relationLabel, t
 
 const FILTERS: [Filter, string][] = [['ALL', '전체'], ['RESOURCE_RELATIONSHIP', '자원 관계'], ['INTEREST', '관심 행동'], ['MOVEMENT_INTENT', '이동 의도'], ['VERIFIED_USE', '검증 이용']];
 const point = (angle: number, rx: number, ry: number) => ({ x: 650 + Math.cos(angle) * rx, y: 355 + Math.sin(angle) * ry });
-export default function ContextResourceNetwork({ data, selected, onSelect }: {
-  data: Ecosystem; selected?: PlaceNode; onSelect: (node?: PlaceNode) => void;
+export default function ContextResourceNetwork({
+  data,
+  selected,
+  onSelect,
+  priorityNodeIds,
+}: {
+  data: Ecosystem;
+  selected?: PlaceNode;
+  onSelect: (node?: PlaceNode) => void;
+  priorityNodeIds?: Set<string>;
 }) {
   const [filter, setFilter] = useState<Filter>('ALL');
   const [category, setCategory] = useState<string>();
@@ -13,7 +21,13 @@ export default function ContextResourceNetwork({ data, selected, onSelect }: {
   const edges = useMemo(() => filteredEdges(data, filter), [data, filter]);
   const eligible = data.nodes;
   const groups = GROUPS.map(([kind, label], i) => {
-    const all = eligible.filter(n => n.kind === kind);
+    const all = eligible
+      .filter(n => n.kind === kind)
+      .sort((a, b) => {
+        const ap = priorityNodeIds?.has(a.id) ? 1 : 0;
+        const bp = priorityNodeIds?.has(b.id) ? 1 : 0;
+        return bp - ap;
+      });
     const selectedIndex = selected ? all.findIndex(n => n.id === selected.id) : -1;
     const pages = Math.max(1, Math.ceil(all.length / 4));
     const activePage = selectedIndex >= 0 ? Math.floor(selectedIndex / 4) : page % pages;
@@ -49,7 +63,36 @@ export default function ContextResourceNetwork({ data, selected, onSelect }: {
           const faded = selectedId ? e.source !== selectedId && e.target !== selectedId : category ? a.kind !== category && b.kind !== category : false;
           const level = evidenceLevel(e);
           const bend = { RESOURCE_RELATIONSHIP: 305, INTEREST: 340, MOVEMENT_INTENT: 375, VERIFIED_USE: 410 };
-          return <path key={`${e.source}-${e.target}-${i}`} d={`M ${a.x} ${a.y} Q 650 ${level ? bend[level] : 355} ${b.x} ${b.y}`} className={`context-edge ${level?.toLowerCase()}`} opacity={faded ? .07 : 1}><title>{a.label} {level === 'RESOURCE_RELATIONSHIP' ? '↔' : '→'} {b.label}: {relationLabel(e)} · {e.basis}{e.total ? ` · ${e.total}회` : ''}</title></path>;
+          const controlY = level ? bend[level] : 355;
+          const labelX = (a.x + 2 * 650 + b.x) / 4;
+          const labelY = (a.y + 2 * controlY + b.y) / 4;
+
+          return <g key={`${e.source}-${e.target}-${i}`}>
+            <path
+              d={`M ${a.x} ${a.y} Q 650 ${controlY} ${b.x} ${b.y}`}
+              className={`context-edge ${level?.toLowerCase()}`}
+              opacity={faded ? .07 : 1}
+            >
+              <title>{a.label} {level === 'RESOURCE_RELATIONSHIP' ? '↔' : '→'} {b.label}: {relationLabel(e)} · {e.basis}{e.total ? ` · ${e.total}회` : ''}</title>
+            </path>
+            {e.total && level && level !== 'RESOURCE_RELATIONSHIP' && (
+              <g
+                className={`context-edge-count ${level.toLowerCase()}`}
+                opacity={faded ? .07 : 1}
+              >
+                <rect
+                  x={labelX - 20}
+                  y={labelY - 12}
+                  width="40"
+                  height="24"
+                  rx="12"
+                />
+                <text x={labelX} y={labelY + 5}>
+                  {e.total}
+                </text>
+              </g>
+            )}
+          </g>;
         })}
         {groups.map(g => <g key={g.kind} role="button" tabIndex={0} aria-label={`${g.label} ${g.all.length}개 자원`} aria-pressed={category === g.kind}
           onClick={() => { onSelect(undefined); setCategory(g.kind); }} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(undefined); setCategory(g.kind); } }}

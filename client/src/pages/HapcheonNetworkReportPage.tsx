@@ -6,21 +6,64 @@ import "./hapcheon-network-report.css";
 import ContextResourceNetwork from "../components/ContextResourceNetwork";
 import { GROUPS, type PlaceNode, type Ecosystem } from "../contextNetwork";
 
+type LiveNetworkNode = {
+  id: string;
+  name: string;
+  category: string;
+};
+
+type LiveNetworkEdge = {
+  sourceNodeId: string;
+  targetNodeId: string;
+  stage: "INTEREST" | "MOVEMENT_INTENT" | string;
+  total: number;
+  unit: string;
+};
+
+type LiveNetworkSnapshot = {
+  snapshotAt?: string;
+  released?: {
+    status?: string;
+    notice?: string;
+    nodes?: LiveNetworkNode[];
+    edges?: LiveNetworkEdge[];
+    stageTotals?: Array<{
+      stage: string;
+      total: number;
+      unit: string;
+    }>;
+  };
+};
+
 export default function HapcheonNetworkReportPage() {
   const [data, setData] = useState<Ecosystem>();
+  const [live, setLive] = useState<LiveNetworkSnapshot>();
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<PlaceNode>();
   const [showNetworkDemo, setShowNetworkDemo] = useState(false);
   const [networkDemoStep, setNetworkDemoStep] = useState(0);
   const load = async () => {
     setError("");
+
     try {
-      const { data: ecosystem } = await api.get("/public/regional-network/hapcheon");
+      const [ecosystemResponse, liveResponse] = await Promise.all([
+        api.get("/public/regional-network/hapcheon"),
+        api.get("/public/regional-network/hapcheon/live"),
+      ]);
+
+      const ecosystem = ecosystemResponse.data;
       if (ecosystem?.region?.id !== "hapcheon") throw new Error();
+
       setData(ecosystem);
-    } catch { setData(undefined); setError("합천 지역 연결망을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요."); }
+      setLive(liveResponse.data || undefined);
+    } catch {
+      setData(undefined);
+      setLive(undefined);
+      setError("합천 지역 연결망을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
+    }
   };
-  useEffect(() => { void load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { void load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!showNetworkDemo) {
@@ -37,11 +80,123 @@ export default function HapcheonNetworkReportPage() {
 
     return () => timers.forEach(window.clearTimeout);
   }, [showNetworkDemo]);
+  const displayData = useMemo<Ecosystem | undefined>(() => {
+    if (!data) return undefined;
+    if (live?.released?.status !== "AVAILABLE") return data;
+
+    const liveNodes = live.released.nodes || [];
+    const liveEdges = live.released.edges || [];
+
+    const ecosystemIdByLiveId = new Map<string, string>();
+
+    for (const liveNode of liveNodes) {
+      const match = data.nodes.find(
+        (node) => node.label.trim() === liveNode.name.trim(),
+      );
+
+      if (match) ecosystemIdByLiveId.set(liveNode.id, match.id);
+    }
+
+    const convertedLiveEdges = liveEdges.flatMap((edge) => {
+      const source = ecosystemIdByLiveId.get(edge.sourceNodeId);
+      const target = ecosystemIdByLiveId.get(edge.targetNodeId);
+
+      if (!source || !target || source === target) return [];
+
+      return [{
+        source,
+        target,
+        relation: edge.stage,
+        evidenceLevel:
+          edge.stage === "MOVEMENT_INTENT"
+            ? "MOVEMENT_INTENT" as const
+            : "INTEREST" as const,
+        basis: "최근 30일 익명 관광객 행동 흐름",
+        total: edge.total,
+      }];
+    });
+
+    return {
+      ...data,
+      edges: [
+        ...data.edges,
+        ...convertedLiveEdges,
+      ],
+    };
+  }, [data, live]);
+  const livePriorityNodeIds = useMemo(() => {
+    if (!data || live?.released?.status !== "AVAILABLE") return new Set<string>();
+
+    const idByLiveNodeId = new Map<string, string>();
+
+    for (const liveNode of live.released.nodes || []) {
+      const match = data.nodes.find(
+        (node) => node.label.trim() === liveNode.name.trim(),
+      );
+      if (match) idByLiveNodeId.set(liveNode.id, match.id);
+    }
+
+    const ids = new Set<string>();
+
+    for (const edge of live.released.edges || []) {
+      const source = idByLiveNodeId.get(edge.sourceNodeId);
+      const target = idByLiveNodeId.get(edge.targetNodeId);
+
+      if (source) ids.add(source);
+      if (target) ids.add(target);
+    }
+
+    return ids;
+  }, [data, live]);
   const groups = useMemo(() => GROUPS.map(([kind, label]) => ({ kind, label, nodes: data?.nodes.filter((node) => node.kind === kind) || [] })), [data]);
   if (!data) return <main className="mayor-login"><PublicBrand compact linked={false}/><small>합천 정책 리포트 · 읽기 전용</small><h1>합천 지역 중심 네트워크</h1><p>{error || "실제 합천 지역 데이터를 불러오고 있습니다."}</p>{error&&<button onClick={()=>void load()}>다시 시도</button>}</main>;
   return <main className="mayor-report">
     <header><div><PublicBrand compact linked={false}/><span>합천 정책 리포트 · 읽기 전용</span><h1>흩어진 관광자원을<br/><em>하나의 지역경제 흐름</em>으로</h1><p>관광객의 현재 상황을 중심으로 합천의 장소·서비스·행동을 연결합니다.</p></div><div className="mayor-kpi"><strong>{data.counts.total}</strong><span>실제 등록 자원</span><strong>{data.counts.verified}</strong><span>검증 완료 자원</span><strong>{data.edges.length}</strong><span>데이터 기반 관계</span></div></header>
     <section className="mayor-thesis"><strong>합천의 자원이 부족한 것이 아닙니다.</strong><span>지금까지 서로 연결되어 움직이지 않았을 뿐입니다.</span></section>
+    {live?.released?.status === "AVAILABLE" && (
+      <section className="live-network-summary">
+        <div>
+          <small>RECENT 30 DAYS · LIVE NETWORK</small>
+          <h2>최근 30일 실제 이용 흐름</h2>
+          <p>
+            실제 이용 행동이 누적되면서 합천 지역자원 간 연결이 매일 갱신됩니다.
+          </p>
+        </div>
+
+        <div className="live-network-kpis">
+          {(live.released.stageTotals || []).map((item) => (
+            <div key={item.stage}>
+              <strong>{item.total}</strong>
+              <span>
+                {item.stage === "INTEREST"
+                  ? "관심 행동"
+                  : item.stage === "MOVEMENT_INTENT"
+                    ? "이동 의도"
+                    : item.stage}
+              </span>
+            </div>
+          ))}
+
+          <div>
+            <strong>{live.released.edges?.length || 0}</strong>
+            <span>공개 연결</span>
+          </div>
+        </div>
+
+        {live.snapshotAt && (
+          <small className="live-network-updated">
+            마지막 갱신{" "}
+            {new Date(live.snapshotAt).toLocaleString("ko-KR", {
+              timeZone: "Asia/Seoul",
+              month: "numeric",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </small>
+        )}
+      </section>
+    )}
     <section className="ecosystem-panel"><div className="panel-title"><div><small>REGIONAL OPERATIONAL ONTOLOGY</small><h2>합천 지역 중심 네트워크 그래프</h2></div><div className="legend"><span><i className="verified"/>검증 데이터</span><span><i className="partial"/>추가 검증 필요</span></div></div>
             <button
         type="button"
@@ -54,7 +209,7 @@ export default function HapcheonNetworkReportPage() {
         ✨ 이 그래프가 무엇을 보여주는지, 15초만 보세요
       </button>
 
-      <ContextResourceNetwork data={data} selected={selected} onSelect={setSelected}/>
+      <ContextResourceNetwork data={displayData || data} selected={selected} onSelect={setSelected} priorityNodeIds={livePriorityNodeIds}/>
       <h3 className="resource-details-title">연결된 지역자원 상세</h3>
       <div className="resource-groups">{groups.map(group=><section key={group.kind} className={`resource-group kind-${group.kind.toLowerCase()}`}><h3>{group.label}<small>{group.nodes.length}</small></h3><div>{group.nodes.map(node=><button key={node.id} className={node.status === "VERIFIED" ? "verified" : "partial"} aria-pressed={selected?.id === node.id} onClick={()=>setSelected(node)}>{node.label}</button>)}</div>{!group.nodes.length && <p>공개 등록 자원 없음</p>}</section>)}</div>
       <p className="context-usage-note">지역경제 연결 목표</p>
