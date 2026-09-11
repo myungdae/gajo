@@ -178,6 +178,7 @@ describe('tourism network aggregation', () => {
       },
       service = new TourismNetworkAggregationService(
         events as any,
+        { find: jest.fn().mockReturnValue(query([])) } as any,
         activities as any,
         partners as any,
         aggregates as any,
@@ -212,6 +213,7 @@ describe('tourism network aggregation', () => {
       },
       service = new TourismNetworkAggregationService(
         events as any,
+        { find: jest.fn().mockReturnValue(query([])) } as any,
         activities as any,
         partners as any,
         aggregates as any,
@@ -240,6 +242,7 @@ describe('tourism network aggregation', () => {
       },
       service = new TourismNetworkAggregationService(
         events as any,
+        { find: jest.fn().mockReturnValue(query([])) } as any,
         activities as any,
         partners as any,
         aggregates as any,

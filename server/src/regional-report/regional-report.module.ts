@@ -2,6 +2,10 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PilotEvent, PilotEventSchema } from '../schemas/pilot-event.schema';
 import {
+  VisitorAnalyticsEvent,
+  VisitorAnalyticsEventSchema,
+} from '../analytics/visitor-event.schema';
+import {
   Partner,
   PartnerActivity,
   PartnerActivitySchema,
@@ -25,6 +29,10 @@ import { TourismNetworkJobService } from './tourism-network-job.service';
   imports: [
     MongooseModule.forFeature([
       { name: PilotEvent.name, schema: PilotEventSchema },
+      {
+        name: VisitorAnalyticsEvent.name,
+        schema: VisitorAnalyticsEventSchema,
+      },
       { name: PartnerActivity.name, schema: PartnerActivitySchema },
       { name: Partner.name, schema: PartnerSchema },
       { name: BenefitRedemption.name, schema: BenefitRedemptionSchema },

@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { PilotEvent, PilotEventDocument } from '../schemas/pilot-event.schema';
+import { VisitorAnalyticsEvent } from '../analytics/visitor-event.schema';
 import {
   Partner,
   PartnerActivity,
@@ -354,6 +355,8 @@ function validateReleasedNetwork(
 export class TourismNetworkAggregationService {
   constructor(
     @InjectModel(PilotEvent.name) private events: Model<PilotEventDocument>,
+    @InjectModel(VisitorAnalyticsEvent.name)
+    private visitorEvents: Model<VisitorAnalyticsEvent>,
     @InjectModel(PartnerActivity.name)
     private activities: Model<PartnerActivityDocument>,
     @InjectModel(Partner.name) private partners: Model<PartnerDocument>,
@@ -408,8 +411,14 @@ export class TourismNetworkAggregationService {
       regionId,
       createdAt: { $gte: window.start, $lt: window.end },
     };
-    const [events, activities, partners] = await Promise.all([
+    const [events, visitorEvents, activities, partners] = await Promise.all([
       this.events.find(range).lean(),
+      this.visitorEvents
+        .find({
+          regionId,
+          occurredAt: { $gte: window.start, $lt: window.end },
+        })
+        .lean(),
       this.activities.find(range).lean(),
       this.partners
         .find({
@@ -420,8 +429,27 @@ export class TourismNetworkAggregationService {
         })
         .lean(),
     ]);
+    const adaptedVisitorEvents: RawRow[] = visitorEvents.map((row:any)=>({
+      eventType:
+        row.eventType === 'DIRECTIONS_CLICKED'
+          ? 'NAVIGATION_HANDOFF'
+          : row.eventType === 'PHONE_CLICKED'
+            ? 'PHONE_HANDOFF'
+            : row.eventType === 'BOOKING_CLICKED' ||
+                row.eventType === 'BOOKING_OUTBOUND_DISPATCHED'
+              ? 'BOOKING_HANDOFF'
+              : row.eventType === 'RUNTIME_JOURNEY_STARTED'
+                ? 'JOURNEY_START_ACTION'
+                : row.eventType,
+      regionId: row.regionId,
+      createdAt: row.occurredAt,
+      sessionId: row.anonymousTripId,
+      anonymousTripId: row.anonymousTripId,
+      metadata: row.placeKey ? { entityId: row.placeKey } : undefined,
+    }));
+
     const released = releaseNetwork(
-      events as RawRow[],
+      [...(events as RawRow[]), ...adaptedVisitorEvents],
       activities as RawRow[],
       partners,
       minimumCellSize,
@@ -433,6 +461,7 @@ export class TourismNetworkAggregationService {
             regionId,
             periodKey: window.periodKey,
             eventCount: events.length,
+            visitorEventCount: visitorEvents.length,
             activityCount: activities.length,
           }),
         )
