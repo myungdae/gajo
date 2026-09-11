@@ -43,7 +43,32 @@ type NetworkQuery = {
   stage?: "INTEREST" | "MOVEMENT_INTENT";
   ranking?: "TOP";
   focusNodeIds?: string[];
+  focusEntityId?: string;
+  focusEntityName?: string;
 };
+
+const FLAGSHIP_TOURISM_ENTITIES = [
+  {
+    key: "HWANGMAESAN",
+    name: "황매산 군립공원",
+    aliases: ["황매산", "황매산 군립공원"],
+  },
+  {
+    key: "HAPCHEON_LAKE",
+    name: "합천호",
+    aliases: ["합천호"],
+  },
+  {
+    key: "HAEINSA",
+    name: "해인사",
+    aliases: ["해인사"],
+  },
+  {
+    key: "VIDEO_THEME_PARK",
+    name: "합천 영상테마파크",
+    aliases: ["영상테마파크", "합천영상테마파크", "합천 영상테마파크"],
+  },
+] as const;
 
 export default function HapcheonNetworkReportPage() {
   const [data, setData] = useState<Ecosystem>();
@@ -83,6 +108,7 @@ export default function HapcheonNetworkReportPage() {
       activeNetworkQuery.stage ||
       activeNetworkQuery.relatedCategory ||
       activeNetworkQuery.ranking ||
+      activeNetworkQuery.focusEntityId ||
       activeNetworkQuery.focusNodeIds?.length;
 
     if (!hasActiveQuery) return;
@@ -160,6 +186,7 @@ export default function HapcheonNetworkReportPage() {
       activeNetworkQuery.stage ||
       activeNetworkQuery.relatedCategory ||
       activeNetworkQuery.ranking ||
+      activeNetworkQuery.focusEntityId ||
       activeNetworkQuery.focusNodeIds?.length;
 
     if (!hasQuery) return displayData;
@@ -303,6 +330,17 @@ export default function HapcheonNetworkReportPage() {
         nodeName.get(edge.targetNodeId) || "지역자원"
       } · ${edge.stage === "MOVEMENT_INTENT" ? "이동" : "관심"} ${edge.total}`;
 
+    const flagship = FLAGSHIP_TOURISM_ENTITIES.find((entity) =>
+      entity.aliases.some((alias) => q.includes(alias)),
+    );
+
+    const flagshipLiveNode = flagship
+      ? nodes.find(
+          (node) =>
+            node.name === flagship.name ||
+            flagship.aliases.some((alias) => node.name.includes(alias)),
+        )
+      : undefined;
     const category =
       /숙박|펜션|호텔/.test(q) ? "숙박" :
       /음식|식당|맛집/.test(q) ? "음식점" :
@@ -318,6 +356,8 @@ export default function HapcheonNetworkReportPage() {
           : undefined,
       relatedCategory: category,
       ranking: /가장|강한|제일|top/i.test(q) ? "TOP" : undefined,
+      focusEntityId: flagshipLiveNode?.id,
+      focusEntityName: flagship?.name,
     };
 
     let filtered = [...edges];
@@ -335,6 +375,14 @@ export default function HapcheonNetworkReportPage() {
 
       filtered = filtered.filter(
         (edge) => ids.has(edge.sourceNodeId) || ids.has(edge.targetNodeId),
+      );
+    }
+
+    if (query.focusEntityId) {
+      filtered = filtered.filter(
+        (edge) =>
+          edge.sourceNodeId === query.focusEntityId ||
+          edge.targetNodeId === query.focusEntityId,
       );
     }
 
@@ -376,6 +424,52 @@ export default function HapcheonNetworkReportPage() {
       }`,
     );
   };
+  const flagshipTourism = useMemo(() => {
+    const nodes = live?.released?.nodes || [];
+    const edges = live?.released?.edges || [];
+
+    return FLAGSHIP_TOURISM_ENTITIES.map((entity) => {
+      const node = nodes.find(
+        (candidate) =>
+          candidate.name === entity.name ||
+          entity.aliases.some((alias) => candidate.name.includes(alias)),
+      );
+
+      const related = node
+        ? edges.filter(
+            (edge) =>
+              edge.sourceNodeId === node.id ||
+              edge.targetNodeId === node.id,
+          )
+        : [];
+
+      const interest = related
+        .filter((edge) => edge.stage === "INTEREST")
+        .reduce((sum, edge) => sum + edge.total, 0);
+
+      const movement = related
+        .filter((edge) => edge.stage === "MOVEMENT_INTENT")
+        .reduce((sum, edge) => sum + edge.total, 0);
+
+      const connectedNodeIds = new Set(
+        related.flatMap((edge) => [
+          edge.sourceNodeId,
+          edge.targetNodeId,
+        ]),
+      );
+
+      if (node) connectedNodeIds.delete(node.id);
+
+      return {
+        ...entity,
+        liveNodeId: node?.id,
+        interest,
+        movement,
+        connections: connectedNodeIds.size,
+        available: Boolean(node && related.length),
+      };
+    });
+  }, [live]);
   const groups = useMemo(() => GROUPS.map(([kind, label]) => ({ kind, label, nodes: data?.nodes.filter((node) => node.kind === kind) || [] })), [data]);
   if (!data) return <main className="mayor-login"><PublicBrand compact linked={false}/><small>합천 정책 리포트 · 읽기 전용</small><h1>합천 지역 중심 네트워크</h1><p>{error || "실제 합천 지역 데이터를 불러오고 있습니다."}</p>{error&&<button onClick={()=>void load()}>다시 시도</button>}</main>;
   return <main className="mayor-report">
@@ -425,6 +519,54 @@ export default function HapcheonNetworkReportPage() {
         )}
       </section>
     )}
+    <section className="flagship-tourism">
+      <div className="flagship-tourism-head">
+        <small>FLAGSHIP TOURISM ASSETS</small>
+        <h2>합천 핵심 관광자원</h2>
+        <p>
+          대표 관광자원이 관광객의 관심과 다음 행동을 어디로 연결하는지 관찰합니다.
+        </p>
+      </div>
+
+      <div className="flagship-tourism-grid">
+        {flagshipTourism.map((entity) => (
+          <button
+            key={entity.key}
+            type="button"
+            className={`flagship-tourism-card${entity.available ? " is-live" : ""}`}
+            onClick={() => {
+              const question = `${entity.name}와 연결된 관광 흐름은?`;
+              setNetworkQuestion(question);
+              askNetwork(question);
+            }}
+          >
+            <small>{entity.available ? "LIVE" : "관찰 중"}</small>
+            <strong>{entity.name}</strong>
+
+            <div>
+              <span>
+                <b>{entity.interest}</b>
+                관심
+              </span>
+              <span>
+                <b>{entity.movement}</b>
+                이동 의도
+              </span>
+              <span>
+                <b>{entity.connections}</b>
+                연결 자원
+              </span>
+            </div>
+
+            <em>
+              {entity.available
+                ? "관계망 보기 →"
+                : "공개 기준을 충족한 연결을 기다리는 중"}
+            </em>
+          </button>
+        ))}
+      </div>
+    </section>
     {liveInsights && (
       <section className="network-intelligence">
         <div className="network-intelligence-head">
