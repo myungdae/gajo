@@ -12,6 +12,7 @@ export default function VoiceInputDialog({state,text,reviewing,error,locale,onCh
   onConfirm:()=>void;onCancel:()=>void;onType:()=>void;
 }){
   const dialog=useRef<HTMLDialogElement>(null);
+  const skipRestoreFocusRef=useRef(false);
   const cancelRef=useRef(onCancel);cancelRef.current=onCancel;
   const sending=state==='EXECUTING',copy=VOICE_COPY[locale];
   useLayoutEffect(()=>{
@@ -41,7 +42,7 @@ export default function VoiceInputDialog({state,text,reviewing,error,locale,onCh
       window.removeEventListener('resize',resize);
       window.visualViewport?.removeEventListener('resize',resize);
       window.visualViewport?.removeEventListener('scroll',resize);
-      opener?.isConnected&&opener.focus({preventScroll:true});
+      if(!skipRestoreFocusRef.current) opener?.isConnected&&opener.focus({preventScroll:true});
     };
   },[]);
   useLayoutEffect(()=>{
@@ -64,7 +65,7 @@ export default function VoiceInputDialog({state,text,reviewing,error,locale,onCh
         : <>{state==='LISTENING'||state==='TRANSCRIBING'||state==='REQUESTING_PERMISSION'
             ? <button type="button" className="btn btn-primary speech-session-button" disabled={state!=='LISTENING'} onClick={onStop} aria-label={copy.stop}>{copy.stop}</button>
             : <button type="button" className="btn btn-primary speech-session-button" onClick={onSpeakAgain}>{copy.again}</button>}
-            {error&&<button type="button" className="btn btn-outline" onClick={onType}>{copy.text}</button>}</>}
+            {error&&<button type="button" className="btn btn-outline" onClick={()=>{skipRestoreFocusRef.current=true;onType();}}>{copy.text}</button>}</>}
       <button type="button" className="btn btn-outline voice-cancel voice-confirm-cancel" disabled={sending} onClick={onCancel}>{copy.cancel}</button>
     </div>
   </dialog>,document.body);
