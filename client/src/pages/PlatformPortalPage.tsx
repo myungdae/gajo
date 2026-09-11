@@ -5,7 +5,6 @@ import ExkoRegionKnowledgeLink from '../components/ExkoRegionKnowledgeLink';
 import NationwideRegionExplorer from '../components/NationwideRegionExplorer';
 import PortalRegionSearch from '../components/PortalRegionSearch';
 import PublicBrand from '../components/PublicBrand';
-import ConciergeDemoOverlay from '../components/ConciergeDemoOverlay';
 
 const journeyStages = [
   { stage: 'PLAN', korean: '여행 전', copy: '부모님과 합천 하루 여행하고 싶어요.' },
@@ -43,7 +42,6 @@ const serviceRoles = [
 ];
 
 export default function PlatformPortalPage() {
-  const [showConciergeDemo,setShowConciergeDemo]=useState(false);
   const [openDifference,setOpenDifference]=useState(0);
   return <div className="platform-page platform-portal-page">
     <header className="platform-header">
@@ -59,7 +57,6 @@ export default function PlatformPortalPage() {
           <div className="platform-hero-actions">
             <Link className="platform-primary-action" to="/regions">지역 AI 여행안내 시작하기</Link>
             <a className="platform-secondary-action" href="#why-exkovia" aria-label="ChatGPT·T맵과 무엇이 다른가요?">ChatGPT·T맵과 무엇이 다른가요?</a>
-<button className="platform-secondary-action" type="button" onClick={()=>setShowConciergeDemo(true)}>✨ 20초만 보세요</button>
           </div>
         </div>
 
@@ -126,12 +123,6 @@ export default function PlatformPortalPage() {
           {journeyStages.map((step, index) => <span key={step.stage}>{step.stage}<small>{step.korean}</small>{index < 3 && <i aria-hidden="true">→</i>}</span>)}
         </div>
       </section>
-    <ConciergeDemoOverlay
-  open={showConciergeDemo}
-  startLabel="지역 AI 여행 시작하기"
-  onClose={()=>setShowConciergeDemo(false)}
-  onStartTrip={()=>{setShowConciergeDemo(false);window.location.href="/regions";}}
-/>
 </main>
   </div>;
 }
