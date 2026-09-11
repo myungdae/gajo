@@ -81,14 +81,18 @@ export default function ContextResourceNetwork({
                 opacity={faded ? .07 : 1}
               >
                 <rect
-                  x={labelX - 20}
+                  x={labelX - 36}
                   y={labelY - 12}
-                  width="40"
+                  width="72"
                   height="24"
                   rx="12"
                 />
                 <text x={labelX} y={labelY + 5}>
-                  {e.total}
+                  {level === "INTEREST"
+                    ? `관심 ${e.total}`
+                    : level === "MOVEMENT_INTENT"
+                      ? `이동 ${e.total}`
+                      : `${e.total}`}
                 </text>
               </g>
             )}
@@ -129,7 +133,10 @@ export default function ContextResourceNetwork({
       {selectedId && !activeEdges.length && <p>선택한 자원에 현재 필터의 공개 가능한 직접 연결 근거가 없습니다.</p>}
       {activeEdges.map((e, i) => <p key={i}><strong>{data.nodes.find(n => n.id === e.source)?.label} {evidenceLevel(e) === 'RESOURCE_RELATIONSHIP' ? '↔' : '→'} {data.nodes.find(n => n.id === e.target)?.label}</strong><br/>{relationLabel(e)} · {e.basis}{e.total ? ` · ${e.total}회` : ''}</p>)}
     </details>
-    <p className="context-usage-note">관심 행동은 추천 노출·상세 열람이며, 이동 의도는 방문·소비를 증명하지 않습니다. 검증 이용은 동일 익명 흐름의 업소 QR 유입 후 다른 업소의 검증 혜택 이용입니다. {data.usage?.minimumCellSize || 5}건 미만은 비공개이며, 실제 이동 경로·식사·매출을 뜻하지 않습니다.{data.usage?.start && data.usage?.endExclusive && ` 집계: ${new Date(data.usage.start).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })} ~ ${new Date(data.usage.endExclusive).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })} (종료일 제외).`}</p>
+    <p className="context-usage-note">
+      관심 행동은 장소 상세 열람 등 적극적인 탐색 행동입니다. 이동 의도는 일정 저장·길찾기·전화·예약 등 다음 행동으로 이어질 가능성을 보여주며 실제 방문·소비를 증명하지 않습니다. QR과 검증 혜택 이용은 현장 이용을 확인하는 더 강한 근거로 별도 활용됩니다. 개인정보 보호를 위해 서로 다른 익명 여행 흐름 {data.usage?.minimumCellSize || 5}건 이상이 확인된 연결만 공개합니다. 실제 이동 경로·식사·매출을 뜻하지 않습니다.
+      {data.usage?.start && data.usage?.endExclusive && ` 집계: ${new Date(data.usage.start).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })} ~ ${new Date(data.usage.endExclusive).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })} (종료일 제외).`}
+    </p>
     <blockquote className="context-message">합천의 관광자원은 개별 장소가 아니라, 여행자의 현재 상황을 중심으로 연결될 때 하나의 지역경제 네트워크가 됩니다.</blockquote>
   </>;
 }

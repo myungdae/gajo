@@ -148,6 +148,44 @@ export default function HapcheonNetworkReportPage() {
 
     return ids;
   }, [data, live]);
+  const liveInsights = useMemo(() => {
+    if (live?.released?.status !== "AVAILABLE") return undefined;
+
+    const nodes = live.released.nodes || [];
+    const edges = live.released.edges || [];
+    const nodeName = new Map(nodes.map((node) => [node.id, node.name]));
+
+    const interest = [...edges]
+      .filter((edge) => edge.stage === "INTEREST")
+      .sort((a, b) => b.total - a.total)[0];
+
+    const movement = [...edges]
+      .filter((edge) => edge.stage === "MOVEMENT_INTENT")
+      .sort((a, b) => b.total - a.total)[0];
+
+    const threshold = [...edges]
+      .filter((edge) => edge.total === 5)
+      .sort((a, b) => {
+        if (a.stage === b.stage) return 0;
+        return a.stage === "MOVEMENT_INTENT" ? -1 : 1;
+      })[0];
+
+    const describe = (edge?: LiveNetworkEdge) =>
+      edge
+        ? {
+            source: nodeName.get(edge.sourceNodeId) || "지역자원",
+            target: nodeName.get(edge.targetNodeId) || "지역자원",
+            total: edge.total,
+            stage: edge.stage,
+          }
+        : undefined;
+
+    return {
+      strongestInterest: describe(interest),
+      strongestMovement: describe(movement),
+      thresholdConnection: describe(threshold),
+    };
+  }, [live]);
   const groups = useMemo(() => GROUPS.map(([kind, label]) => ({ kind, label, nodes: data?.nodes.filter((node) => node.kind === kind) || [] })), [data]);
   if (!data) return <main className="mayor-login"><PublicBrand compact linked={false}/><small>합천 정책 리포트 · 읽기 전용</small><h1>합천 지역 중심 네트워크</h1><p>{error || "실제 합천 지역 데이터를 불러오고 있습니다."}</p>{error&&<button onClick={()=>void load()}>다시 시도</button>}</main>;
   return <main className="mayor-report">
@@ -195,6 +233,78 @@ export default function HapcheonNetworkReportPage() {
             })}
           </small>
         )}
+      </section>
+    )}
+    {liveInsights && (
+      <section className="network-intelligence">
+        <div className="network-intelligence-head">
+          <small>TOURISM INTELLIGENCE</small>
+          <h2>이 그래프가 말하는 것</h2>
+          <p>
+            최근 30일 익명 관광객 행동에서 공개 기준을 통과한 연결을 읽습니다.
+          </p>
+        </div>
+
+        <div className="network-intelligence-grid">
+          {liveInsights.strongestInterest && (
+            <article>
+              <small>가장 강한 관심 연결</small>
+              <strong>
+                {liveInsights.strongestInterest.source}
+                <span>→</span>
+                {liveInsights.strongestInterest.target}
+              </strong>
+              <p>
+                관심 {liveInsights.strongestInterest.total}
+                {" · "}
+                최근 30일 공개 연결 중 가장 강한 관심 흐름입니다.
+              </p>
+            </article>
+          )}
+
+          {liveInsights.strongestMovement && (
+            <article>
+              <small>다음 행동으로 이어진 흐름</small>
+              <strong>
+                {liveInsights.strongestMovement.source}
+                <span>→</span>
+                {liveInsights.strongestMovement.target}
+              </strong>
+              <p>
+                이동 {liveInsights.strongestMovement.total}
+                {" · "}
+                일정 저장·길찾기 등 다음 행동 의도가 확인된 연결입니다.
+              </p>
+            </article>
+          )}
+
+          {liveInsights.thresholdConnection && (
+            <article>
+              <small>지켜볼 연결</small>
+              <strong>
+                {liveInsights.thresholdConnection.source}
+                <span>→</span>
+                {liveInsights.thresholdConnection.target}
+              </strong>
+              <p>
+                {liveInsights.thresholdConnection.stage === "MOVEMENT_INTENT"
+                  ? "이동"
+                  : "관심"}{" "}
+                {liveInsights.thresholdConnection.total}
+                {" · "}
+                현재 공개 기준에 막 도달한 연결입니다.
+              </p>
+            </article>
+          )}
+        </div>
+
+        <aside className="network-intelligence-policy">
+          <strong>정책적으로 볼 점</strong>
+          <p>
+            지금 단계에서는 어떤 지역자원 사이에서 관심과 다음 행동이 반복되는지를 관찰합니다.
+            기간별 데이터가 쌓이면 증가·감소·새 연결·끊어진 연결까지 비교하게 됩니다.
+          </p>
+        </aside>
       </section>
     )}
     <section className="ecosystem-panel"><div className="panel-title"><div><small>REGIONAL OPERATIONAL ONTOLOGY</small><h2>합천 지역 중심 네트워크 그래프</h2></div><div className="legend"><span><i className="verified"/>검증 데이터</span><span><i className="partial"/>추가 검증 필요</span></div></div>
