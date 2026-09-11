@@ -35,12 +35,25 @@ type LiveNetworkSnapshot = {
   };
 };
 
+type NetworkCategory = "숙박" | "음식점" | "카페" | "관광";
+
+type NetworkQuery = {
+  sourceCategory?: NetworkCategory;
+  relatedCategory?: NetworkCategory;
+  stage?: "INTEREST" | "MOVEMENT_INTENT";
+  ranking?: "TOP";
+  focusNodeIds?: string[];
+};
+
 export default function HapcheonNetworkReportPage() {
   const [data, setData] = useState<Ecosystem>();
   const [live, setLive] = useState<LiveNetworkSnapshot>();
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<PlaceNode>();
   const [showNetworkDemo, setShowNetworkDemo] = useState(false);
+  const [networkQuestion, setNetworkQuestion] = useState("");
+  const [networkAnswer, setNetworkAnswer] = useState<string>();
+  const [activeNetworkQuery, setActiveNetworkQuery] = useState<NetworkQuery>({});
   const [networkDemoStep, setNetworkDemoStep] = useState(0);
   const load = async () => {
     setError("");
@@ -124,6 +137,76 @@ export default function HapcheonNetworkReportPage() {
       ],
     };
   }, [data, live]);
+  const queryDisplayData = useMemo<Ecosystem | undefined>(() => {
+    if (!displayData) return undefined;
+
+    const hasQuery =
+      activeNetworkQuery.stage ||
+      activeNetworkQuery.relatedCategory ||
+      activeNetworkQuery.ranking ||
+      activeNetworkQuery.focusNodeIds?.length;
+
+    if (!hasQuery) return displayData;
+
+    let edges = [...displayData.edges];
+
+    if (activeNetworkQuery.stage) {
+      edges = edges.filter(
+        (edge) => edge.evidenceLevel === activeNetworkQuery.stage,
+      );
+    }
+
+    if (activeNetworkQuery.relatedCategory) {
+      const categoryIds = new Set(
+        displayData.nodes
+          .filter(
+            (node) =>
+              node.kind === activeNetworkQuery.relatedCategory,
+          )
+          .map((node) => node.id),
+      );
+
+      edges = edges.filter(
+        (edge) =>
+          categoryIds.has(edge.source) ||
+          categoryIds.has(edge.target),
+      );
+    }
+
+    if (activeNetworkQuery.focusNodeIds?.length) {
+      const liveNameById = new Map(
+        (live?.released?.nodes || []).map((node) => [node.id, node.name]),
+      );
+
+      const focusNames = new Set(
+        activeNetworkQuery.focusNodeIds
+          .map((id) => liveNameById.get(id))
+          .filter((name): name is string => Boolean(name)),
+      );
+
+      const focusIds = new Set(
+        displayData.nodes
+          .filter((node) => focusNames.has(node.label))
+          .map((node) => node.id),
+      );
+
+      edges = edges.filter(
+        (edge) =>
+          focusIds.has(edge.source) ||
+          focusIds.has(edge.target),
+      );
+    }
+
+    const nodeIds = new Set(
+      edges.flatMap((edge) => [edge.source, edge.target]),
+    );
+
+    return {
+      ...displayData,
+      nodes: displayData.nodes.filter((node) => nodeIds.has(node.id)),
+      edges,
+    };
+  }, [displayData, activeNetworkQuery, live]);
   const livePriorityNodeIds = useMemo(() => {
     if (!data || live?.released?.status !== "AVAILABLE") return new Set<string>();
 
@@ -186,6 +269,111 @@ export default function HapcheonNetworkReportPage() {
       thresholdConnection: describe(threshold),
     };
   }, [live]);
+  const askNetwork = (question: string) => {
+    const q = question.trim();
+
+    if (!q || live?.released?.status !== "AVAILABLE") {
+      setNetworkAnswer("현재 공개 가능한 Live Network 데이터가 충분하지 않습니다.");
+      setActiveNetworkQuery({});
+      return;
+    }
+
+    const nodes = live.released.nodes || [];
+    const edges = live.released.edges || [];
+    const nodeName = new Map(nodes.map((node) => [node.id, node.name]));
+
+    const describe = (edge: LiveNetworkEdge) =>
+      `${nodeName.get(edge.sourceNodeId) || "지역자원"} → ${
+        nodeName.get(edge.targetNodeId) || "지역자원"
+      } · ${edge.stage === "MOVEMENT_INTENT" ? "이동" : "관심"} ${edge.total}`;
+
+    const categoryFromQuestion = (): NetworkCategory | undefined => {
+      if (/숙박|펜션|호텔/.test(q)) return "숙박";
+      if (/음식|식당|맛집/.test(q)) return "음식점";
+      if (/카페|커피/.test(q)) return "카페";
+      if (/관광|명소|관광지/.test(q)) return "관광";
+      return undefined;
+    };
+
+    const category = categoryFromQuestion();
+
+    const query: NetworkQuery = {
+      stage: /이동|다음 행동|길찾기|일정/.test(q)
+        ? "MOVEMENT_INTENT"
+        : /관심/.test(q)
+          ? "INTEREST"
+          : undefined,
+      relatedCategory: category,
+      ranking: /가장|강한|제일|top/i.test(q) ? "TOP" : undefined,
+    };
+
+    let filtered = [...edges];
+
+    if (query.stage) {
+      filtered = filtered.filter((edge) => edge.stage === query.stage);
+    }
+
+    if (query.relatedCategory) {
+      const ids = new Set(
+        nodes
+          .filter((node) => node.category === query.relatedCategory)
+          .map((node) => node.id),
+      );
+
+      filtered = filtered.filter(
+        (edge) =>
+          ids.has(edge.sourceNodeId) ||
+          ids.has(edge.targetNodeId),
+      );
+    }
+
+    filtered.sort((a, b) => b.total - a.total);
+
+    if (query.ranking === "TOP") {
+      filtered = filtered.slice(0, 1);
+    } else {
+      filtered = filtered.slice(0, 5);
+    }
+
+    query.focusNodeIds = [
+      ...new Set(
+        filtered.flatMap((edge) => [
+          edge.sourceNodeId,
+          edge.targetNodeId,
+        ]),
+      ),
+    ];
+
+    setActiveNetworkQuery(query);
+
+    if (!filtered.length) {
+      setNetworkAnswer(
+        "현재 공개 기준을 충족하는 해당 조건의 연결은 없습니다.",
+      );
+      return;
+    }
+
+    const condition = [
+      query.relatedCategory ? `${query.relatedCategory} 관련` : "",
+      query.stage === "MOVEMENT_INTENT"
+        ? "이동 의도"
+        : query.stage === "INTEREST"
+          ? "관심"
+          : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    setNetworkAnswer(
+      `${condition ? `${condition} ` : ""}주요 연결은 ${filtered
+        .map(describe)
+        .join(", ")}입니다. ${
+        query.stage === "MOVEMENT_INTENT"
+          ? "이동 의도는 실제 방문·소비를 증명하지 않습니다."
+          : "공개된 익명 행동 흐름을 기준으로 한 결과입니다."
+      }`,
+    );
+  };
   const groups = useMemo(() => GROUPS.map(([kind, label]) => ({ kind, label, nodes: data?.nodes.filter((node) => node.kind === kind) || [] })), [data]);
   if (!data) return <main className="mayor-login"><PublicBrand compact linked={false}/><small>합천 정책 리포트 · 읽기 전용</small><h1>합천 지역 중심 네트워크</h1><p>{error || "실제 합천 지역 데이터를 불러오고 있습니다."}</p>{error&&<button onClick={()=>void load()}>다시 시도</button>}</main>;
   return <main className="mayor-report">
@@ -307,7 +495,78 @@ export default function HapcheonNetworkReportPage() {
         </aside>
       </section>
     )}
-    <section className="ecosystem-panel"><div className="panel-title"><div><small>REGIONAL OPERATIONAL ONTOLOGY</small><h2>합천 지역 중심 네트워크 그래프</h2></div><div className="legend"><span><i className="verified"/>검증 데이터</span><span><i className="partial"/>추가 검증 필요</span></div></div>
+    <section className="network-ask">
+      <div className="network-ask-head">
+        <small>ASK THE LIVE NETWORK</small>
+        <h2>이 네트워크에 물어보기</h2>
+        <p>
+          합천 관광 Live Network가 가진 공개 데이터 안에서 질문에 답합니다.
+        </p>
+      </div>
+
+      <div className="network-ask-examples">
+        {[
+          "가장 강한 연결은?",
+          "숙박에서 어디로 이어지나?",
+          "이동 의도만 보여줘",
+          "카페와 연결된 흐름은?",
+          "정책적으로 무엇을 볼까?",
+        ].map((example) => (
+          <button
+            key={example}
+            type="button"
+            onClick={() => {
+              setNetworkQuestion(example);
+              askNetwork(example);
+            }}
+          >
+            {example}
+          </button>
+        ))}
+      </div>
+
+      <form
+        className="network-ask-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          askNetwork(networkQuestion);
+        }}
+      >
+        <input
+          value={networkQuestion}
+          onChange={(event) => setNetworkQuestion(event.target.value)}
+          placeholder="예: 숙박에서 음식점으로 이어지는 흐름은?"
+          aria-label="합천 관광 Live Network 질문"
+        />
+        <button type="submit">물어보기</button>
+      </form>
+
+      {networkAnswer && (
+        <div className="network-ask-answer" role="status">
+          <strong>Live Network 답변</strong>
+          <p>{networkAnswer}</p>
+          <button
+            type="button"
+            className="network-query-reset"
+            onClick={() => {
+              setActiveNetworkQuery({});
+              setNetworkQuestion("");
+              setNetworkAnswer(undefined);
+            }}
+          >
+            전체 네트워크 보기
+          </button>
+        </div>
+      )}
+
+      <p className="network-ask-note">
+        답변은 현재 공개 기준을 충족한 익명 행동 데이터에 한정됩니다.
+        실제 방문·소비·매출 여부는 별도 근거가 필요합니다.
+      </p>
+    </section>
+    <section className="ecosystem-panel"><div className="panel-title"><div><small>HAPCHEON TOURISM INTELLIGENCE COCKPIT</small>
+<h2>합천 관광 인텔리전스 콕핏</h2>
+<p className="cockpit-subtitle">관광객의 행동이 매일 그려내는 살아 있는 관광 네트워크</p></div><div className="legend"><span><i className="verified"/>검증 데이터</span><span><i className="partial"/>추가 검증 필요</span></div></div>
             <button
         type="button"
         className="network-demo-trigger"
@@ -319,7 +578,7 @@ export default function HapcheonNetworkReportPage() {
         ✨ 이 그래프가 무엇을 보여주는지, 15초만 보세요
       </button>
 
-      <ContextResourceNetwork data={displayData || data} selected={selected} onSelect={setSelected} priorityNodeIds={livePriorityNodeIds}/>
+      <ContextResourceNetwork data={queryDisplayData || displayData || data} selected={selected} onSelect={setSelected} priorityNodeIds={livePriorityNodeIds}/>
       <h3 className="resource-details-title">연결된 지역자원 상세</h3>
       <div className="resource-groups">{groups.map(group=><section key={group.kind} className={`resource-group kind-${group.kind.toLowerCase()}`}><h3>{group.label}<small>{group.nodes.length}</small></h3><div>{group.nodes.map(node=><button key={node.id} className={node.status === "VERIFIED" ? "verified" : "partial"} aria-pressed={selected?.id === node.id} onClick={()=>setSelected(node)}>{node.label}</button>)}</div>{!group.nodes.length && <p>공개 등록 자원 없음</p>}</section>)}</div>
       <p className="context-usage-note">지역경제 연결 목표</p>
