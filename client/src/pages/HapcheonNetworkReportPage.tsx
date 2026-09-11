@@ -76,7 +76,23 @@ export default function HapcheonNetworkReportPage() {
     }
   };
 
-  useEffect(() => { void load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { void load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const hasActiveQuery =
+      activeNetworkQuery.stage ||
+      activeNetworkQuery.relatedCategory ||
+      activeNetworkQuery.ranking ||
+      activeNetworkQuery.focusNodeIds?.length;
+
+    if (!hasActiveQuery) return;
+
+    window.setTimeout(() => {
+      document
+        .getElementById("cockpit-network-graph")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
+  }, [activeNetworkQuery]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!showNetworkDemo) {
@@ -550,9 +566,31 @@ export default function HapcheonNetworkReportPage() {
         실제 방문·소비·매출 여부는 별도 근거가 필요합니다.
       </p>
     </section>
-    <section className="ecosystem-panel"><div className="panel-title"><div><small>HAPCHEON TOURISM INTELLIGENCE COCKPIT</small>
+    <section id="cockpit-network-graph" className="ecosystem-panel"><div className="panel-title"><div><small>HAPCHEON TOURISM INTELLIGENCE COCKPIT</small>
 <h2>합천 관광 인텔리전스 콕핏</h2>
-<p className="cockpit-subtitle">관광객의 행동이 매일 그려내는 살아 있는 관광 네트워크</p></div><div className="legend"><span><i className="verified"/>검증 데이터</span><span><i className="partial"/>추가 검증 필요</span></div></div>
+<p className="cockpit-subtitle">관광객의 행동이 매일 그려내는 살아 있는 관광 네트워크</p>
+
+{networkAnswer && activeNetworkQuery.focusNodeIds?.length ? (
+  <div className="cockpit-active-query">
+    <div>
+      <small>현재 질문</small>
+      <strong>{networkQuestion}</strong>
+      <span>
+        질문 조건에 맞는 Live Network를 강조해서 보고 있습니다.
+      </span>
+    </div>
+    <button
+      type="button"
+      onClick={() => {
+        setActiveNetworkQuery({});
+        setNetworkQuestion("");
+        setNetworkAnswer(undefined);
+      }}
+    >
+      전체 네트워크
+    </button>
+  </div>
+) : null}</div><div className="legend"><span><i className="verified"/>검증 데이터</span><span><i className="partial"/>추가 검증 필요</span></div></div>
             <button
         type="button"
         className="network-demo-trigger"
