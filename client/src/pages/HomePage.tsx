@@ -307,15 +307,7 @@ export default function HomePage() {
       <button
         type="button"
         className="home-safety-action"
-        onClick={() =>
-          navigate(link("/concierge?mode=now"), {
-            state: {
-              tripMode: "NOW",
-              freeTextOpen: true,
-              entryMessage: "현재 합천의 안전·재난 정보를 확인하고 내 여행에 미치는 영향을 알려주세요."
-            }
-          })
-        }
+        onClick={() => navigate(link("/safety"))}
       >
         <span className="home-safety-action-icon" aria-hidden="true">⚠️</span>
 
