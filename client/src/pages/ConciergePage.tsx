@@ -1191,7 +1191,7 @@ function ResultPanel({
 
   return (
     <section className="recommendation-section">
-      {rec && (
+      {rec && itinerarySteps.length > 0 && (
         <>
           <h2>{SHARED_VISITOR_COPY.recommendationHeading}</h2>
           {rec.reasonSummary && (
