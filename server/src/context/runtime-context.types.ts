@@ -26,7 +26,8 @@ export type RuntimeChangeType =
   | 'CLOSING_SOON'
   | 'DAY_TO_NIGHT'
   | 'RESERVATION_UNAVAILABLE'
-  | 'LOCATION_CHANGED';
+  | 'LOCATION_CHANGED'
+  | 'OFFICIAL_SAFETY_ALERT';
 
 export type ItineraryItemStatus = 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'SKIPPED';
 export type OperationalWeatherState = 'CLEAR' | 'CLOUDY' | 'LIGHT_RAIN' | 'RAIN' | 'HEAVY_RAIN' | 'THUNDERSTORM' | 'SNOW' | 'UNKNOWN';

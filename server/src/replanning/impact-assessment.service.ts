@@ -20,6 +20,48 @@ export class ImpactAssessmentService {
       affected = future.filter((step: any) => this.isOutdoor(step, event, evidence));
       const unsafeWeather = event.eventType === 'HEAVY_RAIN' || ['RAIN', 'HEAVY_RAIN', 'THUNDERSTORM', 'SNOW'].includes(String(event.currentValue));
       if (affected.length) { level = unsafeWeather ? 'HIGH' : 'MEDIUM'; reasons.push('미완료 야외 활동이 현재 날씨의 영향을 받음'); }
+    } else if (event.eventType === 'OFFICIAL_SAFETY_ALERT') {
+      const alert =
+        event.currentValue && typeof event.currentValue === 'object'
+          ? event.currentValue as any
+          : {};
+
+      const alertType = String(
+        alert.alertType || alert.type || alert.warningType || ''
+      ).toUpperCase();
+
+      const outdoorSafetyAlert = [
+        'RAIN',
+        'HEAVY_RAIN',
+        'TYPHOON',
+        'WIND',
+        'STRONG_WIND',
+        'SNOW',
+        'HEAT',
+      ].some((type) => alertType.includes(type));
+
+      if (outdoorSafetyAlert) {
+        affected = future.filter((step: any) =>
+          this.isOutdoor(step, event, evidence)
+        );
+      }
+
+      if (affected.length) {
+        level =
+          event.severity === 'CRITICAL'
+            ? 'CRITICAL'
+            : event.severity === 'HIGH'
+              ? 'HIGH'
+              : event.severity === 'MEDIUM'
+                ? 'MEDIUM'
+                : 'LOW';
+
+        reasons.push(
+          alert.title
+            ? `공식 안전특보 '${alert.title}'가 미완료 야외 일정에 영향을 줄 수 있음`
+            : '공식 안전특보가 미완료 야외 일정에 영향을 줄 수 있음'
+        );
+      }
     } else if (event.eventType === 'LOCATION_CHANGED') {
       const next = future[0];
       if (next) {

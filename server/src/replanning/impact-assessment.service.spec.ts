@@ -20,4 +20,53 @@ describe('ImpactAssessmentService', () => {
     expect(service.assess(rain, itinerary, {}).level).toBe('HIGH');
     expect(service.assess({ ...rain, affectedItineraryItemIds: undefined }, { steps: [{ itemId: 'inside', status: 'PLANNED', facilityUri: 'facility:inside' }] }, {}).level).toBe('NONE');
   });
+  it('marks a future outdoor item HIGH for an official heavy-rain safety alert', () => {
+    const event: any = {
+      eventType: 'OFFICIAL_SAFETY_ALERT',
+      observedAt: '',
+      severity: 'HIGH',
+      evidence: ['기상청 공식 특보'],
+      currentValue: {
+        alertType: 'HEAVY_RAIN',
+        title: '합천군 호우주의보',
+        source: 'KMA',
+      },
+    };
+
+    const result = service.assess(event, itinerary, {});
+
+    expect(result.level).toBe('HIGH');
+    expect(result.affectedItems.map((item) => item.itemId)).toEqual(['walk']);
+    expect(result.reasons[0]).toContain('합천군 호우주의보');
+  });
+
+  it('keeps indoor-only plans unaffected by an official heavy-rain safety alert', () => {
+    const event: any = {
+      eventType: 'OFFICIAL_SAFETY_ALERT',
+      observedAt: '',
+      severity: 'HIGH',
+      evidence: ['기상청 공식 특보'],
+      currentValue: {
+        alertType: 'HEAVY_RAIN',
+        title: '합천군 호우주의보',
+        source: 'KMA',
+      },
+    };
+
+    const indoorOnly = {
+      steps: [
+        {
+          itemId: 'inside',
+          status: 'PLANNED',
+          facilityUri: 'facility:inside',
+          programLabel: '실내 전시',
+        },
+      ],
+    };
+
+    const result = service.assess(event, indoorOnly, {});
+
+    expect(result.level).toBe('NONE');
+    expect(result.affectedItems).toHaveLength(0);
+  });
 });
