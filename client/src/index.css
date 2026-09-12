@@ -4031,7 +4031,7 @@ dialog.voice-dialog .voice-dialog-actions > button {
 }
 .home-safety-action {
   width: 100%;
-  margin: 6px 0 8px;
+  margin: -6px 0 -4px;
   padding: 14px 16px;
   border: 1px solid #d8b75b;
   border-radius: 16px;
