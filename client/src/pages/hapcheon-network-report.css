@@ -853,3 +853,31 @@
     grid-template-columns: 1fr;
   }
 }
+
+.change-intelligence-meaning,
+.change-intelligence-policy {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba(147, 119, 72, 0.18);
+  border-radius: 14px;
+  background: rgba(255, 252, 245, 0.72);
+}
+
+.change-intelligence-meaning small,
+.change-intelligence-policy small {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.change-intelligence-meaning p,
+.change-intelligence-policy p {
+  margin: 0;
+  line-height: 1.65;
+}
+
+.change-intelligence-meaning p {
+  font-weight: 700;
+}

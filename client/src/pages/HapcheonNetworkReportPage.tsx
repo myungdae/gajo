@@ -630,6 +630,20 @@ export default function HapcheonNetworkReportPage() {
           </p>
         </div>
 
+          <div className="change-intelligence-meaning">
+            <small>이 변화가 뜻하는 것</small>
+            <p>
+              관광객의 실제 행동이 개별 관광자원을 서로 연결하기 시작했습니다.
+            </p>
+          </div>
+
+          <div className="change-intelligence-policy">
+            <small>이번 변화에서 볼 점</small>
+            <p>
+              반복해서 강해지는 연결과 아직 연결이 약한 자원을 보면,
+              다음 관광동선과 지역상권 연결의 우선순위를 찾을 수 있습니다.
+            </p>
+          </div>
         {(change.changes?.newlyReleased?.length ||
           change.changes?.strengthened?.length) ? (
           <div className="change-intelligence-highlights">
