@@ -8,3 +8,21 @@
   font-size: 16px;
   font-weight: 700;
 }
+
+/* Clearer text-entry field */
+.runtime-journey-entry textarea {
+  background: #fff;
+  border: 2px solid #8aa79d;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.runtime-journey-entry textarea::placeholder {
+  color: #65756f;
+  opacity: 1;
+}
+
+.runtime-journey-entry textarea:focus {
+  border-color: #2f6f63;
+  outline: 3px solid rgba(47,111,99,0.14);
+  outline-offset: 1px;
+}

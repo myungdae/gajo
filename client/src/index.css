@@ -4013,7 +4013,19 @@ dialog.voice-dialog .voice-dialog-actions > button {
 }
 
 
-.location-confirmation .location-change-action {
+/* Prominent alternate-location action */
+.location-methods .location-alternate-action,
+.location-confirmation .location-alternate-action {
   font-size: 17px;
   font-weight: 700;
+  text-align: center;
+  min-height: 40px;
+}
+
+.now-runtime-dashboard .location-methods .location-alternate-action,
+.now-runtime-dashboard .location-confirmation .location-alternate-action {
+  font-size: 17px;
+  font-weight: 700;
+  text-align: center;
+  min-height: 40px;
 }
