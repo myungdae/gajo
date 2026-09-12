@@ -303,6 +303,37 @@ export default function HomePage() {
       </button>
     </div>
 
+    {region.id === "hapcheon" && (
+      <button
+        type="button"
+        className="home-safety-action"
+        onClick={() =>
+          navigate(link("/concierge?mode=now"), {
+            state: {
+              tripMode: "NOW",
+              freeTextOpen: true,
+              entryMessage: "현재 합천의 안전·재난 정보를 확인하고 내 여행에 미치는 영향을 알려주세요."
+            }
+          })
+        }
+      >
+        <span className="home-safety-action-icon" aria-hidden="true">⚠️</span>
+
+        <span className="home-safety-action-copy">
+          <strong>
+            {language === "ko" ? "안전·재난" : "Safety & Emergency"}
+          </strong>
+          <small>
+            {language === "ko"
+              ? "기상특보·재난정보가 내 여행에 미치는 영향을 확인합니다."
+              : "Check how weather alerts and hazards may affect your trip."}
+          </small>
+        </span>
+
+        <span className="home-safety-action-arrow" aria-hidden="true">›</span>
+      </button>
+    )}
+
     <RuntimeJourneyEntry
       loading={false}
       onCreate={createJourney}
