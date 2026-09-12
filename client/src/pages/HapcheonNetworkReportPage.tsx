@@ -999,6 +999,100 @@ export default function HapcheonNetworkReportPage() {
         </div>
       </div>
     )}
+    {change?.status === "AVAILABLE" && change.summary && (
+      <section className="coa-panel">
+        <div className="coa-panel-head">
+          <small>COURSES OF ACTION · RUNTIME DECISION SUPPORT</small>
+          <h2>3가지 실행방안</h2>
+          <p>
+            현재 관측된 익명 행동과 지역 연결 변화를 바탕으로 비교한 검토 선택지입니다.
+            최종 판단은 담당자가 합니다.
+          </p>
+        </div>
+
+        <div className="coa-grid">
+          <article className="coa-card">
+            <div className="coa-card-head">
+              <span>COA-A</span>
+              <strong>강한 연결 확대</strong>
+              <em>빠른 성과형</em>
+            </div>
+            <p>
+              최근 반복되거나 강화되는 관광자원 간 연결을 우선 활용해
+              추천 동선과 연계 자원 후보로 검토합니다.
+            </p>
+            <dl>
+              <div>
+                <dt>근거</dt>
+                <dd>강해진 연결 +{change.summary.strengthened}</dd>
+              </div>
+              <div>
+                <dt>기대</dt>
+                <dd>이미 나타난 행동 흐름을 활용하므로 실행 가능성이 높습니다.</dd>
+              </div>
+              <div>
+                <dt>주의</dt>
+                <dd>일부 인기 자원으로 이용이 집중될 가능성을 함께 봐야 합니다.</dd>
+              </div>
+            </dl>
+          </article>
+
+          <article className="coa-card">
+            <div className="coa-card-head">
+              <span>COA-B</span>
+              <strong>약한 연결 보완</strong>
+              <em>균형 확장형</em>
+            </div>
+            <p>
+              약해지거나 더 이상 공개되지 않는 연결을 살펴보고,
+              관광·음식·숙박 사이의 끊긴 흐름을 보완할 후보를 찾습니다.
+            </p>
+            <dl>
+              <div>
+                <dt>근거</dt>
+                <dd>
+                  약해진 연결 {change.summary.weakened} · 공개 중단 {change.summary.noLongerPublic}
+                </dd>
+              </div>
+              <div>
+                <dt>기대</dt>
+                <dd>특정 자원에 치우치지 않는 체류 동선 확장을 검토할 수 있습니다.</dd>
+              </div>
+              <div>
+                <dt>주의</dt>
+                <dd>연결이 약한 이유를 실제 이용 데이터로 추가 확인해야 합니다.</dd>
+              </div>
+            </dl>
+          </article>
+
+          <article className="coa-card">
+            <div className="coa-card-head">
+              <span>COA-C</span>
+              <strong>신규 연결 실험</strong>
+              <em>가치 발굴형</em>
+            </div>
+            <p>
+              이번 집계에서 새롭게 공개된 연결을 후보로 삼아
+              새로운 연계 동선과 지역상권 연결 가능성을 시험합니다.
+            </p>
+            <dl>
+              <div>
+                <dt>근거</dt>
+                <dd>새로 공개된 연결 +{change.summary.newlyReleased}</dd>
+              </div>
+              <div>
+                <dt>기대</dt>
+                <dd>기존에 보이지 않던 관광객 이동 패턴을 새 가치로 전환할 가능성이 있습니다.</dd>
+              </div>
+              <div>
+                <dt>주의</dt>
+                <dd>일시적 현상인지 반복되는 연결인지 다음 집계에서 검증해야 합니다.</dd>
+              </div>
+            </dl>
+          </article>
+        </div>
+      </section>
+    )}
     <footer><strong>검색에서 행동으로</strong><p>방문 → 지역 내 이동 → 식사·체험·숙박 → 체류 연장·지역 소비로 연결하는 합천형 AI 관광 실행 플랫폼</p></footer>
   </main>;
 }

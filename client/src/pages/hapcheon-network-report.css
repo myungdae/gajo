@@ -881,3 +881,102 @@
 .change-intelligence-meaning p {
   font-weight: 700;
 }
+.coa-panel {
+  margin-top: 28px;
+  padding: 24px;
+  border: 1px solid rgba(34, 82, 74, 0.16);
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(245,250,247,0.96), rgba(255,255,255,0.98));
+}
+
+.coa-panel-head small {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #55766f;
+}
+
+.coa-panel-head h2 {
+  margin: 0;
+}
+
+.coa-panel-head p {
+  margin: 8px 0 0;
+  line-height: 1.65;
+  color: #5d6965;
+}
+
+.coa-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.coa-card {
+  padding: 18px;
+  border: 1px solid rgba(34, 82, 74, 0.14);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.coa-card-head {
+  display: grid;
+  gap: 5px;
+}
+
+.coa-card-head span {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #2f6f63;
+}
+
+.coa-card-head strong {
+  font-size: 18px;
+}
+
+.coa-card-head em {
+  width: fit-content;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #eef6f2;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+  color: #3f695f;
+}
+
+.coa-card > p {
+  margin: 12px 0;
+  line-height: 1.6;
+}
+
+.coa-card dl {
+  margin: 0;
+}
+
+.coa-card dl div {
+  padding: 10px 0;
+  border-top: 1px solid #edf1ef;
+}
+
+.coa-card dt {
+  margin-bottom: 3px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #75817d;
+}
+
+.coa-card dd {
+  margin: 0;
+  line-height: 1.5;
+}
+
+@media (max-width: 860px) {
+  .coa-grid {
+    grid-template-columns: 1fr;
+  }
+}
