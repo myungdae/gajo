@@ -2,10 +2,17 @@ import { BadRequestException, Body, Controller, Get, Post, Query } from '@nestjs
 import { LiveRuntimeHydrationService } from './live-runtime-hydration.service';
 import { RuntimeContextService } from './runtime-context.service';
 import { LocationHydrationService, LocationObservation } from './location-hydration.service';
+import { SafetyAlertProviderService } from './safety-alert-provider.service';
 
 @Controller('api/runtime-context')
 export class LiveRuntimeController {
-  constructor(private readonly hydration: LiveRuntimeHydrationService, private readonly contexts: RuntimeContextService, private readonly locationHydration: LocationHydrationService) {}
+  constructor(private readonly hydration: LiveRuntimeHydrationService, private readonly contexts: RuntimeContextService, private readonly locationHydration: LocationHydrationService, private readonly safetyAlerts: SafetyAlertProviderService) {}
+  @Get('safety')
+  async safety(@Query('regionId') regionId?: string) {
+    if (!regionId) throw new BadRequestException('regionId is required');
+    return this.safetyAlerts.getActiveAlerts(regionId);
+  }
+
   @Get('live')
   async live(@Query('contextNo') contextNo?: string,@Query('regionId') regionId?:string) {
     if(!regionId)throw new BadRequestException('regionId is required');

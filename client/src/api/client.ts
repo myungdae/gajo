@@ -808,6 +808,40 @@ export async function fetchLiveRuntimeContext(
   return data;
 }
 
+export type SafetyAlertProviderStatus =
+  | "READY"
+  | "NOT_CONFIGURED"
+  | "UNAVAILABLE";
+
+export interface SafetyAlert {
+  id: string;
+  regionId: string;
+  alertType: string;
+  title: string;
+  severity: "INFO" | "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  issuedAt: string;
+  effectiveFrom?: string;
+  effectiveUntil?: string;
+  source: "KMA" | "MOIS" | "OTHER_OFFICIAL";
+  sourceName: string;
+  sourceUrl?: string;
+  rawRegionName?: string;
+}
+
+export interface SafetyAlertResponse {
+  status: SafetyAlertProviderStatus;
+  source: "KMA";
+  checkedAt: string;
+  alerts: SafetyAlert[];
+}
+
+export async function fetchSafetyAlerts(regionId: string) {
+  const { data } = await api.get<SafetyAlertResponse>(
+    "/runtime-context/safety",
+    { params: { regionId } },
+  );
+  return data;
+}
 export async function hydrateRuntimeLocation(
   context: any,
   location: any,

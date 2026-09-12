@@ -6,6 +6,7 @@ import { OntologyModule } from '../ontology/ontology.module';
 import { SeedModule } from '../seed/seed.module';
 import { LiveWeatherProviderService } from './live-weather-provider.service';
 import { LiveRuntimeHydrationService } from './live-runtime-hydration.service';
+import { SafetyAlertProviderService } from './safety-alert-provider.service';
 import { LiveRuntimeController } from './live-runtime.controller';
 import { EntityLocationService } from './entity-location.service';
 import { LocationHydrationService } from './location-hydration.service';
@@ -19,7 +20,7 @@ import { AiUsageModule } from '../admin/ai-usage.module';
 
 @Module({
   imports: [OntologyModule, SeedModule, MasterDataModule, AiUsageModule],
-  providers: [GraphTraversalService, RuntimeContextService, LiveWeatherProviderService, LiveRuntimeHydrationService, PlaceWeatherContextProvider, EntityLocationService, LocationHydrationService, ContextExtractionGateway,
+  providers: [GraphTraversalService, RuntimeContextService, LiveWeatherProviderService, LiveRuntimeHydrationService, SafetyAlertProviderService, PlaceWeatherContextProvider, EntityLocationService, LocationHydrationService, ContextExtractionGateway,
     { provide: CONTEXT_EXTRACTOR, inject: [ConfigService], useFactory: (config:ConfigService) => {
       const provider=(config.get<string>('CONTEXT_EXTRACTOR_PROVIDER')||'openai').toLowerCase();
       if(provider==='openai') return new OpenAIContextExtractor(config);
