@@ -72,7 +72,7 @@ import {
 import { GlossaryText } from "../components/GlossaryText";
 import { isExplanationOnly } from "../aiResponseActions";
 import { understoodSummary } from "../understoodSummary";
-import { acceptVoiceResult, understandVoice, type VoiceResultFingerprint, type VoiceUnderstanding } from "../voice/voiceUx";
+import { acceptVoiceResult, canAutoExecuteTravelSpeech, understandVoice, type VoiceResultFingerprint, type VoiceUnderstanding } from "../voice/voiceUx";
 import { useRegionalLanguage } from "../RegionalLanguageContext";
 
 interface Message {
@@ -241,8 +241,15 @@ const [excludedDiscoveryIds, setExcludedDiscoveryIds] = useState<string[]>(
     const model=understandVoice(text);
     setVoiceDraft(text);setVoiceUnderstanding(model);
     cancelVoiceAutoExecute();
-    // 음성 인식기가 발화를 일찍 종료하더라도 자동 실행하지 않는다.
-    // 사용자가 인식 결과를 확인한 뒤 직접 실행하도록 한다.
+    if(canAutoExecuteTravelSpeech(model)){
+      setVoiceState("UNDERSTANDING");
+      voiceAutoExecuteTimerRef.current=setTimeout(()=>{
+        voiceAutoExecuteTimerRef.current=null;
+        void send(text,undefined,false,model);
+      },800);
+      return;
+    }
+
     setVoiceState("CONFIRMING");
   };
   const {

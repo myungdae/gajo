@@ -28,3 +28,24 @@ test("natural NOW needs distinguish current location from an explicit place anch
   assert.equal(destination.slots.place.value,"계룡산");
   assert.equal(destination.slots.place.confidence,"HIGH");
 });
+test("natural Korean itinerary-add variants normalize to the same risky action",()=>{
+  for(const text of [
+    "합천 영상테마파크 일정에 잡아줘",
+    "합천 영상테마파크 일정에 넣어줘",
+    "합천 영상테마파크 일정에 추가해줘",
+    "합천 영상테마파크 일정에 담아줘",
+  ]){
+    const model=understandVoice(text);
+    assert.equal(model.slots.place.value,"합천 영상테마파크");
+    assert.equal(model.slots.action.value,"일정에 담기");
+    assert.equal(model.slots.category.value,"여행 장소");
+    assert.deepEqual(
+      voiceConfirmationPolicy(model),
+      {mode:"CONFIRM",slots:[],reasons:["RISKY_ACTION"]}
+    );
+    assert.equal(
+      voiceExecutionText(model),
+      "합천 영상테마파크 일정에 담기"
+    );
+  }
+});
