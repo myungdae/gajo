@@ -89,4 +89,89 @@ describe('RuntimeReplanningService', () => {
     const result = await service.observeRuntime(previous, current, itinerary()); const explanation = result.proposedRevision.explanation;
     expect(explanation).toContain('강한 비'); expect(explanation).toContain('무릎'); expect(explanation).toContain('야외 산책'); expect(explanation).toContain('실내 저보행 프로그램');
   });
+  it('uses only indoor alternatives for an official heavy-rain safety alert', async () => {
+    const { service, traversal } = harness();
+    const { previous, current } = contexts();
+
+    traversal.findSuitablePrograms = () => [
+      { programUri: 'program:outdoor-alt', matchedOn: ['kneePain'] },
+      { programUri: 'program:indoor', matchedOn: ['kneePain'] },
+    ];
+
+    traversal.objectProps = (uri: string) =>
+      uri === 'program:outdoor-alt'
+        ? { heldAtFacility: ['facility:outdoor-alt'] }
+        : uri === 'program:indoor'
+          ? {
+              heldAtFacility: ['facility:indoor'],
+              requiresMobilityCondition: ['shortWalkingDistance'],
+            }
+          : {};
+
+    traversal.literalProps = (uri: string) =>
+      uri === 'facility:walk'
+        ? { isIndoor: 'false' }
+        : uri === 'program:outdoor-alt'
+          ? { isIndoor: 'false', durationMinutes: '45' }
+          : uri === 'facility:outdoor-alt'
+            ? { isIndoor: 'false' }
+            : uri === 'program:indoor'
+              ? { isIndoor: 'true', durationMinutes: '60' }
+              : { isIndoor: 'true', isAccessible: 'true' };
+
+    traversal.label = (uri: string) =>
+      ({
+        'program:outdoor-alt': '야외 대체 코스',
+        'facility:outdoor-alt': '야외 시설',
+        'program:indoor': '실내 저보행 프로그램',
+        'facility:indoor': '실내 라운지',
+        kneePain: '무릎 통증',
+      } as Record<string, string>)[uri] || uri;
+
+    const event: any = {
+      eventType: 'OFFICIAL_SAFETY_ALERT',
+      observedAt: new Date().toISOString(),
+      severity: 'HIGH',
+      evidence: ['기상청 공식 특보'],
+      currentValue: {
+        alertType: 'HEAVY_RAIN',
+        title: '합천군 호우주의보',
+        source: 'KMA',
+      },
+    };
+
+    const result = await service.observeExternalEvents(
+      previous,
+      current,
+      itinerary(),
+      [event],
+    );
+
+    expect(result.replanningRecommended).toBe(true);
+
+    expect(result.proposedRevision.candidateDiagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          candidateUri: 'program:outdoor-alt',
+          accepted: false,
+          reasonCodes: ['WEATHER_INCOMPATIBLE'],
+        }),
+      ]),
+    );
+
+    expect(
+      result.proposedRevision.proposedNewItems.map(
+        (step: any) => step.programUri,
+      ),
+    ).toContain('program:indoor');
+
+    expect(
+      result.proposedRevision.proposedNewItems.some(
+        (step: any) => step.programUri === 'program:outdoor-alt',
+      ),
+    ).toBe(false);
+
+    expect(result.proposedRevision.explanation).toContain('합천군 호우주의보');
+    expect(result.proposedRevision.explanation).toContain('실내 저보행 프로그램');
+  });
 });

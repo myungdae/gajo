@@ -37,6 +37,65 @@ export class RuntimeReplanningService {
     return { events, impacts, replanningRecommended: true, proposedRevision };
   }
 
+  async observeExternalEvents(
+    previousContext: any,
+    currentContext: any,
+    itinerary: any,
+    events: RuntimeChangeEvent[],
+  ) {
+    const impacts = events.map((event) =>
+      this.impactService.assess(event, itinerary, currentContext)
+    );
+
+    const actionable = impacts.filter((impact) =>
+      ['HIGH', 'CRITICAL'].includes(impact.level)
+    );
+
+    if (!actionable.length) {
+      return {
+        events,
+        impacts,
+        replanningRecommended: false,
+        proposedRevision: null,
+      };
+    }
+
+    const suppressionKey = this.fingerprint(
+      events,
+      actionable,
+      currentContext
+    );
+
+    const suppressed = await this.proposalModel
+      .findOne({ suppressionKey, status: 'REJECTED' })
+      .lean();
+
+    if (suppressed) {
+      return {
+        events,
+        impacts,
+        replanningRecommended: false,
+        proposedRevision: null,
+        suppressed: true,
+      };
+    }
+
+    const proposedRevision = await this.propose(
+      previousContext,
+      currentContext,
+      itinerary,
+      events,
+      actionable,
+      suppressionKey
+    );
+
+    return {
+      events,
+      impacts,
+      replanningRecommended: true,
+      proposedRevision,
+    };
+  }
   async observeById(input: { previousContextNo: string; currentContextNo: string; itineraryNo: string }) {
     const [previousContext, currentContext, itinerary] = await Promise.all([
       this.contextService.getContext(input.previousContextNo), this.contextService.getContext(input.currentContextNo),
@@ -54,7 +113,28 @@ export class RuntimeReplanningService {
     const unaffectedFuture = (itinerary.steps || []).filter((step: any) => step.status === 'PLANNED' && !impactedIds.has(step.itemId || String(step.order)));
     const excludedPrograms = new Set([...history, ...removedItems].map((step: any) => step.programUri).filter(Boolean));
     const excludedFacilities = new Set(history.map((step: any) => step.facilityUri).filter(Boolean));
-    const requiresIndoor = events.some((event) => event.eventType === 'HEAVY_RAIN');
+    const requiresIndoor = events.some((event) => {
+      if (event.eventType === 'HEAVY_RAIN') return true;
+      if (event.eventType !== 'OFFICIAL_SAFETY_ALERT') return false;
+
+      const alert =
+        event.currentValue && typeof event.currentValue === 'object'
+          ? event.currentValue as any
+          : {};
+
+      const alertType = String(
+        alert.alertType || alert.type || alert.warningType || ''
+      ).toUpperCase();
+
+      return [
+        'RAIN',
+        'HEAVY_RAIN',
+        'TYPHOON',
+        'WIND',
+        'STRONG_WIND',
+        'SNOW',
+      ].some((type) => alertType.includes(type));
+    });
     const candidateDiagnostics: any[] = [];
     const candidates = this.buildCandidates(currentContext).filter((candidate) => {
       const codes: CandidateRejectionCode[] = [];
@@ -149,7 +229,26 @@ export class RuntimeReplanningService {
   private fingerprint(events: RuntimeChangeEvent[], impacts: AssessedImpact[], context: any) { const value = { events: events.map((e) => [e.eventType, e.entityUri, e.currentValue]), items: impacts.flatMap((i) => i.affectedItems.map((s) => s.itemId || s.order)).sort(), precipitation: context.precipitation, states: context.runtimeStates }; return createHash('sha256').update(JSON.stringify(value)).digest('hex'); }
   private explain(event: RuntimeChangeEvent, impacts: AssessedImpact[], removed: any[], added: any[], context: any, decisionReason: string) {
     const affectedLabel = removed[0]?.programLabel || removed[0]?.facilityLabel || removed[0]?.label || '예정된 활동';
-    const change = event.eventType === 'HEAVY_RAIN' ? `강수량 ${event.currentValue}mm의 강한 비가 관측되었습니다` : event.eventType === 'WEATHER_CHANGED' ? '현재 날씨가 야외 활동에 적합하지 않은 상태로 바뀌었습니다' : event.eventType === 'FACILITY_UNAVAILABLE' ? `${affectedLabel}을(를) 현재 이용할 수 없습니다` : event.eventType === 'RESERVATION_UNAVAILABLE' ? '필수 예약이 마감되었습니다' : '현재 상황이 변경되었습니다';
+    const safetyAlert =
+      event.eventType === 'OFFICIAL_SAFETY_ALERT' &&
+      event.currentValue &&
+      typeof event.currentValue === 'object'
+        ? event.currentValue as any
+        : undefined;
+    const change =
+      event.eventType === 'HEAVY_RAIN'
+        ? `강수량 ${event.currentValue}mm의 강한 비가 관측되었습니다`
+        : event.eventType === 'WEATHER_CHANGED'
+          ? '현재 날씨가 야외 활동에 적합하지 않은 상태로 바뀌었습니다'
+          : event.eventType === 'OFFICIAL_SAFETY_ALERT'
+            ? safetyAlert?.title
+              ? `${safetyAlert.title}가 발표되었습니다`
+              : '공식 안전특보가 발표되었습니다'
+            : event.eventType === 'FACILITY_UNAVAILABLE'
+              ? `${affectedLabel}을(를) 현재 이용할 수 없습니다`
+              : event.eventType === 'RESERVATION_UNAVAILABLE'
+                ? '필수 예약이 마감되었습니다'
+                : '현재 상황이 변경되었습니다';
     const visitor = (context.expandedConditions || []).some((u: string) => /shortWalkingDistance|limitedMobility/.test(u)) ? '동반자의 무릎 부담과 짧은 보행 필요를 고려하면' : '현재 방문객 조건을 고려하면';
     const affected = removed.map((step) => step.programLabel || step.label).join(', ') || impacts.flatMap((i) => i.affectedItems.map((s) => s.programLabel || s.label)).join(', ');
     const alternative = added.map((step) => step.programLabel || step.label).join(', ') || '이용 가능한 실내 일정';
