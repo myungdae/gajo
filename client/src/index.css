@@ -4011,3 +4011,9 @@ dialog.voice-dialog .voice-dialog-actions > button {
   word-break: keep-all;
   font-weight: 700;
 }
+
+
+.location-confirmation .location-change-action {
+  font-size: 17px;
+  font-weight: 700;
+}

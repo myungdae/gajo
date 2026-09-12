@@ -3,3 +3,8 @@
 .runtime-goal-chips{grid-template-columns:repeat(3,minmax(0,1fr))}.runtime-goal-chips button{font-size:13px}.runtime-compact-conditions .runtime-choice-grid button{font-size:12px;padding:5px 3px;min-height:44px}.runtime-journey-entry>p{font-size:13px}.runtime-journey-entry>h1{font-size:1.3rem}.runtime-journey-entry>details{margin:6px 0}.runtime-journey-entry>small{display:block;font-size:12px}.runtime-journey-entry .runtime-example{font-size:12px}@media(max-width:340px){.runtime-goal-chips{grid-template-columns:repeat(3,minmax(0,1fr))}.runtime-compact-conditions .runtime-choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 .entry-input-actions{display:flex;flex-direction:column;gap:8px;margin-top:8px}.entry-input-actions button{flex:1}.runtime-journey-entry textarea{width:100%;box-sizing:border-box;padding:12px;border:1px solid #cad8ce;border-radius:12px;font:inherit}.entry-optional-conditions{margin-top:12px}.home-trip-secondary{font-size:14px;padding:8px 12px;border-top:1px solid #dbe5dd}.home-trip-secondary p{margin:0}.concierge-primary-entry h1{font-size:24px}.concierge-primary-entry>.runtime-journey-entry{padding:0;border:0;box-shadow:none}.regional-home .spotlight-card.has-image{min-height:190px;padding:18px}.regional-home .spotlight-card h1{font-size:26px}.regional-home .spotlight-card p{font-size:14px}.regional-home .runtime-journey-entry h1{font-size:23px}.concierge-primary-entry .concierge-unified-composer{position:static}
+
+.entry-optional-conditions > summary {
+  font-size: 16px;
+  font-weight: 700;
+}
