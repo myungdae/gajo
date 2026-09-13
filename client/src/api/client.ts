@@ -757,6 +757,7 @@ export async function observeRuntime(payload: {
   previousContext?: any;
   currentContext?: any;
   itinerary?: any;
+  events?: any[];
   previousContextNo?: string;
   currentContextNo?: string;
   itineraryNo?: string;

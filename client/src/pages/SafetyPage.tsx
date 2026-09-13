@@ -45,17 +45,18 @@ export default function SafetyPage() {
     };
   }, [region.id]);
 
-  const replan = () =>
-    navigate(localizedRegionalPath("/concierge?mode=now", region.id), {
+  const replan = () => {
+    navigate(localizedRegionalPath("/itinerary", region.id), {
       state: {
-        tripMode: "NOW",
-        freeTextOpen: true,
-        initialMessage:
-          "현재 위치와 날씨, 확인 가능한 안전정보를 바탕으로 내 여행에 영향이 있는지 확인하고 안전한 다음 일정을 제안해 주세요.",
-        autoSubmit: true,
+        safetyReview: {
+          status: safety?.status ?? "UNAVAILABLE",
+          source: "KMA",
+          checkedAt: safety?.checkedAt,
+          alerts: safety?.alerts ?? [],
+        },
       },
     });
-
+  };
   const safetyHeading =
     safetyLoading
       ? language === "ko"

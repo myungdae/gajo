@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { shortUri } from "../utils/uri";
 import {
@@ -53,9 +53,19 @@ export default function ItineraryPage() {
   const [, setRevision] = useState(0);
   const tripSession = ensureTripSession(region.id);
   const regionLink = (path: string) => regionalPath(path, region.id);
+
   const location = useLocation() as {
-    state?: { result?: ConciergeChatResponse };
+  state?: {
+    result?: ConciergeChatResponse;
+    safetyReview?: {
+      status?: string;
+      source?: string;
+      checkedAt?: string;
+      alerts?: any[];
+    };
   };
+};
+
   const navigate = useNavigate();
   const hasFullJourney = Boolean(
     (tripSession.itinerary as any)?.savedAsFullJourney ||
@@ -85,6 +95,7 @@ export default function ItineraryPage() {
       runtimeContextForRegion(location.state?.result?.context, region.id) ||
       runtimeContextForRegion(tripSession.runtimeContext, region.id),
   );
+  const safetyReviewHandled = useRef(false);
   useEffect(() => {
     track("ITINERARY_VIEWED", tripSession.id, {
       source: location.state?.result ? "recommendation" : "saved-itinerary",
@@ -108,6 +119,103 @@ export default function ItineraryPage() {
     return () => window.removeEventListener("regional-trip-saved", refresh);
   }, [region.id]);
 
+  useEffect(() => {
+    const review = location.state?.safetyReview;
+
+    if (!review || safetyReviewHandled.current) return;
+    safetyReviewHandled.current = true;
+
+    if (review.status !== "READY") {
+      setRuntimeMessage(
+        language === "ko"
+          ? "현재 기상청 공식 특보 정보를 확인할 수 없어 안전 여부를 단정하지 않습니다."
+          : "KMA official alert information is currently unavailable, so safety is not being assumed.",
+      );
+      return;
+    }
+
+    const alerts = review.alerts || [];
+
+    if (alerts.length === 0) {
+      setRuntimeMessage(
+        language === "ko"
+          ? "기상청 공식특보 확인 결과 현재 일정에 영향을 주는 추가 안전 변화가 없습니다. 기존 일정을 유지합니다."
+          : "KMA confirms no additional official safety change affecting the current itinerary. The existing itinerary is maintained.",
+      );
+      return;
+    }
+
+    const itinerary =
+      result?.recommendation?.itinerary ||
+      (tripSession.itinerary as any);
+
+    if (!itinerary?.steps?.length) {
+      setRuntimeMessage(
+        language === "ko"
+          ? "공식특보는 확인했지만 현재 영향평가할 여행 일정이 없습니다."
+          : "Official alerts were confirmed, but there is no current itinerary to assess.",
+      );
+      return;
+    }
+
+    const previousContext =
+      knownRuntimeContext ||
+      result?.context ||
+      tripSession.runtimeContext ||
+      { regionId: region.id };
+
+    const currentContext = {
+      ...previousContext,
+      regionId: region.id,
+      observedAt: review.checkedAt || new Date().toISOString(),
+    };
+
+    const events = alerts.map((alert: any) => ({
+      eventType: "OFFICIAL_SAFETY_ALERT",
+      observedAt:
+        alert.issuedAt ||
+        review.checkedAt ||
+        new Date().toISOString(),
+      severity: alert.severity || "HIGH",
+      evidence: [`기상청 공식 특보: ${alert.title}`],
+      currentValue: {
+        alertType: alert.alertType,
+        title: alert.title,
+        source: alert.source || "KMA",
+        rawRegionName: alert.rawRegionName,
+      },
+    }));
+
+    setObserving(true);
+
+    observeRuntime({
+      regionId: region.id,
+      previousContext,
+      currentContext,
+      itinerary,
+      events,
+    })
+      .then((response) => {
+        setKnownRuntimeContext(currentContext);
+        setProposal(response.proposedRevision);
+
+        setRuntimeMessage(
+          response.replanningRecommended
+            ? ""
+            : language === "ko"
+              ? "기상청 공식특보를 현재 일정과 비교했지만 변경이 필요한 영향은 확인되지 않았습니다. 기존 일정을 유지합니다."
+              : "The KMA alerts were assessed against the current itinerary, but no change requiring replanning was identified.",
+        );
+      })
+      .catch((error: any) => {
+        setRuntimeMessage(
+          language === "ko"
+            ? `공식특보의 여행 영향을 확인하지 못했습니다. ${error?.message || "잠시 후 다시 시도해 주세요."}`
+            : `Could not assess the trip impact of the official alert. ${error?.message || "Please try again shortly."}`,
+        );
+      })
+      .finally(() => setObserving(false));
+  }, []);
   const removePlace = (entityId: string) => {
     const updated = removeSavedPlace(region.id, entityId);
     if (!updated) return;
@@ -133,24 +241,113 @@ export default function ItineraryPage() {
       </div>
     );
 
-  if (!result || !result.recommendation) {
-    return (
-      <div><TripManagement onSavedPlacesCleared={setSavedPlaces} /><div className="card">
+if (!result || !result.recommendation) {
+  const safetyReview = location.state?.safetyReview;
+  const safetyReady = safetyReview?.status === "READY";
+  const safetyAlerts = safetyReview?.alerts || [];
+  const noActiveAlerts = safetyReady && safetyAlerts.length === 0;
+
+  return (
+    <div>
+      <TripManagement onSavedPlacesCleared={setSavedPlaces} />
+
+      {safetyReview && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <small>🛡️ EXKOVIA RUNTIME SAFETY</small>
+
+          <h2 style={{ marginTop: 10 }}>
+            {language === "ko"
+              ? "안전정보 확인 완료"
+              : "Safety information checked"}
+          </h2>
+
+          {noActiveAlerts ? (
+            <>
+              <p>
+                {language === "ko"
+                  ? "현재 합천에 활성 기상특보가 없습니다."
+                  : "There are currently no active KMA weather alerts for Hapcheon."}
+              </p>
+              <p>
+                {language === "ko"
+                  ? "아직 진행 중인 여행 일정이 없어 영향을 비교할 일정은 없습니다."
+                  : "There is no active itinerary yet, so there is no trip to assess for impact."}
+              </p>
+            </>
+          ) : safetyReady && safetyAlerts.length > 0 ? (
+            <>
+              <p>
+                {language === "ko"
+                  ? `현재 공식 기상특보 ${safetyAlerts.length}건이 확인되었습니다.`
+                  : `${safetyAlerts.length} active official weather alert(s) were confirmed.`}
+              </p>
+
+              {safetyAlerts.map((alert: any) => (
+                <div key={alert.id} style={{ margin: "10px 0" }}>
+                  <strong>{alert.title}</strong>
+                  <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
+                    {alert.sourceName}
+                    {alert.rawRegionName ? ` · ${alert.rawRegionName}` : ""}
+                  </div>
+                </div>
+              ))}
+
+              <p>
+                {language === "ko"
+                  ? "여행을 만들 때 이 공식 안전정보를 우선 반영합니다."
+                  : "These official alerts will be considered when creating a trip."}
+              </p>
+            </>
+          ) : (
+            <p>
+              {language === "ko"
+                ? "현재 공식 기상특보 정보를 확인할 수 없습니다. 안전하다고 단정하지 않고 보수적으로 여행을 계획합니다."
+                : "Official weather alert information is currently unavailable. The trip will be planned conservatively rather than assuming conditions are safe."}
+            </p>
+          )}
+
+          <button
+            className="btn btn-primary btn-block"
+            onClick={() =>
+              navigate(regionLink("/concierge"), {
+                state: {
+                  tripMode: "NOW",
+                  freeTextOpen: true,
+                  initialMessage: noActiveAlerts
+                    ? "현재 합천에 활성 기상특보가 없다는 공식 안전정보를 반영해서 지금 가능한 여행 일정을 만들어 주세요."
+                    : "현재 확인된 공식 기상특보와 안전정보를 우선 반영해서 안전한 여행 일정을 만들어 주세요.",
+                  autoSubmit: false,
+                },
+              })
+            }
+          >
+            {language === "ko"
+              ? "안전정보를 반영해 여행 시작하기"
+              : "Start a trip with safety information"}
+          </button>
+        </div>
+      )}
+
+      <div className="card">
         <h1>내 여행</h1>
         <h2>현재 여행</h2>
         <p>현재 진행 중인 여행 일정이 없습니다.</p>
         <p style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
           AI 여행도우미에게 원하는 여행을 말씀해 주세요.
         </p>
+
         <button
           className="btn btn-primary btn-block"
           onClick={() => navigate(regionLink("/concierge"))}
         >
           AI 여행도우미에게 물어보기
         </button>
-      </div><ArchivedTrips /></div>
-    );
-  }
+      </div>
+
+      <ArchivedTrips />
+    </div>
+  );
+}
 
   const rec = result.recommendation;
   const itinerarySteps: any[] = rec.itinerary?.steps || rec.steps || [];

@@ -170,9 +170,9 @@ export class SafetyAlertProviderService {
     return {
       id: `kma:${row.regId}:${row.tmFc}:${row.wrn}:${row.lvl}:${row.cmd}`,
       regionId,
-      alertType: row.wrn,
-      title: `${row.regKo} 기상특보 (${row.wrn}/${row.lvl})`,
-      severity: 'MEDIUM',
+      alertType: this.warningType(row.wrn),
+      title: this.warningTitle(row),
+      severity: this.warningSeverity(row),
       issuedAt: this.kmaTimeToIso(row.tmFc),
       effectiveFrom: this.kmaTimeToIso(row.tmEf),
       effectiveUntil: row.edTm
@@ -185,6 +185,64 @@ export class SafetyAlertProviderService {
     };
   }
 
+  private warningType(code: string): string {
+    const map: Record<string, string> = {
+      R: 'HEAVY_RAIN',
+      W: 'STRONG_WIND',
+      T: 'TYPHOON',
+      S: 'SNOW',
+      H: 'HEAT',
+      C: 'COLD_WAVE',
+      D: 'DRY',
+      O: 'STORM_SURGE',
+      N: 'TSUNAMI',
+      V: 'HIGH_WAVES',
+      Y: 'YELLOW_DUST',
+      F: 'FOG',
+    };
+
+    return map[String(code || '').toUpperCase()] || String(code || '').toUpperCase();
+  }
+
+  private warningName(code: string): string {
+    const map: Record<string, string> = {
+      R: '호우',
+      W: '강풍',
+      T: '태풍',
+      S: '대설',
+      H: '폭염',
+      C: '한파',
+      D: '건조',
+      O: '해일',
+      N: '지진해일',
+      V: '풍랑',
+      Y: '황사',
+      F: '안개',
+    };
+
+    return map[String(code || '').toUpperCase()] || '기상';
+  }
+
+  private warningLevelName(level: string): string {
+    const map: Record<string, string> = {
+      '1': '예비특보',
+      '2': '주의보',
+      '3': '경보',
+    };
+
+    return map[String(level || '')] || '특보';
+  }
+
+  private warningTitle(row: KmaWarningRow): string {
+    return `${row.regKo} ${this.warningName(row.wrn)}${this.warningLevelName(row.lvl)}`;
+  }
+
+  private warningSeverity(row: KmaWarningRow): SafetyAlertSeverity {
+    if (row.lvl === '3') return 'CRITICAL';
+    if (row.lvl === '2') return 'HIGH';
+    if (row.lvl === '1') return 'MEDIUM';
+    return 'MEDIUM';
+  }
   private toKmaMinute(date: Date): string {
     const formatter = new Intl.DateTimeFormat('en-CA', {
       timeZone: 'Asia/Seoul',

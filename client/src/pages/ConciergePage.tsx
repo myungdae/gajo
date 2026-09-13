@@ -141,6 +141,7 @@ function ConciergeConversation() {
     tripMode?: "PLAN" | "NOW";
     initialMessage?: string;
     autoSubmit?: boolean;
+    freshEntry?: boolean;
     entryMessage?: string;
     entryDescription?: string;
     conversationSnapshot?: ConversationSnapshot;
@@ -154,7 +155,17 @@ function ConciergeConversation() {
     (queryMode === "PLAN" || queryMode === "NOW" ? queryMode : "GENERIC");
   const preset = getQuickStartPreset(entryState?.quickStartPreset);
   const tripSession = ensureTripSession(region.id);
-  const restored=useRef(readConversation<ConversationSnapshot>(sessionStorage,region.id,tripSession.id,tripMode)).current;
+
+ const restored = useRef(
+  entryState?.freshEntry
+    ? undefined
+    : readConversation<ConversationSnapshot>(
+        sessionStorage,
+        region.id,
+        tripSession.id,
+        tripMode,
+      ),
+).current;
   const [messages, setMessages] = useState<Message[]>(restored?.messages || [
     {
       role: "ai",
@@ -192,9 +203,15 @@ const [excludedDiscoveryIds, setExcludedDiscoveryIds] = useState<string[]>(
   const [loading, setLoading] = useState(false);
   const [requestError, setRequestError] = useState(false);
   const [locationFreshnessNotice,setLocationFreshnessNotice]=useState<{label?:string;confirmedAt?:string}|null>(null);
-  const [freeTextOpen, setFreeTextOpen] = useState(
-    restored?.messages.some(message=>Boolean(message.result)) ? false : restored?.freeTextOpen ?? Boolean(entryState?.freeTextOpen),
-  );
+
+const [freeTextOpen, setFreeTextOpen] = useState(
+  entryState?.freeTextOpen === true
+    ? true
+    : restored?.messages.some(message => Boolean(message.result))
+      ? false
+      : restored?.freeTextOpen ?? false,
+);
+
   const [,setManualEntryMode]=useState<"VOICE"|"TEXT"|null>(null);
   const [otherRequestOpen,setOtherRequestOpen]=useState(Boolean(entryState?.otherRequestOpen));
   const [emptyJourneyEditOpen,setEmptyJourneyEditOpen]=useState(false);
