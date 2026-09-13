@@ -1,20 +1,18 @@
+import "./SafetyPage.css";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useRegion } from "../RegionContext";
 import { useRegionalLanguage } from "../RegionalLanguageContext";
-import GajoLiveStatus from "../components/GajoLiveStatus";
 import {
   fetchSafetyAlerts,
   type SafetyAlertResponse,
 } from "../api/client";
-import { regionalRuntimeView } from "../regionalRuntime";
 import { localizedRegionalPath } from "../visitorRouting";
 
 export default function SafetyPage() {
   const region = useRegion();
   const { language } = useRegionalLanguage();
   const navigate = useNavigate();
-  const runtime = regionalRuntimeView(region);
 
   const [safety, setSafety] = useState<SafetyAlertResponse | null>(null);
   const [safetyLoading, setSafetyLoading] = useState(true);
@@ -104,14 +102,6 @@ export default function SafetyPage() {
         </p>
       </header>
 
-      <section className="safety-status-card">
-        <small>{language === "ko" ? "현재 상황" : "CURRENT CONDITIONS"}</small>
-        <GajoLiveStatus
-          regionName={region.regionName}
-          regionId={region.id}
-          liveEnabled={runtime.weatherEnabled}
-        />
-      </section>
 
       <section className="safety-status-card">
         <small>
@@ -135,29 +125,107 @@ export default function SafetyPage() {
           ))}
       </section>
 
-      <section className="safety-status-card safety-impact-card">
+      <details className="safety-status-card safety-impact-card">
+  <summary className="safety-impact-summary">
+    <div className="safety-impact-summary-main">
+      <div className="safety-impact-eyebrow">
+        <span className="safety-impact-icon" aria-hidden="true">
+          🧭
+        </span>
         <small>{language === "ko" ? "내 여행 영향" : "TRIP IMPACT"}</small>
-        <h2>
-          {language === "ko"
-            ? "현재 상황을 기준으로 다시 판단합니다"
-            : "Reassess using current conditions"}
-        </h2>
+      </div>
+
+      <h2>
+        {language === "ko"
+          ? "현재 상황이 내 여행에 미치는 영향 보기"
+          : "See how current conditions affect my trip"}
+      </h2>
+
+      <p>
+        {language === "ko"
+          ? "기상청 공식 특보와 현재 여행 일정을 함께 확인합니다."
+          : "Check official KMA alerts together with the current itinerary."}
+      </p>
+    </div>
+
+    <span className="safety-impact-arrow" aria-hidden="true">
+      →
+    </span>
+  </summary>
+
+  <div className="safety-impact-detail">
+    {safety?.status === "READY" && safety.alerts.length === 0 ? (
+      <>
+        <div className="safety-impact-state">
+          <span className="safety-impact-state-icon" aria-hidden="true">
+            ✅
+          </span>
+          <strong>
+            {language === "ko"
+              ? "현재 여행에 추가적인 안전 영향은 확인되지 않았습니다."
+              : "No additional safety impact is currently identified."}
+          </strong>
+        </div>
+
         <p>
           {language === "ko"
-            ? "위치·시간·날씨와 현재 여행 일정을 함께 보고 안전한 다음 행동을 검토합니다."
-            : "Review location, time, weather and the current itinerary together."}
+            ? "현재 합천에 활성 기상특보가 없습니다. 지금의 위치·시간·날씨와 여행 일정을 기준으로 계속 진행할 수 있습니다."
+            : "There are no active weather alerts for Hapcheon. You can continue based on the current location, time, weather and itinerary."}
         </p>
+      </>
+    ) : safety?.status === "READY" && safety.alerts.length > 0 ? (
+      <>
+        <div className="safety-impact-state">
+          <span className="safety-impact-state-icon" aria-hidden="true">
+            ⚠️
+          </span>
+          <strong>
+            {language === "ko"
+              ? "현재 여행에 영향을 줄 수 있는 공식 특보가 있습니다."
+              : "An official alert may affect your trip."}
+          </strong>
+        </div>
 
-        <button
-          type="button"
-          className="btn btn-primary btn-block"
-          onClick={replan}
-        >
+        {safety.alerts.map((alert) => (
+          <div key={alert.id} className="safety-impact-alert">
+            <b>{alert.title}</b>
+            <span>
+              {alert.sourceName}
+              {alert.rawRegionName ? ` · ${alert.rawRegionName}` : ""}
+            </span>
+          </div>
+        ))}
+
+        <p>
           {language === "ko"
-            ? "안전한 일정으로 다시 보기"
-            : "Review a safer itinerary"}
-        </button>
-      </section>
+            ? "야외 일정과 이동 계획을 다시 확인하고 더 안전한 다음 행동을 검토합니다."
+            : "Review outdoor activities and travel plans before continuing."}
+        </p>
+      </>
+    ) : (
+      <div className="safety-impact-state">
+        <span className="safety-impact-state-icon" aria-hidden="true">
+          ℹ️
+        </span>
+        <p>
+          {language === "ko"
+            ? "현재 공식 특보 정보를 확인할 수 없습니다. 잠시 후 다시 확인해 주세요."
+            : "Official alert information is currently unavailable. Please try again shortly."}
+        </p>
+      </div>
+    )}
+
+    <button
+      type="button"
+      className="btn btn-primary btn-block"
+      onClick={replan}
+    >
+      {language === "ko"
+        ? "안전한 일정으로 다시 보기"
+        : "Review a safer itinerary"}
+    </button>
+  </div>
+</details>
     </main>
   );
 }

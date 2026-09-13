@@ -1,0 +1,140 @@
+.safety-impact-card {
+  margin-top: 18px;
+  border: 1px solid rgba(13, 49, 72, 0.14);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(13, 49, 72, 0.05);
+}
+
+.safety-impact-summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.safety-impact-summary::-webkit-details-marker {
+  display: none;
+}
+
+.safety-impact-summary::marker {
+  content: "";
+}
+
+.safety-impact-summary:hover {
+  background: rgba(0, 132, 119, 0.04);
+}
+
+.safety-impact-summary small {
+  display: block;
+  margin-bottom: 7px;
+}
+
+.safety-impact-summary h2 {
+  margin: 0 0 8px;
+}
+
+.safety-impact-summary p {
+  margin: 0;
+}
+
+.safety-impact-arrow {
+  flex: 0 0 auto;
+  font-size: 28px;
+  line-height: 1;
+  color: #0b887d;
+  transition: transform 0.2s ease;
+}
+
+.safety-impact-card[open] .safety-impact-arrow {
+  transform: rotate(90deg);
+}
+
+.safety-impact-detail {
+  padding: 18px 20px 20px;
+  border-top: 1px solid rgba(13, 49, 72, 0.10);
+  background: rgba(0, 132, 119, 0.025);
+}
+
+.safety-impact-detail > strong {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.safety-impact-detail p {
+  margin: 8px 0 16px;
+}
+
+.safety-impact-alert {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 12px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(0, 132, 119, 0.06);
+}
+
+.safety-impact-alert span {
+  font-size: 0.9rem;
+  opacity: 0.72;
+}
+
+/* EXKOVIA SAFETY IMPACT POLISH */
+
+.safety-impact-summary {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 132, 119, 0.055),
+    rgba(255, 255, 255, 0.82)
+  );
+}
+
+.safety-impact-summary-main {
+  min-width: 0;
+}
+
+.safety-impact-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+
+.safety-impact-eyebrow small {
+  margin: 0;
+}
+
+.safety-impact-icon {
+  font-size: 19px;
+  line-height: 1;
+}
+
+.safety-impact-state {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.safety-impact-state-icon {
+  flex: 0 0 auto;
+  font-size: 19px;
+  line-height: 1.2;
+}
+
+.safety-impact-card[open] {
+  box-shadow: 0 8px 22px rgba(13, 49, 72, 0.08);
+}
+
+.safety-impact-card[open] .safety-impact-summary {
+  background: rgba(0, 132, 119, 0.06);
+}
+
+.safety-impact-detail {
+  background: rgba(255, 255, 255, 0.88);
+}
