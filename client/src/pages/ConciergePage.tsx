@@ -288,7 +288,22 @@ const [freeTextOpen, setFreeTextOpen] = useState(
   };
   const openVoice=()=>{if(requestInFlightRef.current)return;setVoiceOpen(true);beginVoice();};
   const dismissVoice=()=>{cancelVoiceAutoExecute();cancelListening();setVoiceUnderstanding(null);setVoiceDraft("");setVoiceState("IDLE");setVoiceOpen(false);track("VOICE_INPUT_SWITCHED",tripSession.id,{to:"TEXT_OR_TOUCH"});};
-  const openText=()=>{setManualEntryMode("TEXT");setFreeTextOpen(true);requestAnimationFrame(()=>textInputRef.current?.focus());};
+
+
+const openText = () => {
+  setManualEntryMode("TEXT");
+  setFreeTextOpen(true);
+};
+
+const voiceToText = () => {
+  dismissVoice();
+  navigate(regionLink("/"), {
+    state: { openTextEntry: true },
+  });
+};
+
+
+
   const createRuntimeJourney=(text:string,context:CreateContextInput,planned:PlannedContext)=>{
     const current=loadTripSession(localStorage,region.id)||tripSession;
     const changed=Object.fromEntries(Object.entries(planned).filter(([,value])=>value!==undefined));
@@ -299,7 +314,8 @@ const [freeTextOpen, setFreeTextOpen] = useState(
     track('RUNTIME_JOURNEY_REQUESTED',tripSession.id,{mode:tripMode});
     void send(text,context);
   };
-  const voiceToText=()=>{dismissVoice();setManualEntryMode("TEXT");setFreeTextOpen(true);requestAnimationFrame(()=>textInputRef.current?.focus());};
+
+
   useEffect(() => {
     sessionStorage.setItem(contextSessionKey, contextSessionIdRef.current);
   }, [contextSessionKey]);

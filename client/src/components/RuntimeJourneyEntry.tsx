@@ -7,8 +7,24 @@ import { ensureTripSession, sessionContext, mergeTravelContext, type PlannedCont
 import { RegionalActionIcon, type RegionalHomeActionType } from './RegionalActionIcon';
 import './runtime-journey.css';
 
-export default function RuntimeJourneyEntry({ loading, onCreate, onDirect, onSubmit, auxiliary = false }: {
-  loading: boolean; onCreate: (text: string, context: CreateContextInput, planned: PlannedContext) => void; onDirect: () => void; onSubmit?: (text:string) => void; auxiliary?: boolean;
+export default function RuntimeJourneyEntry({
+  loading,
+  onCreate,
+  onDirect,
+  onSubmit,
+  auxiliary = false,
+  initialTextEntryOpen = false,
+}: {
+  loading: boolean;
+  onCreate: (
+    text: string,
+    context: CreateContextInput,
+    planned: PlannedContext,
+  ) => void;
+  onDirect: () => void;
+  onSubmit?: (text: string) => void;
+  auxiliary?: boolean;
+  initialTextEntryOpen?: boolean;
 }) {
   const { language } = useRegionalLanguage(), region = useRegion(), copy = JOURNEY_COPY[language];
   const [known,setKnown] = useState(() => sessionContext(ensureTripSession(region.id)));
@@ -16,7 +32,7 @@ export default function RuntimeJourneyEntry({ loading, onCreate, onDirect, onSub
   const [changed,setChanged]=useState<Array<keyof JourneyPreferences>>([]);
   const [firstVisit,setFirstVisit]=useState(ensureTripSession(region.id).plannedContext?.firstVisit);
   const [text,setText]=useState('');
-  const [textEntryOpen,setTextEntryOpen]=useState(false);
+  const [textEntryOpen,setTextEntryOpen]=useState(initialTextEntryOpen);
   useEffect(()=>{const refresh=()=>{const context=sessionContext(ensureTripSession(region.id));setKnown(context);setValue(journeyPreferences(context));setChanged([])};window.addEventListener('regional-trip-saved',refresh);return()=>window.removeEventListener('regional-trip-saved',refresh)},[region.id]);
   const label = (row: readonly string[]) => row[language === 'ko' ? 1 : 2];
   const choices = (key: keyof JourneyPreferences, rows: readonly (readonly string[])[]) => <div className={`runtime-choice-grid${key==='goal'?' runtime-goal-chips':''}`}>{rows.map(row =>
@@ -34,7 +50,18 @@ export default function RuntimeJourneyEntry({ loading, onCreate, onDirect, onSub
     </div>
 
     {onSubmit&&textEntryOpen&&<form onSubmit={event=>{event.preventDefault();if(text.trim())onSubmit(text.trim())}}>
-      <textarea aria-label={language==='ko'?'여행 요청':'Travel request'} rows={2} value={text} onChange={event=>setText(event.target.value)} placeholder={language==='ko'?'예) 배고파요, 커피 마시고 싶어요, 잘 곳이 필요해요.':'For example: I am hungry, I want coffee, or I need a place to stay.'}/>
+
+      <textarea
+  autoFocus
+  aria-label={language==='ko'?'여행 요청':'Travel request'}
+  rows={2}
+  value={text}
+  onChange={event=>setText(event.target.value)}
+  placeholder={language==='ko'
+    ?'예) 배고파요, 커피 마시고 싶어요, 잘 곳이 필요해요.'
+    :'For example: I am hungry, I want coffee, or I need a place to stay.'}
+/>
+
       <button type="submit" className="btn btn-primary btn-block" disabled={loading||!text.trim()}>{language==='ko'?'이대로 찾아보기':'Find what I need'}</button>
     </form>}
 
