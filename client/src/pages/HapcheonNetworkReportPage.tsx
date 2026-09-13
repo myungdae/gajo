@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { api } from "../api/client";
 import PublicBrand from "../components/PublicBrand";
 import "./hapcheon-network-report.css";
@@ -118,9 +119,189 @@ const FLAGSHIP_TOURISM_ENTITIES = [
 ] as const;
 
 export default function HapcheonNetworkReportPage() {
+const location = useLocation();
+const demoMode =
+  new URLSearchParams(location.search).get("demo") === "1";
   const [data, setData] = useState<Ecosystem>();
   const [live, setLive] = useState<LiveNetworkSnapshot>();
   const [change, setChange] = useState<NetworkChangeSnapshot>();
+const demoChange: NetworkChangeSnapshot = {
+  status: "AVAILABLE",
+  summary: {
+    previousConnections: 5,
+    currentConnections: 8,
+    newlyReleased: 3,
+    strengthened: 2,
+    weakened: 1,
+    noLongerPublic: 0,
+    previousInterest: 12,
+    currentInterest: 19,
+    interestDelta: 7,
+    previousMovement: 6,
+    currentMovement: 10,
+    movementDelta: 4,
+    newlyReleasedInterestContribution: 4,
+  },
+  changes: {
+    newlyReleased: [
+      {
+        kind: "NEWLY_RELEASED",
+        sourceNodeId: "demo-hapcheon-lake",
+        targetNodeId: "demo-food",
+        sourceName: "합천호",
+        targetName: "지역 음식점",
+        stage: "MOVEMENT_INTENT",
+      },
+      {
+        kind: "NEWLY_RELEASED",
+        sourceNodeId: "demo-tourism",
+        targetNodeId: "demo-cafe",
+        sourceName: "관광지",
+        targetName: "카페",
+        stage: "INTEREST",
+      },
+    ],
+    strengthened: [
+      {
+        kind: "STRENGTHENED",
+        sourceNodeId: "demo-stay",
+        targetNodeId: "demo-tourism",
+        sourceName: "숙박",
+        targetName: "관광지",
+        stage: "MOVEMENT_INTENT",
+      },
+    ],
+    weakened: [
+      {
+        kind: "WEAKENED",
+        sourceNodeId: "demo-food-2",
+        targetNodeId: "demo-cafe-2",
+        sourceName: "음식점",
+        targetName: "카페",
+        stage: "INTEREST",
+      },
+    ],
+    noLongerPublic: [],
+  },
+  interpretation: {
+    interestIncreaseMostlyFromNewlyReleased: true,
+    caution:
+      "시연용 예시 데이터입니다. 실제 운영에서는 누적 snapshot을 비교해 자동 산출합니다.",
+  },
+};
+
+const demoData: Ecosystem = {
+  status: "AVAILABLE",
+
+  nodes: [
+    {
+      id: "demo-hapcheon-lake",
+      label: "합천호",
+      kind: "ATTRACTION",
+      status: "VERIFIED",
+      area: "대병면",
+      sourceName: "시연용 예시 데이터",
+    },
+    {
+      id: "demo-food",
+      label: "지역 음식점",
+      kind: "FOOD",
+      status: "VERIFIED",
+      area: "합천군",
+      sourceName: "시연용 예시 데이터",
+    },
+    {
+      id: "demo-stay",
+      label: "숙박",
+      kind: "STAY",
+      status: "VERIFIED",
+      area: "합천군",
+      sourceName: "시연용 예시 데이터",
+    },
+    {
+      id: "demo-tourism",
+      label: "관광지",
+      kind: "ATTRACTION",
+      status: "VERIFIED",
+      area: "합천군",
+      sourceName: "시연용 예시 데이터",
+    },
+    {
+      id: "demo-cafe",
+      label: "카페",
+      kind: "CAFE",
+      status: "VERIFIED",
+      area: "합천군",
+      sourceName: "시연용 예시 데이터",
+    },
+  ],
+
+  edges: [
+    {
+      source: "demo-hapcheon-lake",
+      target: "demo-food",
+      relation: "MOVEMENT_INTENT",
+      evidenceLevel: "MOVEMENT_INTENT",
+      basis: "시연용 최근 이동 흐름",
+      total: 8,
+    },
+    {
+      source: "demo-stay",
+      target: "demo-tourism",
+      relation: "MOVEMENT_INTENT",
+      evidenceLevel: "MOVEMENT_INTENT",
+      basis: "시연용 강화 연결",
+      total: 6,
+    },
+    {
+      source: "demo-tourism",
+      target: "demo-cafe",
+      relation: "INTEREST",
+      evidenceLevel: "INTEREST",
+      basis: "시연용 신규 관심 연결",
+      total: 5,
+    },
+    {
+      source: "demo-food",
+      target: "demo-cafe",
+      relation: "INTEREST",
+      evidenceLevel: "INTEREST",
+      basis: "시연용 약화 연결",
+      total: 3,
+    },
+  ],
+
+  counts: {
+    total: 5,
+    verified: 5,
+    byKind: {
+      ATTRACTION: 2,
+      FOOD: 1,
+      CAFE: 1,
+      STAY: 1,
+      FESTIVAL: 0,
+    },
+  },
+
+  runtimeSignals: [
+    "관광객 이동 흐름",
+    "관광·음식·숙박 연결 변화",
+    "신규 관심 관계",
+  ],
+
+  actionPath: [
+    "상황 확인",
+    "변화 해석",
+    "대응방안 검토",
+  ],
+
+  outcomePath: [
+    "관광객 행동",
+    "지역 관계",
+    "변화 인텔리전스",
+    "다음 판단",
+  ],
+};
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<PlaceNode>();
   const [showNetworkDemo, setShowNetworkDemo] = useState(false);
@@ -141,13 +322,17 @@ export default function HapcheonNetworkReportPage() {
       const ecosystem = ecosystemResponse.data;
       if (ecosystem?.region?.id !== "hapcheon") throw new Error();
 
-      setData(ecosystem);
+      setData(demoMode ? demoData : ecosystem);
       setLive(liveResponse.data || undefined);
-      setChange(changeResponse.data || undefined);
+      setChange(
+  demoMode
+    ? demoChange
+    : changeResponse.data || undefined
+);
     } catch {
-      setData(undefined);
+      setData(demoMode ? demoData : undefined);
       setLive(undefined);
-      setChange(undefined);
+      setChange(demoMode ? demoChange : undefined);
       setError("합천 지역 연결망을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
     }
   };
