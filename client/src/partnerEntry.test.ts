@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { applyPartnerEntryToTrip } from "./partnerEntry.ts";
+import { applyPartnerEntryToTrip, partnerEntryAnchor } from "./partnerEntry.ts";
 import { createTripSession } from "./tripSession.ts";
 const partner: any = {
   partnerId: "p1",
@@ -43,3 +43,31 @@ test("partner entry rejects cross-region session mutation", () =>
     () => applyPartnerEntryToTrip(createTripSession("okcheon"), partner),
     /region mismatch/,
   ));
+
+test("partner entry creates HERE anchor from canonical facility coordinates", () => {
+  const facility: any = {
+    uri: "entity:1",
+    label: "?????",
+    literalProps: {
+      latitude: 35.5,
+      longitude: 128.1,
+    },
+  };
+
+  assert.deepEqual(partnerEntryAnchor(partner, facility), {
+    entityId: "entity:1",
+    label: "?????",
+    latitude: 35.5,
+    longitude: 128.1,
+  });
+});
+
+test("partner entry does not create HERE anchor without valid coordinates", () => {
+  const facility: any = {
+    uri: "entity:1",
+    label: "?????",
+    literalProps: {},
+  };
+
+  assert.equal(partnerEntryAnchor(partner, facility), undefined);
+});

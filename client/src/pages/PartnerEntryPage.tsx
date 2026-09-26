@@ -1,20 +1,23 @@
 import { setEntry } from '../visitorAnalytics';
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { fetchPublicPartner, recordPartnerEntry, type PublicPartner } from "../api/client";
+import { fetchFacility, fetchPublicPartner, recordPartnerEntry, type PublicPartner } from "../api/client";
 import { ensureTripSession, saveTripSession } from "../tripSession";
-import { applyPartnerEntryToTrip } from "../partnerEntry";
+import { applyPartnerEntryToTrip, partnerEntryAnchor } from "../partnerEntry";
 import { getRegionConfig } from "../regionConfig";
 export default function PartnerEntryPage() {
   const { partnerSlug = "" } = useParams(),
     navigate = useNavigate(),
     [partner, setPartner] = useState<PublicPartner>(),
+    [entryAnchor, setEntryAnchor] = useState<ReturnType<typeof partnerEntryAnchor>>(),
     [error, setError] = useState("");
   useEffect(() => {
     let live = true;
     (async () => {
       try {
         const p = await fetchPublicPartner(partnerSlug),
+          facility = await fetchFacility(p.canonicalEntityId),
+          anchor = facility ? partnerEntryAnchor(p, facility) : undefined,
           trip = ensureTripSession(p.regionId),
           enteredAt = new Date().toISOString();
         if (trip.restorationPending)
@@ -25,7 +28,10 @@ export default function PartnerEntryPage() {
         });
         setEntry(p.regionId, `partner:${p.partnerSlug}`);
         saveTripSession(applyPartnerEntryToTrip(trip, p, enteredAt));
-        if (live) setPartner(p);
+        if (live) {
+          setPartner(p);
+          setEntryAnchor(anchor);
+        }
       } catch (e: any) {
         if (live)
           setError(
@@ -46,6 +52,18 @@ export default function PartnerEntryPage() {
       state: {
         tripMode: "NOW",
         freeTextOpen: false,
+        ...(entryAnchor ? {
+          quickContext: {
+            conversationalAnchor: {
+              entityId: entryAnchor.entityId,
+              regionId: partner.regionId,
+              label: entryAnchor.label,
+              latitude: entryAnchor.latitude,
+              longitude: entryAnchor.longitude,
+              source: "RDM" as const,
+            },
+          },
+        } : {}),
         entryMessage: `${partner.displayName}에서 ${regionName} 여행을 시작하셨군요.`,
         entryDescription: "지금 갈 곳, 먹을 곳, 비 오는 날 코스를 AI가 함께 찾아드립니다.",
       },

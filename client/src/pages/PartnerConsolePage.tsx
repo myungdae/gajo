@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import {
   confirmBenefitUse,
   createPartnerBenefit,
+  downloadPartnerPrintQr,
   downloadPartnerTestQr,
   fetchPartnerMetrics,
 } from "../api/client";
@@ -46,6 +47,21 @@ export default function PartnerConsolePage() {
       setMessage("혜택 내용과 관리 키를 확인해 주세요.");
     }
   };
+  const downloadPrintQr = async (format: "svg" | "png") => {
+    try {
+      const asset = await downloadPartnerPrintQr(partnerSlug, key, "go", format),
+        url = URL.createObjectURL(asset.blob),
+        anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = asset.filename;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      setMessage("매장용 진입 QR을 내려받았습니다. 출력하여 현장에 부착할 수 있습니다.");
+    } catch {
+      setMessage("운영 승인 상태와 파트너 관리 키를 확인해 주세요.");
+    }
+  };
+
   const downloadQr = async (kind: "go" | "visit", format: "svg" | "png") => {
     try {
       const asset = await downloadPartnerTestQr(partnerSlug, key, kind, format),
@@ -91,6 +107,22 @@ export default function PartnerConsolePage() {
           </dl>
         </section>
       )}
+      <section>
+        <h2>내 매장 QR</h2>
+        <p>운영 승인된 매장은 현장 부착용 진입 QR을 내려받아 출력할 수 있습니다.</p>
+        <button
+          className="btn btn-primary"
+          onClick={() => downloadPrintQr("png")}
+        >
+          진입 QR PNG
+        </button>
+        <button
+          className="btn btn-outline"
+          onClick={() => downloadPrintQr("svg")}
+        >
+          진입 QR SVG
+        </button>
+      </section>
       <section>
         <h2>테스트 QR 다운로드</h2>
         <p>

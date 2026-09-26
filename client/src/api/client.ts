@@ -988,6 +988,23 @@ export async function downloadPartnerTestQr(
     filename: `${slug}-${kind}-test.${format}`,
   };
 }
+
+export async function downloadPartnerPrintQr(
+  slug: string,
+  key: string,
+  kind: "go" | "visit",
+  format: "svg" | "png",
+) {
+  const response = await api.get(`/partners/${encodeURIComponent(slug)}/qr`, {
+    params: { kind, format, test: false },
+    headers: { "x-partner-key": key },
+    responseType: "blob",
+  });
+  return {
+    blob: response.data as Blob,
+    filename: `${slug}-${kind}-print.${format}`,
+  };
+}
 export async function fetchRegionalHome(regionId:string){const{data}=await api.get(`/regional-home/${encodeURIComponent(regionId)}`);return data}
 export async function fetchRegionalSpotlights(regionId:string,token:string){const{data}=await api.get('/admin/regional-spotlights',{params:{regionId},headers:{'x-admin-token':token}});return data}
 export async function createRegionalSpotlight(payload:any,token:string){const{data}=await api.post('/admin/regional-spotlights',payload,{headers:{'x-admin-token':token}});return data}
