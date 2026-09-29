@@ -7,6 +7,7 @@ export default function TravelAssistantAboutPage() {
   const region = useRegion();
   const { language } = useRegionalLanguage();
   const [showDemo, setShowDemo] = useState(false);
+  const [showDifference, setShowDifference] = useState(false);
 
   return (
     <article className="regional-home">
@@ -27,30 +28,45 @@ export default function TravelAssistantAboutPage() {
             : "It considers your current location, time, weather and travel situation, uses local information to suggest what you need now, and connects you to practical next actions such as maps, directions and calls."}
         </p>
 
-        <p>
-          {language === "ko"
-            ? "ChatGPT·Gemini 같은 범용 AI는 다양한 질문에 답하는 데 강하고, 지도·내비게이션은 장소 검색과 이동에 강합니다. 이 여행도우미는 이를 대신하는 것이 아니라, 지역의 정보와 여행자의 지금 상황을 연결해 다음 행동을 돕습니다."
-            : "General AI such as ChatGPT and Gemini is strong at answering a wide range of questions, while maps and navigation are strong at finding places and routes. This travel assistant does not replace them; it connects local information with your current travel situation to help you take the next action."}
-        </p>
-
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           <button
             type="button"
             className="btn btn-primary"
+            onClick={() => setShowDifference(open => !open)}
+            aria-expanded={showDifference}
+          >
+            {language === "ko"
+              ? "ChatGPT와 어떻게 다른가?"
+              : "How is this different from ChatGPT?"}
+          </button>
+
+          <button
+            type="button"
+            className="btn btn-outline"
             onClick={() => setShowDemo(true)}
           >
             {language === "ko" ? "소개 영상 보기" : "Watch introduction"}
           </button>
-
-          <a
-            className="btn btn-outline"
-            href="https://exkovia.com/#why-exkovia"
-          >
-            {language === "ko"
-              ? "자세한 차이 알아보기"
-              : "See the differences"}
-          </a>
         </div>
+
+        {showDifference && (
+          <div style={{ marginTop: 16 }}>
+            <p>
+              {language === "ko"
+                ? "ChatGPT와 Gemini 같은 범용 AI는 다양한 질문에 폭넓게 답하고, 지도 앱은 장소 검색과 길 안내에 강합니다. EXKOVIA는 지역 정보와 여행자의 위치·시간·날씨·상황을 함께 살펴 지금 필요한 장소를 추천하고, 지도 보기와 길찾기 등 다음 행동까지 안내하는 지역 맞춤형 AI 컨시어지입니다."
+                : "General AI such as ChatGPT and Gemini can answer a wide range of questions, while map apps are strong at place search and navigation. EXKOVIA is a locally tailored AI concierge that considers regional information together with the traveler's location, time, weather and situation, recommends what is useful now, and connects the traveler to next actions such as maps and directions."}
+            </p>
+
+            <a
+              href="https://exkovia.com/#why-exkovia"
+              className="app-header__all-regions"
+            >
+              {language === "ko"
+                ? "더 자세히 알아보기"
+                : "Learn more"}
+            </a>
+          </div>
+        )}
       </section>
 
       <ConciergeDemoOverlay
