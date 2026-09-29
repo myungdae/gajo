@@ -53,6 +53,11 @@ export default function App() {
           <Route path="/hapcheon" element={<HomePage />} />
           <Route path="/hapcheon/meteor-crater" element={<MeteorCraterPage />} />
           <Route path="/hapcheon/safety" element={<SafetyPage />} />
+          <Route path="/gajo/safety" element={<SafetyPage />} />
+          <Route path="/okcheon/safety" element={<SafetyPage />} />
+          <Route path="/muan/safety" element={<SafetyPage />} />
+          <Route path="/gyeryong/safety" element={<SafetyPage />} />
+          <Route path="/daejeon-junggu/safety" element={<SafetyPage />} />
           <Route path="/daejeon-junggu" element={<HomePage />} />
           <Route path="/gajo/concierge" element={<ConciergePage />} />
           <Route path="/okcheon/concierge" element={<ConciergePage />} />

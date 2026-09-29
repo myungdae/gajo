@@ -27,6 +27,7 @@ const openTextEntry =
   Boolean((location.state as { openTextEntry?: boolean } | null)?.openTextEntry);
   const [,refreshTrip]=useState(0);
   const [showConciergeDemo, setShowConciergeDemo] = useState(false);
+  const [showStoryNotice, setShowStoryNotice] = useState(false);
   const [homeLocation,setHomeLocation]=useState<TripLocation|undefined>(
     ()=>ensureTripSession(region.id).locationContext?.now
   );
@@ -141,13 +142,12 @@ const openTextEntry =
     guidancePlace = selectedRegionalHomePlace(region, currentTrip),
     guidanceContext = regionalHomeGuidancePlace(region, currentTrip, language, english),
     guidance = buildProactiveGuidance(guidanceContext, undefined, new Date(), language),
-    primary = () => spotlight.primaryAction?.type === "JOURNEY" ? navigate(link("/concierge?mode=now"),{state:{tripMode:"NOW"}}) : spotlight.primaryAction?.type === "DETAIL" && spotlight.primaryAction.target ? navigate(withLanguage(spotlight.primaryAction.target)) : ask(`${spotlight.title} 이야기를 알려주세요.`, `Tell me more about ${spotlight.title}.`),
     createJourney=(text:string,context:CreateContextInput,planned:PlannedContext)=>{const current=session();saveTripSession({...current,mode:'NOW',plannedContext:{...(current.plannedContext||{}),...planned}});track('RUNTIME_JOURNEY_REQUESTED',current.id,{mode:'NOW'});navigate(link('/concierge?mode=now'),{state:{tripMode:'NOW',initialMessage:text,quickContext:context,autoSubmit:true}})};
 
   return <div className="regional-home" lang={language} style={{ "--region-accent": region.accent } as React.CSSProperties}>
     <section className={`spotlight-card${spotlight.imageUrl ? " has-image" : ""}`} style={spotlight.imageUrl ? { backgroundImage: `linear-gradient(180deg,rgba(8,24,18,.08) 5%,rgba(8,24,18,.96) 100%),url(${spotlight.imageUrl})`, backgroundPosition: `${spotlight.imageFocusX || "center"} ${spotlight.imageFocusY || "center"}` } : {}} aria-labelledby="spotlight-title">
       {spotlight.imageUrl && <img className="sr-only" src={spotlight.imageUrl} alt={spotlight.imageAlt || ""} />}
-      <div><small>{spotlight.statusLabel}</small><h1 id="spotlight-title">{spotlight.title}</h1><p>{spotlight.shortDescription}</p>{spotlightQuestion&&<p className="spotlight-question">{spotlightQuestion}</p>}{region.id!=="hapcheon"&&<div className="spotlight-actions"><button onClick={primary}>{spotlight.primaryAction?.label || copy.story}</button>{(spotlight.secondaryAction || place?.latitude !== undefined) && <button onClick={() => findNearby("TOURIST_ATTRACTION")}>{spotlight.secondaryAction?.label || copy.nearby}</button>}</div>}</div>
+      <div><small>{spotlight.statusLabel}</small><h1 id="spotlight-title">{spotlight.title}</h1><p>{spotlight.shortDescription}</p>{spotlightQuestion&&<p className="spotlight-question">{spotlightQuestion}</p>}{region.id!=="hapcheon"&&<div className="spotlight-actions">{(spotlight.secondaryAction || place?.latitude !== undefined) && <button onClick={() => findNearby("TOURIST_ATTRACTION")}>{spotlight.secondaryAction?.label || copy.nearby}</button>}</div>}</div>
     </section>
     <section className="home-context-strip" aria-label={language==="ko"?"현재 여행 상황":"Current travel context"}>
       <GajoLiveStatus
@@ -305,11 +305,11 @@ const openTextEntry =
       </button>
     </div>
 
-    {region.id === "hapcheon" && (
+
       <button
         type="button"
         className="home-safety-action"
-        onClick={() => navigate(link("/safety"))}
+        onClick={() => navigate(withLanguage(region.id === "gajo" ? "/gajo/safety" : `/${region.id}/safety`))}
       >
         <span className="home-safety-action-icon" aria-hidden="true">⚠️</span>
 
@@ -326,8 +326,36 @@ const openTextEntry =
 
         <span className="home-safety-action-arrow" aria-hidden="true">›</span>
       </button>
-    )}
 
+
+      <button
+        type="button"
+        className="home-safety-action"
+        onClick={() => {
+          if (region.id === "hapcheon") {
+            navigate(withLanguage("/hapcheon/meteor-crater"));
+          } else {
+            setShowStoryNotice(true);
+          }
+        }}
+      >
+        <span className="home-safety-action-icon" aria-hidden="true">📖</span>
+
+        <span className="home-safety-action-copy">
+          <strong>
+            {language === "ko"
+              ? `${region.regionName}의 이야기 만나기`
+              : `Discover the Story of ${english.regionName}`}
+          </strong>
+          <small>
+            {language === "ko"
+              ? `지금 내가 있는 곳에서 ${region.regionName}의 이야기를 만나보세요.`
+              : `Discover the stories connected to where you are in ${english.regionName}.`}
+          </small>
+        </span>
+
+        <span className="home-safety-action-arrow" aria-hidden="true">›</span>
+      </button>
 <RuntimeJourneyEntry
   loading={false}
   onCreate={createJourney}
@@ -342,6 +370,57 @@ const openTextEntry =
     <TripContinuity onNewTrip={()=>refreshTrip(value=>value+1)}/>
     {guidancePlace&&<section className="proactive-card" aria-label={language==='ko'?'출발 전에 확인하세요':'Check Before You Leave'}><small>{language==='ko'?'출발 전에 확인하세요':'Check Before You Leave'}</small>{guidancePlace&&<h2>{guidanceContext.label}{language==='ko'?'로 가시나요?':' — ready to leave?'}</h2>}<p>{guidance.fact && `${guidance.fact} `}{guidance.context} {guidance.fallbackUsed?(guidancePlace?(language==='ko'?'목적지의 최신 날씨는 아직 확인되지 않았어요.':'The latest destination weather has not been verified yet.'):(language==='ko'?'여정을 만들면 출발 전에 필요한 정보를 확인해 드릴게요.':'Create a journey and I will check what you need before departure.')):guidance.recommendation}</p>{guidance.basisLabel && <span>{guidance.basisLabel}</span>}{guidancePlace&&<button type="button" className="btn btn-outline" onClick={()=>ask(`${guidanceContext.label}로 출발하기 전에 최신 날씨와 이용 정보를 확인해 주세요.`,`Check the latest weather and visitor information before I leave for ${guidanceContext.label}.`)}>{language==='ko'?'출발 정보 확인하기':'Check Departure Information'}</button>}</section>}
 
+    {showStoryNotice && (
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={language === "ko" ? `${region.regionName} 이야기 안내` : `${english.regionName} story notice`}
+        onClick={() => setShowStoryNotice(false)}
+        style={{
+          position:"fixed",
+          inset:0,
+          zIndex:1000,
+          background:"rgba(0,0,0,.48)",
+          display:"grid",
+          placeItems:"center",
+          padding:20
+        }}
+      >
+        <div
+          onClick={(event) => event.stopPropagation()}
+          style={{
+            width:"min(420px,100%)",
+            background:"#fff",
+            borderRadius:20,
+            padding:"26px 22px",
+            boxShadow:"0 18px 50px rgba(0,0,0,.22)"
+          }}
+        >
+          <div style={{fontSize:32,marginBottom:10}}>📖</div>
+
+          <h2 style={{margin:"0 0 12px",fontSize:21,lineHeight:1.35}}>
+            {language === "ko"
+              ? `${region.regionName}의 이야기를 준비하고 있습니다`
+              : `We are preparing the story of ${english.regionName}`}
+          </h2>
+
+          <p style={{margin:"0 0 22px",lineHeight:1.7,color:"#475569"}}>
+            {language === "ko"
+              ? `이 공간은 지역과 협의하여 ${region.regionName}의 역사·문화·예술·사람 가운데 어떤 이야기를 여행자에게 들려드릴지 함께 정하기 위해 마련했습니다.`
+              : `This space is reserved for stories to be selected together with the local community, including the history, culture, arts, and people of ${english.regionName}.`}
+          </p>
+
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => setShowStoryNotice(false)}
+            style={{width:"100%"}}
+          >
+            {language === "ko" ? "확인" : "OK"}
+          </button>
+        </div>
+      </div>
+    )}
     <ConciergeDemoOverlay
       open={showConciergeDemo}
       regionName={region.regionName}

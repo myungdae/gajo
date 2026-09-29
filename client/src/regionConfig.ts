@@ -161,18 +161,18 @@ const quickIntents: QuickIntent[] = [
 ];
 export const GAJO_CONFIG: RegionConfig = {
   id: "gajo",
-  regionName: "가조",
-  serviceName: "가조 여행 동행",
-  heroTitle: "가조에 오신 것을 환영합니다",
-  heroSubtitle: "오늘의 가조를 편안하게 만나보세요.",
+  regionName: "거창",
+  serviceName: "거창 여행 동행",
+  heroTitle: "거창에 오신 것을 환영합니다",
+  heroSubtitle: "오늘의 거창을 편안하게 만나보세요.",
   heroCopy: "계획할 때부터 여행 중인 지금까지, 필요한 다음 일정을 이어드려요.",
   home: {
     hero: {
-      title: "가조에서, 여행의 다음을 찾으세요",
+      title: "거창에서, 여행의 다음을 찾으세요",
       description: "여행 전 계획부터 현장의 맛집·숙소·길찾기, 상황이 달라진 뒤의 새 일정까지 이어드립니다.",
       overlay: "#164d46",
     },
-    question: "가조 여행, 무엇을 도와드릴까요?",
+    question: "거창 여행, 무엇을 도와드릴까요?",
     supportingCopy: "말씀하시거나 편하게 입력해 주세요.",
     examples: [
       "가조에서 부모님과 편하게 갈 곳 알려줘",
@@ -237,7 +237,7 @@ export const GAJO_CONFIG: RegionConfig = {
     },
   ],
   serviceAreaMessage:
-    "현재는 가조 지역을 중심으로 안내하고 있어요. 가조에서 즐길 수 있는 장소를 찾아드릴까요?",
+    "현재는 거창군 전역의 관광·음식·카페·숙박·체험 정보를 안내하고 있어요. 무엇을 찾고 계신가요?",
   ontologyNamespace: "https://gajo-wellness.kr/ontology#",
   dataSources: {
     masterData: "gajo-master-data",
@@ -808,7 +808,7 @@ export const REGION_CONFIGS: Record<RegionId, RegionConfig> = {
 };
 export const REGION_CONFIG = GAJO_CONFIG;
 export const REGION_HOME_ENGLISH:Record<RegionId,RegionalHomeEnglish>={
-  gajo:{regionName:'Gajo',serviceName:'Explore Gajo',heroTitle:'Welcome to Gajo',heroSubtitle:'Take in Gajo at a relaxed pace today.',heroCopy:'Plan your next stop, from local food and stays to on-the-go changes.'},
+  gajo:{regionName:'Geochang',serviceName:'Explore Geochang',heroTitle:'Welcome to Geochang',heroSubtitle:'Discover Geochang at your own pace today.',heroCopy:'Plan your next stop, from local attractions and food to cafés, stays, and on-the-go changes.'},
   okcheon:{regionName:'Okcheon',serviceName:'Explore Okcheon',heroTitle:'Welcome to Okcheon',heroSubtitle:'Discover the landscapes and stories of Okcheon.',heroCopy:'Plan a relaxed journey through its literary and cultural heritage.'},
   muan:{regionName:'Muan',serviceName:'Explore Muan',heroTitle:'Welcome to Muan',heroSubtitle:'Discover Muan’s lotus ponds, wetlands, and coast.',heroCopy:'Find a comfortable route for nature, food, and family time.'},
   gyeryong:{regionName:'Gyeryong',serviceName:'Explore Gyeryong',heroTitle:'Welcome to Gyeryong',heroSubtitle:'Explore local history, events, and family attractions.',heroCopy:'Plan your next stop with practical local information.'},
