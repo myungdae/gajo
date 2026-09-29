@@ -41,11 +41,11 @@ export default function RuntimeJourneyEntry({
     </button>)}</div>;
   return <section className="runtime-journey-entry" aria-labelledby="runtime-journey-title">
     {!auxiliary&&<>
-    <h1 id="runtime-journey-title">{language === 'ko' ? '무엇을 원하시는지 알려주세요' : 'Tell me what you need'}</h1>
-    <p>{language === 'ko' ? '지금 필요한 것을 말이나 글로 알려주시면 위치·시간·날씨와 함께 보고 찾아드릴게요.' : 'Tell me what you need by voice or text, and I will use your location, time and weather to help.'}</p>
+    <h1 id="runtime-journey-title">{language === 'ko' ? region.regionName + ' 여행, 무엇을 도와드릴까요?' : 'How can I help with your trip to ' + region.regionName + '?'}</h1>
+    <p>{language === 'ko' ? '말이나 글로 말씀하시면 현재 위치와 상황에 맞춰 안내해 드립니다.' : 'Tell me what you need by voice or text, and I will use your location, time and weather to help.'}</p>
 
     <div className="entry-input-actions">
-      <button type="button" className="btn btn-primary" onClick={onDirect}>{language === 'ko' ? '말로 알려주기' : 'Tell me by voice'}</button>
+      <button type="button" className="btn btn-primary" onClick={onDirect}>{language === 'ko' ? '말로 물어보기' : 'Tell me by voice'}</button>
       {onSubmit&&<button type="button" className="btn btn-outline" onClick={()=>setTextEntryOpen(open=>!open)} aria-expanded={textEntryOpen}>{language === 'ko' ? '글로 입력하기' : 'Type instead'}</button>}
     </div>
 
@@ -65,7 +65,7 @@ export default function RuntimeJourneyEntry({
       <button type="submit" className="btn btn-primary btn-block" disabled={loading||!text.trim()}>{language==='ko'?'이대로 찾아보기':'Find what I need'}</button>
     </form>}
 
-    {!onSubmit&&<button type="button" className="btn btn-primary" onClick={onDirect}>{language === 'ko' ? '말로 알려주기' : 'Tell me by voice'}</button>}
+    {!onSubmit&&<button type="button" className="btn btn-primary" onClick={onDirect}>{language === 'ko' ? '말로 물어보기' : 'Tell me by voice'}</button>}
     </>}
     <details className="entry-optional-conditions"><summary>{language==='ko'?'말이나 글 대신 선택하거나, 조건 수정하기':'Choose or adjust preferences'}</summary>
     <fieldset><legend>{copy.question}</legend>{choices('goal', JOURNEY_OPTIONS.goal)}</fieldset>

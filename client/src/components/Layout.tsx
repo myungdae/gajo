@@ -91,7 +91,18 @@ export default function Layout() {
       <ConnectionStatus />
       {!webShell&&<header className="app-header">
         <PublicBrand compact language={language} href={withLanguage(`/${region.id}`)}/>
-        <div className="app-header__tools"><span className="app-header__region-name">{language==='en'?english.serviceName:region.serviceName}</span><div className="language-switch" aria-label={language==='en'?'Language':'언어 선택'}><button type="button" aria-pressed={language==='ko'} onClick={()=>select('ko')}>한국어</button><button type="button" aria-pressed={language==='en'} onClick={()=>select('en')}>English</button></div><a href="https://exkovia.com/" className="app-header__all-regions">{language==='en'?'All Regions':'전체 지역 보기'}</a></div>
+        <div className="app-header__tools"><span className="app-header__region-name">{language==='en'?english.serviceName:region.serviceName}</span><div className="language-switch" aria-label={language==='en'?'Language':'언어 선택'}><button type="button" aria-pressed={language==='ko'} onClick={()=>select('ko')}>한국어</button><button type="button" aria-pressed={language==='en'} onClick={()=>select('en')}>English</button></div><a
+  href={withLanguage(`/${region.id}/about`)}
+  className="app-header__all-regions"
+>
+  {language==='en'?'About the Travel Assistant':'여행도우미 소개'}
+</a>
+<a
+  href="https://exkovia.com/"
+  className="app-header__all-regions"
+>
+  {language==='en'?'All Regions':'전체 지역 보기'}
+</a></div>
       </header>}
       <main className={`app-main${webShell?' app-main--web':''}`} ref={mainRef}>
         <Outlet />

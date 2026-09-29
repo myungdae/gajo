@@ -6,6 +6,7 @@ import ConciergePage from './pages/ConciergePage';
 import ItineraryPage from './pages/ItineraryPage';
 import MapPage from './pages/MapPage';
 import SafetyPage from './pages/SafetyPage';
+import TravelAssistantAboutPage from './pages/TravelAssistantAboutPage';
 import AdminEntry from './pages/AdminEntry';
 import OntologyExplorerPage from './pages/OntologyExplorerPage';
 import NearbyRestaurantsPage from './pages/NearbyRestaurantsPage';
@@ -51,6 +52,12 @@ export default function App() {
           <Route path="/muan" element={<HomePage />} />
           <Route path="/gyeryong" element={<HomePage />} />
           <Route path="/hapcheon" element={<HomePage />} />
+          <Route path="/gajo/about" element={<TravelAssistantAboutPage />} />
+          <Route path="/okcheon/about" element={<TravelAssistantAboutPage />} />
+          <Route path="/muan/about" element={<TravelAssistantAboutPage />} />
+          <Route path="/gyeryong/about" element={<TravelAssistantAboutPage />} />
+          <Route path="/hapcheon/about" element={<TravelAssistantAboutPage />} />
+          <Route path="/daejeon-junggu/about" element={<TravelAssistantAboutPage />} />
           <Route path="/hapcheon/meteor-crater" element={<MeteorCraterPage />} />
           <Route path="/hapcheon/safety" element={<SafetyPage />} />
           <Route path="/gajo/safety" element={<SafetyPage />} />

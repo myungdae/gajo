@@ -7,7 +7,6 @@ import { localizedRegionalPath as regionalPath } from '../visitorRouting';
 import { ensureTripSession, loadTripSession, saveTripSession, type PlannedContext } from "../tripSession";
 import type{CreateContextInput}from'../api/client';
 import RuntimeJourneyEntry from '../components/RuntimeJourneyEntry';
-import ConciergeDemoOverlay from "../components/ConciergeDemoOverlay";
 import GajoLiveStatus from '../components/GajoLiveStatus';
 import { regionalRuntimeView } from "../regionalRuntime";
 import { locationPermissionState, observeVisitorLocation } from "../utils/visitorLocation";
@@ -26,7 +25,6 @@ export default function HomePage() {
 const openTextEntry =
   Boolean((location.state as { openTextEntry?: boolean } | null)?.openTextEntry);
   const [,refreshTrip]=useState(0);
-  const [showConciergeDemo, setShowConciergeDemo] = useState(false);
   const [showStoryNotice, setShowStoryNotice] = useState(false);
   const [homeLocation,setHomeLocation]=useState<TripLocation|undefined>(
     ()=>ensureTripSession(region.id).locationContext?.now
@@ -149,6 +147,17 @@ const openTextEntry =
       {spotlight.imageUrl && <img className="sr-only" src={spotlight.imageUrl} alt={spotlight.imageAlt || ""} />}
       <div><small>{spotlight.statusLabel}</small><h1 id="spotlight-title">{spotlight.title}</h1><p>{spotlight.shortDescription}</p>{spotlightQuestion&&<p className="spotlight-question">{spotlightQuestion}</p>}{region.id!=="hapcheon"&&<div className="spotlight-actions">{(spotlight.secondaryAction || place?.latitude !== undefined) && <button onClick={() => findNearby("TOURIST_ATTRACTION")}>{spotlight.secondaryAction?.label || copy.nearby}</button>}</div>}</div>
     </section>
+<RuntimeJourneyEntry
+  loading={false}
+  onCreate={createJourney}
+  onSubmit={text=>ask(text,text)}
+  initialTextEntryOpen={openTextEntry}
+  onDirect={()=>navigate(
+    link('/concierge?mode=now'),
+    {state:{tripMode:'NOW',voiceRequested:true}}
+  )}
+/>
+
     <section className="home-context-strip" aria-label={language==="ko"?"현재 여행 상황":"Current travel context"}>
       <GajoLiveStatus
         regionName={region.regionName}
@@ -169,143 +178,6 @@ const openTextEntry =
         </button>
       )}
     </section>
-    <div style={{display:"grid",gap:8,margin:"0 0 16px"}}>
-      <a
-        href={`/?lang=${language}#why-exkovia`}
-        aria-label={language==="ko"?"ChatGPT·T맵과 무엇이 다른가요?":"How is this different from ChatGPT and TMAP?"}
-        style={{
-          minHeight:72,
-          display:"flex",
-          alignItems:"center",
-          justifyContent:"space-between",
-          gap:12,
-          width:"100%",
-          padding:"10px 12px",
-          borderRadius:14,
-          border:"1px solid #9fd6cf",
-          background:"#eef9f7",
-          color:"#08786d",
-          textDecoration:"none",
-          boxSizing:"border-box"
-        }}
-      >
-        <span style={{display:"flex",alignItems:"center",gap:12,minWidth:0}}>
-          <span
-            aria-hidden="true"
-            style={{
-              width:42,
-              height:42,
-              display:"grid",
-              placeItems:"center",
-              flex:"0 0 auto",
-              borderRadius:"50%",
-              border:"2px solid #08786d",
-              fontSize:13,
-              fontWeight:900,
-              letterSpacing:"-0.5px"
-            }}
-          >
-            GPT
-          </span>
-
-          <span style={{textAlign:"left",lineHeight:1.25}}>
-            <strong style={{display:"block",fontSize:14,fontWeight:800}}>
-              {language==="ko"?"ChatGPT · T맵과":"ChatGPT · TMAP"}
-            </strong>
-            <strong style={{display:"block",fontSize:16,fontWeight:900}}>
-              {language==="ko"?"무엇이 다른가요?":"What is different?"}
-            </strong>
-          </span>
-        </span>
-
-        <span
-          aria-hidden="true"
-          style={{
-            width:42,
-            height:42,
-            display:"grid",
-            placeItems:"center",
-            flex:"0 0 auto",
-            borderRadius:"50%",
-            background:"#0b8a7d",
-            color:"#fff",
-            fontSize:30,
-            fontWeight:900,
-            lineHeight:1
-          }}
-        >
-          ›
-        </span>
-      </a>
-
-      <button
-        type="button"
-        className="home-concierge-demo-button"
-        onClick={() => setShowConciergeDemo(true)}
-        style={{
-          minHeight:72,
-          display:"flex",
-          alignItems:"center",
-          justifyContent:"space-between",
-          gap:12,
-          width:"100%",
-          padding:"10px 12px",
-          borderRadius:14,
-          border:"1px solid #9fd6cf",
-          background:"#eef9f7",
-          color:"#08786d",
-          boxSizing:"border-box",
-          cursor:"pointer",
-          fontFamily:"inherit"
-        }}
-      >
-        <span style={{display:"flex",alignItems:"center",gap:12,minWidth:0}}>
-          <span
-            aria-hidden="true"
-            style={{
-              width:42,
-              height:42,
-              display:"grid",
-              placeItems:"center",
-              flex:"0 0 auto",
-              fontSize:27
-            }}
-          >
-            ✨
-          </span>
-
-          <span style={{textAlign:"left",lineHeight:1.25}}>
-            <strong style={{display:"block",fontSize:14,fontWeight:800}}>
-              {language==="ko"?"이 여행도우미가 다른 이유,":"Why this travel assistant is different"}
-            </strong>
-            <strong style={{display:"block",fontSize:16,fontWeight:900}}>
-              {language==="ko"?"20초만 보세요":"See it in 20 seconds"}
-            </strong>
-          </span>
-        </span>
-
-        <span
-          aria-hidden="true"
-          style={{
-            width:42,
-            height:42,
-            display:"grid",
-            placeItems:"center",
-            flex:"0 0 auto",
-            borderRadius:"50%",
-            background:"#0b8a7d",
-            color:"#fff",
-            fontSize:30,
-            fontWeight:900,
-            lineHeight:1
-          }}
-        >
-          ›
-        </span>
-      </button>
-    </div>
-
-
       <button
         type="button"
         className="home-safety-action"
@@ -356,16 +228,7 @@ const openTextEntry =
 
         <span className="home-safety-action-arrow" aria-hidden="true">›</span>
       </button>
-<RuntimeJourneyEntry
-  loading={false}
-  onCreate={createJourney}
-  onSubmit={text=>ask(text,text)}
-  initialTextEntryOpen={openTextEntry}
-  onDirect={()=>navigate(
-    link('/concierge?mode=now'),
-    {state:{tripMode:'NOW',voiceRequested:true}}
-  )}
-/>
+
 
     <TripContinuity onNewTrip={()=>refreshTrip(value=>value+1)}/>
     {guidancePlace&&<section className="proactive-card" aria-label={language==='ko'?'출발 전에 확인하세요':'Check Before You Leave'}><small>{language==='ko'?'출발 전에 확인하세요':'Check Before You Leave'}</small>{guidancePlace&&<h2>{guidanceContext.label}{language==='ko'?'로 가시나요?':' — ready to leave?'}</h2>}<p>{guidance.fact && `${guidance.fact} `}{guidance.context} {guidance.fallbackUsed?(guidancePlace?(language==='ko'?'목적지의 최신 날씨는 아직 확인되지 않았어요.':'The latest destination weather has not been verified yet.'):(language==='ko'?'여정을 만들면 출발 전에 필요한 정보를 확인해 드릴게요.':'Create a journey and I will check what you need before departure.')):guidance.recommendation}</p>{guidance.basisLabel && <span>{guidance.basisLabel}</span>}{guidancePlace&&<button type="button" className="btn btn-outline" onClick={()=>ask(`${guidanceContext.label}로 출발하기 전에 최신 날씨와 이용 정보를 확인해 주세요.`,`Check the latest weather and visitor information before I leave for ${guidanceContext.label}.`)}>{language==='ko'?'출발 정보 확인하기':'Check Departure Information'}</button>}</section>}
@@ -421,17 +284,5 @@ const openTextEntry =
         </div>
       </div>
     )}
-    <ConciergeDemoOverlay
-      open={showConciergeDemo}
-      regionName={region.regionName}
-      onClose={() => setShowConciergeDemo(false)}
-      onStartTrip={() => {
-        setShowConciergeDemo(false);
-        navigate(
-          link("/concierge?mode=now"),
-          { state: { tripMode: "NOW", freeTextOpen: true } }
-        );
-      }}
-    />
   </div>;
 }
