@@ -7,11 +7,12 @@ const component=readFileSync(new URL('./components/ExkoRegionKnowledgeLink.tsx',
 const home=readFileSync(new URL('./pages/HomePage.tsx',import.meta.url),'utf8');
 const nearby=readFileSync(new URL('./pages/NearbyRestaurantsPage.tsx',import.meta.url),'utf8');
 
-test('only the three verified regions resolve fixed EXKO resources',()=>{
-  assert.deepEqual(Object.keys(VERIFIED_EXKO_REGION_URLS),['hapcheon','geochang','okcheon']);
+test('only the four verified regions resolve fixed EXKO resources',()=>{
+  assert.deepEqual(Object.keys(VERIFIED_EXKO_REGION_URLS),['hapcheon','geochang','okcheon','gyeryong']);
   assert.equal(verifiedExkoRegionUrl('hapcheon'),'https://exko.kr/resource/%ED%95%A9%EC%B2%9C%EA%B5%B0');
   assert.equal(verifiedExkoRegionUrl('geochang'),'https://exko.kr/resource/%EA%B1%B0%EC%B0%BD%EA%B5%B0');
   assert.equal(verifiedExkoRegionUrl('okcheon'),'https://exko.kr/resource/%EC%98%A5%EC%B2%9C%EA%B5%B0');
+  assert.equal(verifiedExkoRegionUrl('gyeryong'),'https://exko.kr/resource/%EA%B3%84%EB%A3%A1%EC%8B%9C');
   for(const regionId of ['gajo','unknown','HAPCHEON','hapcheon/nearby','hapcheon?x=1','../hapcheon','https://evil.example'])assert.equal(verifiedExkoRegionUrl(regionId),undefined);
 });
 
@@ -24,7 +25,7 @@ test('verified URL contains no visitor location query or trip identity',()=>{
 
 test('Portal keeps regional AI primary actions separate from verified EXKO links',()=>{
   const portal=readFileSync(new URL('./pages/PlatformPortalPage.tsx',import.meta.url),'utf8');
-  for(const [name,id,to] of [['합천 AI','hapcheon','/hapcheon'],['거창 AI','geochang','/gajo'],['옥천 AI','okcheon','/okcheon']]){
+  for(const [name,id,to] of [['합천 AI','hapcheon','/hapcheon'],['거창 AI','geochang','/gajo'],['옥천 AI','okcheon','/okcheon'],['계룡 AI','gyeryong','/gyeryong']]){
     assert.match(portal,new RegExp(`name: '${name}'[^\\n]*to: '${to.replaceAll('/','\\/')}'[^\\n]*exkoRegionId:'${id}'`));
   }
   assert.doesNotMatch(portal,/지역 AI 여행안내: 준비 중/);
@@ -33,7 +34,7 @@ test('Portal keeps regional AI primary actions separate from verified EXKO links
   assert.doesNotMatch(portal,/gajo\.odex\.kr|external:true/);
   assert.equal((portal.match(/compact\/>/g)||[]).length,1);
   assert.match(component,/외부 지역지식 서비스/);
-  assert.match(component,/EXKO에서 \{name\}군 지역지식 보기/);
+  assert.match(component,/EXKO에서 \{name\} 지역지식 보기/);
 });
 
 test('Regional Home removes the technical knowledge link while nearby keeps its safe passive link',()=>{
