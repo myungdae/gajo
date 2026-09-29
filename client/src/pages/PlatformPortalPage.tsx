@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import '../platform.css';
 import ExkoRegionKnowledgeLink from '../components/ExkoRegionKnowledgeLink';
@@ -42,6 +42,15 @@ const serviceRoles = [
 ];
 
 export default function PlatformPortalPage() {
+  useEffect(() => {
+    if (window.location.hash !== "#why-exkovia") return;
+
+    window.requestAnimationFrame(() => {
+      document.getElementById("why-exkovia")?.scrollIntoView({
+        block: "start",
+      });
+    });
+  }, []);
   const [openDifference,setOpenDifference]=useState(0);
   return <div className="platform-page platform-portal-page">
     <header className="platform-header">
