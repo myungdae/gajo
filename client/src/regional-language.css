@@ -61,7 +61,7 @@ html[lang="en"] .recommendation-section h2::after { content: "Selected Stops"; }
   }
 
   .app-header__all-regions {
-    font-size: 10px;
+    font-size: 11px;
   }
 }
 
